@@ -1,0 +1,35 @@
+name: ctx-ui
+
+services:
+  ctx-ui:
+    image: ghcr.io/echways/ctx-ui:${CTX_UI_VERSION:?}
+    restart: unless-stopped
+    environment:
+      CtxUi__PublicUrl: https://${CTX_UI_DOMAIN:?}
+    volumes:
+      - ctx-ui-data:/data
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    depends_on:
+      - ctx-ui
+    environment:
+      CTX_UI_DOMAIN: ${CTX_UI_DOMAIN:?}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+
+volumes:
+  ctx-ui-data:
+  caddy-data:
+  caddy-config:

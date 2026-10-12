@@ -1,0 +1,3 @@
+{$CTX_UI_DOMAIN} {
+	reverse_proxy ctx-ui:8080
+}

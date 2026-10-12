@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <AssemblyName>ctx-ui</AssemblyName>
+    <RootNamespace>CtxUi.Server</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.CommandLine" />
+    <ProjectReference Include="..\CtxUi.Core\CtxUi.Core.csproj" />
+    <ProjectReference Include="..\CtxUi.Gateway\CtxUi.Gateway.csproj" />
+  </ItemGroup>
+
+</Project>

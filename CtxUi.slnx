@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/CtxUi.Core/CtxUi.Core.csproj" />
+    <Project Path="src/CtxUi.Gateway/CtxUi.Gateway.csproj" />
+    <Project Path="src/CtxUi.Server/CtxUi.Server.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/CtxUi.Core.Tests/CtxUi.Core.Tests.csproj" />
+    <Project Path="tests/CtxUi.Gateway.Tests/CtxUi.Gateway.Tests.csproj" />
+    <Project Path="tests/CtxUi.IntegrationTests/CtxUi.IntegrationTests.csproj" />
+  </Folder>
+</Solution>

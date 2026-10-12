@@ -6,7 +6,6 @@ public static class ClientCredentials
 {
     private const string Scheme = "Bearer ";
 
-    /// <summary>Токен из адреса /k/…, иначе из заголовка Authorization: Bearer, иначе null.</summary>
     public static string? Read(HttpContext context)
     {
         if (TokenPath.Get(context) is { } fromPath)

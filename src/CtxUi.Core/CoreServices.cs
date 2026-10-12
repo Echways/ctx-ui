@@ -13,7 +13,6 @@ public static class CoreServices
 {
     public const string DatabaseFile = "ctx-ui.db";
 
-    /// <summary>Регистрирует базу и сервисы. Реализацию ISecretVault и, при желании, TimeProvider даёт вызывающий.</summary>
     public static IServiceCollection AddCtxUiCore(this IServiceCollection services, string dataDir)
     {
         var connection = new SqliteConnectionStringBuilder { DataSource = Path.Combine(dataDir, DatabaseFile) }.ToString();

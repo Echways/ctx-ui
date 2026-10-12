@@ -11,7 +11,6 @@ using CtxUi.Server;
 
 namespace CtxUi.IntegrationTests;
 
-/// <summary>Шлюз на свободном порту со своим временным каталогом данных.</summary>
 public sealed class GatewayHost : IAsyncDisposable
 {
     public required WebApplication App { get; init; }
@@ -40,7 +39,6 @@ public sealed class GatewayHost : IAsyncDisposable
         };
     }
 
-    /// <summary>Меняет данные через сервисы и сразу применяет изменение, не дожидаясь фоновой проверки.</summary>
     public async Task<T> ArrangeAsync<T>(Func<IServiceProvider, Task<T>> action)
     {
         var result = await ChangeAsync(action);
@@ -48,7 +46,6 @@ public sealed class GatewayHost : IAsyncDisposable
         return result;
     }
 
-    /// <summary>Меняет данные так, как это сделал бы другой процесс: таблицу маршрутов не трогает.</summary>
     public async Task<T> ChangeAsync<T>(Func<IServiceProvider, Task<T>> action)
     {
         await using var scope = App.Services.CreateAsyncScope();
@@ -92,7 +89,6 @@ public sealed class GatewayHost : IAsyncDisposable
         }
         catch (IOException)
         {
-            // Каталог во временной папке; если его держит антивирус или ОС, он уйдёт при следующей очистке.
         }
     }
 }

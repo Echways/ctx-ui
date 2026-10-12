@@ -5,17 +5,14 @@ using CtxUi.Core.Secrets;
 
 namespace CtxUi.Core.Clients;
 
-/// <summary>Клиент вместе с открытым токеном. Открытый токен нигде, кроме этого значения, не хранится.</summary>
 public sealed record IssuedClient(Client Client, string Token);
 
 public sealed record ClientUpdate
 {
-    /// <summary>true, если срок меняется. Тогда ExpiresAt = null означает «бессрочно».</summary>
     public bool ChangeExpiry { get; init; }
 
     public DateTimeOffset? ExpiresAt { get; init; }
 
-    /// <summary>Новый полный набор inbound'ов или null, если набор не меняется.</summary>
     public IReadOnlyCollection<string>? InboundSlugs { get; init; }
 }
 
@@ -82,8 +79,6 @@ public sealed class ClientService(CtxUiDbContext db, ISecretVault vault, TimePro
 
         if (update.InboundSlugs is not null)
         {
-            // Правим набор разницей: удаление и повторное добавление той же связи
-            // в одном контексте конфликтует по составному ключу.
             var wanted = (await ResolveInboundsAsync(update.InboundSlugs, ct)).Select(inbound => inbound.Id).ToHashSet();
             client.Inbounds.RemoveAll(link => !wanted.Contains(link.InboundId));
             foreach (var inboundId in wanted.Except(client.Inbounds.Select(link => link.InboundId)).ToList())
@@ -120,10 +115,6 @@ public sealed class ClientService(CtxUiDbContext db, ISecretVault vault, TimePro
     public async Task<string?> RevealAsync(string name, CancellationToken ct = default) =>
         vault.Open((await GetAsync(name, ct)).TokenSealed);
 
-    /// <summary>
-    /// Отмечает обращение клиента. Идёт мимо отслеживания изменений,
-    /// поэтому не увеличивает ревизию маршрутов и не заставляет сервер перечитывать таблицу.
-    /// </summary>
     public async Task MarkUsedAsync(Guid clientId, DateTimeOffset now, CancellationToken ct = default)
     {
         await db.Clients

@@ -9,10 +9,6 @@ using CtxUi.Core.Inbounds;
 
 namespace CtxUi.Server;
 
-/// <summary>
-/// Управление из командной строки. Работает с той же базой, что и сервер;
-/// запущенный сервер подхватывает изменения сам по счётчику ревизии.
-/// </summary>
 public static class Cli
 {
     public static bool Handles(string[] args) => args.Length > 0 && args[0] is "inbound" or "client";
@@ -25,7 +21,6 @@ public static class Cli
     {
         var builder = Host.CreateApplicationBuilder();
         configure?.Invoke(builder);
-        // Журнал уходит в stderr, чтобы вывод команды можно было разбирать скриптом.
         builder.Logging.ClearProviders()
             .AddConsole(console => console.LogToStandardErrorThreshold = LogLevel.Trace)
             .AddCtxUiFilters()

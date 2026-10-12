@@ -6,10 +6,6 @@ using Yarp.ReverseProxy.Forwarder;
 
 namespace CtxUi.Gateway;
 
-/// <summary>
-/// Прозрачно пересылает запрос в удалённый MCP-сервер. Тело и ответ идут потоком без разбора,
-/// поэтому работают любая ревизия протокола и ответы SSE.
-/// </summary>
 public sealed class HttpUpstream(IHttpForwarder forwarder, ILogger<HttpUpstream> logger) : IDisposable
 {
     private readonly HttpMessageInvoker _client = new(new SocketsHttpHandler

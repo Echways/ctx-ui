@@ -7,7 +7,6 @@ public sealed class FakeVault : ISecretVault
 {
     private const string Prefix = "sealed:";
 
-    /// <summary>Изображает потерю ключей: всё запечатанное перестаёт открываться.</summary>
     public bool Broken { get; set; }
 
     public string Seal(string plaintext) => Prefix + Convert.ToBase64String(Encoding.UTF8.GetBytes(plaintext));

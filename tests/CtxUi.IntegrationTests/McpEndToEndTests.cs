@@ -17,7 +17,6 @@ public sealed class EchoTools
     public static string Echo(string text) => "echo: " + text;
 }
 
-/// <summary>Настоящий сервер MCP за шлюзом и настоящий клиент MCP перед ним.</summary>
 public class McpEndToEndTests
 {
     private static async Task<WebApplication> StartMcpServerAsync()

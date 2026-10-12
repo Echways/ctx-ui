@@ -13,7 +13,6 @@ public sealed record RecordedRequest(
     IReadOnlyDictionary<string, string> Headers,
     string Body);
 
-/// <summary>Настоящий HTTP-сервер на свободном порту, который запоминает пришедшие запросы.</summary>
 public sealed class FakeUpstream : IAsyncDisposable
 {
     private readonly WebApplication _app;

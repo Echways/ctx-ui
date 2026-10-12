@@ -7,7 +7,6 @@ namespace CtxUi.Gateway.Tests;
 
 internal static class Pipeline
 {
-    /// <summary>Прогоняет запрос через UseTokenPath без сервера и возвращает контекст после обработки.</summary>
     public static async Task<HttpContext> RunAsync(string path, string query = "", string? authorization = null)
     {
         var app = new ApplicationBuilder(new ServiceCollection().BuildServiceProvider());

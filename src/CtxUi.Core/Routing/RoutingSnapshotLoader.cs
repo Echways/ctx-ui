@@ -14,8 +14,6 @@ public sealed class RoutingSnapshotLoader(CtxUiDbContext db, ISecretVault vault,
 
     public async Task<RoutingSnapshot> LoadAsync(CancellationToken ct = default)
     {
-        // Ревизия читается раньше данных. Если данные изменятся между двумя чтениями,
-        // снимок получит старую ревизию с новыми данными и на следующей проверке перечитается.
         var revision = await CurrentRevisionAsync(ct);
 
         var routes = new List<InboundRoute>();

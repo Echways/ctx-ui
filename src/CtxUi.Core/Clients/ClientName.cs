@@ -19,9 +19,5 @@ public static class ClientName
         return name;
     }
 
-    /// <summary>
-    /// Ключ уникальности имени. Хранится отдельной колонкой, потому что SQLite
-    /// сравнивает без учёта регистра только латиницу.
-    /// </summary>
     public static string Key(string name) => name.Normalize(NormalizationForm.FormKC).ToUpperInvariant();
 }

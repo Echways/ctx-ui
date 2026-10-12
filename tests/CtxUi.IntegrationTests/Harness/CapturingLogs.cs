@@ -3,7 +3,6 @@ using Microsoft.Extensions.Logging;
 
 namespace CtxUi.IntegrationTests;
 
-/// <summary>Собирает всё, что сервер пишет в журнал, чтобы тест мог искать утечки.</summary>
 public sealed class CapturingLogs : ILoggerProvider
 {
     public ConcurrentQueue<string> Lines { get; } = new();

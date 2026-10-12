@@ -6,7 +6,6 @@ namespace CtxUi.Server;
 
 public static class ServerApp
 {
-    /// <summary>Собирает веб-приложение. Обратный вызов нужен тестам: порт, каталог данных, часы.</summary>
     public static WebApplication Build(string[] args, Action<WebApplicationBuilder>? configure = null)
     {
         var builder = WebApplication.CreateBuilder(args);
@@ -20,7 +19,6 @@ public static class ServerApp
         return app;
     }
 
-    /// <summary>Применяет миграции и загружает маршруты. Вызывается до старта, чтобы первый запрос не увидел пустую таблицу.</summary>
     public static async Task InitializeAsync(WebApplication app, CancellationToken ct = default)
     {
         await using (var scope = app.Services.CreateAsyncScope())

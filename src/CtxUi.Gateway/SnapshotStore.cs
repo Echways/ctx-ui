@@ -3,7 +3,6 @@ using CtxUi.Core.Routing;
 
 namespace CtxUi.Gateway;
 
-/// <summary>Держит текущий снимок маршрутов. Чтение без блокировок, замена целиком.</summary>
 public sealed class SnapshotStore(IServiceScopeFactory scopes)
 {
     private readonly SemaphoreSlim _reloading = new(1, 1);
@@ -25,7 +24,6 @@ public sealed class SnapshotStore(IServiceScopeFactory scopes)
         }
     }
 
-    /// <summary>Перечитывает снимок, только если ревизия в базе отличается от загруженной.</summary>
     public async Task<bool> ReloadIfChangedAsync(CancellationToken ct = default)
     {
         long revision;

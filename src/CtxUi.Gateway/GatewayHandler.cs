@@ -4,7 +4,6 @@ using CtxUi.Core.Routing;
 
 namespace CtxUi.Gateway;
 
-/// <summary>Конечная точка /mcp/{slug}: решение о доступе, затем пересылка или отказ.</summary>
 public sealed class GatewayHandler(
     SnapshotStore store,
     HttpUpstream upstream,
@@ -27,7 +26,6 @@ public sealed class GatewayHandler(
             await Rejection.WriteAsync(context, decision);
         }
 
-        // В журнал идёт slug только известного inbound'а: произвольная строка из адреса туда не попадает.
         logger.LogInformation(
             "{Method} /mcp/{Slug} клиент={Client} исход={Outcome} статус={StatusCode}",
             context.Request.Method,

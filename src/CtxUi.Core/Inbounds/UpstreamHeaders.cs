@@ -4,7 +4,6 @@ using CtxUi.Core.Secrets;
 
 namespace CtxUi.Core.Inbounds;
 
-/// <summary>Заголовки, которые шлюз добавляет к запросу в upstream. Обычно это ключ доступа к нему.</summary>
 public static partial class UpstreamHeaders
 {
     public const string ClientPrefix = "X-Mcp-Client-";
@@ -39,7 +38,6 @@ public static partial class UpstreamHeaders
         return headers;
     }
 
-    /// <summary>Заголовки личности клиента. Их выставляет только шлюз.</summary>
     public static bool IsIdentity(string name) =>
         name.StartsWith(ClientPrefix, StringComparison.OrdinalIgnoreCase) ||
         name.StartsWith(MetaPrefix, StringComparison.OrdinalIgnoreCase);
@@ -47,7 +45,6 @@ public static partial class UpstreamHeaders
     public static string? Seal(ISecretVault vault, IReadOnlyDictionary<string, string> headers) =>
         headers.Count == 0 ? null : vault.Seal(JsonSerializer.Serialize(headers));
 
-    /// <summary>Возвращает null, если сохранённые заголовки не расшифровать.</summary>
     public static IReadOnlyDictionary<string, string>? Open(ISecretVault vault, string? sealedHeaders)
     {
         if (sealedHeaders is null)

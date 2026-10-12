@@ -1,0 +1,157 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+image="ctx-ui-systemd-test"
+box="ctx-ui-install-test"
+dist="$(mktemp -d)"
+failures=0
+
+case "$(uname -m)" in
+    x86_64 | amd64) arch=x64 ;;
+    aarch64 | arm64) arch=arm64 ;;
+    *) echo "unsupported architecture $(uname -m)" >&2; exit 1 ;;
+esac
+
+cleanup() {
+    docker rm -f "$box" > /dev/null 2>&1 || true
+    rm -rf "$dist"
+}
+trap cleanup EXIT
+
+in_box() {
+    docker exec "$box" "$@"
+}
+
+check() {
+    local name="$1"
+    shift
+    if "$@"; then
+        echo "ok    $name"
+    else
+        echo "FAIL  $name"
+        failures=$((failures + 1))
+    fi
+}
+
+equals() {
+    [ "$1" = "$2" ] || { echo "      expected: $1"; echo "      actual:   $2"; return 1; }
+}
+
+contains() {
+    [[ "$2" == *"$1"* ]] || { echo "      expected to contain: $1"; echo "      actual: $2"; return 1; }
+}
+
+status() {
+    in_box curl -s -o /dev/null -w '%{http_code}' "$@" http://127.0.0.1:8080/mcp/smoke
+}
+
+status_becomes() {
+    local expected="$1" actual=""
+    shift
+    for _ in $(seq 1 20); do
+        actual="$(status "$@")"
+        if [ "$actual" = "$expected" ]; then
+            return 0
+        fi
+        sleep 0.5
+    done
+    echo "      expected: $expected"
+    echo "      actual:   $actual"
+    return 1
+}
+
+"$root/deploy/package.sh" 0.0.1 "$dist" > /dev/null
+first="ctx-ui-0.0.1-linux-$arch.tar.gz"
+second="ctx-ui-0.0.2-linux-$arch.tar.gz"
+mkdir "$dist/next"
+tar -xzf "$dist/$first" -C "$dist/next"
+echo 0.0.2 > "$dist/next/ctx-ui/VERSION"
+tar -C "$dist/next" -czf "$dist/$second" ctx-ui
+cp "$root/deploy/linux/install.sh" "$dist/install-unstamped.sh"
+mkdir "$dist/tampered"
+cp "$dist/SHA256SUMS" "$dist/$first" "$dist/tampered/"
+echo tampered >> "$dist/tampered/$first"
+chmod -R a+rX "$dist"
+
+docker build -q -t "$image" -f "$root/deploy/tests/systemd.Dockerfile" "$root/deploy/tests" > /dev/null
+docker rm -f "$box" > /dev/null 2>&1 || true
+docker run -d --name "$box" --privileged --cgroupns private \
+    --tmpfs /run --tmpfs /run/lock --tmpfs /tmp -v "$dist:/dist:ro" "$image" > /dev/null
+for _ in $(seq 1 30); do
+    state="$(in_box systemctl is-system-running 2> /dev/null || true)"
+    if [ "$state" = running ] || [ "$state" = degraded ]; then
+        break
+    fi
+    sleep 1
+done
+
+echo "== refusals"
+output="$(in_box bash /dist/install-unstamped.sh 2>&1)" && code=0 || code=$?
+check "unstamped installer needs a version" equals 1 "$code"
+check "unstamped installer explains" contains "не указана версия" "$output"
+output="$(in_box bash /dist/install.sh --purge 2>&1)" && code=0 || code=$?
+check "purge alone is refused" equals 1 "$code"
+output="$(in_box bash /dist/install.sh --archive /dist/SHA256SUMS 2>&1)" && code=0 || code=$?
+check "foreign archive is refused" equals 1 "$code"
+output="$(in_box env CTX_UI_DOWNLOAD_URL=file:///dist/tampered bash /dist/install.sh 2>&1)" && code=0 || code=$?
+check "tampered download is refused" equals 1 "$code"
+check "tampered download explains" contains "контрольная сумма" "$output"
+output="$(in_box bash /dist/install.sh --archive "/dist/$first" --listen "http://127.0.0.1:8080; reboot" 2>&1)" && code=0 || code=$?
+check "address with shell syntax is refused" equals 1 "$code"
+check "refused address leaves no settings" equals "" "$(in_box sh -c 'ls /etc/ctx-ui/ctx-ui.env 2>/dev/null' || true)"
+check "nothing is installed after refusals" equals "" "$(in_box sh -c 'ls -d /opt/ctx-ui 2>/dev/null' || true)"
+
+echo "== install"
+output="$(in_box env CTX_UI_DOWNLOAD_URL=file:///dist bash /dist/install.sh \
+    --public-url https://mcp.example.com/ --listen http://127.0.0.1:8080 2>&1)" || true
+check "installer reports the version" contains "ctx-ui 0.0.1 установлен и запущен." "$output"
+check "service is active" equals active "$(in_box systemctl is-active ctx-ui)"
+check "service is enabled" equals enabled "$(in_box systemctl is-enabled ctx-ui)"
+check "service runs as ctx-ui" equals ctx-ui "$(in_box ps -o user= -C ctx-ui | sort -u)"
+check "program directory" equals "755 root:root" "$(in_box stat -c '%a %U:%G' /opt/ctx-ui)"
+check "settings file" equals "640 root:ctx-ui" "$(in_box stat -c '%a %U:%G' /etc/ctx-ui/ctx-ui.env)"
+check "data directory" equals "700 ctx-ui:ctx-ui" "$(in_box stat -c '%a %U:%G' /var/lib/ctx-ui)"
+check "settings content" equals \
+    "Urls=http://127.0.0.1:8080 CtxUi__PublicUrl=https://mcp.example.com CtxUi__DataDir=/var/lib/ctx-ui" \
+    "$(in_box cat /etc/ctx-ui/ctx-ui.env | tr '\n' ' ' | sed 's/ $//')"
+
+echo "== command line"
+output="$(in_box sh -c 'cd / && ctx-ui inbound add smoke --url http://127.0.0.1:9/mcp' 2>&1)" || true
+check "inbound address starts with the public url" contains "https://mcp.example.com/mcp/smoke" "$output"
+output="$(in_box sh -c 'cd / && ctx-ui client add smoke --inbound smoke' 2>&1)" || true
+token="$(echo "$output" | grep -o -E 'tnk_[A-Za-z0-9]{32}' | head -n 1 || true)"
+check "client add prints a token" [ -n "$token" ]
+check "data files belong to ctx-ui" equals "" "$(in_box find /var/lib/ctx-ui ! -user ctx-ui)"
+check "request without a token is rejected" status_becomes 401
+check "request with the token reaches forwarding" status_becomes 502 -H "Authorization: Bearer $token"
+output="$(in_box runuser -u nobody -- ctx-ui inbound list 2>&1)" && code=0 || code=$?
+check "other users are refused" equals 1 "$code"
+check "refusal mentions sudo" contains "sudo" "$output"
+
+echo "== upgrade"
+output="$(in_box bash /dist/install.sh --archive "/dist/$second" --public-url https://other.example.com 2>&1)" || true
+check "installer reports the upgrade" contains "ctx-ui обновлён с 0.0.1 до 0.0.2" "$output"
+check "installer says settings were kept" contains "новые значения не применены" "$output"
+check "settings are untouched" contains "CtxUi__PublicUrl=https://mcp.example.com" "$(in_box cat /etc/ctx-ui/ctx-ui.env)"
+check "new version is in place" equals 0.0.2 "$(in_box cat /opt/ctx-ui/VERSION)"
+check "service is active after upgrade" equals active "$(in_box systemctl is-active ctx-ui)"
+check "client survives the upgrade" status_becomes 502 -H "Authorization: Bearer $token"
+
+output="$(in_box bash /dist/install.sh --archive /dist/SHA256SUMS 2>&1)" && code=0 || code=$?
+check "refused archive leaves the service running" equals "1 active" "$code $(in_box systemctl is-active ctx-ui)"
+
+echo "== uninstall"
+in_box bash /dist/install.sh --uninstall > /dev/null 2>&1 || true
+check "program is removed" equals "" "$(in_box sh -c 'ls -d /opt/ctx-ui /usr/local/bin/ctx-ui /etc/systemd/system/ctx-ui.service 2>/dev/null' || true)"
+check "data and settings stay" equals "/etc/ctx-ui/ctx-ui.env /var/lib/ctx-ui/ctx-ui.db" \
+    "$(in_box sh -c 'ls /etc/ctx-ui/ctx-ui.env /var/lib/ctx-ui/ctx-ui.db' | tr '\n' ' ' | sed 's/ $//')"
+in_box bash /dist/install.sh --uninstall --purge > /dev/null 2>&1 || true
+check "purge removes data and settings" equals "" "$(in_box sh -c 'ls -d /etc/ctx-ui /var/lib/ctx-ui 2>/dev/null' || true)"
+check "purge removes the user" equals "" "$(in_box sh -c 'getent passwd ctx-ui' || true)"
+
+if [ "$failures" -ne 0 ]; then
+    echo "$failures check(s) failed"
+    exit 1
+fi
+echo "all checks passed"

@@ -11,4 +11,9 @@
     <ProjectReference Include="..\CtxUi.Gateway\CtxUi.Gateway.csproj" />
   </ItemGroup>
 
+  <ItemGroup Condition="'$(SelfContained)' == 'true'">
+    <PackageReference Include="Microsoft.ICU.ICU4C.Runtime" />
+    <RuntimeHostConfigurationOption Include="System.Globalization.AppLocalIcu" Value="$(IcuVersion)" />
+  </ItemGroup>
+
 </Project>

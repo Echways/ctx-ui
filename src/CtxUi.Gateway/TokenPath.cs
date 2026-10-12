@@ -4,10 +4,6 @@ using Microsoft.AspNetCore.Http.Features;
 
 namespace CtxUi.Gateway;
 
-/// <summary>
-/// Адрес вида /k/{токен}/mcp/{slug} для клиентов, которые не умеют задавать заголовки.
-/// Middleware стоит первым в конвейере, поэтому маршрутизация и журнал токена уже не видят.
-/// </summary>
 public static class TokenPath
 {
     private const string Marker = "/k/";

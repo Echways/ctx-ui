@@ -18,7 +18,6 @@ public static class GatewayServices
         return services;
     }
 
-    /// <summary>Порядок важен: токен вырезается из пути до маршрутизации.</summary>
     public static WebApplication UseCtxUiGateway(this WebApplication app)
     {
         app.UseTokenPath();

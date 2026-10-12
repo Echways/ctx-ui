@@ -1,0 +1,23 @@
+[Unit]
+Description=ctx-ui MCP gateway
+Documentation=https://github.com/Echways/mcp-ui
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ctx-ui
+Group=ctx-ui
+WorkingDirectory=/opt/ctx-ui
+EnvironmentFile=/etc/ctx-ui/ctx-ui.env
+ExecStart=/opt/ctx-ui/ctx-ui
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/var/lib/ctx-ui
+
+[Install]
+WantedBy=multi-user.target

@@ -31,10 +31,6 @@ public enum AccessStatus
 
 public readonly record struct AccessDecision(AccessStatus Status, ClientAccess? Client = null, InboundRoute? Route = null);
 
-/// <summary>
-/// Неизменяемая таблица маршрутов и клиентов. Шлюз читает её на каждом запросе без обращения к базе;
-/// после изменения в базе строится новый снимок и подменяет старый.
-/// </summary>
 public sealed class RoutingSnapshot
 {
     private readonly FrozenDictionary<string, InboundRoute> _routes;
@@ -50,7 +46,6 @@ public sealed class RoutingSnapshot
         _clients = clientsByTokenHash.ToFrozenDictionary(StringComparer.Ordinal);
     }
 
-    /// <summary>Снимок до первой загрузки. Ревизия -1 не совпадает ни с одной ревизией в базе.</summary>
     public static RoutingSnapshot Empty { get; } = new(-1, [], []);
 
     public long Revision { get; }

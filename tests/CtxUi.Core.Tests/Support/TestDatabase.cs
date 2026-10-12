@@ -4,7 +4,6 @@ using CtxUi.Core.Data;
 
 namespace CtxUi.Core.Tests;
 
-/// <summary>SQLite в памяти с применёнными миграциями. Живёт, пока открыто соединение.</summary>
 public sealed class TestDatabase : IAsyncDisposable
 {
     private readonly SqliteConnection _connection = new("DataSource=:memory:");

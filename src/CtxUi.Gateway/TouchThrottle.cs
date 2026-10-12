@@ -2,7 +2,6 @@ using System.Collections.Concurrent;
 
 namespace CtxUi.Gateway;
 
-/// <summary>Решает, пора ли записать обращение клиента в базу, чтобы не писать на каждый запрос.</summary>
 public sealed class TouchThrottle(TimeSpan interval)
 {
     private readonly ConcurrentDictionary<Guid, DateTimeOffset> _lastTouch = new();

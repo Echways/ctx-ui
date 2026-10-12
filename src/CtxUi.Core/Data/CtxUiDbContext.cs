@@ -45,11 +45,6 @@ public sealed class CtxUiDbContext(DbContextOptions<CtxUiDbContext> options) : D
         modelBuilder.Entity<RoutingState>().HasData(new RoutingState { Id = 1, Revision = 0 });
     }
 
-    /// <summary>
-    /// Любое отслеживаемое изменение меняет маршруты, поэтому вместе с ним растёт ревизия.
-    /// Прирост делается в SQL, чтобы два процесса не затёрли изменения друг друга.
-    /// Обновления времени обращения идут через ExecuteUpdateAsync и ревизию не трогают.
-    /// </summary>
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         if (!ChangeTracker.HasChanges())

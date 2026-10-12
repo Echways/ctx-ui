@@ -483,6 +483,7 @@ $RECYCLE.BIN/
 
 # CtxUi: рабочий каталог с базой и ключами
 /data/
+/dist/
 /src/CtxUi.Server/data/
 
 # Superpowers

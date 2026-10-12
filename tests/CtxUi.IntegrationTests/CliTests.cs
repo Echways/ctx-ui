@@ -44,7 +44,6 @@ public sealed partial class CliTests : IDisposable
         }
         catch (IOException)
         {
-            // Временный каталог; уйдёт при следующей очистке.
         }
     }
 

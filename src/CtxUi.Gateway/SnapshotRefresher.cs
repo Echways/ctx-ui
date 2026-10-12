@@ -4,7 +4,6 @@ using Microsoft.Extensions.Options;
 
 namespace CtxUi.Gateway;
 
-/// <summary>Подхватывает изменения, сделанные из другого процесса, например из CLI.</summary>
 public sealed class SnapshotRefresher(SnapshotStore store, IOptions<GatewayOptions> options, ILogger<SnapshotRefresher> logger)
     : BackgroundService
 {

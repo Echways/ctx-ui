@@ -8,7 +8,6 @@ public sealed class ClientTouch(IServiceScopeFactory scopes, TimeProvider clock,
 {
     private readonly TouchThrottle _throttle = new(TimeSpan.FromMinutes(1));
 
-    /// <summary>Сбой записи статистики не должен ронять запрос клиента, поэтому метод не бросает.</summary>
     public async Task TouchAsync(Guid clientId)
     {
         var now = clock.GetUtcNow();

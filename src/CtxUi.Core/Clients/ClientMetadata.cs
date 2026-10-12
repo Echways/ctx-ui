@@ -2,7 +2,6 @@ using System.Text.RegularExpressions;
 
 namespace CtxUi.Core.Clients;
 
-/// <summary>Пары ключ-значение клиента. Шлюз передаёт их upstream заголовками X-Mcp-Meta-{ключ}.</summary>
 public static partial class ClientMetadata
 {
     public const int MaxEntries = 32;

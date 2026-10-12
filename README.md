@@ -5,31 +5,33 @@
 клиента со сроком и выдаёт ему токен.
 
 Сейчас готов этап 1: inbound'ы на удалённые MCP-серверы и управление из
-командной строки. Лимиты, веб-панель, запуск stdio-серверов и подписки
-описаны в `docs/superpowers/specs/2026-10-12-mcp-orchestrator-design.md`.
+командной строки.
 
-## Запуск
+## Установка
 
-Нужен .NET 10 SDK.
+Бинарник и сервис systemd, Linux x86_64 или aarch64:
 
 ```bash
-cd src/CtxUi.Server
-dotnet run
+curl -fsSL https://github.com/Echways/mcp-ui/releases/latest/download/install.sh | sudo bash
 ```
 
-Сервер слушает `http://127.0.0.1:8080` и хранит базу и ключи шифрования в
-каталоге `data`. TLS он не поднимает: перед ним ставится nginx или Caddy.
+Docker с Caddy и автоматическим сертификатом, обновление, удаление и
+резервная копия описаны в [docs/install.md](docs/install.md).
+
+Сервис сам TLS не поднимает: перед ним ставится Caddy или nginx.
 
 ## Управление
 
-Команды выполняются из того же каталога. Запущенный сервер подхватывает
-изменения в течение секунды, перезапуск не нужен.
+Запущенный сервис подхватывает изменения в течение секунды, перезапуск не
+нужен.
 
 ```bash
-dotnet run -- inbound add learn --url https://learn.microsoft.com/api/mcp
-dotnet run -- client add "Иванов 4419" --inbound learn --expires 2027-07-01
-dotnet run -- client list
+sudo ctx-ui inbound add learn --url https://learn.microsoft.com/api/mcp
+sudo ctx-ui client add "Иванов 4419" --inbound learn --expires 2027-07-01
+sudo ctx-ui client list
 ```
+
+В Docker те же команды идут через `docker compose exec ctx-ui ctx-ui …`.
 
 | Команда | Что делает |
 | --- | --- |
@@ -48,7 +50,7 @@ dotnet run -- client list
 `/k/<токен>/mcp/<slug>`. Адрес с токеном равносилен паролю.
 
 ```bash
-claude mcp add --transport http learn http://localhost:8080/mcp/learn \
+claude mcp add --transport http learn https://mcp.example.com/mcp/learn \
     --header "Authorization: Bearer tnk_..."
 ```
 
@@ -60,29 +62,33 @@ claude mcp add --transport http learn http://localhost:8080/mcp/learn \
 процентами в UTF-8. Такие же заголовки, присланные самим клиентом, шлюз
 вырезает.
 
-## Настройки
+## Документация
 
-Секция `CtxUi` в `appsettings.json` или переменные окружения.
-
-| Ключ | Переменная | По умолчанию | Смысл |
-| --- | --- | --- | --- |
-| `DataDir` | `CtxUi__DataDir` | `data` | каталог с базой и ключами |
-| `PublicUrl` | `CtxUi__PublicUrl` | `http://localhost:8080` | внешний адрес, с него начинаются адреса для клиентов |
-| `RefreshInterval` | `CtxUi__RefreshInterval` | `00:00:01` | как часто сервер проверяет изменения из CLI |
-
-Каталог `data/keys` нужен, чтобы показывать выпущенные токены и читать
-секретные заголовки inbound'ов. Без него токены продолжают работать, но
-показать их нельзя, только перевыпустить, а inbound'ы с секретными
-заголовками выключаются до повторного добавления.
+- [Установка](docs/install.md)
+- [Настройки](docs/configuration.md)
+- [Как это устроено](docs/internals.md)
+- [Выпуск релиза](docs/releasing.md)
 
 ## Разработка
+
+Нужен .NET 10 SDK.
+
+```bash
+cd src/CtxUi.Server
+dotnet run
+dotnet run -- inbound list
+```
+
+Сервер слушает `http://127.0.0.1:8080` и хранит базу и ключи в каталоге
+`data` рядом с проектом.
 
 ```bash
 dotnet test
 ```
 
 Интеграционные тесты поднимают шлюз и поддельный upstream на свободных
-портах, сеть наружу им не нужна.
+портах, сеть наружу им не нужна. Проверки установки описаны в
+[docs/releasing.md](docs/releasing.md).
 
 ## Лицензия
 

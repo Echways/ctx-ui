@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/CtxUi.Core/CtxUi.Core.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/CtxUi.Core.Tests/CtxUi.Core.Tests.csproj" />
+  </Folder>
+</Solution>

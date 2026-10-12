@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="Yarp.ReverseProxy" />
+    <ProjectReference Include="..\CtxUi.Core\CtxUi.Core.csproj" />
+  </ItemGroup>
+
+</Project>

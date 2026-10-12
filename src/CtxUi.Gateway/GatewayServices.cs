@@ -13,6 +13,7 @@ public static class GatewayServices
         services.AddSingleton<SnapshotStore>();
         services.AddHostedService<SnapshotRefresher>();
         services.AddSingleton<HttpUpstream>();
+        services.AddSingleton<ClientTouch>();
         services.AddSingleton<GatewayHandler>();
         return services;
     }

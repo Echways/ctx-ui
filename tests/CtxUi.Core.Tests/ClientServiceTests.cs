@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Time.Testing;
 using CtxUi.Core.Clients;
 using CtxUi.Core.Inbounds;
@@ -174,5 +175,33 @@ public class ClientServiceTests
 
         await Assert.ThrowsAsync<DomainException>(() => Clients(database).UpdateAsync(
             "Иванов", new ClientUpdate { ChangeExpiry = true, ExpiresAt = TestData.Now.AddDays(-1) }));
+    }
+
+    [Fact]
+    public async Task First_use_sets_both_marks_and_later_use_moves_only_the_last_one()
+    {
+        await using var database = await DatabaseWithInboundsAsync("echo");
+        var issued = await Clients(database).AddAsync("Иванов", ["echo"]);
+        var later = TestData.Now.AddHours(1);
+
+        await Clients(database).MarkUsedAsync(issued.Client.Id, TestData.Now);
+        await Clients(database).MarkUsedAsync(issued.Client.Id, later);
+
+        var client = Assert.Single(await Clients(database).ListAsync());
+        Assert.Equal(TestData.Now, client.FirstUsedAt);
+        Assert.Equal(later, client.LastUsedAt);
+    }
+
+    [Fact]
+    public async Task Marking_use_does_not_touch_the_routing_revision()
+    {
+        await using var database = await DatabaseWithInboundsAsync("echo");
+        var issued = await Clients(database).AddAsync("Иванов", ["echo"]);
+        await using var db = database.NewContext();
+        var before = await db.RoutingStates.Select(state => state.Revision).SingleAsync();
+
+        await Clients(database).MarkUsedAsync(issued.Client.Id, TestData.Now);
+
+        Assert.Equal(before, await db.RoutingStates.Select(state => state.Revision).SingleAsync());
     }
 }

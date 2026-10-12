@@ -5,7 +5,12 @@ using CtxUi.Core.Routing;
 namespace CtxUi.Gateway;
 
 /// <summary>Конечная точка /mcp/{slug}: решение о доступе, затем пересылка или отказ.</summary>
-public sealed class GatewayHandler(SnapshotStore store, HttpUpstream upstream, TimeProvider clock, ILogger<GatewayHandler> logger)
+public sealed class GatewayHandler(
+    SnapshotStore store,
+    HttpUpstream upstream,
+    ClientTouch touch,
+    TimeProvider clock,
+    ILogger<GatewayHandler> logger)
 {
     public async Task HandleAsync(HttpContext context)
     {
@@ -13,9 +18,14 @@ public sealed class GatewayHandler(SnapshotStore store, HttpUpstream upstream, T
         var decision = store.Current.Authorize(ClientCredentials.Read(context), slug, clock.GetUtcNow());
 
         if (decision.Status == AccessStatus.Allowed)
-            await upstream.ForwardAsync(context, decision.Route!, decision.Client!);
+        {
+            await touch.TouchAsync(decision.Client!.Id);
+            await upstream.ForwardAsync(context, decision.Route!, decision.Client);
+        }
         else
+        {
             await Rejection.WriteAsync(context, decision);
+        }
 
         // В журнал идёт slug только известного inbound'а: произвольная строка из адреса туда не попадает.
         logger.LogInformation(

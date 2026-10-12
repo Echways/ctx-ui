@@ -120,6 +120,20 @@ public sealed class ClientService(CtxUiDbContext db, ISecretVault vault, TimePro
     public async Task<string?> RevealAsync(string name, CancellationToken ct = default) =>
         vault.Open((await GetAsync(name, ct)).TokenSealed);
 
+    /// <summary>
+    /// Отмечает обращение клиента. Идёт мимо отслеживания изменений,
+    /// поэтому не увеличивает ревизию маршрутов и не заставляет сервер перечитывать таблицу.
+    /// </summary>
+    public async Task MarkUsedAsync(Guid clientId, DateTimeOffset now, CancellationToken ct = default)
+    {
+        await db.Clients
+            .Where(client => client.Id == clientId)
+            .ExecuteUpdateAsync(setters => setters.SetProperty(client => client.LastUsedAt, now), ct);
+        await db.Clients
+            .Where(client => client.Id == clientId && client.FirstUsedAt == null)
+            .ExecuteUpdateAsync(setters => setters.SetProperty(client => client.FirstUsedAt, now), ct);
+    }
+
     private static void EnsureFuture(DateTimeOffset? expiresAt, DateTimeOffset now)
     {
         if (expiresAt is { } value && value <= now)

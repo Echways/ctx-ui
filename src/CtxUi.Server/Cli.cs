@@ -98,7 +98,7 @@ public static class Cli
                         parse.GetValue(inbound) ?? [],
                         Expiry(parse.GetValue(expires)),
                         Pairs(parse.GetValue(meta)),
-                        ct);
+                        ct: ct);
                     WriteConnection(services, await clients.GetAsync(issued.Client.Name, ct), issued.Token);
                 }),
                 Leaf("list", "показать клиентов", [], async (_, services, ct) =>

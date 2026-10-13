@@ -1,5 +1,6 @@
 using System.Collections.Frozen;
 using CtxUi.Core.Clients;
+using CtxUi.Core.Inbounds;
 
 namespace CtxUi.Core.Routing;
 
@@ -9,7 +10,10 @@ public sealed record InboundRoute(
     Uri Url,
     IReadOnlyDictionary<string, string> UpstreamHeaders,
     bool ForwardIdentity,
-    TimeSpan RequestTimeout);
+    TimeSpan RequestTimeout)
+{
+    public int MaxBodyBytes { get; init; } = Inbound.DefaultMaxBodyBytes;
+}
 
 public sealed record ClientAccess(
     Guid Id,
@@ -17,7 +21,12 @@ public sealed record ClientAccess(
     bool Enabled,
     DateTimeOffset? ExpiresAt,
     FrozenSet<Guid> InboundIds,
-    IReadOnlyDictionary<string, string> Metadata);
+    IReadOnlyDictionary<string, string> Metadata)
+{
+    public ClientLimits Limits { get; init; } = ClientLimits.None;
+
+    public DateTimeOffset PeriodStartedAt { get; init; }
+}
 
 public enum AccessStatus
 {

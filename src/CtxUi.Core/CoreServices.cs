@@ -6,6 +6,7 @@ using CtxUi.Core.Clients;
 using CtxUi.Core.Data;
 using CtxUi.Core.Inbounds;
 using CtxUi.Core.Routing;
+using CtxUi.Core.Usage;
 
 namespace CtxUi.Core;
 
@@ -21,6 +22,7 @@ public static class CoreServices
         services.AddScoped<InboundService>();
         services.AddScoped<ClientService>();
         services.AddScoped<RoutingSnapshotLoader>();
+        services.AddScoped<UsageStore>();
         return services;
     }
 }

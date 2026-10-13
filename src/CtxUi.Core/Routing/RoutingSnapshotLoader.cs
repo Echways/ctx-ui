@@ -1,6 +1,7 @@
 using System.Collections.Frozen;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using CtxUi.Core.Clients;
 using CtxUi.Core.Data;
 using CtxUi.Core.Inbounds;
 using CtxUi.Core.Secrets;
@@ -37,7 +38,10 @@ public sealed class RoutingSnapshotLoader(CtxUiDbContext db, ISecretVault vault,
                 new Uri(inbound.Url),
                 headers,
                 inbound.ForwardIdentity,
-                TimeSpan.FromSeconds(inbound.RequestTimeoutSeconds)));
+                TimeSpan.FromSeconds(inbound.RequestTimeoutSeconds))
+            {
+                MaxBodyBytes = inbound.MaxBodyBytes,
+            });
         }
 
         var clients = await db.Clients.AsNoTracking().Include(client => client.Inbounds).ToListAsync(ct);
@@ -49,6 +53,10 @@ public sealed class RoutingSnapshotLoader(CtxUiDbContext db, ISecretVault vault,
                 client.Enabled,
                 client.ExpiresAt,
                 client.Inbounds.Select(link => link.InboundId).ToFrozenSet(),
-                client.Metadata))));
+                client.Metadata)
+            {
+                Limits = ClientLimits.Of(client),
+                PeriodStartedAt = client.PeriodStartedAt,
+            })));
     }
 }

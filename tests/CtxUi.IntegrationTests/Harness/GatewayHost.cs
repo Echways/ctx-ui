@@ -13,30 +13,35 @@ namespace CtxUi.IntegrationTests;
 
 public sealed class GatewayHost : IAsyncDisposable
 {
-    public required WebApplication App { get; init; }
-    public required HttpClient Http { get; init; }
-    public required string DataDir { get; init; }
+    private readonly Action<WebApplicationBuilder>? _configure;
+
+    private GatewayHost(string dataDir, Action<WebApplicationBuilder>? configure)
+    {
+        DataDir = dataDir;
+        _configure = configure;
+    }
+
+    public WebApplication App { get; private set; } = null!;
+
+    public HttpClient Http { get; private set; } = null!;
+
+    public string DataDir { get; }
 
     public string BaseUrl => App.Urls.First();
 
     public static async Task<GatewayHost> StartAsync(Action<WebApplicationBuilder>? configure = null)
     {
-        var dataDir = Directory.CreateTempSubdirectory("ctx-ui-test-").FullName;
-        var app = ServerApp.Build([], builder =>
-        {
-            builder.WebHost.UseUrls("http://127.0.0.1:0");
-            builder.Configuration["CtxUi:DataDir"] = dataDir;
-            builder.Configuration["CtxUi:RefreshInterval"] = "00:00:00.050";
-            configure?.Invoke(builder);
-        });
-        await ServerApp.InitializeAsync(app);
-        await app.StartAsync();
-        return new GatewayHost
-        {
-            App = app,
-            DataDir = dataDir,
-            Http = new HttpClient { BaseAddress = new Uri(app.Urls.First()) },
-        };
+        var host = new GatewayHost(Directory.CreateTempSubdirectory("ctx-ui-test-").FullName, configure);
+        await host.BootAsync();
+        return host;
+    }
+
+    public async Task RestartAsync()
+    {
+        Http.Dispose();
+        await App.StopAsync();
+        await App.DisposeAsync();
+        await BootAsync();
     }
 
     public async Task<T> ArrangeAsync<T>(Func<IServiceProvider, Task<T>> action)
@@ -63,8 +68,15 @@ public sealed class GatewayHost : IAsyncDisposable
         string name,
         string[] slugs,
         DateTimeOffset? expiresAt = null,
-        IEnumerable<KeyValuePair<string, string>>? metadata = null) =>
-        ArrangeAsync(services => services.GetRequiredService<ClientService>().AddAsync(name, slugs, expiresAt, metadata));
+        IEnumerable<KeyValuePair<string, string>>? metadata = null,
+        ClientLimits? limits = null) =>
+        ArrangeAsync(services => services.GetRequiredService<ClientService>().AddAsync(name, slugs, expiresAt, metadata, limits));
+
+    public Task SetLimitsAsync(string name, ClientLimits limits) => ArrangeAsync(async services =>
+    {
+        await services.GetRequiredService<ClientService>().UpdateAsync(name, new ClientUpdate { Limits = limits });
+        return true;
+    });
 
     public static HttpRequestMessage Post(string path, string? bearer = null, string body = "{}")
     {
@@ -90,5 +102,21 @@ public sealed class GatewayHost : IAsyncDisposable
         catch (IOException)
         {
         }
+    }
+
+    private async Task BootAsync()
+    {
+        var app = ServerApp.Build([], builder =>
+        {
+            builder.WebHost.UseUrls("http://127.0.0.1:0");
+            builder.Configuration["CtxUi:DataDir"] = DataDir;
+            builder.Configuration["CtxUi:RefreshInterval"] = "00:00:00.050";
+            builder.Configuration["CtxUi:FlushInterval"] = "00:00:00.050";
+            _configure?.Invoke(builder);
+        });
+        await ServerApp.InitializeAsync(app);
+        await app.StartAsync();
+        App = app;
+        Http = new HttpClient { BaseAddress = new Uri(app.Urls.First()) };
     }
 }

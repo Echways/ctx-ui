@@ -13,6 +13,13 @@ public sealed class Client
     public DateTimeOffset? ExpiresAt { get; set; }
     public DateTimeOffset? FirstUsedAt { get; set; }
     public DateTimeOffset? LastUsedAt { get; set; }
+    public int? RatePerMinute { get; set; }
+    public int? MaxConcurrency { get; set; }
+    public int? QuotaCalls { get; set; }
+    public int? ResetEveryDays { get; set; }
+    public DateTimeOffset PeriodStartedAt { get; set; }
+    public long UsedCalls { get; set; }
+    public DateTimeOffset? UsedSince { get; set; }
     public Dictionary<string, string> Metadata { get; set; } = new();
     public List<ClientInbound> Inbounds { get; set; } = [];
 }

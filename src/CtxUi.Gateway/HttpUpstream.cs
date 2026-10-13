@@ -6,6 +6,13 @@ using Yarp.ReverseProxy.Forwarder;
 
 namespace CtxUi.Gateway;
 
+public enum ForwardOutcome
+{
+    Completed,
+    ClientAborted,
+    UpstreamFailed,
+}
+
 public sealed class HttpUpstream(IHttpForwarder forwarder, ILogger<HttpUpstream> logger) : IDisposable
 {
     private readonly HttpMessageInvoker _client = new(new SocketsHttpHandler
@@ -18,7 +25,7 @@ public sealed class HttpUpstream(IHttpForwarder forwarder, ILogger<HttpUpstream>
         ConnectTimeout = TimeSpan.FromSeconds(15),
     });
 
-    public async Task ForwardAsync(HttpContext context, InboundRoute route, ClientAccess client)
+    public async Task<ForwardOutcome> ForwardAsync(HttpContext context, InboundRoute route, ClientAccess client)
     {
         var config = new ForwarderRequestConfig { ActivityTimeout = route.RequestTimeout };
         var error = await forwarder.SendAsync(
@@ -31,17 +38,21 @@ public sealed class HttpUpstream(IHttpForwarder forwarder, ILogger<HttpUpstream>
         switch (error)
         {
             case ForwarderError.None:
-                return;
-            case ForwarderError.RequestCanceled or ForwarderError.RequestBodyCanceled or ForwarderError.ResponseBodyCanceled:
+                return ForwardOutcome.Completed;
+            case ForwarderError.RequestCanceled
+                or ForwarderError.RequestBodyCanceled
+                or ForwarderError.RequestBodyClient
+                or ForwarderError.ResponseBodyCanceled
+                or ForwarderError.ResponseBodyClient:
                 logger.LogInformation("inbound {Slug}: клиент оборвал запрос ({Error})", route.Slug, error);
-                return;
+                return ForwardOutcome.ClientAborted;
             default:
                 logger.LogWarning(
                     "inbound {Slug}: upstream не ответил ({Error}): {Reason}",
                     route.Slug,
                     error,
                     context.Features.Get<IForwarderErrorFeature>()?.Exception?.Message);
-                return;
+                return ForwardOutcome.UpstreamFailed;
         }
     }
 

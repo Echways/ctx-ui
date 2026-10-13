@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using CtxUi.Core.Clients;
 using CtxUi.Core.Inbounds;
+using CtxUi.Core.Usage;
 
 namespace CtxUi.Core.Data;
 
@@ -12,13 +13,19 @@ public sealed class CtxUiDbContext(DbContextOptions<CtxUiDbContext> options) : D
     public DbSet<Client> Clients => Set<Client>();
     public DbSet<ClientInbound> ClientInbounds => Set<ClientInbound>();
     public DbSet<RoutingState> RoutingStates => Set<RoutingState>();
+    public DbSet<UsageEvent> UsageEvents => Set<UsageEvent>();
+    public DbSet<UsageDaily> UsageDays => Set<UsageDaily>();
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder) =>
         configurationBuilder.Properties<DateTimeOffset>().HaveConversion<UnixMillisConverter>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<Inbound>(entity => entity.HasIndex(inbound => inbound.Slug).IsUnique());
+        modelBuilder.Entity<Inbound>(entity =>
+        {
+            entity.HasIndex(inbound => inbound.Slug).IsUnique();
+            entity.Property(inbound => inbound.MaxBodyBytes).HasDefaultValue(Inbound.DefaultMaxBodyBytes);
+        });
 
         modelBuilder.Entity<Client>(entity =>
         {
@@ -42,12 +49,21 @@ public sealed class CtxUiDbContext(DbContextOptions<CtxUiDbContext> options) : D
                 .HasForeignKey(link => link.InboundId).OnDelete(DeleteBehavior.Cascade);
         });
 
+        modelBuilder.Entity<UsageEvent>(entity =>
+        {
+            entity.HasIndex(usage => usage.At);
+            entity.HasIndex(usage => new { usage.ClientId, usage.At });
+        });
+
+        modelBuilder.Entity<UsageDaily>(entity =>
+            entity.HasKey(daily => new { daily.Day, daily.ClientId, daily.InboundId }));
+
         modelBuilder.Entity<RoutingState>().HasData(new RoutingState { Id = 1, Revision = 0 });
     }
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        if (!ChangeTracker.HasChanges())
+        if (!RoutingChanged())
             return await base.SaveChangesAsync(cancellationToken);
 
         await using var transaction = Database.CurrentTransaction is null
@@ -62,4 +78,8 @@ public sealed class CtxUiDbContext(DbContextOptions<CtxUiDbContext> options) : D
 
         return written;
     }
+
+    private bool RoutingChanged() => ChangeTracker.Entries().Any(entry =>
+        entry.State is EntityState.Added or EntityState.Modified or EntityState.Deleted &&
+        entry.Entity is Inbound or Client or ClientInbound);
 }

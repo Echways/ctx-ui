@@ -7,6 +7,8 @@ namespace CtxUi.Core.Clients;
 
 public sealed record IssuedClient(Client Client, string Token);
 
+public sealed record StoredUsage(Guid ClientId, DateTimeOffset Since, long Calls);
+
 public sealed record ClientUpdate
 {
     public bool ChangeExpiry { get; init; }
@@ -14,6 +16,8 @@ public sealed record ClientUpdate
     public DateTimeOffset? ExpiresAt { get; init; }
 
     public IReadOnlyCollection<string>? InboundSlugs { get; init; }
+
+    public ClientLimits? Limits { get; init; }
 }
 
 public sealed class ClientService(CtxUiDbContext db, ISecretVault vault, TimeProvider clock)
@@ -23,6 +27,7 @@ public sealed class ClientService(CtxUiDbContext db, ISecretVault vault, TimePro
         IReadOnlyCollection<string> inboundSlugs,
         DateTimeOffset? expiresAt = null,
         IEnumerable<KeyValuePair<string, string>>? metadata = null,
+        ClientLimits? limits = null,
         CancellationToken ct = default)
     {
         var parsedName = ClientName.Parse(name);
@@ -30,6 +35,7 @@ public sealed class ClientService(CtxUiDbContext db, ISecretVault vault, TimePro
         var now = clock.GetUtcNow();
         EnsureFuture(expiresAt, now);
         var parsedMetadata = ClientMetadata.Parse(metadata);
+        var parsedLimits = (limits ?? ClientLimits.None).Validated();
         if (await db.Clients.AnyAsync(client => client.NameKey == key, ct))
             throw new DomainException($"клиент «{parsedName}» уже есть");
         var inbounds = await ResolveInboundsAsync(inboundSlugs, ct);
@@ -45,6 +51,11 @@ public sealed class ClientService(CtxUiDbContext db, ISecretVault vault, TimePro
             TokenPrefix = AccessToken.DisplayPrefix(token),
             CreatedAt = now,
             ExpiresAt = expiresAt,
+            RatePerMinute = parsedLimits.RatePerMinute,
+            MaxConcurrency = parsedLimits.MaxConcurrency,
+            QuotaCalls = parsedLimits.QuotaCalls,
+            ResetEveryDays = parsedLimits.ResetEveryDays,
+            PeriodStartedAt = now,
             Metadata = parsedMetadata,
             Inbounds = inbounds.Select(inbound => new ClientInbound { InboundId = inbound.Id }).ToList(),
         };
@@ -85,6 +96,25 @@ public sealed class ClientService(CtxUiDbContext db, ISecretVault vault, TimePro
                 client.Inbounds.Add(new ClientInbound { ClientId = client.Id, InboundId = inboundId });
         }
 
+        if (update.Limits is { } limits)
+        {
+            limits.Validated();
+            if (limits.ResetEveryDays != client.ResetEveryDays || (client.QuotaCalls is null && limits.QuotaCalls is not null))
+                client.PeriodStartedAt = clock.GetUtcNow();
+
+            client.RatePerMinute = limits.RatePerMinute;
+            client.MaxConcurrency = limits.MaxConcurrency;
+            client.QuotaCalls = limits.QuotaCalls;
+            client.ResetEveryDays = limits.ResetEveryDays;
+        }
+
+        await db.SaveChangesAsync(ct);
+    }
+
+    public async Task ResetQuotaAsync(string name, CancellationToken ct = default)
+    {
+        var client = await GetAsync(name, ct);
+        client.PeriodStartedAt = clock.GetUtcNow();
         await db.SaveChangesAsync(ct);
     }
 
@@ -123,6 +153,33 @@ public sealed class ClientService(CtxUiDbContext db, ISecretVault vault, TimePro
         await db.Clients
             .Where(client => client.Id == clientId && client.FirstUsedAt == null)
             .ExecuteUpdateAsync(setters => setters.SetProperty(client => client.FirstUsedAt, now), ct);
+    }
+
+    public async Task<List<StoredUsage>> LoadUsageAsync(CancellationToken ct = default)
+    {
+        var counted = await db.Clients.AsNoTracking()
+            .Where(client => client.UsedSince != null)
+            .Select(client => new { client.Id, client.UsedSince, client.UsedCalls })
+            .ToListAsync(ct);
+        return counted.Select(row => new StoredUsage(row.Id, row.UsedSince!.Value, row.UsedCalls)).ToList();
+    }
+
+    public async Task SaveUsageAsync(IReadOnlyCollection<StoredUsage> usage, CancellationToken ct = default)
+    {
+        await using var transaction = await db.Database.BeginTransactionAsync(ct);
+        foreach (var item in usage)
+        {
+            DateTimeOffset? since = item.Since;
+            await db.Clients
+                .Where(client => client.Id == item.ClientId)
+                .ExecuteUpdateAsync(
+                    setters => setters
+                        .SetProperty(client => client.UsedCalls, item.Calls)
+                        .SetProperty(client => client.UsedSince, since),
+                    ct);
+        }
+
+        await transaction.CommitAsync(ct);
     }
 
     private static void EnsureFuture(DateTimeOffset? expiresAt, DateTimeOffset now)

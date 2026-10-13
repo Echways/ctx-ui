@@ -26,5 +26,6 @@ internal static class TestData
         TokenSealed = "sealed",
         TokenPrefix = "tnk_test00",
         CreatedAt = Now,
+        PeriodStartedAt = Now,
     };
 }

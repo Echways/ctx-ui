@@ -38,6 +38,9 @@ namespace CtxUi.Core.Data.Migrations
                     b.Property<long?>("LastUsedAt")
                         .HasColumnType("INTEGER");
 
+                    b.Property<int?>("MaxConcurrency")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("Metadata")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -50,6 +53,18 @@ namespace CtxUi.Core.Data.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<long>("PeriodStartedAt")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("QuotaCalls")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("RatePerMinute")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("ResetEveryDays")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("TokenHash")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -61,6 +76,12 @@ namespace CtxUi.Core.Data.Migrations
                     b.Property<string>("TokenSealed")
                         .IsRequired()
                         .HasColumnType("TEXT");
+
+                    b.Property<long>("UsedCalls")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long?>("UsedSince")
+                        .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
 
@@ -127,6 +148,11 @@ namespace CtxUi.Core.Data.Migrations
                     b.Property<int>("Kind")
                         .HasColumnType("INTEGER");
 
+                    b.Property<int>("MaxBodyBytes")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(4194304);
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -150,6 +176,74 @@ namespace CtxUi.Core.Data.Migrations
                         .IsUnique();
 
                     b.ToTable("Inbounds");
+                });
+
+            modelBuilder.Entity("CtxUi.Core.Usage.UsageDaily", b =>
+                {
+                    b.Property<DateOnly>("Day")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("ClientId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("InboundId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Calls")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("DurationMs")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Errors")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Refused")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ToolCalls")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Day", "ClientId", "InboundId");
+
+                    b.ToTable("UsageDays");
+                });
+
+            modelBuilder.Entity("CtxUi.Core.Usage.UsageEvent", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("At")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid>("ClientId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("DurationMs")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid>("InboundId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Method")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Outcome")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Tool")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("At");
+
+                    b.HasIndex("ClientId", "At");
+
+                    b.ToTable("UsageEvents");
                 });
 
             modelBuilder.Entity("CtxUi.Core.Clients.ClientInbound", b =>

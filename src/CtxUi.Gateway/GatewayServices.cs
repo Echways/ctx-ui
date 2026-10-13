@@ -18,6 +18,8 @@ public static class GatewayServices
         services.AddSingleton<ClientLimiter>();
         services.AddSingleton<QuotaLedger>();
         services.AddHostedService<QuotaSaver>();
+        services.AddSingleton<UsageJournal>();
+        services.AddHostedService<UsageWriter>();
         services.AddSingleton<GatewayHandler>();
         return services;
     }

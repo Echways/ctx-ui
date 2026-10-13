@@ -11,6 +11,7 @@ public sealed class GatewayHandler(
     ClientTouch touch,
     ClientLimiter limiter,
     QuotaLedger ledger,
+    UsageJournal journal,
     TimeProvider clock,
     ILogger<GatewayHandler> logger)
 {
@@ -52,7 +53,7 @@ public sealed class GatewayHandler(
         if (!rate.IsAcquired)
         {
             await Rejection.WriteRateLimitedAsync(context, ClientLimiter.SecondsUntilNextRequest(client));
-            return UsageOutcome.RateLimited;
+            return Refused(UsageOutcome.RateLimited);
         }
 
         if (!HttpMethods.IsPost(context.Request.Method))
@@ -62,9 +63,10 @@ public sealed class GatewayHandler(
         if (!slot.IsAcquired)
         {
             await Rejection.WriteBusyAsync(context);
-            return UsageOutcome.ConcurrencyLimited;
+            return Refused(UsageOutcome.ConcurrencyLimited);
         }
 
+        var started = clock.GetTimestamp();
         var body = await RequestBody.ReadAsync(context.Request, route.MaxBodyBytes, context.RequestAborted);
         if (body.Status == BodyStatus.Aborted)
         {
@@ -75,27 +77,40 @@ public sealed class GatewayHandler(
         if (body.Status == BodyStatus.TooLarge)
         {
             await Rejection.WriteBodyTooLargeAsync(context, route.MaxBodyBytes);
-            return UsageOutcome.BodyTooLarge;
+            return Refused(UsageOutcome.BodyTooLarge);
         }
 
         if (RpcEnvelope.Read(body.Bytes) is not { } envelope)
         {
             await Rejection.WriteNotJsonRpcAsync(context);
-            return UsageOutcome.NotJsonRpc;
+            return Refused(UsageOutcome.NotJsonRpc);
         }
 
+        UsageOutcome outcome;
         var charge = envelope.ToolCalls > 0 ? ledger.Charge(client, envelope.ToolCalls, now) : (QuotaCharge?)null;
         if (charge is { Accepted: false } refused)
         {
             await Rejection.WriteQuotaExhaustedAsync(context, envelope, QuotaRefusal.Text(refused, now));
-            return UsageOutcome.QuotaExhausted;
+            outcome = UsageOutcome.QuotaExhausted;
+        }
+        else
+        {
+            context.Request.Body = new MemoryStream(body.Bytes, writable: false);
+            outcome = Outcome(await upstream.ForwardAsync(context, route, client), context.Response.StatusCode);
+            if (charge is { } accepted && outcome is UsageOutcome.UpstreamRejected or UsageOutcome.UpstreamFailed)
+                ledger.Refund(client.Id, accepted);
         }
 
-        context.Request.Body = new MemoryStream(body.Bytes, writable: false);
-        var outcome = Outcome(await upstream.ForwardAsync(context, route, client), context.Response.StatusCode);
-        if (charge is { } accepted && outcome is UsageOutcome.UpstreamRejected or UsageOutcome.UpstreamFailed)
-            ledger.Refund(client.Id, accepted);
+        var duration = (int)Math.Min(int.MaxValue, clock.GetElapsedTime(started).TotalMilliseconds);
+        foreach (var call in envelope.Calls.Where(call => call.Method is not null))
+            journal.Record(new UsageRecord(client.Id, route.Id, now, call.Method, call.Tool, duration, outcome));
 
         return outcome;
+
+        UsageOutcome Refused(UsageOutcome reason)
+        {
+            journal.Record(new UsageRecord(client.Id, route.Id, now, null, null, 0, reason));
+            return reason;
+        }
     }
 }

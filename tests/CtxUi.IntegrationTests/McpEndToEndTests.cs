@@ -19,7 +19,7 @@ public sealed class EchoTools
 
 public class McpEndToEndTests
 {
-    private static async Task<WebApplication> StartMcpServerAsync()
+    internal static async Task<WebApplication> StartMcpServerAsync()
     {
         var builder = WebApplication.CreateSlimBuilder();
         builder.WebHost.UseUrls("http://127.0.0.1:0");

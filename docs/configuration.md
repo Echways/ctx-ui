@@ -17,6 +17,8 @@
 | `CtxUi__PublicUrl` | `CtxUi:PublicUrl` | `http://localhost:8080` | внешний адрес, с него начинаются адреса для клиентов |
 | `CtxUi__DataDir` | `CtxUi:DataDir` | `data` | каталог с базой и ключами |
 | `CtxUi__RefreshInterval` | `CtxUi:RefreshInterval` | `00:00:01` | как часто сервис проверяет изменения, сделанные командой `ctx-ui` |
+| `CtxUi__FlushInterval` | `CtxUi:FlushInterval` | `00:00:05` | как часто сервис записывает в базу счётчики квот и журнал вызовов |
+| `CtxUi__UsageRetentionDays` | `CtxUi:UsageRetentionDays` | `30` | сколько дней хранятся строки журнала вызовов; итоги по дням хранятся бессрочно |
 
 Адрес прослушивания задаётся именно переменной `Urls`. `ASPNETCORE_URLS`
 не действует: её перекрывает значение из `appsettings.json`, который лежит

@@ -128,6 +128,23 @@ public class RpcEnvelopeTests
     [InlineData("""{"id":1,"method":"tools/call","params":{"name":"a","name":"b"}}""")]
     public void Message_that_two_parsers_could_read_differently_is_rejected(string json) => Assert.Null(Read(json));
 
+    [Theory]
+    [InlineData("""{"id":1,"method":"\ud800"}""")]
+    [InlineData("""{"id":1,"method":"tools/call","params":{"name":"\udc00"}}""")]
+    [InlineData("""{"id":1,"method":"tools/call","params":{"name":"\ud83d"}}""")]
+    public void Text_with_half_of_a_surrogate_pair_is_rejected(string json) => Assert.Null(Read(json));
+
+    [Theory]
+    [InlineData("""{"id":1,"method":"@"}""")]
+    [InlineData("""{"id":1,"method":"tools/call","params":{"name":"@"}}""")]
+    public void Text_that_is_not_utf8_is_rejected(string json)
+    {
+        var body = Encoding.UTF8.GetBytes(json);
+        body[Array.IndexOf(body, (byte)'@')] = 0xFF;
+
+        Assert.Null(RpcEnvelope.Read(body));
+    }
+
     [Fact]
     public void Deeply_nested_arguments_are_read_and_absurd_nesting_is_rejected()
     {

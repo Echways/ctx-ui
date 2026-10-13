@@ -45,7 +45,7 @@ public sealed record RpcEnvelope(IReadOnlyList<RpcCall> Calls, bool IsBatch)
 
             return calls.Count == 0 || reader.Read() ? null : new RpcEnvelope(calls, batch);
         }
-        catch (JsonException)
+        catch (Exception exception) when (exception is JsonException or InvalidOperationException)
         {
             return null;
         }

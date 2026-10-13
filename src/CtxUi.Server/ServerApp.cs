@@ -24,6 +24,6 @@ public static class ServerApp
         await using (var scope = app.Services.CreateAsyncScope())
             await scope.ServiceProvider.GetRequiredService<CtxUiDbContext>().Database.MigrateAsync(ct);
 
-        await app.Services.GetRequiredService<SnapshotStore>().ReloadAsync(ct);
+        await app.Services.LoadCtxUiGatewayAsync(ct);
     }
 }

@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using Microsoft.AspNetCore.Http;
@@ -37,6 +38,25 @@ internal static class Rejection
         if (status == StatusCodes.Status401Unauthorized)
             context.Response.Headers.WWWAuthenticate = "Bearer";
 
+        return context.Response.WriteAsJsonAsync(new Body(error, message), Json);
+    }
+
+    public static Task WriteRateLimitedAsync(HttpContext context, int retryAfterSeconds) => WriteLimitAsync(
+        context,
+        retryAfterSeconds,
+        "rate_limited",
+        $"слишком много запросов в минуту, повторите через {retryAfterSeconds} с");
+
+    public static Task WriteBusyAsync(HttpContext context) => WriteLimitAsync(
+        context,
+        1,
+        "too_many_concurrent",
+        "слишком много одновременных запросов, дождитесь ответа на предыдущие");
+
+    private static Task WriteLimitAsync(HttpContext context, int retryAfterSeconds, string error, string message)
+    {
+        context.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+        context.Response.Headers.RetryAfter = retryAfterSeconds.ToString(CultureInfo.InvariantCulture);
         return context.Response.WriteAsJsonAsync(new Body(error, message), Json);
     }
 

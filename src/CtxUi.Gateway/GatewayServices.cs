@@ -14,6 +14,7 @@ public static class GatewayServices
         services.AddHostedService<SnapshotRefresher>();
         services.AddSingleton<HttpUpstream>();
         services.AddSingleton<ClientTouch>();
+        services.AddSingleton<ClientLimiter>();
         services.AddSingleton<GatewayHandler>();
         return services;
     }

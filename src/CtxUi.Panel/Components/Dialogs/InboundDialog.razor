@@ -8,30 +8,30 @@
                 <MudAlert Severity="Severity.Error" role="alert">@_error</MudAlert>
             }
             <MudTextField @bind-Value="_slug" Label="Slug" Immediate="true" Disabled="Slug is not null"
-                          HelperText="часть адреса /mcp/<slug>: строчные латинские буквы, цифры и дефис" />
-            <MudTextField @bind-Value="_name" Label="Название" Immediate="true" HelperText="для списка; пустое заменяется на slug" />
-            <MudTextField @bind-Value="_url" Label="Адрес MCP-сервера" Immediate="true"
-                          HelperText="streamable HTTP, например https://example.org/mcp" />
+                          HelperText="@PanelText.SlugHelp" />
+            <MudTextField @bind-Value="_name" Label="@PanelText.Title" Immediate="true" HelperText="@PanelText.TitleHelp" />
+            <MudTextField @bind-Value="_url" Label="@PanelText.McpServerAddress" Immediate="true"
+                          HelperText="@PanelText.McpServerAddressHelp" />
             @if (Slug is not null)
             {
                 <MudText Typo="Typo.body2">@_storedHeaders</MudText>
-                <MudCheckBox T="bool" @bind-Value="_replaceHeaders" Label="Заменить заголовки" Dense="true" />
+                <MudCheckBox T="bool" @bind-Value="_replaceHeaders" Label="@PanelText.ReplaceHeaders" Dense="true" />
             }
             @if (_replaceHeaders)
             {
-                <MudTextField @bind-Value="_headers" Label="Заголовки для upstream" Immediate="true" Lines="3"
-                              HelperText="по одному в строке: Имя=значение. Хранятся зашифрованными и после сохранения не показываются" />
+                <MudTextField @bind-Value="_headers" Label="@PanelText.UpstreamHeaders" Immediate="true" Lines="3"
+                              HelperText="@PanelText.UpstreamHeadersHelp" />
             }
-            <MudCheckBox T="bool" @bind-Value="_forwardIdentity" Label="Передавать upstream личность клиента" Dense="true" />
-            <MudNumericField T="int" @bind-Value="_timeoutSeconds" Label="Таймаут запроса, с" Immediate="true"
+            <MudCheckBox T="bool" @bind-Value="_forwardIdentity" Label="@PanelText.ForwardIdentity" Dense="true" />
+            <MudNumericField T="int" @bind-Value="_timeoutSeconds" Label="@PanelText.Timeout" Immediate="true"
                              Min="1" Max="Inbound.RequestTimeoutCeiling" HideSpinButtons="true" />
-            <MudNumericField T="int" @bind-Value="_bodyKilobytes" Label="Предел тела запроса, КБ" Immediate="true"
+            <MudNumericField T="int" @bind-Value="_bodyKilobytes" Label="@PanelText.BodyLimit" Immediate="true"
                              Min="1" Max="Inbound.MaxBodyBytesCeiling / 1024" HideSpinButtons="true" />
         </MudStack>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="@(() => MudDialog.Cancel())">Отмена</MudButton>
-        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SaveAsync">Сохранить</MudButton>
+        <MudButton OnClick="@(() => MudDialog.Cancel())">@PanelText.Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SaveAsync">@PanelText.Save</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -75,9 +75,9 @@
         _bodyKilobytes = Math.Max(1, inbound.MaxBodyBytes / 1024);
         _storedHeaders = headers switch
         {
-            null => "Заголовки для upstream не расшифрованы: потерян каталог keys. Задайте их заново.",
-            { Count: 0 } => "Заголовков для upstream нет.",
-            _ => $"Заданы заголовки: {string.Join(", ", headers)}. Значения не показываются.",
+            null => PanelText.HeadersLost,
+            { Count: 0 } => PanelText.HeadersNone,
+            _ => string.Format(PanelText.HeadersSet, string.Join(", ", headers)),
         };
     }
 

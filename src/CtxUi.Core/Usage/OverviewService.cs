@@ -38,8 +38,7 @@ public sealed class OverviewService(CtxUiDbContext db, UsageStore usage, TimePro
                 .GroupBy(call => new { call.InboundId, call.Outcome, IsToolCall = call.Method == UsageRecord.ToolsCall })
                 .Select(group => new { group.Key.InboundId, group.Key.Outcome, group.Key.IsToolCall, Count = group.Count() })
                 .ToListAsync(ct))
-            .Where(row => row.Outcome is
-                UsageOutcome.Ok or UsageOutcome.UpstreamRejected or UsageOutcome.UpstreamFailed or UsageOutcome.ClientAborted)
+            .Where(row => UsageRecord.IsForwarded(row.Outcome))
             .ToList();
         var today = DateOnly.FromDateTime(now.UtcDateTime);
 

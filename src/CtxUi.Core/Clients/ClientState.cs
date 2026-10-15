@@ -18,9 +18,10 @@ public static class ClientState
 
     public static string Text(ClientStatus status) => status switch
     {
-        ClientStatus.Disabled => "отключён",
-        ClientStatus.Expired => "истёк",
-        ClientStatus.Exhausted => "исчерпан",
-        _ => "активен",
+        ClientStatus.Disabled => CoreText.StatusDisabled,
+        ClientStatus.Expired => CoreText.StatusExpired,
+        ClientStatus.Exhausted => CoreText.StatusExhausted,
+        ClientStatus.Active => CoreText.StatusActive,
+        _ => status.ToString(),
     };
 }

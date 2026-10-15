@@ -2,6 +2,7 @@ using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using CtxUi.Core.Admins;
+using CtxUi.Core.ApiKeys;
 using CtxUi.Core.Clients;
 using CtxUi.Core.Inbounds;
 using CtxUi.Core.Settings;
@@ -19,6 +20,7 @@ public sealed class CtxUiDbContext(DbContextOptions<CtxUiDbContext> options) : D
     public DbSet<UsageDaily> UsageDays => Set<UsageDaily>();
     public DbSet<Admin> Admins => Set<Admin>();
     public DbSet<Setting> Settings => Set<Setting>();
+    public DbSet<ApiKey> ApiKeys => Set<ApiKey>();
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder) =>
         configurationBuilder.Properties<DateTimeOffset>().HaveConversion<UnixMillisConverter>();
@@ -65,6 +67,12 @@ public sealed class CtxUiDbContext(DbContextOptions<CtxUiDbContext> options) : D
         modelBuilder.Entity<Admin>(entity => entity.HasIndex(admin => admin.NameKey).IsUnique());
 
         modelBuilder.Entity<Setting>(entity => entity.HasKey(setting => setting.Key));
+
+        modelBuilder.Entity<ApiKey>(entity =>
+        {
+            entity.HasIndex(apiKey => apiKey.NameKey).IsUnique();
+            entity.HasIndex(apiKey => apiKey.SecretHash).IsUnique();
+        });
 
         modelBuilder.Entity<RoutingState>().HasData(new RoutingState { Id = 1, Revision = 0 });
     }

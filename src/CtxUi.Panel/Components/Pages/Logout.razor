@@ -4,14 +4,14 @@
 @inject SignInManager<Admin> SignIn
 @inject NavigationManager Navigation
 
-<PageTitle>Выход из ctx-ui</PageTitle>
+<PageTitle>@PanelText.SignOutTitle</PageTitle>
 
 <form class="entrance" method="post" @formname="logout" @onsubmit="SignOutAsync">
     <AntiforgeryToken />
     <h1>ctx-ui</h1>
-    <p>Выйти из панели?</p>
-    <button type="submit">Выйти</button>
-    <a href="">Остаться</a>
+    <p>@PanelText.SignOutQuestion</p>
+    <button type="submit">@PanelText.SignOut</button>
+    <a href="">@PanelText.Stay</a>
 </form>
 
 @code {

@@ -59,7 +59,7 @@ public sealed class GatewayHandler(
         if (!HttpMethods.IsPost(context.Request.Method))
             return Outcome(await upstream.ForwardAsync(context, route, client), context.Response.StatusCode);
 
-        using var slot = limiter.AcquireSlot(client);
+        using var slot = await limiter.AcquireSlotAsync(client, context.RequestAborted);
         if (!slot.IsAcquired)
         {
             await Rejection.WriteBusyAsync(context);

@@ -4,16 +4,16 @@
 @inject ISnackbar Snackbar
 @inject TimeProvider Clock
 
-<PageTitle>Клиенты</PageTitle>
+<PageTitle>@PanelText.Clients</PageTitle>
 
 <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-4">
-    <MudText Typo="Typo.h5">Клиенты</MudText>
+    <MudText Typo="Typo.h5">@PanelText.Clients</MudText>
     <MudSpacer />
-    <MudTextField @bind-Value="_search" Label="Поиск по имени" Immediate="true" Clearable="true" Margin="Margin.Dense"
+    <MudTextField @bind-Value="_search" Label="@PanelText.SearchByName" Immediate="true" Clearable="true" Margin="Margin.Dense"
                   Variant="Variant.Outlined" Style="max-width: 280px" />
-    <MudIconButton Icon="@Icons.Material.Filled.Refresh" aria-label="Обновить" title="Обновить" OnClick="LoadAsync" />
+    <MudIconButton Icon="@Icons.Material.Filled.Refresh" aria-label="@PanelText.Refresh" title="@PanelText.Refresh" OnClick="LoadAsync" />
     <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PersonAdd" OnClick="AddAsync">
-        Добавить клиента
+        @PanelText.AddClient
     </MudButton>
 </MudStack>
 
@@ -24,24 +24,24 @@
 else if (_clients.Count == 0)
 {
     <MudAlert Severity="Severity.Info">
-        Клиентов пока нет. Клиент — это тот, кому выдан токен: у него свой срок, свои лимиты и свой набор inbound'ов.
+        @PanelText.ClientsEmpty
     </MudAlert>
 }
 else if (Shown.Count == 0)
 {
-    <MudAlert Severity="Severity.Info">Никто не найден: в именах клиентов нет «@_search».</MudAlert>
+    <MudAlert Severity="Severity.Info">@string.Format(PanelText.ClientsNotFound, _search)</MudAlert>
 }
 else
 {
     <MudTable Items="Shown" Dense="true" Hover="true" Elevation="1">
         <HeaderContent>
-            <MudTh>Имя</MudTh>
-            <MudTh>Состояние</MudTh>
-            <MudTh>Срок, UTC</MudTh>
-            <MudTh>Обращался, UTC</MudTh>
-            <MudTh>Вызовы</MudTh>
-            <MudTh>Inbounds</MudTh>
-            <MudTh>Доступ</MudTh>
+            <MudTh>@PanelText.Name</MudTh>
+            <MudTh>@PanelText.State</MudTh>
+            <MudTh>@PanelText.ExpiryColumn</MudTh>
+            <MudTh>@PanelText.LastSeenColumn</MudTh>
+            <MudTh>@PanelText.CallsColumn</MudTh>
+            <MudTh>@PanelText.Inbounds</MudTh>
+            <MudTh>@PanelText.AccessColumn</MudTh>
             <MudTh></MudTh>
         </HeaderContent>
         <RowTemplate>
@@ -51,8 +51,8 @@ else
                     @ClientState.Text(ClientState.Of(context, _loadedAt))
                 </MudChip>
             </MudTd>
-            <MudTd>@(context.ExpiresAt is { } expiresAt ? $"до {Words.Day(expiresAt)}" : "бессрочно")</MudTd>
-            <MudTd>@(context.LastUsedAt is { } usedAt ? Words.Minute(usedAt) : "не обращался")</MudTd>
+            <MudTd>@(context.ExpiresAt is { } expiresAt ? string.Format(PanelText.ExpiresOn, Words.Day(expiresAt)) : PanelText.NoExpiry)</MudTd>
+            <MudTd>@(context.LastUsedAt is { } usedAt ? Words.Minute(usedAt) : PanelText.NeverSeen)</MudTd>
             <MudTd>@QuotaPeriod.UsedCalls(context, _loadedAt)/@(context.QuotaCalls?.ToString() ?? "∞")</MudTd>
             <MudTd>@string.Join(", ", context.Inbounds.Select(link => link.Inbound!.Slug).Order())</MudTd>
             <MudTd>
@@ -60,15 +60,15 @@ else
                            ValueChanged="@(enabled => SwitchAsync(context, enabled))" />
             </MudTd>
             <MudTd Style="text-align: right; white-space: nowrap">
-                <MudIconButton Icon="@Icons.Material.Filled.Link" Size="Size.Small" aria-label="Подключение" title="Подключение"
+                <MudIconButton Icon="@Icons.Material.Filled.Link" Size="Size.Small" aria-label="@PanelText.Connection" title="@PanelText.Connection"
                                OnClick="@(() => ConnectAsync(context))" />
-                <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" aria-label="Изменить" title="Изменить"
+                <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" aria-label="@PanelText.Edit" title="@PanelText.Edit"
                                OnClick="@(() => EditAsync(context))" />
-                <MudIconButton Icon="@Icons.Material.Filled.RestartAlt" Size="Size.Small" aria-label="Сбросить квоту" title="Сбросить квоту"
+                <MudIconButton Icon="@Icons.Material.Filled.RestartAlt" Size="Size.Small" aria-label="@PanelText.ResetQuota" title="@PanelText.ResetQuota"
                                OnClick="@(() => ResetAsync(context))" />
-                <MudIconButton Icon="@Icons.Material.Filled.Key" Size="Size.Small" aria-label="Новый токен" title="Новый токен"
+                <MudIconButton Icon="@Icons.Material.Filled.Key" Size="Size.Small" aria-label="@PanelText.NewToken" title="@PanelText.NewToken"
                                OnClick="@(() => ReissueAsync(context))" />
-                <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" aria-label="Удалить" title="Удалить"
+                <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" aria-label="@PanelText.Delete" title="@PanelText.Delete"
                                OnClick="@(() => RemoveAsync(context))" />
             </MudTd>
         </RowTemplate>
@@ -105,15 +105,15 @@ else
 
     private Task SwitchAsync(Client client, bool enabled) => ApplyAsync(
         services => services.GetRequiredService<ClientService>().SetEnabledAsync(client.Name, enabled),
-        $"Клиент «{client.Name}» {(enabled ? "включён" : "отключён")}");
+        string.Format(enabled ? PanelText.ClientEnabled : PanelText.ClientDisabled, client.Name));
 
     private Task ResetAsync(Client client) => ApplyAsync(
         services => services.GetRequiredService<ClientService>().ResetQuotaAsync(client.Name),
-        $"Счётчик квоты клиента «{client.Name}» обнулён, период начат заново");
+        string.Format(PanelText.QuotaReset, client.Name));
 
     private async Task AddAsync()
     {
-        var dialog = await Dialogs.ShowAsync<ClientDialog>("Новый клиент", FormOptions);
+        var dialog = await Dialogs.ShowAsync<ClientDialog>(PanelText.NewClient, FormOptions);
         if (await dialog.Result is not { Canceled: false, Data: string name })
             return;
 
@@ -124,7 +124,7 @@ else
     private async Task EditAsync(Client client)
     {
         var parameters = new DialogParameters<ClientDialog> { { dialog => dialog.Name, client.Name } };
-        var dialog = await Dialogs.ShowAsync<ClientDialog>($"Клиент «{client.Name}»", parameters, FormOptions);
+        var dialog = await Dialogs.ShowAsync<ClientDialog>(string.Format(PanelText.ClientTitle, client.Name), parameters, FormOptions);
         if (await dialog.Result is { Canceled: false })
             await LoadAsync();
     }
@@ -132,23 +132,23 @@ else
     private Task ConnectAsync(Client client) => ConnectAsync(client.Name);
 
     private Task ConnectAsync(string name) => Dialogs.ShowAsync<ConnectionDialog>(
-        $"Подключение: {name}",
+        string.Format(PanelText.ConnectionTitle, name),
         new DialogParameters<ConnectionDialog> { { dialog => dialog.Name, name } },
         ConnectionOptions);
 
     private async Task ReissueAsync(Client client)
     {
         var confirmed = await Dialogs.ShowMessageBoxAsync(
-            $"Выпустить новый токен для «{client.Name}»?",
-            "Прежний токен сразу перестанет работать: клиенту придётся заменить его в своих настройках.",
-            yesText: "Выпустить",
-            cancelText: "Отмена");
+            string.Format(PanelText.ReissueQuestion, client.Name),
+            PanelText.ReissueWarning,
+            yesText: PanelText.Issue,
+            cancelText: PanelText.Cancel);
         if (confirmed != true)
             return;
 
         await ApplyAsync(
             services => services.GetRequiredService<ClientService>().ReissueAsync(client.Name),
-            $"Клиенту «{client.Name}» выпущен новый токен");
+            string.Format(PanelText.TokenReissued, client.Name));
         if (_clients!.Any(known => known.Id == client.Id))
             await ConnectAsync(client);
     }
@@ -156,15 +156,15 @@ else
     private async Task RemoveAsync(Client client)
     {
         var confirmed = await Dialogs.ShowMessageBoxAsync(
-            $"Удалить клиента «{client.Name}»?",
-            "Его токен сразу перестанет работать. Записи журнала о нём останутся.",
-            yesText: "Удалить",
-            cancelText: "Отмена");
+            string.Format(PanelText.RemoveClientQuestion, client.Name),
+            PanelText.RemoveClientWarning,
+            yesText: PanelText.Delete,
+            cancelText: PanelText.Cancel);
         if (confirmed == true)
         {
             await ApplyAsync(
                 services => services.GetRequiredService<ClientService>().RemoveAsync(client.Name),
-                $"Клиент «{client.Name}» удалён");
+                string.Format(PanelText.ClientRemoved, client.Name));
         }
     }
 

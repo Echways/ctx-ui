@@ -39,7 +39,7 @@ public sealed class ClientService(CtxUiDbContext db, ISecretVault vault, TimePro
         var parsedMetadata = ClientMetadata.Parse(metadata);
         var parsedLimits = (limits ?? ClientLimits.None).Validated();
         if (await db.Clients.AnyAsync(client => client.NameKey == key, ct))
-            throw new DomainException($"клиент «{parsedName}» уже есть");
+            throw new DomainException(string.Format(CoreText.ClientExists, parsedName));
         var inbounds = await ResolveInboundsAsync(inboundSlugs, ct);
 
         var token = AccessToken.Generate();
@@ -78,8 +78,14 @@ public sealed class ClientService(CtxUiDbContext db, ISecretVault vault, TimePro
         return await db.Clients
                 .Include(client => client.Inbounds).ThenInclude(link => link.Inbound)
                 .SingleOrDefaultAsync(client => client.NameKey == key, ct)
-            ?? throw new DomainException($"клиент «{name.Trim()}» не найден");
+            ?? throw new NotFoundException(string.Format(CoreText.ClientNotFound, name.Trim()));
     }
+
+    public async Task<Client> GetAsync(Guid id, CancellationToken ct = default) =>
+        await db.Clients.AsNoTracking()
+            .Include(client => client.Inbounds).ThenInclude(link => link.Inbound)
+            .SingleOrDefaultAsync(client => client.Id == id, ct)
+        ?? throw new NotFoundException(CoreText.ClientIdNotFound);
 
     public async Task UpdateAsync(string name, ClientUpdate update, CancellationToken ct = default)
     {
@@ -154,10 +160,11 @@ public sealed class ClientService(CtxUiDbContext db, ISecretVault vault, TimePro
     {
         await db.Clients
             .Where(client => client.Id == clientId)
-            .ExecuteUpdateAsync(setters => setters.SetProperty(client => client.LastUsedAt, now), ct);
-        await db.Clients
-            .Where(client => client.Id == clientId && client.FirstUsedAt == null)
-            .ExecuteUpdateAsync(setters => setters.SetProperty(client => client.FirstUsedAt, now), ct);
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(client => client.LastUsedAt, now)
+                    .SetProperty(client => client.FirstUsedAt, client => client.FirstUsedAt ?? now),
+                ct);
     }
 
     public async Task<List<StoredUsage>> LoadUsageAsync(CancellationToken ct = default)
@@ -190,19 +197,19 @@ public sealed class ClientService(CtxUiDbContext db, ISecretVault vault, TimePro
     private static void EnsureFuture(DateTimeOffset? expiresAt, DateTimeOffset now)
     {
         if (expiresAt is { } value && value <= now)
-            throw new DomainException($"срок {value:yyyy-MM-dd} уже прошёл");
+            throw new DomainException(string.Format(CoreText.ExpiryPassed, value));
     }
 
     private async Task<List<Inbound>> ResolveInboundsAsync(IReadOnlyCollection<string> slugs, CancellationToken ct)
     {
         var wanted = slugs.Select(slug => slug.Trim()).Distinct(StringComparer.Ordinal).ToList();
         if (wanted.Count == 0)
-            throw new DomainException("укажите хотя бы один inbound");
+            throw new DomainException(CoreText.InboundRequired);
 
         var found = await db.Inbounds.Where(inbound => wanted.Contains(inbound.Slug)).ToListAsync(ct);
         var missing = wanted.Except(found.Select(inbound => inbound.Slug)).ToList();
         if (missing.Count > 0)
-            throw new DomainException($"inbound не найден: {string.Join(", ", missing)}");
+            throw new DomainException(string.Format(CoreText.InboundsMissing, string.Join(", ", missing)));
 
         return found;
     }

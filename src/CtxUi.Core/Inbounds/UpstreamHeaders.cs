@@ -26,13 +26,13 @@ public static partial class UpstreamHeaders
         foreach (var (name, value) in pairs ?? [])
         {
             if (!NamePattern().IsMatch(name))
-                throw new DomainException($"имя заголовка «{name}» недопустимо");
+                throw new DomainException(string.Format(CoreText.HeaderNameInvalid, name));
             if (Forbidden.Contains(name) || IsIdentity(name))
-                throw new DomainException($"заголовок «{name}» шлюз выставляет сам, задать его нельзя");
+                throw new DomainException(string.Format(CoreText.HeaderReserved, name));
             if (!ValuePattern().IsMatch(value))
-                throw new DomainException($"значение заголовка «{name}» должно быть непустой строкой из печатных символов ASCII");
+                throw new DomainException(string.Format(CoreText.HeaderValueInvalid, name));
             if (!headers.TryAdd(name, value))
-                throw new DomainException($"заголовок «{name}» задан дважды");
+                throw new DomainException(string.Format(CoreText.HeaderDuplicate, name));
         }
 
         return headers;

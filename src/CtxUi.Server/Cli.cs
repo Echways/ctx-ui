@@ -3,18 +3,23 @@ using System.Globalization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using CtxUi.Core;
+using CtxUi.Core.ApiKeys;
 using CtxUi.Core.Clients;
 using CtxUi.Core.Data;
 using CtxUi.Core.Inbounds;
 using CtxUi.Core.Settings;
 using CtxUi.Core.Usage;
+using CtxUi.Panel;
 using CtxUi.Panel.Accounts;
+using CtxUi.Server.Api;
 
 namespace CtxUi.Server;
 
 public static class Cli
 {
-    public static bool Handles(string[] args) => args.Length > 0 && args[0] is "inbound" or "client" or "usage" or "admin";
+    private const string Language = "ru";
+
+    public static bool Handles(string[] args) => args.Length > 0 && args[0] is "inbound" or "client" or "usage" or "admin" or "apikey";
 
     public static async Task<int> RunAsync(
         string[] args,
@@ -22,6 +27,7 @@ public static class Cli
         TextWriter error,
         Action<HostApplicationBuilder>? configure = null)
     {
+        CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo(Language);
         var builder = Host.CreateApplicationBuilder();
         configure?.Invoke(builder);
         builder.Logging.ClearProviders()
@@ -31,9 +37,9 @@ public static class Cli
         builder.Services.AddCtxUi(builder.Configuration);
         using var host = builder.Build();
 
-        var root = new RootCommand("ctx-ui: inbound'ы, клиенты, учёт вызовов и вход в панель")
+        var root = new RootCommand("ctx-ui: inbound'ы, клиенты, учёт вызовов, вход в панель и ключи API")
         {
-            InboundCommand(), ClientCommand(), UsageCommand(), AdminCommand(),
+            InboundCommand(), ClientCommand(), UsageCommand(), AdminCommand(), ApiKeyCommand(),
         };
         return await root.Parse(args).InvokeAsync(new InvocationConfiguration { Output = output, Error = error });
 
@@ -200,8 +206,8 @@ public static class Cli
         Command UsageCommand()
         {
             var client = new Option<string?>("--client") { Description = "только этот клиент" };
-            var days = new Option<int>("--days") { Description = "за сколько последних дней, по умолчанию 7", DefaultValueFactory = _ => 7 };
-            var limit = new Option<int>("--limit") { Description = "сколько последних строк, по умолчанию 50", DefaultValueFactory = _ => 50 };
+            var days = new Option<int>("--days") { Description = "за сколько последних дней, по умолчанию 7", DefaultValueFactory = _ => UsageStore.DefaultDays };
+            var limit = new Option<int>("--limit") { Description = "сколько последних строк, по умолчанию 50", DefaultValueFactory = _ => UsageStore.DefaultLines };
 
             async Task<Guid?> ClientIdAsync(ParseResult parse, IServiceProvider services, CancellationToken ct) =>
                 parse.GetValue(client) is { } wanted
@@ -212,7 +218,7 @@ public static class Cli
             {
                 Leaf("days", "итоги по дням", [client, days], async (parse, services, ct) =>
                 {
-                    var span = InRange("--days", parse.GetValue(days), MaxUsageDays);
+                    var span = InRange("--days", parse.GetValue(days), UsageStore.MaxDays);
                     var today = DateOnly.FromDateTime(services.GetRequiredService<TimeProvider>().GetUtcNow().UtcDateTime);
                     var totals = await services.GetRequiredService<UsageStore>()
                         .DailyAsync(await ClientIdAsync(parse, services, ct), today.AddDays(1 - span), ct);
@@ -229,7 +235,7 @@ public static class Cli
                 }),
                 Leaf("log", "последние вызовы, новые сверху", [client, limit], async (parse, services, ct) =>
                 {
-                    var count = InRange("--limit", parse.GetValue(limit), MaxUsageLines);
+                    var count = InRange("--limit", parse.GetValue(limit), UsageStore.MaxLines);
                     var lines = await services.GetRequiredService<UsageStore>()
                         .RecentAsync(await ClientIdAsync(parse, services, ct), count, ct);
                     var clients = (await services.GetRequiredService<ClientService>().ListAsync(ct))
@@ -288,7 +294,7 @@ public static class Cli
                     }
 
                     if (admins.Count == 0)
-                        output.WriteLine("Администраторов нет, войти в панель некому. Добавьте: ctx-ui admin add <логин>");
+                        output.WriteLine("No admins, nobody can sign in to the panel. Add one: ctx-ui admin add <login>");
                 }),
                 Leaf("remove", "удалить администратора", [login], async (parse, services, ct) =>
                 {
@@ -306,6 +312,39 @@ public static class Cli
 
                     output.WriteLine($"Панель:  {PanelUrl(services, await settings.RenewPathAsync(ct))}");
                     output.WriteLine("Новый адрес начнёт работать после перезапуска сервиса, до тех пор действует прежний");
+                }),
+            };
+        }
+
+        Command ApiKeyCommand()
+        {
+            var name = new Argument<string>("name") { Description = "название: латинские буквы, цифры, точка, дефис, подчёркивание" };
+
+            return new Command("apikey", "ключи для REST API; API и Swagger UI живут под адресом панели")
+            {
+                Leaf("add", "выпустить ключ и показать его", [name], async (parse, services, ct) =>
+                {
+                    var issued = await services.GetRequiredService<ApiKeyService>().AddAsync(parse.GetValue(name)!, ct);
+                    var panel = PanelUrl(services, await services.GetRequiredService<PanelSettings>().PathAsync(ct));
+                    output.WriteLine($"Ключ «{issued.Key.Name}» выпущен");
+                    output.WriteLine($"Ключ:     {issued.Secret}");
+                    output.WriteLine($"API:      {panel}{ApiServices.Prefix.TrimStart('/')}/");
+                    output.WriteLine($"Swagger:  {panel}{ApiServices.SwaggerPath}/");
+                    output.WriteLine("Ключ показан один раз. Потерянный ключ не восстановить: удалите его и выпустите новый.");
+                }),
+                Leaf("list", "показать ключи", [], async (_, services, ct) =>
+                {
+                    var keys = await services.GetRequiredService<ApiKeyService>().ListAsync(ct);
+                    foreach (var key in keys)
+                        output.WriteLine($"{key.Name,-24} {key.SecretPrefix}…  выпущен {Date(key.CreatedAt, "yyyy-MM-dd")}");
+
+                    if (keys.Count == 0)
+                        output.WriteLine("Ключей нет. Выпустите: ctx-ui apikey add <название>");
+                }),
+                Leaf("remove", "отозвать ключ; запросы с ним сразу получают 401", [name], async (parse, services, ct) =>
+                {
+                    await services.GetRequiredService<ApiKeyService>().RemoveAsync(parse.GetValue(name)!, ct);
+                    output.WriteLine($"Ключ «{parse.GetValue(name)!.Trim()}» отозван");
                 }),
             };
         }
@@ -362,17 +401,15 @@ public static class Cli
             }
 
             output.WriteLine($"Токен:   {token}");
-            foreach (var slug in client.Inbounds.Select(link => link.Inbound!.Slug).Order())
+            foreach (var slug in ConnectionText.Slugs(client))
             {
                 output.WriteLine($"Inbound «{slug}»:");
-                output.WriteLine($"  с заголовком Authorization: Bearer <токен>   {PublicUrl(services)}/mcp/{slug}");
-                output.WriteLine($"  адрес с токеном внутри                      {PublicUrl(services)}/k/{token}/mcp/{slug}");
+                output.WriteLine($"  с заголовком Authorization: Bearer <токен>   {ConnectionText.Address(PublicUrl(services), slug)}");
+                output.WriteLine($"  адрес с токеном внутри                      {ConnectionText.AddressWithToken(PublicUrl(services), token, slug)}");
             }
         }
     }
 
-    private const int MaxUsageDays = 3_650;
-    private const int MaxUsageLines = 1_000;
     private const string Removed = "удалён";
 
     private static string DescribeLimits(Client client)

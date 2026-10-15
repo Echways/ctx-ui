@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Localization;
 using Microsoft.Playwright;
 
 namespace CtxUi.IntegrationTests;
@@ -21,7 +22,7 @@ public sealed class PanelSession : IAsyncDisposable
 
     public string Password { get; }
 
-    public static async Task<PanelSession> OpenAsync(GatewayHost gateway, string admin = "root")
+    public static async Task<PanelSession> OpenAsync(GatewayHost gateway, string admin = "root", string? language = "ru")
     {
         var issued = await gateway.AddAdminAsync(admin);
         var browser = await Browser.Value;
@@ -32,6 +33,16 @@ public sealed class PanelSession : IAsyncDisposable
             Permissions = ["clipboard-read", "clipboard-write"],
         });
         context.SetDefaultTimeout(PatienceMs);
+        if (language is not null)
+        {
+            await context.AddCookiesAsync([new Cookie
+            {
+                Name = CookieRequestCultureProvider.DefaultCookieName,
+                Value = CookieRequestCultureProvider.MakeCookieValue(new RequestCulture(language)),
+                Url = gateway.PanelUrl,
+            }]);
+        }
+
         var page = await context.NewPageAsync();
         await page.GotoAsync("");
         return new PanelSession(context, page, issued.Password);

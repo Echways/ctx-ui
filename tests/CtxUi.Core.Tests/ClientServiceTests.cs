@@ -98,7 +98,20 @@ public class ClientServiceTests
         await Clients(database).AddAsync("Иванов", ["echo"]);
 
         Assert.Equal("Иванов", (await Clients(database).GetAsync(" иванов ")).Name);
-        await Assert.ThrowsAsync<DomainException>(() => Clients(database).GetAsync("Петров"));
+        await Assert.ThrowsAsync<NotFoundException>(() => Clients(database).GetAsync("Петров"));
+    }
+
+    [Fact]
+    public async Task Client_is_found_by_id_with_its_inbounds()
+    {
+        await using var database = await DatabaseWithInboundsAsync("echo", "learn");
+        var issued = await Clients(database).AddAsync("Иванов", ["learn", "echo"]);
+
+        var found = await Clients(database).GetAsync(issued.Client.Id);
+
+        Assert.Equal("Иванов", found.Name);
+        Assert.Equal(["echo", "learn"], found.Inbounds.Select(link => link.Inbound!.Slug).Order());
+        await Assert.ThrowsAsync<NotFoundException>(() => Clients(database).GetAsync(Guid.NewGuid()));
     }
 
     [Fact]

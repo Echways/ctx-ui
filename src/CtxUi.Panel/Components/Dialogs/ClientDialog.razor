@@ -9,37 +9,37 @@
             }
             @if (_inbounds is { Count: 0 })
             {
-                <MudAlert Severity="Severity.Info">Сначала добавьте inbound: клиенту нужно выдать доступ хотя бы к одному.</MudAlert>
+                <MudAlert Severity="Severity.Info">@PanelText.AddInboundFirst</MudAlert>
             }
-            <MudTextField @bind-Value="_name" Label="Имя" Immediate="true" Disabled="Name is not null"
-                          HelperText="как клиент будет называться в списке и в журнале" />
+            <MudTextField @bind-Value="_name" Label="@PanelText.Name" Immediate="true" Disabled="Name is not null"
+                          HelperText="@PanelText.ClientNameHelp" />
             <div>
-                <MudText Typo="Typo.caption">Доступ к inbound'ам</MudText>
+                <MudText Typo="Typo.caption">@PanelText.InboundAccess</MudText>
                 @foreach (var inbound in _inbounds ?? [])
                 {
                     <MudCheckBox T="bool" Value="_chosen.Contains(inbound.Slug)" Dense="true"
                                  ValueChanged="@(chosen => Choose(inbound.Slug, chosen))"
-                                 Label="@(inbound.Enabled ? inbound.Slug : $"{inbound.Slug} (выключен)")" />
+                                 Label="@(inbound.Enabled ? inbound.Slug : string.Format(PanelText.InboundOff, inbound.Slug))" />
                 }
             </div>
-            <MudTextField T="DateTime?" @bind-Value="_expires" Label="Срок действия" InputType="InputType.Date" Format="yyyy-MM-dd"
-                          Immediate="true" HelperText="с начала этого дня по UTC доступ закрыт; пусто — бессрочно" />
-            <MudNumericField T="int?" @bind-Value="_rate" Label="Запросов в минуту" Immediate="true" HideSpinButtons="true"
-                             HelperText="пусто — без ограничения" />
-            <MudNumericField T="int?" @bind-Value="_concurrency" Label="Одновременных запросов" Immediate="true"
-                             HideSpinButtons="true" HelperText="пусто — без ограничения" />
-            <MudNumericField T="int?" @bind-Value="_quota" Label="Квота вызовов инструментов" Immediate="true"
-                             HideSpinButtons="true" HelperText="сколько tools/call можно сделать за период; пусто — без квоты" />
-            <MudNumericField T="int?" @bind-Value="_resetDays" Label="Обновлять квоту каждые, дней" Immediate="true"
-                             HideSpinButtons="true" HelperText="пусто — квота выдаётся один раз" />
-            <MudTextField @bind-Value="_metadata" Label="Метаданные" Immediate="true" Lines="2"
-                          HelperText="по одной паре в строке: ключ=значение. Уходят upstream заголовками X-Mcp-Meta-*" />
+            <MudTextField T="DateTime?" @bind-Value="_expires" Label="@PanelText.Expiry" InputType="InputType.Date" Format="yyyy-MM-dd"
+                          Immediate="true" HelperText="@PanelText.ExpiryHelp" />
+            <MudNumericField T="int?" @bind-Value="_rate" Label="@PanelText.RatePerMinute" Immediate="true" HideSpinButtons="true"
+                             HelperText="@PanelText.NoLimitHelp" />
+            <MudNumericField T="int?" @bind-Value="_concurrency" Label="@PanelText.Concurrency" Immediate="true"
+                             HideSpinButtons="true" HelperText="@PanelText.NoLimitHelp" />
+            <MudNumericField T="int?" @bind-Value="_quota" Label="@PanelText.Quota" Immediate="true"
+                             HideSpinButtons="true" HelperText="@PanelText.QuotaHelp" />
+            <MudNumericField T="int?" @bind-Value="_resetDays" Label="@PanelText.ResetDays" Immediate="true"
+                             HideSpinButtons="true" HelperText="@PanelText.ResetDaysHelp" />
+            <MudTextField @bind-Value="_metadata" Label="@PanelText.Metadata" Immediate="true" Lines="2"
+                          HelperText="@PanelText.MetadataHelp" />
         </MudStack>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="@(() => MudDialog.Cancel())">Отмена</MudButton>
+        <MudButton OnClick="@(() => MudDialog.Cancel())">@PanelText.Cancel</MudButton>
         <MudButton Color="Color.Primary" Variant="Variant.Filled" Disabled="_inbounds is not { Count: > 0 }" OnClick="SaveAsync">
-            Сохранить
+            @PanelText.Save
         </MudButton>
     </DialogActions>
 </MudDialog>

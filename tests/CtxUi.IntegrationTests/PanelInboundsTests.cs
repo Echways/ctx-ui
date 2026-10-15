@@ -246,7 +246,7 @@ public class PanelInboundsTests
         var page = await OpenInboundsAsync(session);
         await CliRunner.RunAsync(gateway.DataDir, "inbound", "remove", "echo");
 
-        await Row(page, "echo").GetByRole(AriaRole.Switch).UncheckAsync();
+        await Row(page, "echo").GetByRole(AriaRole.Switch).ClickAsync();
 
         await Expect(page.GetByText("Inbound «echo» не найден")).ToBeVisibleAsync();
         await Expect(Row(page, "echo")).ToHaveCountAsync(0);

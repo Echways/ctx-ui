@@ -5,4 +5,9 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="all" />
   </ItemGroup>
 
+  <ItemGroup>
+    <EmbeddedResource Update="CoreText.resx" StronglyTypedLanguage="CSharp" StronglyTypedClassName="CoreText"
+                      StronglyTypedNamespace="CtxUi.Core" StronglyTypedFileName="$(IntermediateOutputPath)CoreText.Designer.cs" />
+  </ItemGroup>
+
 </Project>

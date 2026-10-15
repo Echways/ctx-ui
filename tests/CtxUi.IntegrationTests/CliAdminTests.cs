@@ -148,7 +148,7 @@ public sealed partial class CliAdminTests : IDisposable
 
         var listed = await RunAsync("admin", "list");
 
-        Assert.Contains("Администраторов нет", empty.Output);
+        Assert.Contains("No admins", empty.Output);
         Assert.Contains("ctx-ui admin add", empty.Output);
         var lines = listed.Output.Split('\n', StringSplitOptions.RemoveEmptyEntries);
         Assert.Equal(2, lines.Length);
@@ -172,7 +172,7 @@ public sealed partial class CliAdminTests : IDisposable
         Assert.Equal(1, again.Code);
         Assert.Contains("администратор «root» не найден", again.Error);
         Assert.Equal(1, password.Code);
-        Assert.Contains("Администраторов нет", listed.Output);
+        Assert.Contains("No admins", listed.Output);
     }
 
     [Fact]

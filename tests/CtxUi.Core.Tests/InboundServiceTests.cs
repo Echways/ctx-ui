@@ -96,11 +96,21 @@ public class InboundServiceTests
     }
 
     [Fact]
+    public async Task Find_returns_nothing_for_an_unknown_slug()
+    {
+        await using var database = await TestDatabase.CreateAsync();
+        await Service(database).AddHttpAsync("echo", null, "https://mcp.example.org/mcp");
+
+        Assert.Equal("echo", (await Service(database).FindAsync(" echo "))?.Slug);
+        Assert.Null(await Service(database).FindAsync("nope"));
+    }
+
+    [Fact]
     public async Task Unknown_slug_is_reported()
     {
         await using var database = await TestDatabase.CreateAsync();
 
-        var error = await Assert.ThrowsAsync<DomainException>(() => Service(database).RemoveAsync("nope"));
+        var error = await Assert.ThrowsAsync<NotFoundException>(() => Service(database).RemoveAsync("nope"));
 
         Assert.Contains("не найден", error.Message);
     }

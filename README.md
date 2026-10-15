@@ -7,7 +7,7 @@ An inbound is an address (`/mcp/<slug>`) backed by a remote MCP server. A
 client is a token with an expiry date, a set of inbounds and limits.
 
 Supports streamable HTTP inbounds, per-client limits and quotas, a call
-log, a web panel and a CLI.
+log, a web panel, a CLI and a REST API with Swagger UI.
 
 ## Install
 
@@ -51,13 +51,16 @@ A path with a token is a credential: treat it as a password.
 ## Panel
 
 Served only under a random 16-character path; any other path gets 404.
+English by default; the button in the top bar (and the link under the sign-in
+form) switches to Russian and back, the choice is kept in a cookie for a year.
 
 | Section | Contents |
 | --- | --- |
-| Обзор (overview) | active clients, calls and upstream failures over 24 h; per-inbound and daily totals |
+| Overview | active clients, calls and upstream failures over 24 h; per-inbound and daily totals |
 | Inbounds | create, edit, enable/disable, delete |
-| Клиенты (clients) | create, edit, enable/disable, search, connection window, new token, quota reset |
-| Журнал (log) | recent calls, filter by client |
+| Clients | create, edit, enable/disable, search, connection window, new token, quota reset |
+| Log | recent calls, filter by client |
+| API keys | issue, revoke, link to Swagger UI |
 
 Changes apply to the gateway immediately. The connection window shows the
 token, addresses and a ready-to-send message for the client.
@@ -141,6 +144,44 @@ names with spaces.
 Both accept `--client <name>`. Times are UTC. Data reaches the database every
 `FlushInterval` (5 s), so it lags slightly.
 
+### apikey
+
+| Command | Effect |
+| --- | --- |
+| `apikey add <name>` | issue a REST API key; prints it once with the API and Swagger addresses |
+| `apikey list` | name, key prefix, issue date |
+| `apikey remove <name>` | revoke; requests with the key get 401 at once |
+
+Name: 1–64 characters, `A-Z a-z 0-9 . _ -`.
+
+## REST API
+
+Lives under the panel's secret path, like the panel itself:
+
+| Address | What |
+| --- | --- |
+| `https://<host>/<secret>/api/v1/…` | API, key in `Authorization: Bearer ctxk_…` |
+| `https://<host>/<secret>/swagger/` | Swagger UI, "Authorize" takes the key |
+| `https://<host>/<secret>/openapi/v1.json` | OpenAPI 3.1 document |
+
+| Resource | Methods |
+| --- | --- |
+| `inbounds`, `inbounds/{slug}` | list, get, `PUT` creates or replaces, `enable`, `disable`, `DELETE` |
+| `clients`, `clients/{id}` | list (`?name=` finds one), get, `POST` issues, `PATCH` changes, `connection`, `enable`, `disable`, `reset-quota`, `reissue`, `DELETE` |
+| `usage/days`, `usage/log`, `overview` | daily totals, recent calls, the panel's overview |
+
+Errors are `application/problem+json`: 400 wrong input, 401 no or unknown
+key, 404 no such object, 409 the token cannot be shown (`keys/` lost). The
+`detail` text is the same as the CLI prints. Changes reach the gateway at
+once.
+
+```bash
+curl -H "Authorization: Bearer ctxk_..." https://mcp.example.com/<secret>/api/v1/clients
+```
+
+A panel session does not open the API: browsers send the cookie with
+requests from any site.
+
 ## Limits
 
 Each limit is optional; unset means unlimited.
@@ -148,7 +189,7 @@ Each limit is optional; unset means unlimited.
 | Limit | Counts | When exceeded |
 | --- | --- | --- |
 | `--rate` | all requests, token bucket | HTTP 429, `Retry-After: <seconds until next>` |
-| `--concurrency` | in-flight `POST` | HTTP 429, `Retry-After: 1` |
+| `--concurrency` | in-flight `POST` | HTTP 429 after waiting up to 1 s for a slot, `Retry-After: 1` |
 | `--quota` | `tools/call` per period | HTTP 200, tool result with `isError: true` and reset time |
 
 The quota is spent only by `tools/call`. With an exhausted quota the client

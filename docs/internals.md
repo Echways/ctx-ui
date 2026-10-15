@@ -117,6 +117,12 @@ Concurrency counts only `POST`. MCP clients keep a `GET` notification stream
 open; counting it would block a client with limit 1 forever. Rate counts all
 methods.
 
+A request that finds no free slot waits up to `ConcurrencyWait` (1 s) before
+the 429; at most as many requests wait as the limit allows. The client reads
+the answer before the gateway releases the slot (stream tail, journal, log),
+so without the wait a client making calls one after another would get 429 on
+the next call.
+
 **Body.** For `POST` the gateway buffers the body up to
 `Inbound.MaxBodyBytes` (default 4 MB) and forwards the same bytes. The
 response still streams.
@@ -255,6 +261,29 @@ affects only the forger's responses. `X-Forwarded-For` is ignored.
 panel works offline and leaks its address to no one.
 
 Times are shown in UTC and labelled as such.
+
+## REST API
+
+| What | How |
+| --- | --- |
+| Middleware order | `UseForwardedHeaders` → `UseTokenPath` → `UseCtxUiPanelGate` → `UseCtxUiApiDocs` → `UseRouting` → … Swagger UI sits behind the gate, so it does not exist without the secret path |
+| Sign-in | scheme `ApiKey`; policy `api` accepts only that scheme. The panel cookie does not open the API, so there is no CSRF |
+| Errors | filter `ApiChanges`: `NotFoundException` → 404, `DomainException` → 400, `detail` is the exception text capitalised. Broken JSON and 401 are shaped by `UseStatusCodePages`, only under `/api`, so empty 404s and panel responses stay as they were |
+| Unknown address | `/api/{**rest}` → 404. Without it the request falls to the panel's `NotFound` page and gets a redirect to the login form |
+| Changes | after every non-GET request the filter calls `IRoutingRefresh.RefreshAsync`, as `PanelBackend.ChangeAsync` does |
+| Document | `MapOpenApi("/openapi/{documentName}.json")`, only `api/` paths. The server address is built from the request including `PathBase`; `UseForwardedHeaders` supplies `https` |
+| Swagger UI | `UseSwaggerUI`, `RoutePrefix = "swagger"`, document at the relative `../openapi/v1.json`. No external requests: `validatorUrl` is `null` by default and all files are embedded |
+
+**Keys.** `ctxk_` plus 40 letters and digits, a different prefix and length
+from client tokens so the two are never confused. Stored as SHA-256 and an
+11-character prefix for lists; lost keys are reissued, not recovered.
+Keys do not bump the routing revision.
+
+**Addressing.** Clients by id: names may contain `/`, and `%2F` in a path
+segment is not decoded. `GET /clients?name=` finds one by name.
+
+**Not found.** `NotFoundException` derives from `DomainException`, so the
+CLI and the panel keep catching one type while the API tells 404 from 400.
 
 ## Storage
 

@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="AdminNameInvalid" xml:space="preserve">
+    <value>username “{0}” is not allowed: 1 to {1} characters, Latin letters, digits, dot, hyphen and underscore</value>
+  </data>
+  <data name="ApiKeyNameInvalid" xml:space="preserve">
+    <value>key name “{0}” is not allowed: 1 to {1} characters, Latin letters, digits, dot, hyphen and underscore</value>
+  </data>
+  <data name="ApiKeyExists" xml:space="preserve">
+    <value>key “{0}” already exists</value>
+  </data>
+  <data name="ApiKeyNotFound" xml:space="preserve">
+    <value>key “{0}” not found</value>
+  </data>
+  <data name="ClientExists" xml:space="preserve">
+    <value>client “{0}” already exists</value>
+  </data>
+  <data name="ClientNotFound" xml:space="preserve">
+    <value>client “{0}” not found</value>
+  </data>
+  <data name="ClientIdNotFound" xml:space="preserve">
+    <value>client not found</value>
+  </data>
+  <data name="ClientNameEmpty" xml:space="preserve">
+    <value>client name cannot be empty</value>
+  </data>
+  <data name="ClientNameTooLong" xml:space="preserve">
+    <value>client name is longer than {0} characters</value>
+  </data>
+  <data name="ClientNameControl" xml:space="preserve">
+    <value>client name contains control characters</value>
+  </data>
+  <data name="ExpiryPassed" xml:space="preserve">
+    <value>expiry date {0:yyyy-MM-dd} has already passed</value>
+  </data>
+  <data name="InboundRequired" xml:space="preserve">
+    <value>specify at least one inbound</value>
+  </data>
+  <data name="InboundsMissing" xml:space="preserve">
+    <value>inbound not found: {0}</value>
+  </data>
+  <data name="LimitOutOfRange" xml:space="preserve">
+    <value>{0}: a whole number from 1 to {1} is allowed, an empty value removes the limit</value>
+  </data>
+  <data name="LimitRate" xml:space="preserve">
+    <value>requests per minute limit</value>
+  </data>
+  <data name="LimitConcurrency" xml:space="preserve">
+    <value>concurrent requests limit</value>
+  </data>
+  <data name="LimitQuota" xml:space="preserve">
+    <value>call quota</value>
+  </data>
+  <data name="LimitResetDays" xml:space="preserve">
+    <value>quota reset period in days</value>
+  </data>
+  <data name="MetadataKeyInvalid" xml:space="preserve">
+    <value>metadata key “{0}” is not allowed: up to 64 Latin letters, digits and hyphens, no hyphen at either end</value>
+  </data>
+  <data name="MetadataValueTooLong" xml:space="preserve">
+    <value>metadata value “{0}” is longer than {1} characters</value>
+  </data>
+  <data name="MetadataValueControl" xml:space="preserve">
+    <value>metadata value “{0}” contains control characters</value>
+  </data>
+  <data name="MetadataKeyDuplicate" xml:space="preserve">
+    <value>metadata key “{0}” is given twice</value>
+  </data>
+  <data name="MetadataTooMany" xml:space="preserve">
+    <value>more than {0} metadata pairs</value>
+  </data>
+  <data name="PairLineInvalid" xml:space="preserve">
+    <value>“{0}”: expected key=value</value>
+  </data>
+  <data name="SlugInvalid" xml:space="preserve">
+    <value>slug “{0}” is not allowed: 1 to 64 characters, lowercase Latin letters, digits and hyphen, no hyphen at either end</value>
+  </data>
+  <data name="InboundExists" xml:space="preserve">
+    <value>inbound “{0}” already exists</value>
+  </data>
+  <data name="InboundNotFound" xml:space="preserve">
+    <value>inbound “{0}” not found</value>
+  </data>
+  <data name="InboundNameInvalid" xml:space="preserve">
+    <value>inbound name must be a single line of up to {0} characters</value>
+  </data>
+  <data name="TimeoutOutOfRange" xml:space="preserve">
+    <value>request timeout: a whole number from 1 to {0} seconds is allowed</value>
+  </data>
+  <data name="BodyLimitOutOfRange" xml:space="preserve">
+    <value>request body limit: from {0} to {1} bytes is allowed</value>
+  </data>
+  <data name="UrlInvalid" xml:space="preserve">
+    <value>address “{0}” is not allowed: a full address starting with http:// or https:// is required</value>
+  </data>
+  <data name="UrlHasSecrets" xml:space="preserve">
+    <value>the address must not contain a login, password or #fragment; pass secrets in a header</value>
+  </data>
+  <data name="HeaderNameInvalid" xml:space="preserve">
+    <value>header name “{0}” is not allowed</value>
+  </data>
+  <data name="HeaderReserved" xml:space="preserve">
+    <value>header “{0}” is set by the gateway itself and cannot be specified</value>
+  </data>
+  <data name="HeaderValueInvalid" xml:space="preserve">
+    <value>value of header “{0}” must be a non-empty string of printable ASCII characters</value>
+  </data>
+  <data name="HeaderDuplicate" xml:space="preserve">
+    <value>header “{0}” is given twice</value>
+  </data>
+  <data name="StatusActive" xml:space="preserve">
+    <value>active</value>
+  </data>
+  <data name="StatusDisabled" xml:space="preserve">
+    <value>disabled</value>
+  </data>
+  <data name="StatusExpired" xml:space="preserve">
+    <value>expired</value>
+  </data>
+  <data name="StatusExhausted" xml:space="preserve">
+    <value>exhausted</value>
+  </data>
+  <data name="OutcomeOk" xml:space="preserve">
+    <value>succeeded</value>
+  </data>
+  <data name="OutcomeUpstreamRejected" xml:space="preserve">
+    <value>rejected by upstream</value>
+  </data>
+  <data name="OutcomeUpstreamFailed" xml:space="preserve">
+    <value>upstream failure</value>
+  </data>
+  <data name="OutcomeClientAborted" xml:space="preserve">
+    <value>aborted by client</value>
+  </data>
+  <data name="OutcomeQuotaExhausted" xml:space="preserve">
+    <value>quota exhausted</value>
+  </data>
+  <data name="OutcomeRateLimited" xml:space="preserve">
+    <value>rate exceeded</value>
+  </data>
+  <data name="OutcomeConcurrencyLimited" xml:space="preserve">
+    <value>too many concurrent</value>
+  </data>
+  <data name="OutcomeBodyTooLarge" xml:space="preserve">
+    <value>body too large</value>
+  </data>
+  <data name="OutcomeNotJsonRpc" xml:space="preserve">
+    <value>not JSON-RPC</value>
+  </data>
+</root>

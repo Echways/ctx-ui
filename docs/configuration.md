@@ -21,6 +21,7 @@ install method.
 | `CtxUi__RefreshInterval` | `CtxUi:RefreshInterval` | `00:00:01` | how often the server checks for CLI changes |
 | `CtxUi__FlushInterval` | `CtxUi:FlushInterval` | `00:00:05` | how often quota counters and the call log are written |
 | `CtxUi__UsageRetentionDays` | `CtxUi:UsageRetentionDays` | `30` | call log retention; daily totals are kept forever |
+| `CtxUi__ConcurrencyWait` | `CtxUi:ConcurrencyWait` | `00:00:01` | how long a request over the concurrency limit waits for a slot before 429 |
 | `CtxUi__SessionCheckInterval` | `CtxUi:SessionCheckInterval` | `00:01:00` | how often an open panel rechecks the administrator's session |
 
 Use `Urls`, not `ASPNETCORE_URLS`: the latter is overridden by

@@ -16,18 +16,17 @@ public static partial class ClientMetadata
         foreach (var (key, value) in pairs ?? [])
         {
             if (!KeyPattern().IsMatch(key))
-                throw new DomainException(
-                    $"ключ метаданных «{key}» недопустим: до 64 латинских букв, цифр и дефисов, дефис не по краям");
+                throw new DomainException(string.Format(CoreText.MetadataKeyInvalid, key));
             if (value.Length > MaxValueLength)
-                throw new DomainException($"значение метаданных «{key}» длиннее {MaxValueLength} символов");
+                throw new DomainException(string.Format(CoreText.MetadataValueTooLong, key, MaxValueLength));
             if (value.Any(char.IsControl))
-                throw new DomainException($"значение метаданных «{key}» содержит управляющие символы");
+                throw new DomainException(string.Format(CoreText.MetadataValueControl, key));
             if (!metadata.TryAdd(key, value))
-                throw new DomainException($"ключ метаданных «{key}» задан дважды");
+                throw new DomainException(string.Format(CoreText.MetadataKeyDuplicate, key));
         }
 
         if (metadata.Count > MaxEntries)
-            throw new DomainException($"метаданных больше {MaxEntries} пар");
+            throw new DomainException(string.Format(CoreText.MetadataTooMany, MaxEntries));
 
         return metadata;
     }

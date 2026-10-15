@@ -164,8 +164,8 @@ public class InboundEditTests
     {
         await using var database = await TestDatabase.CreateAsync();
 
-        var onGet = await Assert.ThrowsAsync<DomainException>(() => Inbounds(database).GetAsync("nope"));
-        var onUpdate = await Assert.ThrowsAsync<DomainException>(() => Inbounds(database).UpdateAsync("nope", Settings()));
+        var onGet = await Assert.ThrowsAsync<NotFoundException>(() => Inbounds(database).GetAsync("nope"));
+        var onUpdate = await Assert.ThrowsAsync<NotFoundException>(() => Inbounds(database).UpdateAsync("nope", Settings()));
 
         Assert.Contains("nope", onGet.Message);
         Assert.Contains("nope", onUpdate.Message);

@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using CtxUi.Core.Data;
 using CtxUi.Gateway;
 using CtxUi.Panel;
+using CtxUi.Server.Api;
 
 namespace CtxUi.Server;
 
@@ -21,6 +22,7 @@ public static class ServerApp
         builder.Services.AddCtxUi(builder.Configuration);
         builder.Services.AddCtxUiGateway(builder.Configuration.GetSection(CtxUiOptions.Section));
         builder.Services.AddCtxUiPanel(builder.Configuration.GetSection(CtxUiOptions.Section));
+        builder.Services.AddCtxUiApi();
         builder.Services.Configure<ForwardedHeadersOptions>(options =>
         {
             options.ForwardedHeaders = ForwardedHeaders.XForwardedProto;
@@ -32,11 +34,13 @@ public static class ServerApp
         app.UseForwardedHeaders();
         app.UseTokenPath();
         app.UseCtxUiPanelGate(GatewayServices.Path);
+        app.UseCtxUiApiDocs();
         app.UseRouting();
         app.UseAuthentication();
         app.UseAuthorization();
         app.UseAntiforgery();
         app.MapCtxUiGateway();
+        app.MapCtxUiApi();
         app.MapCtxUiPanel();
         return app;
     }

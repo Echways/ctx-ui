@@ -6,13 +6,15 @@ using CtxUi.Core;
 using CtxUi.Core.Clients;
 using CtxUi.Core.Data;
 using CtxUi.Core.Inbounds;
+using CtxUi.Core.Settings;
 using CtxUi.Core.Usage;
+using CtxUi.Panel.Accounts;
 
 namespace CtxUi.Server;
 
 public static class Cli
 {
-    public static bool Handles(string[] args) => args.Length > 0 && args[0] is "inbound" or "client" or "usage";
+    public static bool Handles(string[] args) => args.Length > 0 && args[0] is "inbound" or "client" or "usage" or "admin";
 
     public static async Task<int> RunAsync(
         string[] args,
@@ -29,7 +31,10 @@ public static class Cli
         builder.Services.AddCtxUi(builder.Configuration);
         using var host = builder.Build();
 
-        var root = new RootCommand("ctx-ui: inbound'ы, клиенты и учёт вызовов") { InboundCommand(), ClientCommand(), UsageCommand() };
+        var root = new RootCommand("ctx-ui: inbound'ы, клиенты, учёт вызовов и вход в панель")
+        {
+            InboundCommand(), ClientCommand(), UsageCommand(), AdminCommand(),
+        };
         return await root.Parse(args).InvokeAsync(new InvocationConfiguration { Output = output, Error = error });
 
         Command InboundCommand()
@@ -245,6 +250,66 @@ public static class Cli
             };
         }
 
+        Command AdminCommand()
+        {
+            var login = new Argument<string>("login") { Description = "логин: латинские буквы, цифры, точка, дефис, подчёркивание" };
+            var renew = new Option<bool>("--new") { Description = "заменить адрес панели новым случайным" };
+
+            async Task WriteEntranceAsync(IServiceProvider services, string name, string password, CancellationToken ct)
+            {
+                output.WriteLine($"Логин:   {name}");
+                output.WriteLine($"Пароль:  {password}");
+                output.WriteLine($"Панель:  {PanelUrl(services, await services.GetRequiredService<PanelSettings>().PathAsync(ct))}");
+                output.WriteLine("Пароль показан один раз. Если он потерян, выпустите новый: ctx-ui admin password <логин>");
+            }
+
+            return new Command("admin", "кто входит в панель и по какому адресу она открывается")
+            {
+                Leaf("add", "добавить администратора и показать его пароль", [login], async (parse, services, ct) =>
+                {
+                    var issued = await services.GetRequiredService<AdminAccounts>().AddAsync(parse.GetValue(login)!, ct);
+                    output.WriteLine($"Администратор «{issued.Admin.Name}» добавлен");
+                    await WriteEntranceAsync(services, issued.Admin.Name, issued.Password, ct);
+                }),
+                Leaf("password", "выдать новый пароль, закрыть прежние сеансы и снять блокировку", [login], async (parse, services, ct) =>
+                {
+                    var issued = await services.GetRequiredService<AdminAccounts>().ResetPasswordAsync(parse.GetValue(login)!, ct);
+                    output.WriteLine($"Пароль администратора «{issued.Admin.Name}» заменён, прежние сеансы закрыты");
+                    await WriteEntranceAsync(services, issued.Admin.Name, issued.Password, ct);
+                }),
+                Leaf("list", "показать администраторов", [], async (_, services, ct) =>
+                {
+                    var now = services.GetRequiredService<TimeProvider>().GetUtcNow();
+                    var admins = await services.GetRequiredService<AdminAccounts>().ListAsync(ct);
+                    foreach (var admin in admins)
+                    {
+                        var locked = admin.LockedUntil > now ? $"вход закрыт до {Date(admin.LockedUntil.Value, "yyyy-MM-dd HH:mm")} (UTC)" : "";
+                        output.WriteLine($"{admin.Name,-24} добавлен {Date(admin.CreatedAt, "yyyy-MM-dd")}  {locked}".TrimEnd());
+                    }
+
+                    if (admins.Count == 0)
+                        output.WriteLine("Администраторов нет, войти в панель некому. Добавьте: ctx-ui admin add <логин>");
+                }),
+                Leaf("remove", "удалить администратора", [login], async (parse, services, ct) =>
+                {
+                    await services.GetRequiredService<AdminAccounts>().RemoveAsync(parse.GetValue(login)!, ct);
+                    output.WriteLine($"Администратор «{parse.GetValue(login)!.Trim()}» удалён");
+                }),
+                Leaf("path", "показать адрес панели; --new заменяет его", [renew], async (parse, services, ct) =>
+                {
+                    var settings = services.GetRequiredService<PanelSettings>();
+                    if (!parse.GetValue(renew))
+                    {
+                        output.WriteLine($"Панель:  {PanelUrl(services, await settings.PathAsync(ct))}");
+                        return;
+                    }
+
+                    output.WriteLine($"Панель:  {PanelUrl(services, await settings.RenewPathAsync(ct))}");
+                    output.WriteLine("Новый адрес начнёт работать после перезапуска сервиса, до тех пор действует прежний");
+                }),
+            };
+        }
+
         Command Leaf(
             string name,
             string description,
@@ -335,6 +400,8 @@ public static class Cli
 
     private static string PublicUrl(IServiceProvider services) =>
         services.GetRequiredService<IOptions<CtxUiOptions>>().Value.PublicUrl.TrimEnd('/');
+
+    private static string PanelUrl(IServiceProvider services, string path) => $"{PublicUrl(services)}/{path}/";
 
     private static string Date(DateTimeOffset value, string format) => value.ToString(format, CultureInfo.InvariantCulture);
 

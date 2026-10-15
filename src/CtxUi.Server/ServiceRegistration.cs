@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.DataProtection;
 using CtxUi.Core;
 using CtxUi.Core.Secrets;
+using CtxUi.Panel;
 
 namespace CtxUi.Server;
 
@@ -24,6 +25,7 @@ public static class ServiceRegistration
             .SetApplicationName("CtxUi")
             .PersistKeysToFileSystem(new DirectoryInfo(keysDir));
         services.AddSingleton<ISecretVault, DataProtectionVault>();
+        services.AddCtxUiAccounts();
         return services;
     }
 

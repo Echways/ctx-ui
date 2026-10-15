@@ -24,6 +24,7 @@ public static class CoreServices
         services.AddScoped<ClientService>();
         services.AddScoped<RoutingSnapshotLoader>();
         services.AddScoped<UsageStore>();
+        services.AddScoped<OverviewService>();
         services.AddScoped<PanelSettings>();
         return services;
     }

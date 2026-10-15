@@ -53,7 +53,7 @@ public class PanelInboundsTests
         await Dialog(page).GetByLabel("Адрес MCP-сервера").FillAsync("https://learn.example.org/api/mcp");
         await Dialog(page).GetByLabel("Заголовки для upstream").FillAsync("Authorization=Bearer s3cret\nX-Tenant=7");
         await Dialog(page).GetByLabel("Передавать upstream личность клиента").CheckAsync();
-        await Dialog(page).GetByRole(AriaRole.Button, new() { Name = "Сохранить" }).ClickAsync();
+        await Dialog(page).GetByRole(AriaRole.Button, new() { Name = "Добавить inbound" }).ClickAsync();
 
         await Expect(Dialog(page)).ToHaveCountAsync(0);
         await Expect(Row(page, "learn")).ToContainTextAsync("Учебный");
@@ -79,20 +79,20 @@ public class PanelInboundsTests
 
         await Dialog(page).GetByLabel("Slug").FillAsync("Мой сервер");
         await Dialog(page).GetByLabel("Адрес MCP-сервера").FillAsync("https://learn.example.org/mcp");
-        await Dialog(page).GetByRole(AriaRole.Button, new() { Name = "Сохранить" }).ClickAsync();
+        await Dialog(page).GetByRole(AriaRole.Button, new() { Name = "Добавить inbound" }).ClickAsync();
         await Expect(Dialog(page).GetByRole(AriaRole.Alert)).ToContainTextAsync("Slug «Мой сервер» недопустим");
 
         await Dialog(page).GetByLabel("Slug").FillAsync("echo");
-        await Dialog(page).GetByRole(AriaRole.Button, new() { Name = "Сохранить" }).ClickAsync();
+        await Dialog(page).GetByRole(AriaRole.Button, new() { Name = "Добавить inbound" }).ClickAsync();
         await Expect(Dialog(page).GetByRole(AriaRole.Alert)).ToContainTextAsync("Inbound «echo» уже есть");
 
         await Dialog(page).GetByLabel("Slug").FillAsync("learn");
         await Dialog(page).GetByLabel("Заголовки для upstream").FillAsync("без знака равно");
-        await Dialog(page).GetByRole(AriaRole.Button, new() { Name = "Сохранить" }).ClickAsync();
+        await Dialog(page).GetByRole(AriaRole.Button, new() { Name = "Добавить inbound" }).ClickAsync();
         await Expect(Dialog(page).GetByRole(AriaRole.Alert)).ToContainTextAsync("ключ=значение");
 
         await Dialog(page).GetByLabel("Заголовки для upstream").FillAsync("");
-        await Dialog(page).GetByRole(AriaRole.Button, new() { Name = "Сохранить" }).ClickAsync();
+        await Dialog(page).GetByRole(AriaRole.Button, new() { Name = "Добавить inbound" }).ClickAsync();
         await Expect(Row(page, "learn")).ToBeVisibleAsync();
         await Expect(page.GetByRole(AriaRole.Row)).ToHaveCountAsync(3);
     }

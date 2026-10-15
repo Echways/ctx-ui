@@ -561,4 +561,22 @@
   <data name="Actions" xml:space="preserve">
     <value>Действия</value>
   </data>
+  <data name="GroupWho" xml:space="preserve">
+    <value>Кто</value>
+  </data>
+  <data name="GroupWhere" xml:space="preserve">
+    <value>Куда</value>
+  </data>
+  <data name="GroupHowLong" xml:space="preserve">
+    <value>Как долго</value>
+  </data>
+  <data name="GroupHowMuch" xml:space="preserve">
+    <value>Сколько</value>
+  </data>
+  <data name="GroupLimits" xml:space="preserve">
+    <value>Пределы</value>
+  </data>
+  <data name="ReissueYes" xml:space="preserve">
+    <value>Выпустить новый токен</value>
+  </data>
 </root>

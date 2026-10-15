@@ -1,39 +1,45 @@
 @inject PanelBackend Backend
 
-<MudDialog>
-    <DialogContent>
-        <MudStack Spacing="3">
-            @if (_error is not null)
-            {
-                <MudAlert Severity="Severity.Error" role="alert">@_error</MudAlert>
-            }
-            <MudTextField @bind-Value="_slug" Label="Slug" Immediate="true" Disabled="Slug is not null"
-                          HelperText="@PanelText.SlugHelp" />
+<Sheet>
+    <ChildContent>
+        @if (_error is not null)
+        {
+            <p class="form-error" role="alert">@_error</p>
+        }
+        <section class="group">
+            <MudTextField @bind-Value="_slug" Label="Slug" Immediate="true" Disabled="Slug is not null" AutoFocus="Slug is null" HelperText="@PanelText.SlugHelp" />
             <MudTextField @bind-Value="_name" Label="@PanelText.Title" Immediate="true" HelperText="@PanelText.TitleHelp" />
-            <MudTextField @bind-Value="_url" Label="@PanelText.McpServerAddress" Immediate="true"
-                          HelperText="@PanelText.McpServerAddressHelp" />
+            <MudTextField @bind-Value="_url" Label="@PanelText.McpServerAddress" Immediate="true" HelperText="@PanelText.McpServerAddressHelp" />
+        </section>
+        <section class="group">
+            <h3>@PanelText.UpstreamHeaders</h3>
             @if (Slug is not null)
             {
-                <MudText Typo="Typo.body2">@_storedHeaders</MudText>
-                <MudCheckBox T="bool" @bind-Value="_replaceHeaders" Label="@PanelText.ReplaceHeaders" Dense="true" />
+                <p class="hint">@_storedHeaders</p>
+                <MudCheckBox T="bool" @bind-Value="_replaceHeaders" Label="@PanelText.ReplaceHeaders" Dense="true" Class="check" />
             }
             @if (_replaceHeaders)
             {
-                <MudTextField @bind-Value="_headers" Label="@PanelText.UpstreamHeaders" Immediate="true" Lines="3"
+                <MudTextField @bind-Value="_headers" Label="@PanelText.UpstreamHeaders" Immediate="true" Lines="3" Sizing="InputSizing.Auto"
                               HelperText="@PanelText.UpstreamHeadersHelp" />
             }
-            <MudCheckBox T="bool" @bind-Value="_forwardIdentity" Label="@PanelText.ForwardIdentity" Dense="true" />
-            <MudNumericField T="int" @bind-Value="_timeoutSeconds" Label="@PanelText.Timeout" Immediate="true"
-                             Min="1" Max="Inbound.RequestTimeoutCeiling" HideSpinButtons="true" />
-            <MudNumericField T="int" @bind-Value="_bodyKilobytes" Label="@PanelText.BodyLimit" Immediate="true"
-                             Min="1" Max="Inbound.MaxBodyBytesCeiling / 1024" HideSpinButtons="true" />
-        </MudStack>
-    </DialogContent>
-    <DialogActions>
-        <MudButton OnClick="@(() => MudDialog.Cancel())">@PanelText.Cancel</MudButton>
-        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SaveAsync">@PanelText.Save</MudButton>
-    </DialogActions>
-</MudDialog>
+            <MudCheckBox T="bool" @bind-Value="_forwardIdentity" Label="@PanelText.ForwardIdentity" Dense="true" Class="check" />
+        </section>
+        <section class="group">
+            <h3>@PanelText.GroupLimits</h3>
+            <div class="pair">
+                <MudNumericField T="int" @bind-Value="_timeoutSeconds" Label="@PanelText.Timeout" Immediate="true"
+                                 Min="1" Max="Inbound.RequestTimeoutCeiling" HideSpinButtons="true" />
+                <MudNumericField T="int" @bind-Value="_bodyKilobytes" Label="@PanelText.BodyLimit" Immediate="true"
+                                 Min="1" Max="Inbound.MaxBodyBytesCeiling / 1024" HideSpinButtons="true" />
+            </div>
+        </section>
+    </ChildContent>
+    <Actions>
+        <button type="button" class="link" @onclick="() => MudDialog.Cancel()">@PanelText.Cancel</button>
+        <button type="button" class="btn-k pigment" @onclick="SaveAsync">@(Slug is null ? PanelText.AddInbound : PanelText.Save)</button>
+    </Actions>
+</Sheet>
 
 @code {
     private string? _error;

@@ -5,8 +5,8 @@
 @inject IJSRuntime Js
 @inject ISnackbar Snackbar
 
-<MudDialog>
-    <DialogContent>
+<Sheet>
+    <ChildContent>
         <MudStack Spacing="3">
             @if (_client is null)
             {
@@ -42,15 +42,14 @@
                               Variant="Variant.Outlined" />
             }
         </MudStack>
-    </DialogContent>
-    <DialogActions>
+    </ChildContent>
+    <Actions>
         @if (_token is not null)
         {
             <MudButton StartIcon="@Icons.Material.Filled.ContentCopy" OnClick="@(() => CopyAsync(_message))">@PanelText.CopyMessage</MudButton>
         }
-        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="@(() => MudDialog.Close())">@PanelText.Close</MudButton>
-    </DialogActions>
-</MudDialog>
+    </Actions>
+</Sheet>
 
 @code {
     private Client? _client;

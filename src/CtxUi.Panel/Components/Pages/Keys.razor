@@ -52,8 +52,6 @@ else
 }
 
 @code {
-    private static readonly DialogOptions FormOptions = new() { MaxWidth = MaxWidth.Small, FullWidth = true, BackdropClick = false };
-
     private List<ApiKey>? _keys;
     private DateTimeOffset? _loadedAt;
 
@@ -67,19 +65,14 @@ else
 
     private async Task AddAsync()
     {
-        var dialog = await Dialogs.ShowAsync<ApiKeyDialog>(PanelText.NewApiKey, FormOptions);
-        if (await dialog.Result is { Canceled: false })
-            await LoadAsync();
+        var dialog = await Dialogs.ShowAsync<ApiKeyDialog>(PanelText.NewApiKey, Sheet.Form);
+        await dialog.Result;
+        await LoadAsync();
     }
 
     private async Task RemoveAsync(ApiKey key)
     {
-        var confirmed = await Dialogs.ShowMessageBoxAsync(
-            string.Format(PanelText.RevokeQuestion, key.Name),
-            PanelText.RevokeWarning,
-            yesText: PanelText.Revoke,
-            cancelText: PanelText.Cancel);
-        if (confirmed != true)
+        if (!await ConfirmDialog.AskAsync(Dialogs, string.Format(PanelText.RevokeQuestion, key.Name), PanelText.RevokeWarning, PanelText.Revoke, danger: true))
             return;
 
         try

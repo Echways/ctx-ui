@@ -814,6 +814,306 @@ button.link:hover, .link:hover {
     margin: 0;
 }
 
+.mud-overlay-dialog .mud-overlay-scrim {
+    background: var(--scrim) !important;
+}
+
+.mud-dialog {
+    background: var(--deep);
+    color: var(--light);
+    border-radius: 0;
+    box-shadow: none;
+}
+
+.mud-dialog.sheet {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: min(560px, 100%);
+    max-width: 100%;
+    height: 100dvh;
+    max-height: none;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    border-left: 1px solid var(--rule);
+}
+
+.mud-dialog.sheet > .mud-focus-trap,
+.mud-dialog.sheet .mud-focus-trap-child-container {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.sheet-head.mud-dialog-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 24px;
+    padding: 32px 32px 0;
+}
+
+.sheet-head h2, .confirm-head h2 {
+    margin: 0;
+    font: 500 20px/28px var(--sans);
+    letter-spacing: -0.01em;
+}
+
+.sheet-body.mud-dialog-content {
+    flex: 1;
+    overflow: auto;
+    display: grid;
+    gap: 48px;
+    align-content: start;
+    margin: 0;
+    padding: 36px 32px 40px;
+}
+
+.sheet-foot.mud-dialog-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 24px;
+    padding: 18px 32px;
+    border-top: 1px solid var(--rule);
+}
+
+.sheet-foot:empty {
+    display: none;
+}
+
+.group {
+    display: grid;
+    gap: 20px;
+    min-width: 0;
+}
+
+.group h3 {
+    margin: 0;
+    font: 600 13px/20px var(--sans);
+    color: var(--light);
+}
+
+.pair {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px 28px;
+}
+
+.hint {
+    margin: 0;
+    font: 400 13px/20px var(--sans);
+    color: var(--mist);
+}
+
+.form-error {
+    margin: 0;
+    font: 500 13px/20px var(--sans);
+    color: var(--vermilion);
+}
+
+.mud-dialog.confirm {
+    width: min(440px, calc(100% - 32px));
+    border: 1px solid var(--rule);
+}
+
+.confirm-head.mud-dialog-title {
+    padding: 28px 28px 0;
+}
+
+.confirm-body.mud-dialog-content {
+    margin: 0;
+    padding: 14px 28px 0;
+}
+
+.confirm-body p {
+    margin: 0;
+    color: var(--mist);
+}
+
+.confirm-foot.mud-dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 28px;
+    padding: 28px;
+}
+
+.btn-k:disabled {
+    opacity: 0.4;
+    filter: none;
+    cursor: not-allowed;
+}
+
+button.btn-k {
+    border: 0;
+}
+
+.btn-danger {
+    font: 600 13px/20px var(--sans);
+    color: var(--vermilion);
+    background: none;
+    border: 1px solid var(--vermilion);
+    padding: 9px 17px;
+    border-radius: 2px;
+    cursor: pointer;
+}
+
+.btn-danger:hover {
+    background: rgba(255, 90, 60, 0.1);
+}
+
+.mud-dialog .fixed.pointer-events-none:focus,
+.mud-focus-trap:focus,
+.mud-focus-trap-child-container:focus,
+.mud-dialog:focus {
+    outline: none;
+}
+
+.checks {
+    display: grid;
+    gap: 2px;
+}
+
+.mud-checkbox {
+    margin: 0;
+    padding: 6px 0;
+    cursor: pointer;
+}
+
+.mud-checkbox .mud-icon-button {
+    flex: none;
+    width: 14px;
+    height: 14px;
+    padding: 0;
+    margin: 0 14px 0 0;
+    border: 1px solid var(--mist);
+    border-radius: 2px;
+    background: none !important;
+}
+
+.mud-checkbox .mud-icon-button svg {
+    display: none;
+}
+
+.mud-checkbox .mud-icon-button.mud-checkbox-true {
+    border-color: var(--light);
+    background: var(--light) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'%3E%3Cpath d='M3 7.2l2.6 2.6L11 4.4' fill='none' stroke='%23080C1C' stroke-width='1.6'/%3E%3C/svg%3E") center / 12px no-repeat !important;
+}
+
+.mud-checkbox:has(input:focus-visible) .mud-icon-button {
+    outline: 2px solid var(--glow);
+    outline-offset: 3px;
+}
+
+.mud-checkbox .mud-typography {
+    font: 400 15px/24px var(--sans);
+    color: var(--light);
+}
+
+.mud-checkbox .mud-typography .note {
+    margin-left: 10px;
+}
+
+.check.off .mud-checkbox {
+    opacity: 0.55;
+}
+
+.mud-input-control {
+    margin: 0;
+}
+
+.mud-input-control > .mud-input-control-input-container {
+    display: flex;
+    flex-direction: column;
+}
+
+.mud-input-control .mud-input-label.mud-input-label-inputcontrol {
+    position: static;
+    order: -1;
+    transform: none !important;
+    margin-bottom: 4px;
+    font: 500 13px/20px var(--sans);
+    color: var(--mist) !important;
+    letter-spacing: normal;
+    pointer-events: auto;
+}
+
+.mud-input.mud-input-text-with-label {
+    margin-top: 0 !important;
+}
+
+.mud-input {
+    color: var(--light);
+    font: 400 15px/24px var(--sans);
+    letter-spacing: normal;
+}
+
+.mud-input > input.mud-input-root, .mud-input > textarea.mud-input-root {
+    padding: 6px 0 7px;
+    height: auto;
+}
+
+.mud-input.mud-input-underline::before {
+    border-bottom: 1px solid var(--rule) !important;
+}
+
+.mud-input.mud-input-underline:hover:not(.mud-disabled)::before {
+    border-bottom: 1px solid var(--mist) !important;
+}
+
+.mud-input.mud-input-underline::after {
+    border-bottom: 2px solid var(--glow) !important;
+}
+
+.mud-input.mud-disabled {
+    color: var(--mist);
+}
+
+.mud-input-helper-text {
+    margin-top: 4px;
+    font: 400 13px/20px var(--sans);
+    color: var(--mist);
+    letter-spacing: normal;
+}
+
+.mud-input-error .mud-input-helper-text {
+    color: var(--vermilion);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .mud-dialog.sheet {
+        animation: sheet-in 0.24s var(--ease) both;
+    }
+}
+
+@keyframes sheet-in {
+    from {
+        transform: translateX(100%);
+    }
+}
+
+@media (max-width: 840px) {
+    .sheet-head.mud-dialog-title {
+        padding: 24px 20px 0;
+    }
+
+    .sheet-body.mud-dialog-content {
+        padding: 28px 20px 36px;
+    }
+
+    .sheet-foot.mud-dialog-actions {
+        padding: 16px 20px;
+    }
+
+    .pair {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
 .block {
     margin-top: 112px;
 }

@@ -57,7 +57,7 @@ public class PanelLanguageTests
         await page.GetByRole(AriaRole.Navigation).GetByRole(AriaRole.Link, new() { Name = "Inbounds" }).ClickAsync();
 
         await page.GetByRole(AriaRole.Button, new() { Name = "Add inbound" }).ClickAsync();
-        await page.GetByRole(AriaRole.Dialog).GetByRole(AriaRole.Button, new() { Name = "Save" }).ClickAsync();
+        await page.GetByRole(AriaRole.Dialog).GetByRole(AriaRole.Button, new() { Name = "Add inbound" }).ClickAsync();
 
         await Expect(page.GetByRole(AriaRole.Dialog).GetByRole(AriaRole.Alert)).ToContainTextAsync("is not allowed");
     }

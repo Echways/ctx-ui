@@ -561,4 +561,22 @@
   <data name="Actions" xml:space="preserve">
     <value>Actions</value>
   </data>
+  <data name="GroupWho" xml:space="preserve">
+    <value>Who</value>
+  </data>
+  <data name="GroupWhere" xml:space="preserve">
+    <value>Where to</value>
+  </data>
+  <data name="GroupHowLong" xml:space="preserve">
+    <value>For how long</value>
+  </data>
+  <data name="GroupHowMuch" xml:space="preserve">
+    <value>How much</value>
+  </data>
+  <data name="GroupLimits" xml:space="preserve">
+    <value>Limits</value>
+  </data>
+  <data name="ReissueYes" xml:space="preserve">
+    <value>Issue a new token</value>
+  </data>
 </root>

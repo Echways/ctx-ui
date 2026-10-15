@@ -3,39 +3,32 @@
 @inject IJSRuntime Js
 @inject ISnackbar Snackbar
 
-<MudDialog>
-    <DialogContent>
-        <MudStack Spacing="3">
-            @if (_error is not null)
-            {
-                <MudAlert Severity="Severity.Error" role="alert">@_error</MudAlert>
-            }
-            @if (_secret is null)
-            {
-                <MudTextField @bind-Value="_name" Label="@PanelText.Title" Immediate="true" HelperText="@PanelText.ApiKeyNameHelp" />
-            }
-            else
-            {
-                <MudAlert Severity="Severity.Warning">@PanelText.KeyShownOnce</MudAlert>
-                <MudTextField T="string" Value="_secret" Label="@PanelText.Key" ReadOnly="true" Variant="Variant.Outlined" Margin="Margin.Dense"
-                              HelperText="@PanelText.KeyHelp"
-                              Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.ContentCopy"
-                              AdornmentAriaLabel="@PanelText.CopyKey" OnAdornmentClick="CopyAsync" />
-            }
-        </MudStack>
-    </DialogContent>
-    <DialogActions>
+<Sheet>
+    <ChildContent>
+        @if (_error is not null)
+        {
+            <p class="form-error" role="alert">@_error</p>
+        }
         @if (_secret is null)
         {
-            <MudButton OnClick="@(() => MudDialog.Cancel())">@PanelText.Cancel</MudButton>
-            <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="IssueAsync">@PanelText.Issue</MudButton>
+            <MudTextField @bind-Value="_name" Label="@PanelText.Title" Immediate="true" AutoFocus="true" HelperText="@PanelText.ApiKeyNameHelp" />
         }
         else
         {
-            <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="@(() => MudDialog.Close())">@PanelText.Close</MudButton>
+            <p class="hint">@PanelText.KeyShownOnce</p>
+            <MudTextField T="string" Value="_secret" Label="@PanelText.Key" ReadOnly="true" HelperText="@PanelText.KeyHelp"
+                          Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.ContentCopy"
+                          AdornmentAriaLabel="@PanelText.CopyKey" OnAdornmentClick="CopyAsync" />
         }
-    </DialogActions>
-</MudDialog>
+    </ChildContent>
+    <Actions>
+        @if (_secret is null)
+        {
+            <button type="button" class="link" @onclick="() => MudDialog.Cancel()">@PanelText.Cancel</button>
+            <button type="button" class="btn-k pigment" @onclick="IssueAsync">@PanelText.IssueKey</button>
+        }
+    </Actions>
+</Sheet>
 
 @code {
     private string? _error;

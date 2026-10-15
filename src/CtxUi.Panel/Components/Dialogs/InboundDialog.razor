@@ -1,0 +1,109 @@
+@inject PanelBackend Backend
+
+<MudDialog>
+    <DialogContent>
+        <MudStack Spacing="3">
+            @if (_error is not null)
+            {
+                <MudAlert Severity="Severity.Error" role="alert">@_error</MudAlert>
+            }
+            <MudTextField @bind-Value="_slug" Label="Slug" Immediate="true" Disabled="Slug is not null"
+                          HelperText="часть адреса /mcp/<slug>: строчные латинские буквы, цифры и дефис" />
+            <MudTextField @bind-Value="_name" Label="Название" Immediate="true" HelperText="для списка; пустое заменяется на slug" />
+            <MudTextField @bind-Value="_url" Label="Адрес MCP-сервера" Immediate="true"
+                          HelperText="streamable HTTP, например https://example.org/mcp" />
+            @if (Slug is not null)
+            {
+                <MudText Typo="Typo.body2">@_storedHeaders</MudText>
+                <MudCheckBox T="bool" @bind-Value="_replaceHeaders" Label="Заменить заголовки" Dense="true" />
+            }
+            @if (_replaceHeaders)
+            {
+                <MudTextField @bind-Value="_headers" Label="Заголовки для upstream" Immediate="true" Lines="3"
+                              HelperText="по одному в строке: Имя=значение. Хранятся зашифрованными и после сохранения не показываются" />
+            }
+            <MudCheckBox T="bool" @bind-Value="_forwardIdentity" Label="Передавать upstream личность клиента" Dense="true" />
+            <MudNumericField T="int" @bind-Value="_timeoutSeconds" Label="Таймаут запроса, с" Immediate="true"
+                             Min="1" Max="Inbound.RequestTimeoutCeiling" HideSpinButtons="true" />
+            <MudNumericField T="int" @bind-Value="_bodyKilobytes" Label="Предел тела запроса, КБ" Immediate="true"
+                             Min="1" Max="Inbound.MaxBodyBytesCeiling / 1024" HideSpinButtons="true" />
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => MudDialog.Cancel())">Отмена</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SaveAsync">Сохранить</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private string? _error;
+    private string _slug = "";
+    private string? _name;
+    private string _url = "";
+    private string? _headers;
+    private string _storedHeaders = "";
+    private bool _replaceHeaders;
+    private bool _forwardIdentity;
+    private int _timeoutSeconds = Inbound.DefaultRequestTimeoutSeconds;
+    private int _bodyKilobytes = Inbound.DefaultMaxBodyBytes / 1024;
+
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter]
+    public string? Slug { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Slug is null)
+        {
+            _replaceHeaders = true;
+            return;
+        }
+
+        var (inbound, headers) = await Backend.ReadAsync(async services =>
+        {
+            var inbounds = services.GetRequiredService<InboundService>();
+            var stored = await inbounds.GetAsync(Slug);
+            return (stored, inbounds.HeaderNames(stored));
+        });
+        _slug = inbound.Slug;
+        _name = inbound.Name;
+        _url = inbound.Url ?? "";
+        _forwardIdentity = inbound.ForwardIdentity;
+        _timeoutSeconds = inbound.RequestTimeoutSeconds;
+        _bodyKilobytes = Math.Max(1, inbound.MaxBodyBytes / 1024);
+        _storedHeaders = headers switch
+        {
+            null => "Заголовки для upstream не расшифрованы: потерян каталог keys. Задайте их заново.",
+            { Count: 0 } => "Заголовков для upstream нет.",
+            _ => $"Заданы заголовки: {string.Join(", ", headers)}. Значения не показываются.",
+        };
+    }
+
+    private async Task SaveAsync()
+    {
+        try
+        {
+            var settings = new InboundSettings
+            {
+                Name = _name,
+                Url = _url,
+                ForwardIdentity = _forwardIdentity,
+                RequestTimeoutSeconds = _timeoutSeconds,
+                MaxBodyBytes = (int)Math.Min(int.MaxValue, _bodyKilobytes * 1024L),
+                UpstreamHeaders = _replaceHeaders ? PairLines.ParseText(_headers) : null,
+            };
+            await Backend.ChangeAsync(services =>
+            {
+                var inbounds = services.GetRequiredService<InboundService>();
+                return Slug is null ? inbounds.AddHttpAsync(_slug, settings) : inbounds.UpdateAsync(Slug, settings);
+            });
+            MudDialog.Close();
+        }
+        catch (DomainException exception)
+        {
+            _error = Words.Sentence(exception.Message);
+        }
+    }
+}

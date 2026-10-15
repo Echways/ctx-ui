@@ -1,0 +1,117 @@
+@page "/inbounds"
+@inject PanelBackend Backend
+@inject IDialogService Dialogs
+@inject ISnackbar Snackbar
+
+<PageTitle>Inbounds</PageTitle>
+
+<MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-4">
+    <MudText Typo="Typo.h5">Inbounds</MudText>
+    <MudSpacer />
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="AddAsync">
+        Добавить inbound
+    </MudButton>
+</MudStack>
+
+@if (_rows is null)
+{
+    <MudProgressLinear Indeterminate="true" />
+}
+else if (_rows.Count == 0)
+{
+    <MudAlert Severity="Severity.Info">
+        Inbound'ов пока нет. Inbound — это адрес /mcp/&lt;slug&gt; на шлюзе, за которым стоит ваш MCP-сервер.
+    </MudAlert>
+}
+else
+{
+    <MudTable Items="_rows" Dense="true" Hover="true" Elevation="1">
+        <HeaderContent>
+            <MudTh>Адрес</MudTh>
+            <MudTh>Название</MudTh>
+            <MudTh>MCP-сервер</MudTh>
+            <MudTh>Клиентов</MudTh>
+            <MudTh>Включён</MudTh>
+            <MudTh></MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd>/mcp/@context.Inbound.Slug</MudTd>
+            <MudTd>@context.Inbound.Name</MudTd>
+            <MudTd>@context.Inbound.Url</MudTd>
+            <MudTd>@context.Clients</MudTd>
+            <MudTd>
+                <MudSwitch T="bool" Value="context.Inbound.Enabled" Color="Color.Primary"
+                           ValueChanged="@(enabled => SwitchAsync(context.Inbound, enabled))" />
+            </MudTd>
+            <MudTd Style="text-align: right; white-space: nowrap">
+                <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" aria-label="Изменить" title="Изменить"
+                               OnClick="@(() => EditAsync(context.Inbound))" />
+                <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" aria-label="Удалить" title="Удалить"
+                               OnClick="@(() => RemoveAsync(context))" />
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+}
+
+@code {
+    private static readonly DialogOptions FormOptions = new() { MaxWidth = MaxWidth.Small, FullWidth = true, BackdropClick = false };
+
+    private List<Row>? _rows;
+
+    protected override Task OnInitializedAsync() => LoadAsync();
+
+    private async Task LoadAsync() => _rows = await Backend.ReadAsync(async services =>
+    {
+        var inbounds = services.GetRequiredService<InboundService>();
+        var clients = await inbounds.ClientCountsAsync();
+        return (await inbounds.ListAsync()).Select(inbound => new Row(inbound, clients.GetValueOrDefault(inbound.Id))).ToList();
+    });
+
+    private async Task AddAsync()
+    {
+        var dialog = await Dialogs.ShowAsync<InboundDialog>("Новый inbound", FormOptions);
+        if (await dialog.Result is { Canceled: false })
+            await LoadAsync();
+    }
+
+    private async Task EditAsync(Inbound inbound)
+    {
+        var parameters = new DialogParameters<InboundDialog> { { dialog => dialog.Slug, inbound.Slug } };
+        var dialog = await Dialogs.ShowAsync<InboundDialog>($"Inbound «{inbound.Slug}»", parameters, FormOptions);
+        if (await dialog.Result is { Canceled: false })
+            await LoadAsync();
+    }
+
+    private Task SwitchAsync(Inbound inbound, bool enabled) => ApplyAsync(
+        services => services.GetRequiredService<InboundService>().SetEnabledAsync(inbound.Slug, enabled),
+        $"Inbound «{inbound.Slug}» {(enabled ? "включён" : "выключен")}");
+
+    private async Task RemoveAsync(Row row)
+    {
+        var slug = row.Inbound.Slug;
+        var confirmed = await Dialogs.ShowMessageBoxAsync(
+            $"Удалить inbound «{slug}»?",
+            $"Адрес /mcp/{slug} перестанет отвечать. Клиентов с доступом к нему: {row.Clients}.",
+            yesText: "Удалить",
+            cancelText: "Отмена");
+        if (confirmed == true)
+            await ApplyAsync(services => services.GetRequiredService<InboundService>().RemoveAsync(slug), $"Inbound «{slug}» удалён");
+    }
+
+    private async Task ApplyAsync(Func<IServiceProvider, Task> change, string done)
+    {
+        try
+        {
+            await Backend.ChangeAsync(change);
+            Snackbar.Add(done, Severity.Success);
+        }
+        catch (DomainException exception)
+        {
+            Snackbar.Add(Words.Sentence(exception.Message), Severity.Error);
+        }
+
+        await LoadAsync();
+    }
+
+    private sealed record Row(Inbound Inbound, int Clients);
+}

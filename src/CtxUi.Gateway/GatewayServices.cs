@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using CtxUi.Core.Clients;
+using CtxUi.Core.Routing;
 
 namespace CtxUi.Gateway;
 
@@ -12,6 +13,7 @@ public static class GatewayServices
         services.Configure<GatewayOptions>(section);
         services.AddHttpForwarder();
         services.AddSingleton<SnapshotStore>();
+        services.AddSingleton<IRoutingRefresh>(provider => provider.GetRequiredService<SnapshotStore>());
         services.AddHostedService<SnapshotRefresher>();
         services.AddSingleton<HttpUpstream>();
         services.AddSingleton<ClientTouch>();

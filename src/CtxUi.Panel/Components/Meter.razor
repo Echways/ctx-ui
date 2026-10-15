@@ -1,0 +1,32 @@
+@using System.Globalization
+
+@if (Limit is { } limit)
+{
+    <span class="meter">
+        <span>@Words.Number(Used) / @Words.Number(limit)</span>
+        <span class="bar @Tone(limit)" aria-hidden="true"><b style="width: @Width(limit)"></b></span>
+    </span>
+}
+else
+{
+    @Words.OrDash(Used)
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public long Used { get; set; }
+
+    [Parameter]
+    public int? Limit { get; set; }
+
+    private double Share(int limit) => limit <= 0 ? 1 : Math.Min(1, (double)Used / limit);
+
+    private string Tone(int limit) => Share(limit) switch
+    {
+        >= 1 => "bad",
+        >= 0.9 => "warn",
+        _ => "",
+    };
+
+    private string Width(int limit) => (Share(limit) * 100).ToString("0.#", CultureInfo.InvariantCulture) + "%";
+}

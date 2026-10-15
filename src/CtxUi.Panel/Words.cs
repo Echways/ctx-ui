@@ -11,7 +11,11 @@ public static class Words
 
     public static string Minute(DateTimeOffset moment) => moment.UtcDateTime.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture);
 
-    public static string Clock(DateTimeOffset moment) => moment.UtcDateTime.ToString("HH:mm", CultureInfo.InvariantCulture);
+    public static string Clock(DateTimeOffset moment, bool seconds = false) =>
+        moment.UtcDateTime.ToString(seconds ? "HH:mm:ss" : "HH:mm", CultureInfo.InvariantCulture);
+
+    public static string Middle(string text, int length) =>
+        text.Length <= length ? text : text[..(length * 3 / 5)] + "…" + text[^(length * 2 / 5 - 1)..];
 
     public static string Number(long value) => value.ToString("N0", CultureInfo.CurrentCulture);
 

@@ -100,16 +100,16 @@
     <value>Add client</value>
   </data>
   <data name="ClientsEmpty" xml:space="preserve">
-    <value>No clients yet. A client is whoever has been issued a token: with its own expiry date, limits and set of inbounds.</value>
+    <value>No clients yet: issue the first token</value>
   </data>
   <data name="ClientsNotFound" xml:space="preserve">
-    <value>Nobody found: no client name contains “{0}”.</value>
+    <value>Nobody named “{0}”</value>
   </data>
   <data name="ExpiryColumn" xml:space="preserve">
     <value>Expires, UTC</value>
   </data>
   <data name="LastSeenColumn" xml:space="preserve">
-    <value>Last seen, UTC</value>
+    <value>Last call, UTC</value>
   </data>
   <data name="CallsColumn" xml:space="preserve">
     <value>Calls</value>
@@ -175,7 +175,7 @@
     <value>Add inbound</value>
   </data>
   <data name="InboundsEmpty" xml:space="preserve">
-    <value>No inbounds yet. An inbound is an address /mcp/&lt;slug&gt; on the gateway backed by your MCP server.</value>
+    <value>No inbounds yet: put your first MCP server behind the gateway</value>
   </data>
   <data name="McpServer" xml:space="preserve">
     <value>MCP server</value>
@@ -205,7 +205,7 @@
     <value>All clients</value>
   </data>
   <data name="JournalEmpty" xml:space="preserve">
-    <value>The log is empty: there have been no calls through the gateway yet, or they are older than the retention period.</value>
+    <value>The log is empty: no calls yet, or they are older than the retention period</value>
   </data>
   <data name="TimeColumn" xml:space="preserve">
     <value>Time, UTC</value>
@@ -217,7 +217,7 @@
     <value>Outcome</value>
   </data>
   <data name="DurationColumn" xml:space="preserve">
-    <value>Duration, ms</value>
+    <value>Duration</value>
   </data>
   <data name="JournalLimit" xml:space="preserve">
     <value>Showing the last {0} calls.</value>
@@ -229,7 +229,7 @@
     <value>Issue key</value>
   </data>
   <data name="KeysEmpty" xml:space="preserve">
-    <value>No keys yet. A key is needed by programs that manage the gateway through the REST API: a bot, an access provisioning script.</value>
+    <value>No keys yet: a key lets a script manage the gateway through the REST API</value>
   </data>
   <data name="Key" xml:space="preserve">
     <value>Key</value>
@@ -533,5 +533,32 @@
   </data>
   <data name="Today" xml:space="preserve">
     <value>today</value>
+  </data>
+  <data name="ClearSearch" xml:space="preserve">
+    <value>Clear search</value>
+  </data>
+  <data name="MoreActions" xml:space="preserve">
+    <value>More actions: {0}</value>
+  </data>
+  <data name="AccessOf" xml:space="preserve">
+    <value>Access: {0}</value>
+  </data>
+  <data name="ClientsSummary" xml:space="preserve">
+    <value>{number} active</value>
+  </data>
+  <data name="InboundsSummary" xml:space="preserve">
+    <value>{number} enabled</value>
+  </data>
+  <data name="JournalSummary" xml:space="preserve">
+    <value>last {number} {n, plural, one {call} other {calls}}</value>
+  </data>
+  <data name="KeysSummary" xml:space="preserve">
+    <value>for the REST API and scripts</value>
+  </data>
+  <data name="Milliseconds" xml:space="preserve">
+    <value>{0} ms</value>
+  </data>
+  <data name="Actions" xml:space="preserve">
+    <value>Actions</value>
   </data>
 </root>

@@ -60,7 +60,7 @@ public class PanelClientFormTests
         Assert.Equal(HttpStatusCode.NotFound, other.StatusCode);
         await Expect(Row(page, "Иванов 4419")).ToContainTextAsync("активен");
         await Expect(Row(page, "Иванов 4419")).ToContainTextAsync("бессрочно");
-        await Expect(Row(page, "Иванов 4419")).ToContainTextAsync("0/∞");
+        await Expect(Row(page, "Иванов 4419").GetByRole(AriaRole.Cell).Nth(4)).ToHaveTextAsync("–");
     }
 
     [Fact]
@@ -158,7 +158,7 @@ public class PanelClientFormTests
         await using var session = await PanelSession.SignInAsync(gateway);
         var page = await OpenClientsAsync(session);
 
-        await Row(page, "Иванов").GetByRole(AriaRole.Button, new() { Name = "Изменить" }).ClickAsync();
+        await RowMenu.ChooseAsync(Row(page, "Иванов"), "Изменить");
 
         await Expect(Field(page, "Имя")).ToHaveValueAsync("Иванов");
         await Expect(Field(page, "Имя")).ToBeDisabledAsync();
@@ -183,14 +183,14 @@ public class PanelClientFormTests
         await using var session = await PanelSession.SignInAsync(gateway);
         var page = await OpenClientsAsync(session);
 
-        await Row(page, "Иванов").GetByRole(AriaRole.Button, new() { Name = "Изменить" }).ClickAsync();
+        await RowMenu.ChooseAsync(Row(page, "Иванов"), "Изменить");
         await Dialog(page).GetByLabel("echo").UncheckAsync();
         await Dialog(page).GetByLabel("docs").CheckAsync();
         await Dialog(page).GetByLabel("Квота вызовов инструментов").FillAsync("1");
         await Dialog(page).GetByLabel("Метаданные").FillAsync("");
         await SaveAsync(page);
         await Expect(Dialog(page)).ToHaveCountAsync(0);
-        await Expect(Row(page, "Иванов")).ToContainTextAsync("0/1");
+        await Expect(Row(page, "Иванов")).ToContainTextAsync("0 / 1");
         await Expect(Row(page, "Иванов")).ToContainTextAsync("docs");
 
         using var closed = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/echo", issued.Token, ToolCall));
@@ -218,14 +218,14 @@ public class PanelClientFormTests
         await using var session = await PanelSession.SignInAsync(gateway);
         var page = await OpenClientsAsync(session);
 
-        await Row(page, "Иванов").GetByRole(AriaRole.Button, new() { Name = "Изменить" }).ClickAsync();
+        await RowMenu.ChooseAsync(Row(page, "Иванов"), "Изменить");
         await Dialog(page).GetByLabel("Запросов в минуту").FillAsync("10");
         await SaveAsync(page);
         await Expect(Dialog(page)).ToHaveCountAsync(0);
         await Expect(Row(page, "Иванов")).ToContainTextAsync("истёк");
         Assert.Equal(10, (await StoredAsync(gateway, "Иванов")).RatePerMinute);
 
-        await Row(page, "Иванов").GetByRole(AriaRole.Button, new() { Name = "Изменить" }).ClickAsync();
+        await RowMenu.ChooseAsync(Row(page, "Иванов"), "Изменить");
         await Dialog(page).GetByLabel("Срок действия").FillAsync("");
         await SaveAsync(page);
         await Expect(Row(page, "Иванов")).ToContainTextAsync("активен");

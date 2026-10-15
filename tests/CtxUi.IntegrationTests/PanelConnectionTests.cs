@@ -130,12 +130,12 @@ public class PanelConnectionTests
         await using var session = await PanelSession.SignInAsync(gateway);
         var page = await OpenClientsAsync(session);
 
-        await Row(page, "Иванов").GetByRole(AriaRole.Button, new() { Name = "Новый токен" }).ClickAsync();
+        await RowMenu.ChooseAsync(Row(page, "Иванов"), "Новый токен");
         await Expect(Dialog(page)).ToContainTextAsync("Прежний токен сразу перестанет работать");
         await Dialog(page).GetByRole(AriaRole.Button, new() { Name = "Отмена" }).ClickAsync();
         using var kept = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/learn", issued.Token));
 
-        await Row(page, "Иванов").GetByRole(AriaRole.Button, new() { Name = "Новый токен" }).ClickAsync();
+        await RowMenu.ChooseAsync(Row(page, "Иванов"), "Новый токен");
         await Dialog(page).GetByRole(AriaRole.Button, new() { Name = "Выпустить" }).ClickAsync();
         await Expect(Dialog(page)).ToContainTextAsync("Подключение: Иванов");
         var fresh = await Field(page, "Токен").InputValueAsync();

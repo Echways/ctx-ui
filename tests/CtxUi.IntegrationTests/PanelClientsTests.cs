@@ -75,17 +75,17 @@ public class PanelClientsTests
         await Expect(Row(page, "Активный")).ToContainTextAsync("активен");
         await Expect(Row(page, "Активный")).ToContainTextAsync("до 2099-01-01");
         await Expect(Row(page, "Активный")).ToContainTextAsync("не обращался");
-        await Expect(Row(page, "Активный")).ToContainTextAsync("0/100");
+        await Expect(Row(page, "Активный")).ToContainTextAsync("0 / 100");
         await Expect(Row(page, "Активный")).ToContainTextAsync("docs, echo");
         await Expect(Row(page, "Активный").GetByRole(AriaRole.Switch)).ToBeCheckedAsync();
         await Expect(Row(page, "Отключённый")).ToContainTextAsync("отключён");
         await Expect(Row(page, "Отключённый")).ToContainTextAsync("бессрочно");
-        await Expect(Row(page, "Отключённый")).ToContainTextAsync("0/∞");
+        await Expect(Row(page, "Отключённый").GetByRole(AriaRole.Cell).Nth(4)).ToHaveTextAsync("–");
         await Expect(Row(page, "Отключённый").GetByRole(AriaRole.Switch)).Not.ToBeCheckedAsync();
         await Expect(Row(page, "Истёкший")).ToContainTextAsync("истёк");
         await Expect(Row(page, "Истёкший")).ToContainTextAsync("до 2020-02-03");
         await Expect(Row(page, "Исчерпавший")).ToContainTextAsync("исчерпан");
-        await Expect(Row(page, "Исчерпавший")).ToContainTextAsync("1/1");
+        await Expect(Row(page, "Исчерпавший")).ToContainTextAsync("1 / 1");
         await Expect(Row(page, "Исчерпавший")).Not.ToContainTextAsync("не обращался");
     }
 
@@ -108,10 +108,11 @@ public class PanelClientsTests
         await Expect(page.GetByRole(AriaRole.Row)).ToHaveCountAsync(3);
 
         await page.GetByLabel("Поиск по имени").FillAsync("никого");
-        await Expect(page.GetByText("Никто не найден")).ToBeVisibleAsync();
+        await Expect(page.GetByText("Никого с именем «никого»")).ToBeVisibleAsync();
 
-        await page.GetByLabel("Поиск по имени").FillAsync("");
+        await page.GetByRole(AriaRole.Button, new() { Name = "Сбросить поиск" }).ClickAsync();
         await Expect(page.GetByRole(AriaRole.Row)).ToHaveCountAsync(4);
+        await Expect(page.GetByLabel("Поиск по имени")).ToHaveValueAsync("");
     }
 
     [Fact]
@@ -149,9 +150,9 @@ public class PanelClientsTests
         await using var session = await PanelSession.SignInAsync(gateway);
         var page = await OpenClientsAsync(session);
 
-        await Row(page, "Иванов").GetByRole(AriaRole.Button, new() { Name = "Сбросить квоту" }).ClickAsync();
+        await RowMenu.ChooseAsync(Row(page, "Иванов"), "Сбросить квоту");
         await Expect(page.GetByText("Счётчик квоты клиента «Иванов» обнулён")).ToBeVisibleAsync();
-        await Expect(Row(page, "Иванов")).ToContainTextAsync("0/1");
+        await Expect(Row(page, "Иванов")).ToContainTextAsync("0 / 1");
         using var served = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/echo", issued.Token, ToolCall));
 
         Assert.True(await IsQuotaRefusalAsync(refused));
@@ -170,12 +171,12 @@ public class PanelClientsTests
         await using var session = await PanelSession.SignInAsync(gateway);
         var page = await OpenClientsAsync(session);
 
-        await Row(page, "Иванов").GetByRole(AriaRole.Button, new() { Name = "Удалить" }).ClickAsync();
+        await RowMenu.ChooseAsync(Row(page, "Иванов"), "Удалить");
         await Expect(Dialog(page)).ToContainTextAsync("Удалить клиента «Иванов»?");
         await Dialog(page).GetByRole(AriaRole.Button, new() { Name = "Отмена" }).ClickAsync();
         using var kept = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/echo", issued.Token));
 
-        await Row(page, "Иванов").GetByRole(AriaRole.Button, new() { Name = "Удалить" }).ClickAsync();
+        await RowMenu.ChooseAsync(Row(page, "Иванов"), "Удалить");
         await Dialog(page).GetByRole(AriaRole.Button, new() { Name = "Удалить" }).ClickAsync();
         await Expect(Row(page, "Иванов")).ToHaveCountAsync(0);
         using var gone = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/echo", issued.Token));
@@ -183,6 +184,20 @@ public class PanelClientsTests
         Assert.Equal(HttpStatusCode.OK, kept.StatusCode);
         Assert.Equal(HttpStatusCode.Unauthorized, gone.StatusCode);
         await Expect(Row(page, "Петров")).ToBeVisibleAsync();
+    }
+
+    [Fact]
+    public async Task Clicking_a_row_opens_the_client_for_editing()
+    {
+        await using var gateway = await GatewayHost.StartAsync();
+        await gateway.AddInboundAsync("echo", "https://echo.example.org/mcp");
+        await gateway.AddClientAsync("Иванов", ["echo"]);
+        await using var session = await PanelSession.SignInAsync(gateway);
+        var page = await OpenClientsAsync(session);
+
+        await Row(page, "Иванов").GetByRole(AriaRole.Cell).First.ClickAsync();
+
+        await Expect(Dialog(page)).ToContainTextAsync("Клиент «Иванов»");
     }
 
     [Fact]
@@ -197,7 +212,7 @@ public class PanelClientsTests
 
         await page.GetByRole(AriaRole.Button, new() { Name = "Обновить" }).ClickAsync();
 
-        await Expect(Row(page, "Петров")).ToContainTextAsync("0/7");
+        await Expect(Row(page, "Петров")).ToContainTextAsync("0 / 7");
     }
 
     [Fact]
@@ -210,7 +225,7 @@ public class PanelClientsTests
         var page = await OpenClientsAsync(session);
         await CliRunner.RunAsync(gateway.DataDir, "client", "remove", "Иванов");
 
-        await Row(page, "Иванов").GetByRole(AriaRole.Button, new() { Name = "Сбросить квоту" }).ClickAsync();
+        await RowMenu.ChooseAsync(Row(page, "Иванов"), "Сбросить квоту");
 
         await Expect(page.GetByText("Клиент «Иванов» не найден")).ToBeVisibleAsync();
         await Expect(page.GetByText("Клиентов пока нет")).ToBeVisibleAsync();

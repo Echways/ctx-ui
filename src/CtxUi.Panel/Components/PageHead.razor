@@ -2,10 +2,13 @@
 
 <div class="head">
     <div>
-        <h1 class="title">@Title @if (Count is { } count)
+        <h1 class="title">
+            @Title
+            @if (Count is > 0 and { } count)
             {
-                <sup class="count">@Words.Number(count)</sup>
-            }</h1>
+                <span class="sr">, </span><sup class="count">@Words.Number(count)</sup>
+            }
+        </h1>
         <p class="summary">
             @Summary
             @if (UpdatedAt is { } updatedAt)

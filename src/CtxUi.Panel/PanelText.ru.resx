@@ -100,16 +100,16 @@
     <value>Добавить клиента</value>
   </data>
   <data name="ClientsEmpty" xml:space="preserve">
-    <value>Клиентов пока нет. Клиент — это тот, кому выдан токен: у него свой срок, свои лимиты и свой набор inbound'ов.</value>
+    <value>Клиентов пока нет: выдайте первый токен</value>
   </data>
   <data name="ClientsNotFound" xml:space="preserve">
-    <value>Никто не найден: в именах клиентов нет «{0}».</value>
+    <value>Никого с именем «{0}»</value>
   </data>
   <data name="ExpiryColumn" xml:space="preserve">
     <value>Срок, UTC</value>
   </data>
   <data name="LastSeenColumn" xml:space="preserve">
-    <value>Обращался, UTC</value>
+    <value>Последний вызов, UTC</value>
   </data>
   <data name="CallsColumn" xml:space="preserve">
     <value>Вызовы</value>
@@ -175,7 +175,7 @@
     <value>Добавить inbound</value>
   </data>
   <data name="InboundsEmpty" xml:space="preserve">
-    <value>Inbound'ов пока нет. Inbound — это адрес /mcp/&lt;slug&gt; на шлюзе, за которым стоит ваш MCP-сервер.</value>
+    <value>Inbound'ов пока нет: поставьте за шлюз первый MCP-сервер</value>
   </data>
   <data name="McpServer" xml:space="preserve">
     <value>MCP-сервер</value>
@@ -205,7 +205,7 @@
     <value>Все клиенты</value>
   </data>
   <data name="JournalEmpty" xml:space="preserve">
-    <value>Журнал пуст: вызовов через шлюз ещё не было или они старше срока хранения.</value>
+    <value>Журнал пуст: вызовов ещё не было или они старше срока хранения</value>
   </data>
   <data name="TimeColumn" xml:space="preserve">
     <value>Время, UTC</value>
@@ -217,7 +217,7 @@
     <value>Исход</value>
   </data>
   <data name="DurationColumn" xml:space="preserve">
-    <value>Длительность, мс</value>
+    <value>Длительность</value>
   </data>
   <data name="JournalLimit" xml:space="preserve">
     <value>Показаны последние {0} вызовов.</value>
@@ -229,7 +229,7 @@
     <value>Выпустить ключ</value>
   </data>
   <data name="KeysEmpty" xml:space="preserve">
-    <value>Ключей пока нет. Ключ нужен программам, которые управляют шлюзом через REST API: боту, скрипту выдачи доступа.</value>
+    <value>Ключей пока нет: ключ нужен скрипту, который управляет шлюзом через REST API</value>
   </data>
   <data name="Key" xml:space="preserve">
     <value>Ключ</value>
@@ -533,5 +533,32 @@
   </data>
   <data name="Today" xml:space="preserve">
     <value>сегодня</value>
+  </data>
+  <data name="ClearSearch" xml:space="preserve">
+    <value>Сбросить поиск</value>
+  </data>
+  <data name="MoreActions" xml:space="preserve">
+    <value>Ещё действия: {0}</value>
+  </data>
+  <data name="AccessOf" xml:space="preserve">
+    <value>Доступ: {0}</value>
+  </data>
+  <data name="ClientsSummary" xml:space="preserve">
+    <value>{number} {n, plural, one {активен} other {активны}}</value>
+  </data>
+  <data name="InboundsSummary" xml:space="preserve">
+    <value>{number} {n, plural, one {включён} other {включены}}</value>
+  </data>
+  <data name="JournalSummary" xml:space="preserve">
+    <value>{n, plural, one {последний {number} вызов} few {последние {number} вызова} many {последние {number} вызовов} other {последние {number} вызова}}</value>
+  </data>
+  <data name="KeysSummary" xml:space="preserve">
+    <value>для REST API и скриптов</value>
+  </data>
+  <data name="Milliseconds" xml:space="preserve">
+    <value>{0} мс</value>
+  </data>
+  <data name="Actions" xml:space="preserve">
+    <value>Действия</value>
   </data>
 </root>

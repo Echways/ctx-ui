@@ -38,7 +38,7 @@ public class PanelLanguageTests
         await page.GetByRole(AriaRole.Banner).GetByRole(AriaRole.Button, new() { Name = "English" }).ClickAsync();
 
         await Expect(page).ToHaveURLAsync(gateway.PanelUrl + "clients");
-        await Expect(page.GetByRole(AriaRole.Heading, new() { Name = "Clients" })).ToBeVisibleAsync();
+        await Expect(page.GetByRole(AriaRole.Heading, new() { Name = "Clients", Level = 1 })).ToBeVisibleAsync();
         await Expect(page.Locator("html")).ToHaveAttributeAsync("lang", "en");
 
         await page.GetByRole(AriaRole.Banner).GetByRole(AriaRole.Button, new() { Name = "Русский" }).ClickAsync();

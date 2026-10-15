@@ -6,48 +6,62 @@
 @inject NavigationManager Navigation
 
 <PageHead Title="@PanelText.Inbounds" Count="_rows?.Count" UpdatedAt="_loadedAt" OnRefresh="LoadAsync">
+    <Summary>
+        @if (_rows is { Count: > 0 })
+        {
+            <span>@Words.Count(PanelText.InboundsSummary, _rows.Count(row => row.Inbound.Enabled))</span>
+        }
+    </Summary>
     <Actions>
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="AddAsync">
-            @PanelText.AddInbound
-        </MudButton>
+        @if (_rows is { Count: > 0 })
+        {
+            <button type="button" class="btn-k pigment" @onclick="AddAsync">@PanelText.AddInbound</button>
+        }
     </Actions>
 </PageHead>
 
 @if (_rows is null)
 {
-    <MudProgressLinear Indeterminate="true" />
+    <div class="placeholder" aria-hidden="true"><i></i><i></i><i></i></div>
 }
 else if (_rows.Count == 0)
 {
-    <MudAlert Severity="Severity.Info">
-        @PanelText.InboundsEmpty
-    </MudAlert>
+    <div class="empty">
+        <h2>@PanelText.InboundsEmpty</h2>
+        <button type="button" class="btn-k pigment" @onclick="AddAsync">@PanelText.AddInbound</button>
+    </div>
 }
 else
 {
-    <MudTable Items="_rows" Dense="true" Hover="true" Elevation="1">
+    <MudTable Items="_rows" Elevation="0" Class="tbl" RowClassFunc="@((row, _) => row.Inbound.Enabled ? "click" : "click dim")"
+              OnRowClick="@((TableRowClickEventArgs<Row> row) => EditAsync(row.Item!.Inbound))">
         <HeaderContent>
             <MudTh>@PanelText.Address</MudTh>
             <MudTh>@PanelText.Title</MudTh>
             <MudTh>@PanelText.McpServer</MudTh>
-            <MudTh>@PanelText.ClientCount</MudTh>
-            <MudTh>@PanelText.Enabled</MudTh>
-            <MudTh></MudTh>
+            <MudTh Class="num">@PanelText.ClientCount</MudTh>
+            <MudTh><span class="sr">@PanelText.Enabled</span></MudTh>
+            <MudTh><span class="sr">@PanelText.Actions</span></MudTh>
         </HeaderContent>
         <RowTemplate>
-            <MudTd>/mcp/@context.Inbound.Slug</MudTd>
-            <MudTd>@context.Inbound.Name</MudTd>
-            <MudTd>@context.Inbound.Url</MudTd>
-            <MudTd>@context.Clients</MudTd>
-            <MudTd>
-                <MudSwitch T="bool" Value="context.Inbound.Enabled" Color="Color.Primary"
-                           ValueChanged="@(enabled => SwitchAsync(context.Inbound, enabled))" />
+            <MudTd><code>/mcp/@context.Inbound.Slug</code></MudTd>
+            <MudTd DataLabel="@PanelText.Title">@context.Inbound.Name</MudTd>
+            <MudTd DataLabel="@PanelText.McpServer"><code title="@context.Inbound.Url">@Words.Middle(context.Inbound.Url ?? "", 44)</code></MudTd>
+            <MudTd DataLabel="@PanelText.ClientCount" Class="num">@Words.OrDash(context.Clients)</MudTd>
+            <MudTd DataLabel="@PanelText.Enabled">
+                <span @onclick:stopPropagation="true">
+                    <MudSwitch T="bool" Value="context.Inbound.Enabled" aria-label="@string.Format(PanelText.InboundTitle, context.Inbound.Slug)"
+                               ValueChanged="@(enabled => SwitchAsync(context.Inbound, enabled))" />
+                </span>
             </MudTd>
-            <MudTd Style="text-align: right; white-space: nowrap">
-                <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" aria-label="@PanelText.Edit" title="@PanelText.Edit"
-                               OnClick="@(() => EditAsync(context.Inbound))" />
-                <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" aria-label="@PanelText.Delete" title="@PanelText.Delete"
-                               OnClick="@(() => RemoveAsync(context))" />
+            <MudTd Class="acts">
+                <span class="acts-in" @onclick:stopPropagation="true">
+                    <button type="button" class="link" @onclick="() => EditAsync(context.Inbound)">@PanelText.Edit</button>
+                    <MudMenu Label="⋯" AriaLabel="@string.Format(PanelText.MoreActions, context.Inbound.Slug)" Class="more"
+                             AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
+                        <MudMenuItem Class="danger" OnClick="() => RemoveAsync(context)">@PanelText.Delete</MudMenuItem>
+                    </MudMenu>
+                </span>
             </MudTd>
         </RowTemplate>
     </MudTable>

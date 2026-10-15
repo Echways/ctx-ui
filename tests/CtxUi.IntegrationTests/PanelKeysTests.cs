@@ -76,7 +76,7 @@ public class PanelKeysTests
         await using var session = await PanelSession.SignInAsync(gateway);
         var page = await OpenKeysAsync(session);
 
-        await page.GetByRole(AriaRole.Row).Filter(new() { HasText = "bot" }).GetByRole(AriaRole.Button, new() { Name = "Отозвать" }).ClickAsync();
+        await RowMenu.ChooseAsync(page.GetByRole(AriaRole.Row).Filter(new() { HasText = "bot" }), "Отозвать");
         await page.GetByRole(AriaRole.Dialog).GetByRole(AriaRole.Button, new() { Name = "Отозвать" }).ClickAsync();
         await Expect(page.GetByText("Ключей пока нет")).ToBeVisibleAsync();
         using var response = await api.GetAsync("api/v1/inbounds");

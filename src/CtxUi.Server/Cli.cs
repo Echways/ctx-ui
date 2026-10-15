@@ -51,7 +51,7 @@ public static class Cli
                         parse.GetValue(slug)!,
                         parse.GetValue(name),
                         parse.GetValue(url)!,
-                        Pairs(parse.GetValue(header)),
+                        PairLines.Parse(parse.GetValue(header)),
                         parse.GetValue(identity),
                         ct);
                     output.WriteLine($"Inbound «{inbound.Slug}» добавлен: {PublicUrl(services)}/mcp/{inbound.Slug}");
@@ -119,7 +119,7 @@ public static class Cli
                             parse.GetValue(name)!,
                             parse.GetValue(inbound) ?? [],
                             Expiry(parse.GetValue(expires)),
-                            Pairs(parse.GetValue(meta)),
+                            PairLines.Parse(parse.GetValue(meta)),
                             Limits(parse, ClientLimits.None),
                             ct);
                         WriteConnection(services, await clients.GetAsync(issued.Client.Name, ct), issued.Token);
@@ -130,10 +130,7 @@ public static class Cli
                     foreach (var client in await services.GetRequiredService<ClientService>().ListAsync(ct))
                     {
                         var used = QuotaPeriod.UsedCalls(client, now);
-                        var status = !client.Enabled ? "отключён"
-                            : client.ExpiresAt <= now ? "истёк"
-                            : used >= client.QuotaCalls ? "исчерпан"
-                            : "активен";
+                        var status = ClientState.Text(ClientState.Of(client, now));
                         var expiry = client.ExpiresAt is { } expiresAt ? Date(expiresAt, "yyyy-MM-dd") : "бессрочно";
                         var lastUsed = client.LastUsedAt is { } usedAt ? Date(usedAt, "yyyy-MM-dd HH:mm") : "не обращался";
                         var calls = $"{used}/{(client.QuotaCalls is { } size ? size : "∞")}";
@@ -239,7 +236,7 @@ public static class Cli
                         var what = line.Tool is null ? line.Method : $"{line.Method} {line.Tool}";
                         output.WriteLine(
                             $"{Date(line.At, "yyyy-MM-dd HH:mm:ss")}  {clients.GetValueOrDefault(line.ClientId, Removed),-24} " +
-                            $"{inbounds.GetValueOrDefault(line.InboundId, Removed),-16} {Describe(line.Outcome),-17} {line.DurationMs,6} мс  {what}");
+                            $"{inbounds.GetValueOrDefault(line.InboundId, Removed),-16} {UsageOutcomes.Text(line.Outcome),-17} {line.DurationMs,6} мс  {what}");
                     }
 
                     if (lines.Count == 0)
@@ -333,16 +330,6 @@ public static class Cli
             : size;
     }
 
-    private static string Describe(UsageOutcome outcome) => outcome switch
-    {
-        UsageOutcome.Ok => "выполнен",
-        UsageOutcome.UpstreamRejected => "upstream отклонил",
-        UsageOutcome.UpstreamFailed => "сбой upstream",
-        UsageOutcome.ClientAborted => "клиент оборвал",
-        UsageOutcome.QuotaExhausted => "квота исчерпана",
-        _ => outcome.ToString(),
-    };
-
     private static int InRange(string option, int value, int max) =>
         value >= 1 && value <= max ? value : throw new DomainException($"{option}: нужно число от 1 до {max}");
 
@@ -352,19 +339,4 @@ public static class Cli
     private static string Date(DateTimeOffset value, string format) => value.ToString(format, CultureInfo.InvariantCulture);
 
     private static DateTimeOffset? Expiry(string? text) => text is null ? null : ExpiryArgument.Parse(text);
-
-    private static List<KeyValuePair<string, string>> Pairs(string[]? values)
-    {
-        var pairs = new List<KeyValuePair<string, string>>();
-        foreach (var value in values ?? [])
-        {
-            var separator = value.IndexOf('=');
-            if (separator <= 0)
-                throw new DomainException($"«{value}»: ожидается вид ключ=значение");
-
-            pairs.Add(KeyValuePair.Create(value[..separator], value[(separator + 1)..]));
-        }
-
-        return pairs;
-    }
 }

@@ -10,6 +10,8 @@ public static class ApiServices
     public const string Prefix = "/api/v1";
     public const string SwaggerPath = "swagger";
 
+    private const string Language = "ru";
+
     private const string Policy = "api";
 
     public static IServiceCollection AddCtxUiApi(this IServiceCollection services)
@@ -48,7 +50,9 @@ public static class ApiServices
 
     public static IApplicationBuilder UseCtxUiApiDocs(this IApplicationBuilder app)
     {
-        app.UseWhen(context => context.Request.Path.StartsWithSegments("/api"), api => api.UseStatusCodePages());
+        app.UseWhen(
+            context => context.Request.Path.StartsWithSegments("/api"),
+            api => api.UseRequestLocalization(Language).UseStatusCodePages());
         return app.UseSwaggerUI(options =>
         {
             options.RoutePrefix = SwaggerPath;

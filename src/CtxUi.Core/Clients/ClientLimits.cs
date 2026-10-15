@@ -18,16 +18,16 @@ public sealed record ClientLimits(
 
     public ClientLimits Validated()
     {
-        Check(RatePerMinute, RateCeiling, "лимит запросов в минуту");
-        Check(MaxConcurrency, ConcurrencyCeiling, "лимит одновременных запросов");
-        Check(QuotaCalls, QuotaCeiling, "квота вызовов");
-        Check(ResetEveryDays, ResetDaysCeiling, "период сброса квоты в днях");
+        Check(RatePerMinute, RateCeiling, CoreText.LimitRate);
+        Check(MaxConcurrency, ConcurrencyCeiling, CoreText.LimitConcurrency);
+        Check(QuotaCalls, QuotaCeiling, CoreText.LimitQuota);
+        Check(ResetEveryDays, ResetDaysCeiling, CoreText.LimitResetDays);
         return this;
     }
 
     private static void Check(int? value, int ceiling, string what)
     {
         if (value is < 1 || value > ceiling)
-            throw new DomainException($"{what}: допустимо целое от 1 до {ceiling}, пустое значение снимает ограничение");
+            throw new DomainException(string.Format(CoreText.LimitOutOfRange, what, ceiling));
     }
 }

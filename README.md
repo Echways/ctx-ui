@@ -51,14 +51,16 @@ A path with a token is a credential: treat it as a password.
 ## Panel
 
 Served only under a random 16-character path; any other path gets 404.
+English by default; the button in the top bar (and the link under the sign-in
+form) switches to Russian and back, the choice is kept in a cookie for a year.
 
 | Section | Contents |
 | --- | --- |
-| Обзор (overview) | active clients, calls and upstream failures over 24 h; per-inbound and daily totals |
+| Overview | active clients, calls and upstream failures over 24 h; per-inbound and daily totals |
 | Inbounds | create, edit, enable/disable, delete |
-| Клиенты (clients) | create, edit, enable/disable, search, connection window, new token, quota reset |
-| Журнал (log) | recent calls, filter by client |
-| Ключи API (API keys) | issue, revoke, link to Swagger UI |
+| Clients | create, edit, enable/disable, search, connection window, new token, quota reset |
+| Log | recent calls, filter by client |
+| API keys | issue, revoke, link to Swagger UI |
 
 Changes apply to the gateway immediately. The connection window shows the
 token, addresses and a ready-to-send message for the client.
@@ -187,7 +189,7 @@ Each limit is optional; unset means unlimited.
 | Limit | Counts | When exceeded |
 | --- | --- | --- |
 | `--rate` | all requests, token bucket | HTTP 429, `Retry-After: <seconds until next>` |
-| `--concurrency` | in-flight `POST` | HTTP 429, `Retry-After: 1` |
+| `--concurrency` | in-flight `POST` | HTTP 429 after waiting up to 1 s for a slot, `Retry-After: 1` |
 | `--quota` | `tools/call` per period | HTTP 200, tool result with `isError: true` and reset time |
 
 The quota is spent only by `tools/call`. With an exhausted quota the client

@@ -9,21 +9,25 @@
 <MudLayout>
     <MudAppBar Elevation="1" Dense="true">
         <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start"
-                       aria-label="Меню" OnClick="@(() => _menuOpen = !_menuOpen)" />
+                       aria-label="@PanelText.Menu" OnClick="@(() => _menuOpen = !_menuOpen)" />
         <MudText Typo="Typo.h6">ctx-ui</MudText>
         <MudSpacer />
+        <MudButton Color="Color.Inherit" StartIcon="@Icons.Material.Filled.Translate" lang="@PanelText.LanguageSwitchCulture"
+                   OnClick="@(() => Navigation.NavigateTo(PanelLanguage.SwitchPath(Navigation), forceLoad: true))">
+            @PanelText.LanguageSwitch
+        </MudButton>
         <AuthorizeView>
-            <MudText Typo="Typo.body2" Class="mr-4">@context.User.Identity?.Name</MudText>
+            <MudText Typo="Typo.body2" Class="mx-4">@context.User.Identity?.Name</MudText>
         </AuthorizeView>
-        <MudButton Color="Color.Inherit" OnClick="@(() => Navigation.NavigateTo("logout", forceLoad: true))">Выйти</MudButton>
+        <MudButton Color="Color.Inherit" OnClick="@(() => Navigation.NavigateTo("logout", forceLoad: true))">@PanelText.SignOut</MudButton>
     </MudAppBar>
     <MudDrawer @bind-Open="_menuOpen" ClipMode="DrawerClipMode.Always" Elevation="1">
         <MudNavMenu>
-            <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard">Обзор</MudNavLink>
-            <MudNavLink Href="inbounds" Icon="@Icons.Material.Filled.Hub">Inbounds</MudNavLink>
-            <MudNavLink Href="clients" Icon="@Icons.Material.Filled.People">Клиенты</MudNavLink>
-            <MudNavLink Href="journal" Icon="@Icons.Material.Filled.ListAlt">Журнал</MudNavLink>
-            <MudNavLink Href="keys" Icon="@Icons.Material.Filled.Key">Ключи API</MudNavLink>
+            <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard">@PanelText.Overview</MudNavLink>
+            <MudNavLink Href="inbounds" Icon="@Icons.Material.Filled.Hub">@PanelText.Inbounds</MudNavLink>
+            <MudNavLink Href="clients" Icon="@Icons.Material.Filled.People">@PanelText.Clients</MudNavLink>
+            <MudNavLink Href="journal" Icon="@Icons.Material.Filled.ListAlt">@PanelText.Journal</MudNavLink>
+            <MudNavLink Href="keys" Icon="@Icons.Material.Filled.Key">@PanelText.ApiKeys</MudNavLink>
         </MudNavMenu>
     </MudDrawer>
     <MudMainContent>

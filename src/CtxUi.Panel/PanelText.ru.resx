@@ -1,0 +1,519 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="LanguageSwitch" xml:space="preserve">
+    <value>English</value>
+  </data>
+  <data name="LanguageSwitchCulture" xml:space="preserve">
+    <value>en</value>
+  </data>
+  <data name="Menu" xml:space="preserve">
+    <value>Меню</value>
+  </data>
+  <data name="SignOut" xml:space="preserve">
+    <value>Выйти</value>
+  </data>
+  <data name="Overview" xml:space="preserve">
+    <value>Обзор</value>
+  </data>
+  <data name="Inbounds" xml:space="preserve">
+    <value>Inbounds</value>
+  </data>
+  <data name="Inbound" xml:space="preserve">
+    <value>Inbound</value>
+  </data>
+  <data name="Clients" xml:space="preserve">
+    <value>Клиенты</value>
+  </data>
+  <data name="Client" xml:space="preserve">
+    <value>Клиент</value>
+  </data>
+  <data name="Journal" xml:space="preserve">
+    <value>Журнал</value>
+  </data>
+  <data name="ApiKeys" xml:space="preserve">
+    <value>Ключи API</value>
+  </data>
+  <data name="Refresh" xml:space="preserve">
+    <value>Обновить</value>
+  </data>
+  <data name="Edit" xml:space="preserve">
+    <value>Изменить</value>
+  </data>
+  <data name="Delete" xml:space="preserve">
+    <value>Удалить</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>Отмена</value>
+  </data>
+  <data name="Save" xml:space="preserve">
+    <value>Сохранить</value>
+  </data>
+  <data name="Close" xml:space="preserve">
+    <value>Закрыть</value>
+  </data>
+  <data name="Issue" xml:space="preserve">
+    <value>Выпустить</value>
+  </data>
+  <data name="Copied" xml:space="preserve">
+    <value>Скопировано</value>
+  </data>
+  <data name="CopyNeedsHttps" xml:space="preserve">
+    <value>Браузер разрешает копировать только на странице, открытой по HTTPS. Выделите текст и скопируйте его сами.</value>
+  </data>
+  <data name="Name" xml:space="preserve">
+    <value>Имя</value>
+  </data>
+  <data name="Title" xml:space="preserve">
+    <value>Название</value>
+  </data>
+  <data name="Address" xml:space="preserve">
+    <value>Адрес</value>
+  </data>
+  <data name="State" xml:space="preserve">
+    <value>Состояние</value>
+  </data>
+  <data name="ClientCount" xml:space="preserve">
+    <value>Клиентов</value>
+  </data>
+  <data name="Enabled" xml:space="preserve">
+    <value>Включён</value>
+  </data>
+  <data name="StateOn" xml:space="preserve">
+    <value>включён</value>
+  </data>
+  <data name="StateOff" xml:space="preserve">
+    <value>выключен</value>
+  </data>
+  <data name="Removed" xml:space="preserve">
+    <value>удалён</value>
+  </data>
+  <data name="SearchByName" xml:space="preserve">
+    <value>Поиск по имени</value>
+  </data>
+  <data name="AddClient" xml:space="preserve">
+    <value>Добавить клиента</value>
+  </data>
+  <data name="ClientsEmpty" xml:space="preserve">
+    <value>Клиентов пока нет. Клиент — это тот, кому выдан токен: у него свой срок, свои лимиты и свой набор inbound'ов.</value>
+  </data>
+  <data name="ClientsNotFound" xml:space="preserve">
+    <value>Никто не найден: в именах клиентов нет «{0}».</value>
+  </data>
+  <data name="ExpiryColumn" xml:space="preserve">
+    <value>Срок, UTC</value>
+  </data>
+  <data name="LastSeenColumn" xml:space="preserve">
+    <value>Обращался, UTC</value>
+  </data>
+  <data name="CallsColumn" xml:space="preserve">
+    <value>Вызовы</value>
+  </data>
+  <data name="AccessColumn" xml:space="preserve">
+    <value>Доступ</value>
+  </data>
+  <data name="ExpiresOn" xml:space="preserve">
+    <value>до {0}</value>
+  </data>
+  <data name="NoExpiry" xml:space="preserve">
+    <value>бессрочно</value>
+  </data>
+  <data name="NeverSeen" xml:space="preserve">
+    <value>не обращался</value>
+  </data>
+  <data name="Connection" xml:space="preserve">
+    <value>Подключение</value>
+  </data>
+  <data name="ResetQuota" xml:space="preserve">
+    <value>Сбросить квоту</value>
+  </data>
+  <data name="NewToken" xml:space="preserve">
+    <value>Новый токен</value>
+  </data>
+  <data name="ClientEnabled" xml:space="preserve">
+    <value>Клиент «{0}» включён</value>
+  </data>
+  <data name="ClientDisabled" xml:space="preserve">
+    <value>Клиент «{0}» отключён</value>
+  </data>
+  <data name="QuotaReset" xml:space="preserve">
+    <value>Счётчик квоты клиента «{0}» обнулён, период начат заново</value>
+  </data>
+  <data name="NewClient" xml:space="preserve">
+    <value>Новый клиент</value>
+  </data>
+  <data name="ClientTitle" xml:space="preserve">
+    <value>Клиент «{0}»</value>
+  </data>
+  <data name="ConnectionTitle" xml:space="preserve">
+    <value>Подключение: {0}</value>
+  </data>
+  <data name="ReissueQuestion" xml:space="preserve">
+    <value>Выпустить новый токен для «{0}»?</value>
+  </data>
+  <data name="ReissueWarning" xml:space="preserve">
+    <value>Прежний токен сразу перестанет работать: клиенту придётся заменить его в своих настройках.</value>
+  </data>
+  <data name="TokenReissued" xml:space="preserve">
+    <value>Клиенту «{0}» выпущен новый токен</value>
+  </data>
+  <data name="RemoveClientQuestion" xml:space="preserve">
+    <value>Удалить клиента «{0}»?</value>
+  </data>
+  <data name="RemoveClientWarning" xml:space="preserve">
+    <value>Его токен сразу перестанет работать. Записи журнала о нём останутся.</value>
+  </data>
+  <data name="ClientRemoved" xml:space="preserve">
+    <value>Клиент «{0}» удалён</value>
+  </data>
+  <data name="AddInbound" xml:space="preserve">
+    <value>Добавить inbound</value>
+  </data>
+  <data name="InboundsEmpty" xml:space="preserve">
+    <value>Inbound'ов пока нет. Inbound — это адрес /mcp/&lt;slug&gt; на шлюзе, за которым стоит ваш MCP-сервер.</value>
+  </data>
+  <data name="McpServer" xml:space="preserve">
+    <value>MCP-сервер</value>
+  </data>
+  <data name="NewInbound" xml:space="preserve">
+    <value>Новый inbound</value>
+  </data>
+  <data name="InboundTitle" xml:space="preserve">
+    <value>Inbound «{0}»</value>
+  </data>
+  <data name="InboundEnabled" xml:space="preserve">
+    <value>Inbound «{0}» включён</value>
+  </data>
+  <data name="InboundDisabled" xml:space="preserve">
+    <value>Inbound «{0}» выключен</value>
+  </data>
+  <data name="RemoveInboundQuestion" xml:space="preserve">
+    <value>Удалить inbound «{0}»?</value>
+  </data>
+  <data name="RemoveInboundWarning" xml:space="preserve">
+    <value>Адрес /mcp/{0} перестанет отвечать. Клиентов с доступом к нему: {1}.</value>
+  </data>
+  <data name="InboundRemoved" xml:space="preserve">
+    <value>Inbound «{0}» удалён</value>
+  </data>
+  <data name="AllClients" xml:space="preserve">
+    <value>Все клиенты</value>
+  </data>
+  <data name="JournalEmpty" xml:space="preserve">
+    <value>Журнал пуст: вызовов через шлюз ещё не было или они старше срока хранения.</value>
+  </data>
+  <data name="TimeColumn" xml:space="preserve">
+    <value>Время, UTC</value>
+  </data>
+  <data name="CallColumn" xml:space="preserve">
+    <value>Вызов</value>
+  </data>
+  <data name="OutcomeColumn" xml:space="preserve">
+    <value>Исход</value>
+  </data>
+  <data name="DurationColumn" xml:space="preserve">
+    <value>Длительность, мс</value>
+  </data>
+  <data name="JournalLimit" xml:space="preserve">
+    <value>Показаны последние {0} вызовов.</value>
+  </data>
+  <data name="ApiDocs" xml:space="preserve">
+    <value>Документация API</value>
+  </data>
+  <data name="IssueKey" xml:space="preserve">
+    <value>Выпустить ключ</value>
+  </data>
+  <data name="KeysEmpty" xml:space="preserve">
+    <value>Ключей пока нет. Ключ нужен программам, которые управляют шлюзом через REST API: боту, скрипту выдачи доступа.</value>
+  </data>
+  <data name="Key" xml:space="preserve">
+    <value>Ключ</value>
+  </data>
+  <data name="IssuedColumn" xml:space="preserve">
+    <value>Выпущен (UTC)</value>
+  </data>
+  <data name="Revoke" xml:space="preserve">
+    <value>Отозвать</value>
+  </data>
+  <data name="NewApiKey" xml:space="preserve">
+    <value>Новый ключ API</value>
+  </data>
+  <data name="RevokeQuestion" xml:space="preserve">
+    <value>Отозвать ключ «{0}»?</value>
+  </data>
+  <data name="RevokeWarning" xml:space="preserve">
+    <value>Запросы с этим ключом сразу начнут получать 401.</value>
+  </data>
+  <data name="KeyRevoked" xml:space="preserve">
+    <value>Ключ «{0}» отозван</value>
+  </data>
+  <data name="SignInTitle" xml:space="preserve">
+    <value>Вход в ctx-ui</value>
+  </data>
+  <data name="SignInRefused" xml:space="preserve">
+    <value>Неверный логин или пароль. После {0} ошибок подряд вход закрывается на {1} минут.</value>
+  </data>
+  <data name="Login" xml:space="preserve">
+    <value>Логин</value>
+  </data>
+  <data name="Password" xml:space="preserve">
+    <value>Пароль</value>
+  </data>
+  <data name="SignIn" xml:space="preserve">
+    <value>Войти</value>
+  </data>
+  <data name="SignOutTitle" xml:space="preserve">
+    <value>Выход из ctx-ui</value>
+  </data>
+  <data name="SignOutQuestion" xml:space="preserve">
+    <value>Выйти из панели?</value>
+  </data>
+  <data name="Stay" xml:space="preserve">
+    <value>Остаться</value>
+  </data>
+  <data name="NotFoundTitle" xml:space="preserve">
+    <value>Страница не найдена</value>
+  </data>
+  <data name="NotFoundHeading" xml:space="preserve">
+    <value>Такой страницы нет</value>
+  </data>
+  <data name="NotFoundText" xml:space="preserve">
+    <value>Адрес изменился или набран с ошибкой. Разделы панели перечислены в меню слева.</value>
+  </data>
+  <data name="ActiveOfAll" xml:space="preserve">
+    <value>{0} из {1}</value>
+  </data>
+  <data name="ActiveOfAllNote" xml:space="preserve">
+    <value>активных из всех</value>
+  </data>
+  <data name="SeenToday" xml:space="preserve">
+    <value>Обращались за сутки</value>
+  </data>
+  <data name="SeenTodayNote" xml:space="preserve">
+    <value>клиентов</value>
+  </data>
+  <data name="CallsToday" xml:space="preserve">
+    <value>Вызовы за сутки</value>
+  </data>
+  <data name="CallsTodayNote" xml:space="preserve">
+    <value>из них инструментов: {0}</value>
+  </data>
+  <data name="FailuresToday" xml:space="preserve">
+    <value>Сбои upstream за сутки</value>
+  </data>
+  <data name="NoCalls" xml:space="preserve">
+    <value>вызовов не было</value>
+  </data>
+  <data name="FailureShare" xml:space="preserve">
+    <value>{0} % вызовов</value>
+  </data>
+  <data name="FirstAccessLead" xml:space="preserve">
+    <value>Чтобы выдать первый доступ,</value>
+  </data>
+  <data name="FirstAccessInbound" xml:space="preserve">
+    <value>добавьте inbound</value>
+  </data>
+  <data name="FirstAccessThen" xml:space="preserve">
+    <value>а затем</value>
+  </data>
+  <data name="FirstAccessClient" xml:space="preserve">
+    <value>клиента</value>
+  </data>
+  <data name="CallsInDayColumn" xml:space="preserve">
+    <value>Вызовов за сутки</value>
+  </data>
+  <data name="UpstreamFailuresColumn" xml:space="preserve">
+    <value>Сбоев upstream</value>
+  </data>
+  <data name="ByDay" xml:space="preserve">
+    <value>По дням, UTC</value>
+  </data>
+  <data name="DayColumn" xml:space="preserve">
+    <value>День</value>
+  </data>
+  <data name="CallCountColumn" xml:space="preserve">
+    <value>Вызовов</value>
+  </data>
+  <data name="ToolsColumn" xml:space="preserve">
+    <value>Инструментов</value>
+  </data>
+  <data name="RefusalsColumn" xml:space="preserve">
+    <value>Отказов шлюза</value>
+  </data>
+  <data name="AverageColumn" xml:space="preserve">
+    <value>В среднем, мс</value>
+  </data>
+  <data name="ApiKeyNameHelp" xml:space="preserve">
+    <value>кому выдан ключ: латинские буквы, цифры, точка, дефис и подчёркивание</value>
+  </data>
+  <data name="KeyShownOnce" xml:space="preserve">
+    <value>Ключ показан один раз. Сохраните его сейчас: потом его не увидеть даже в панели.</value>
+  </data>
+  <data name="KeyHelp" xml:space="preserve">
+    <value>передаётся заголовком Authorization: Bearer &lt;ключ&gt;</value>
+  </data>
+  <data name="CopyKey" xml:space="preserve">
+    <value>Скопировать ключ</value>
+  </data>
+  <data name="AddInboundFirst" xml:space="preserve">
+    <value>Сначала добавьте inbound: клиенту нужно выдать доступ хотя бы к одному.</value>
+  </data>
+  <data name="ClientNameHelp" xml:space="preserve">
+    <value>как клиент будет называться в списке и в журнале</value>
+  </data>
+  <data name="InboundAccess" xml:space="preserve">
+    <value>Доступ к inbound'ам</value>
+  </data>
+  <data name="InboundOff" xml:space="preserve">
+    <value>{0} (выключен)</value>
+  </data>
+  <data name="Expiry" xml:space="preserve">
+    <value>Срок действия</value>
+  </data>
+  <data name="ExpiryHelp" xml:space="preserve">
+    <value>с начала этого дня по UTC доступ закрыт; пусто — бессрочно</value>
+  </data>
+  <data name="RatePerMinute" xml:space="preserve">
+    <value>Запросов в минуту</value>
+  </data>
+  <data name="NoLimitHelp" xml:space="preserve">
+    <value>пусто — без ограничения</value>
+  </data>
+  <data name="Concurrency" xml:space="preserve">
+    <value>Одновременных запросов</value>
+  </data>
+  <data name="Quota" xml:space="preserve">
+    <value>Квота вызовов инструментов</value>
+  </data>
+  <data name="QuotaHelp" xml:space="preserve">
+    <value>сколько tools/call можно сделать за период; пусто — без квоты</value>
+  </data>
+  <data name="ResetDays" xml:space="preserve">
+    <value>Обновлять квоту каждые, дней</value>
+  </data>
+  <data name="ResetDaysHelp" xml:space="preserve">
+    <value>пусто — квота выдаётся один раз</value>
+  </data>
+  <data name="Metadata" xml:space="preserve">
+    <value>Метаданные</value>
+  </data>
+  <data name="MetadataHelp" xml:space="preserve">
+    <value>по одной паре в строке: ключ=значение. Уходят upstream заголовками X-Mcp-Meta-*</value>
+  </data>
+  <data name="TokenLost" xml:space="preserve">
+    <value>Токен показать нельзя: его сохранённая копия не расшифрована, потерян каталог keys. Прежний токен продолжает работать у того, кому он выдан. Чтобы увидеть токен, выпустите новый.</value>
+  </data>
+  <data name="Token" xml:space="preserve">
+    <value>Токен</value>
+  </data>
+  <data name="CopyToken" xml:space="preserve">
+    <value>Скопировать токен</value>
+  </data>
+  <data name="AddressOf" xml:space="preserve">
+    <value>Адрес {0}</value>
+  </data>
+  <data name="TokenHeaderHelp" xml:space="preserve">
+    <value>токен передаётся заголовком Authorization: Bearer &lt;токен&gt;</value>
+  </data>
+  <data name="CopyAddressOf" xml:space="preserve">
+    <value>Скопировать адрес {0}</value>
+  </data>
+  <data name="AddressWithTokenOf" xml:space="preserve">
+    <value>Адрес {0} с токеном</value>
+  </data>
+  <data name="AddressWithTokenHelp" xml:space="preserve">
+    <value>для клиентов, которые не умеют задавать заголовки: claude.ai, ChatGPT</value>
+  </data>
+  <data name="CopyAddressWithTokenOf" xml:space="preserve">
+    <value>Скопировать адрес {0} с токеном</value>
+  </data>
+  <data name="MessageForClient" xml:space="preserve">
+    <value>Сообщение для клиента</value>
+  </data>
+  <data name="CopyMessage" xml:space="preserve">
+    <value>Скопировать сообщение</value>
+  </data>
+  <data name="SlugHelp" xml:space="preserve">
+    <value>часть адреса /mcp/&lt;slug&gt;: строчные латинские буквы, цифры и дефис</value>
+  </data>
+  <data name="TitleHelp" xml:space="preserve">
+    <value>для списка; пустое заменяется на slug</value>
+  </data>
+  <data name="McpServerAddress" xml:space="preserve">
+    <value>Адрес MCP-сервера</value>
+  </data>
+  <data name="McpServerAddressHelp" xml:space="preserve">
+    <value>streamable HTTP, например https://example.org/mcp</value>
+  </data>
+  <data name="ReplaceHeaders" xml:space="preserve">
+    <value>Заменить заголовки</value>
+  </data>
+  <data name="UpstreamHeaders" xml:space="preserve">
+    <value>Заголовки для upstream</value>
+  </data>
+  <data name="UpstreamHeadersHelp" xml:space="preserve">
+    <value>по одному в строке: Имя=значение. Хранятся зашифрованными и после сохранения не показываются</value>
+  </data>
+  <data name="ForwardIdentity" xml:space="preserve">
+    <value>Передавать upstream личность клиента</value>
+  </data>
+  <data name="Timeout" xml:space="preserve">
+    <value>Таймаут запроса, с</value>
+  </data>
+  <data name="BodyLimit" xml:space="preserve">
+    <value>Предел тела запроса, КБ</value>
+  </data>
+  <data name="HeadersLost" xml:space="preserve">
+    <value>Заголовки для upstream не расшифрованы: потерян каталог keys. Задайте их заново.</value>
+  </data>
+  <data name="HeadersNone" xml:space="preserve">
+    <value>Заголовков для upstream нет.</value>
+  </data>
+  <data name="HeadersSet" xml:space="preserve">
+    <value>Заданы заголовки: {0}. Значения не показываются.</value>
+  </data>
+  <data name="MessageIntro" xml:space="preserve">
+    <value>Доступ к MCP-серверам для «{0}».</value>
+  </data>
+  <data name="MessageToken" xml:space="preserve">
+    <value>Токен: {0}</value>
+  </data>
+  <data name="MessageAddress" xml:space="preserve">
+    <value>адрес: {0}</value>
+  </data>
+  <data name="MessageHeader" xml:space="preserve">
+    <value>заголовок: Authorization: Bearer {0}</value>
+  </data>
+  <data name="MessageNoHeader" xml:space="preserve">
+    <value>если заголовок задать нельзя, адрес с токеном внутри:</value>
+  </data>
+  <data name="MessageExpires" xml:space="preserve">
+    <value>Доступ действует до {0} (UTC).</value>
+  </data>
+  <data name="MessageNoExpiry" xml:space="preserve">
+    <value>Доступ бессрочный.</value>
+  </data>
+  <data name="MessageQuota" xml:space="preserve">
+    <value>Вызовов инструментов: {0} {1}</value>
+  </data>
+  <data name="MessageQuotaEvery" xml:space="preserve">
+    <value>каждые {0} дн.</value>
+  </data>
+  <data name="MessageQuotaOnce" xml:space="preserve">
+    <value>на всё время.</value>
+  </data>
+  <data name="MessageWarning" xml:space="preserve">
+    <value>Токен и адрес с токеном равносильны паролю: не передавайте их дальше.</value>
+  </data>
+</root>

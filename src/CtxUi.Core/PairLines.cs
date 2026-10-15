@@ -9,7 +9,7 @@ public static class PairLines
         {
             var separator = line.IndexOf('=');
             if (separator <= 0)
-                throw new DomainException($"«{line}»: ожидается вид ключ=значение");
+                throw new DomainException(string.Format(CoreText.PairLineInvalid, line));
 
             pairs.Add(KeyValuePair.Create(line[..separator], line[(separator + 1)..]));
         }

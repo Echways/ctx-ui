@@ -12,7 +12,7 @@ public sealed class ApiKeyService(CtxUiDbContext db, TimeProvider clock)
         var parsed = ApiKeyName.Parse(name);
         var key = ApiKeyName.Key(parsed);
         if (await db.ApiKeys.AnyAsync(known => known.NameKey == key, ct))
-            throw new DomainException($"ключ «{parsed}» уже есть");
+            throw new DomainException(string.Format(CoreText.ApiKeyExists, parsed));
 
         var secret = ApiKeySecret.Generate();
         var apiKey = new ApiKey
@@ -36,7 +36,7 @@ public sealed class ApiKeyService(CtxUiDbContext db, TimeProvider clock)
     {
         var key = ApiKeyName.Key(name.Trim());
         var apiKey = await db.ApiKeys.SingleOrDefaultAsync(known => known.NameKey == key, ct)
-            ?? throw new NotFoundException($"ключ «{name.Trim()}» не найден");
+            ?? throw new NotFoundException(string.Format(CoreText.ApiKeyNotFound, name.Trim()));
         db.ApiKeys.Remove(apiKey);
         await db.SaveChangesAsync(ct);
     }

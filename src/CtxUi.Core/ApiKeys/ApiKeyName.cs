@@ -13,8 +13,7 @@ public static partial class ApiKeyName
     {
         var name = value?.Trim() ?? "";
         if (!Pattern().IsMatch(name))
-            throw new DomainException(
-                $"название ключа «{name}» недопустимо: от 1 до {MaxLength} символов, латинские буквы, цифры, точка, дефис и подчёркивание");
+            throw new DomainException(string.Format(CoreText.ApiKeyNameInvalid, name, MaxLength));
 
         return name;
     }

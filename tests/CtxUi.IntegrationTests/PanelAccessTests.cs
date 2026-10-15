@@ -84,7 +84,7 @@ public class PanelAccessTests
         using var form = await panel.GetAsync("login");
         using var style = await panel.GetAsync("_content/CtxUi.Panel/panel.css");
         using var script = await panel.GetAsync("_framework/blazor.web.js");
-        var html = await form.Content.ReadAsStringAsync();
+        var html = await PanelClient.PageAsync(form);
 
         Assert.Equal(HttpStatusCode.OK, form.StatusCode);
         Assert.Contains($"<base href=\"{panel.Root}/\"", html);
@@ -128,8 +128,8 @@ public class PanelAccessTests
 
         Assert.Equal(HttpStatusCode.OK, wrongPassword.StatusCode);
         Assert.Equal(HttpStatusCode.OK, unknownLogin.StatusCode);
-        Assert.Contains(Refusal, await wrongPassword.Content.ReadAsStringAsync());
-        Assert.Contains(Refusal, await unknownLogin.Content.ReadAsStringAsync());
+        Assert.Contains(Refusal, await PanelClient.PageAsync(wrongPassword));
+        Assert.Contains(Refusal, await PanelClient.PageAsync(unknownLogin));
         Assert.Equal("", Cookie(wrongPassword));
         Assert.Equal("", Cookie(unknownLogin));
         Assert.Equal(HttpStatusCode.Redirect, home.StatusCode);
@@ -153,7 +153,7 @@ public class PanelAccessTests
         using var reopened = await panel.SignInAsync("root", fresh);
 
         Assert.Equal(HttpStatusCode.OK, locked.StatusCode);
-        Assert.Contains(Refusal, await locked.Content.ReadAsStringAsync());
+        Assert.Contains(Refusal, await PanelClient.PageAsync(locked));
         Assert.Contains("вход закрыт до", listed.Output);
         Assert.Equal(HttpStatusCode.Redirect, reopened.StatusCode);
     }
@@ -242,7 +242,7 @@ public class PanelAccessTests
 
         using var refused = await panel.SignInAsync("root", admin.Password);
 
-        Assert.Contains(Refusal, await refused.Content.ReadAsStringAsync());
+        Assert.Contains(Refusal, await PanelClient.PageAsync(refused));
     }
 
     [Fact]

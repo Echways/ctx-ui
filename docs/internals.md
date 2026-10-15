@@ -117,6 +117,12 @@ Concurrency counts only `POST`. MCP clients keep a `GET` notification stream
 open; counting it would block a client with limit 1 forever. Rate counts all
 methods.
 
+A request that finds no free slot waits up to `ConcurrencyWait` (1 s) before
+the 429; at most as many requests wait as the limit allows. The client reads
+the answer before the gateway releases the slot (stream tail, journal, log),
+so without the wait a client making calls one after another would get 429 on
+the next call.
+
 **Body.** For `POST` the gateway buffers the body up to
 `Inbound.MaxBodyBytes` (default 4 MB) and forwards the same bytes. The
 response still streams.

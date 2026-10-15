@@ -1,4 +1,6 @@
 using System.Collections.Frozen;
+using System.Threading.RateLimiting;
+using Microsoft.Extensions.Options;
 using CtxUi.Core.Clients;
 using CtxUi.Core.Routing;
 
@@ -6,7 +8,9 @@ namespace CtxUi.Gateway.Tests;
 
 public class ClientLimiterTests : IAsyncDisposable
 {
-    private readonly ClientLimiter _limiter = new();
+    private readonly ClientLimiter _limiter = new(Options.Create(new GatewayOptions { ConcurrencyWait = TimeSpan.FromMilliseconds(200) }));
+
+    private ValueTask<RateLimitLease> SlotAsync(ClientAccess client) => _limiter.AcquireSlotAsync(client, CancellationToken.None);
 
     private static ClientAccess Client(ClientLimits limits, Guid? id = null) =>
         new(id ?? Guid.NewGuid(), "Иванов", true, null, FrozenSet<Guid>.Empty, new Dictionary<string, string>()) { Limits = limits };
@@ -14,14 +18,14 @@ public class ClientLimiterTests : IAsyncDisposable
     public ValueTask DisposeAsync() => _limiter.DisposeAsync();
 
     [Fact]
-    public void Client_without_limits_is_never_held_back()
+    public async Task Client_without_limits_is_never_held_back()
     {
         var client = Client(ClientLimits.None);
 
         for (var attempt = 0; attempt < 1_000; attempt++)
         {
             Assert.True(_limiter.AcquireRate(client).IsAcquired);
-            Assert.True(_limiter.AcquireSlot(client).IsAcquired);
+            Assert.True((await SlotAsync(client)).IsAcquired);
         }
     }
 
@@ -77,34 +81,34 @@ public class ClientLimiterTests : IAsyncDisposable
     }
 
     [Fact]
-    public void Changed_limit_applies_to_the_next_request()
+    public async Task Changed_limit_applies_to_the_next_request()
     {
         var id = Guid.NewGuid();
         var strict = Client(new ClientLimits(RatePerMinute: 1, MaxConcurrency: 1), id);
         _limiter.AcquireRate(strict);
-        using var held = _limiter.AcquireSlot(strict);
+        using var held = await SlotAsync(strict);
         Assert.False(_limiter.AcquireRate(strict).IsAcquired);
-        Assert.False(_limiter.AcquireSlot(strict).IsAcquired);
+        Assert.False((await SlotAsync(strict)).IsAcquired);
 
         var relaxed = Client(new ClientLimits(RatePerMinute: 5, MaxConcurrency: 2), id);
         var unlimited = Client(ClientLimits.None, id);
 
         Assert.True(_limiter.AcquireRate(relaxed).IsAcquired);
-        Assert.True(_limiter.AcquireSlot(relaxed).IsAcquired);
+        Assert.True((await SlotAsync(relaxed)).IsAcquired);
         Assert.True(_limiter.AcquireRate(unlimited).IsAcquired);
-        Assert.True(_limiter.AcquireSlot(unlimited).IsAcquired);
+        Assert.True((await SlotAsync(unlimited)).IsAcquired);
     }
 
     [Fact]
-    public void Slot_is_free_again_when_the_request_that_held_it_ends()
+    public async Task Slot_is_free_again_when_the_request_that_held_it_ends()
     {
         var client = Client(new ClientLimits(MaxConcurrency: 2));
-        var first = _limiter.AcquireSlot(client);
-        using var second = _limiter.AcquireSlot(client);
-        using var refused = _limiter.AcquireSlot(client);
+        var first = await SlotAsync(client);
+        using var second = await SlotAsync(client);
+        using var refused = await SlotAsync(client);
 
         first.Dispose();
-        using var afterRelease = _limiter.AcquireSlot(client);
+        using var afterRelease = await SlotAsync(client);
 
         Assert.True(first.IsAcquired);
         Assert.True(second.IsAcquired);
@@ -113,13 +117,41 @@ public class ClientLimiterTests : IAsyncDisposable
     }
 
     [Fact]
-    public void Slots_are_counted_per_client()
+    public async Task Request_arriving_while_the_previous_one_is_finishing_waits_for_its_slot()
+    {
+        var client = Client(new ClientLimits(MaxConcurrency: 1));
+        var finishing = await SlotAsync(client);
+
+        var next = SlotAsync(client).AsTask();
+        finishing.Dispose();
+        using var served = await next;
+
+        Assert.True(served.IsAcquired);
+    }
+
+    [Fact]
+    public async Task Waiting_requests_beyond_the_limit_are_refused_at_once()
+    {
+        var client = Client(new ClientLimits(MaxConcurrency: 1));
+        using var held = await SlotAsync(client);
+        var waiting = SlotAsync(client).AsTask();
+
+        using var excess = await SlotAsync(client);
+
+        Assert.False(excess.IsAcquired);
+        Assert.False(waiting.IsCompleted);
+        using var timedOut = await waiting;
+        Assert.False(timedOut.IsAcquired);
+    }
+
+    [Fact]
+    public async Task Slots_are_counted_per_client()
     {
         var busy = Client(new ClientLimits(MaxConcurrency: 1));
         var other = Client(new ClientLimits(MaxConcurrency: 1));
-        using var held = _limiter.AcquireSlot(busy);
+        using var held = await SlotAsync(busy);
 
-        Assert.False(_limiter.AcquireSlot(busy).IsAcquired);
-        Assert.True(_limiter.AcquireSlot(other).IsAcquired);
+        Assert.False((await SlotAsync(busy)).IsAcquired);
+        Assert.True((await SlotAsync(other)).IsAcquired);
     }
 }

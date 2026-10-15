@@ -10,6 +10,7 @@
     <PackageReference Include="xunit.v3" />
     <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" />
     <Using Include="Xunit" />
+    <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
     <ProjectReference Include="..\..\src\CtxUi.Core\CtxUi.Core.csproj" />
   </ItemGroup>
 

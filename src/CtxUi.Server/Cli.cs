@@ -17,6 +17,8 @@ namespace CtxUi.Server;
 
 public static class Cli
 {
+    private const string Language = "ru";
+
     public static bool Handles(string[] args) => args.Length > 0 && args[0] is "inbound" or "client" or "usage" or "admin" or "apikey";
 
     public static async Task<int> RunAsync(
@@ -25,6 +27,7 @@ public static class Cli
         TextWriter error,
         Action<HostApplicationBuilder>? configure = null)
     {
+        CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo(Language);
         var builder = Host.CreateApplicationBuilder();
         configure?.Invoke(builder);
         builder.Logging.ClearProviders()
@@ -291,7 +294,7 @@ public static class Cli
                     }
 
                     if (admins.Count == 0)
-                        output.WriteLine("Администраторов нет, войти в панель некому. Добавьте: ctx-ui admin add <логин>");
+                        output.WriteLine("No admins, nobody can sign in to the panel. Add one: ctx-ui admin add <login>");
                 }),
                 Leaf("remove", "удалить администратора", [login], async (parse, services, ct) =>
                 {

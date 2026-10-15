@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Localization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -50,6 +51,13 @@ public static class PanelServices
         services.AddRazorComponents().AddInteractiveServerComponents();
         services.AddScoped<AuthenticationStateProvider, AdminSessionState>();
         services.AddMudServices();
+        services.Configure<RequestLocalizationOptions>(options =>
+        {
+            options.SetDefaultCulture(PanelLanguage.Default)
+                .AddSupportedCultures(PanelLanguage.Cultures)
+                .AddSupportedUICultures(PanelLanguage.Cultures);
+            options.RequestCultureProviders = [new CookieRequestCultureProvider()];
+        });
         return services;
     }
 
@@ -59,9 +67,12 @@ public static class PanelServices
         return app.Use(next => context => gate.PassAsync(context, next, openPaths));
     }
 
+    public static IApplicationBuilder UseCtxUiPanelLanguage(this IApplicationBuilder app) => app.UseRequestLocalization();
+
     public static WebApplication MapCtxUiPanel(this WebApplication app)
     {
         app.MapStaticAssets();
+        app.MapGet("/language/{culture}", PanelLanguage.Choose);
         app.MapRazorComponents<App>().AddInteractiveServerRenderMode().RequireAuthorization();
         return app;
     }
@@ -74,7 +85,7 @@ public static class PanelServices
         if (!await scope.ServiceProvider.GetRequiredService<CtxUiDbContext>().Admins.AnyAsync(ct))
         {
             services.GetRequiredService<ILoggerFactory>().CreateLogger("CtxUi.Panel").LogWarning(
-                "войти в панель некому: администраторов нет. Добавьте первого командой ctx-ui admin add <логин>");
+                "nobody can sign in to the panel: there are no admins. Add the first one with ctx-ui admin add <login>");
         }
     }
 }

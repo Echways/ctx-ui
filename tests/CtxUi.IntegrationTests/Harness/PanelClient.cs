@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text.RegularExpressions;
+using Microsoft.AspNetCore.Localization;
 
 namespace CtxUi.IntegrationTests;
 
@@ -10,7 +11,10 @@ public sealed partial class PanelClient : IDisposable
     public PanelClient(GatewayHost gateway, string? forwardedProto = null)
     {
         Root = "/" + gateway.PanelPath;
-        _http = new HttpClient(new HttpClientHandler { AllowAutoRedirect = false, CookieContainer = new CookieContainer() })
+        var cookies = new CookieContainer();
+        cookies.Add(new Uri(gateway.PanelUrl), new Cookie(
+            CookieRequestCultureProvider.DefaultCookieName, CookieRequestCultureProvider.MakeCookieValue(new RequestCulture("ru"))));
+        _http = new HttpClient(new HttpClientHandler { AllowAutoRedirect = false, CookieContainer = cookies })
         {
             BaseAddress = new Uri(gateway.BaseUrl),
         };
@@ -22,6 +26,9 @@ public sealed partial class PanelClient : IDisposable
 
     [GeneratedRegex("name=\"__RequestVerificationToken\" value=\"([^\"]+)\"")]
     private static partial Regex TokenField();
+
+    public static async Task<string> PageAsync(HttpResponseMessage response) =>
+        WebUtility.HtmlDecode(await response.Content.ReadAsStringAsync());
 
     public Task<HttpResponseMessage> GetAsync(string page) => _http.GetAsync($"{Root}/{page}");
 

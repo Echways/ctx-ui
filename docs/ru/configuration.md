@@ -21,6 +21,7 @@
 | `CtxUi__RefreshInterval` | `CtxUi:RefreshInterval` | `00:00:01` | как часто сервер проверяет изменения из CLI |
 | `CtxUi__FlushInterval` | `CtxUi:FlushInterval` | `00:00:05` | как часто пишутся счётчики квот и журнал вызовов |
 | `CtxUi__UsageRetentionDays` | `CtxUi:UsageRetentionDays` | `30` | срок хранения журнала; итоги по дням хранятся всегда |
+| `CtxUi__ConcurrencyWait` | `CtxUi:ConcurrencyWait` | `00:00:01` | сколько запрос сверх лимита одновременных ждёт слот до ответа 429 |
 | `CtxUi__SessionCheckInterval` | `CtxUi:SessionCheckInterval` | `00:01:00` | как часто открытая панель перепроверяет сеанс администратора |
 
 Адрес прослушивания задаётся через `Urls`, не `ASPNETCORE_URLS`: второй

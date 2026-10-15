@@ -1,12 +1,12 @@
 @page "/"
 @inject PanelBackend Backend
 
-<PageTitle>Обзор</PageTitle>
+<PageTitle>@PanelText.Overview</PageTitle>
 
 <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-4">
-    <MudText Typo="Typo.h5">Обзор</MudText>
+    <MudText Typo="Typo.h5">@PanelText.Overview</MudText>
     <MudSpacer />
-    <MudIconButton Icon="@Icons.Material.Filled.Refresh" aria-label="Обновить" title="Обновить" OnClick="LoadAsync" />
+    <MudIconButton Icon="@Icons.Material.Filled.Refresh" aria-label="@PanelText.Refresh" title="@PanelText.Refresh" OnClick="LoadAsync" />
 </MudStack>
 
 @if (_overview is null)
@@ -17,42 +17,44 @@ else
 {
     <MudGrid Class="mb-2">
         <MudItem xs="12" sm="6" md="3">
-            <Tile Title="Клиенты" Value="@($"{_overview.ActiveClients} из {_overview.Clients}")" Note="активных из всех" />
+            <Tile Title="@PanelText.Clients" Value="@string.Format(PanelText.ActiveOfAll, _overview.ActiveClients, _overview.Clients)"
+                  Note="@PanelText.ActiveOfAllNote" />
         </MudItem>
         <MudItem xs="12" sm="6" md="3">
-            <Tile Title="Обращались за сутки" Value="@_overview.SeenClients.ToString()" Note="клиентов" />
+            <Tile Title="@PanelText.SeenToday" Value="@_overview.SeenClients.ToString()" Note="@PanelText.SeenTodayNote" />
         </MudItem>
         <MudItem xs="12" sm="6" md="3">
-            <Tile Title="Вызовы за сутки" Value="@_overview.Calls.ToString()" Note="@($"из них инструментов: {_overview.ToolCalls}")" />
+            <Tile Title="@PanelText.CallsToday" Value="@_overview.Calls.ToString()"
+                  Note="@string.Format(PanelText.CallsTodayNote, _overview.ToolCalls)" />
         </MudItem>
         <MudItem xs="12" sm="6" md="3">
-            <Tile Title="Сбои upstream за сутки" Value="@_overview.Failures.ToString()" Note="@FailureShare" />
+            <Tile Title="@PanelText.FailuresToday" Value="@_overview.Failures.ToString()" Note="@FailureShare" />
         </MudItem>
     </MudGrid>
 
     @if (_overview.Inbounds.Count == 0)
     {
         <MudAlert Severity="Severity.Info">
-            Чтобы выдать первый доступ, <MudLink Href="inbounds">добавьте inbound</MudLink>,
-            а затем <MudLink Href="clients">клиента</MudLink>.
+            @PanelText.FirstAccessLead <MudLink Href="inbounds">@PanelText.FirstAccessInbound</MudLink>,
+            @PanelText.FirstAccessThen <MudLink Href="clients">@PanelText.FirstAccessClient</MudLink>.
         </MudAlert>
     }
     else
     {
-        <MudText Typo="Typo.h6" Class="mt-4 mb-2">Inbounds</MudText>
+        <MudText Typo="Typo.h6" Class="mt-4 mb-2">@PanelText.Inbounds</MudText>
         <MudTable Items="_overview.Inbounds" Dense="true" Hover="true" Elevation="1">
             <HeaderContent>
-                <MudTh>Адрес</MudTh>
-                <MudTh>Название</MudTh>
-                <MudTh>Состояние</MudTh>
-                <MudTh>Клиентов</MudTh>
-                <MudTh>Вызовов за сутки</MudTh>
-                <MudTh>Сбоев upstream</MudTh>
+                <MudTh>@PanelText.Address</MudTh>
+                <MudTh>@PanelText.Title</MudTh>
+                <MudTh>@PanelText.State</MudTh>
+                <MudTh>@PanelText.ClientCount</MudTh>
+                <MudTh>@PanelText.CallsInDayColumn</MudTh>
+                <MudTh>@PanelText.UpstreamFailuresColumn</MudTh>
             </HeaderContent>
             <RowTemplate>
                 <MudTd>/mcp/@context.Slug</MudTd>
                 <MudTd>@context.Name</MudTd>
-                <MudTd>@(context.Enabled ? "включён" : "выключен")</MudTd>
+                <MudTd>@(context.Enabled ? PanelText.StateOn : PanelText.StateOff)</MudTd>
                 <MudTd>@context.Clients</MudTd>
                 <MudTd>@context.Calls</MudTd>
                 <MudTd>@context.Failures</MudTd>
@@ -62,15 +64,15 @@ else
 
     @if (_overview.Days.Count > 0)
     {
-        <MudText Typo="Typo.h6" Class="mt-6 mb-2">По дням, UTC</MudText>
+        <MudText Typo="Typo.h6" Class="mt-6 mb-2">@PanelText.ByDay</MudText>
         <MudTable Items="_overview.Days.Reverse()" Dense="true" Hover="true" Elevation="1">
             <HeaderContent>
-                <MudTh>День</MudTh>
-                <MudTh>Вызовов</MudTh>
-                <MudTh>Инструментов</MudTh>
-                <MudTh>Сбоев upstream</MudTh>
-                <MudTh>Отказов шлюза</MudTh>
-                <MudTh>В среднем, мс</MudTh>
+                <MudTh>@PanelText.DayColumn</MudTh>
+                <MudTh>@PanelText.CallCountColumn</MudTh>
+                <MudTh>@PanelText.ToolsColumn</MudTh>
+                <MudTh>@PanelText.UpstreamFailuresColumn</MudTh>
+                <MudTh>@PanelText.RefusalsColumn</MudTh>
+                <MudTh>@PanelText.AverageColumn</MudTh>
             </HeaderContent>
             <RowTemplate>
                 <MudTd>@context.Day.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture)</MudTd>
@@ -88,8 +90,8 @@ else
     private CtxUi.Core.Usage.Overview? _overview;
 
     private string FailureShare => _overview!.Calls == 0
-        ? "вызовов не было"
-        : $"{Math.Round(100.0 * _overview.Failures / _overview.Calls)} % вызовов";
+        ? PanelText.NoCalls
+        : string.Format(PanelText.FailureShare, Math.Round(100.0 * _overview.Failures / _overview.Calls));
 
     protected override Task OnInitializedAsync() => LoadAsync();
 

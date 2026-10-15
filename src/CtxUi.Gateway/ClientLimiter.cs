@@ -1,9 +1,10 @@
 using System.Threading.RateLimiting;
+using Microsoft.Extensions.Options;
 using CtxUi.Core.Routing;
 
 namespace CtxUi.Gateway;
 
-public sealed class ClientLimiter : IAsyncDisposable
+public sealed class ClientLimiter(IOptions<GatewayOptions> options) : IAsyncDisposable
 {
     private static readonly TimeSpan Minute = TimeSpan.FromMinutes(1);
 
@@ -23,13 +24,26 @@ public sealed class ClientLimiter : IAsyncDisposable
             ? RateLimitPartition.GetConcurrencyLimiter(new Key(client.Id, atOnce), key => new ConcurrencyLimiterOptions
             {
                 PermitLimit = key.Limit,
-                QueueLimit = 0,
+                QueueLimit = key.Limit,
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
             })
             : RateLimitPartition.GetNoLimiter(new Key(client.Id, 0)));
 
     public RateLimitLease AcquireRate(ClientAccess client) => _rate.AttemptAcquire(client);
 
-    public RateLimitLease AcquireSlot(ClientAccess client) => _slots.AttemptAcquire(client);
+    public async ValueTask<RateLimitLease> AcquireSlotAsync(ClientAccess client, CancellationToken aborted)
+    {
+        using var wait = CancellationTokenSource.CreateLinkedTokenSource(aborted);
+        wait.CancelAfter(options.Value.ConcurrencyWait);
+        try
+        {
+            return await _slots.AcquireAsync(client, 1, wait.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            return _slots.AttemptAcquire(client);
+        }
+    }
 
     public static int SecondsUntilNextRequest(ClientAccess client) =>
         client.Limits.RatePerMinute is { } perMinute ? (int)Math.Ceiling(Minute.TotalSeconds / perMinute) : 1;

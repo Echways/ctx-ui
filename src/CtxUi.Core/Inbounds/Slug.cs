@@ -11,8 +11,7 @@ public static partial class Slug
     {
         var slug = value?.Trim() ?? "";
         if (!Pattern().IsMatch(slug))
-            throw new DomainException(
-                $"slug «{value}» недопустим: от 1 до 64 символов, строчные латинские буквы, цифры и дефис, дефис не по краям");
+            throw new DomainException(string.Format(CoreText.SlugInvalid, value));
 
         return slug;
     }

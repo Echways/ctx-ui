@@ -3,14 +3,14 @@
 @inject IDialogService Dialogs
 @inject ISnackbar Snackbar
 
-<PageTitle>Ключи API</PageTitle>
+<PageTitle>@PanelText.ApiKeys</PageTitle>
 
 <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-4">
-    <MudText Typo="Typo.h5">Ключи API</MudText>
+    <MudText Typo="Typo.h5">@PanelText.ApiKeys</MudText>
     <MudSpacer />
-    <MudButton Href="swagger/" Target="_blank" StartIcon="@Icons.Material.Filled.Description">Документация API</MudButton>
+    <MudButton Href="swagger/" Target="_blank" StartIcon="@Icons.Material.Filled.Description">@PanelText.ApiDocs</MudButton>
     <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="AddAsync">
-        Выпустить ключ
+        @PanelText.IssueKey
     </MudButton>
 </MudStack>
 
@@ -21,16 +21,16 @@
 else if (_keys.Count == 0)
 {
     <MudAlert Severity="Severity.Info">
-        Ключей пока нет. Ключ нужен программам, которые управляют шлюзом через REST API: боту, скрипту выдачи доступа.
+        @PanelText.KeysEmpty
     </MudAlert>
 }
 else
 {
     <MudTable Items="_keys" Dense="true" Hover="true" Elevation="1">
         <HeaderContent>
-            <MudTh>Название</MudTh>
-            <MudTh>Ключ</MudTh>
-            <MudTh>Выпущен (UTC)</MudTh>
+            <MudTh>@PanelText.Title</MudTh>
+            <MudTh>@PanelText.Key</MudTh>
+            <MudTh>@PanelText.IssuedColumn</MudTh>
             <MudTh></MudTh>
         </HeaderContent>
         <RowTemplate>
@@ -38,7 +38,7 @@ else
             <MudTd>@(context.SecretPrefix)…</MudTd>
             <MudTd>@Words.Day(context.CreatedAt)</MudTd>
             <MudTd Style="text-align: right">
-                <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" aria-label="Отозвать" title="Отозвать"
+                <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" aria-label="@PanelText.Revoke" title="@PanelText.Revoke"
                                OnClick="@(() => RemoveAsync(context))" />
             </MudTd>
         </RowTemplate>
@@ -57,7 +57,7 @@ else
 
     private async Task AddAsync()
     {
-        var dialog = await Dialogs.ShowAsync<ApiKeyDialog>("Новый ключ API", FormOptions);
+        var dialog = await Dialogs.ShowAsync<ApiKeyDialog>(PanelText.NewApiKey, FormOptions);
         if (await dialog.Result is { Canceled: false })
             await LoadAsync();
     }
@@ -65,17 +65,17 @@ else
     private async Task RemoveAsync(ApiKey key)
     {
         var confirmed = await Dialogs.ShowMessageBoxAsync(
-            $"Отозвать ключ «{key.Name}»?",
-            "Запросы с этим ключом сразу начнут получать 401.",
-            yesText: "Отозвать",
-            cancelText: "Отмена");
+            string.Format(PanelText.RevokeQuestion, key.Name),
+            PanelText.RevokeWarning,
+            yesText: PanelText.Revoke,
+            cancelText: PanelText.Cancel);
         if (confirmed != true)
             return;
 
         try
         {
             await Backend.ChangeAsync(services => services.GetRequiredService<ApiKeyService>().RemoveAsync(key.Name));
-            Snackbar.Add($"Ключ «{key.Name}» отозван", Severity.Success);
+            Snackbar.Add(string.Format(PanelText.KeyRevoked, key.Name), Severity.Success);
         }
         catch (DomainException exception)
         {

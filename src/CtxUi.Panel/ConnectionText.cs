@@ -16,25 +16,28 @@ public static class ConnectionText
     public static string Message(string publicUrl, Client client, string token)
     {
         var text = new StringBuilder();
-        text.Append($"Доступ к MCP-серверам для «{client.Name}».\n\n");
-        text.Append($"Токен: {token}\n\n");
+        text.Append($"{string.Format(PanelText.MessageIntro, client.Name)}\n\n");
+        text.Append($"{string.Format(PanelText.MessageToken, token)}\n\n");
         foreach (var slug in Slugs(client))
         {
             text.Append($"{slug}\n");
-            text.Append($"  адрес: {Address(publicUrl, slug)}\n");
-            text.Append($"  заголовок: Authorization: Bearer {token}\n");
-            text.Append("  если заголовок задать нельзя, адрес с токеном внутри:\n");
+            text.Append($"  {string.Format(PanelText.MessageAddress, Address(publicUrl, slug))}\n");
+            text.Append($"  {string.Format(PanelText.MessageHeader, token)}\n");
+            text.Append($"  {PanelText.MessageNoHeader}\n");
             text.Append($"  {AddressWithToken(publicUrl, token, slug)}\n\n");
         }
 
-        text.Append(client.ExpiresAt is { } expiresAt ? $"Доступ действует до {Words.Day(expiresAt)} (UTC).\n" : "Доступ бессрочный.\n");
+        var validity = client.ExpiresAt is { } expiresAt
+            ? string.Format(PanelText.MessageExpires, Words.Day(expiresAt))
+            : PanelText.MessageNoExpiry;
+        text.Append($"{validity}\n");
         if (client.QuotaCalls is { } quota)
         {
-            var period = client.ResetEveryDays is { } days ? $"каждые {days} дн." : "на всё время.";
-            text.Append($"Вызовов инструментов: {quota} {period}\n");
+            var period = client.ResetEveryDays is { } days ? string.Format(PanelText.MessageQuotaEvery, days) : PanelText.MessageQuotaOnce;
+            text.Append($"{string.Format(PanelText.MessageQuota, quota, period)}\n");
         }
 
-        text.Append("Токен и адрес с токеном равносильны паролю: не передавайте их дальше.");
+        text.Append(PanelText.MessageWarning);
         return text.ToString();
     }
 }

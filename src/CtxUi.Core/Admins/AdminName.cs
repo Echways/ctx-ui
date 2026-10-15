@@ -13,8 +13,7 @@ public static partial class AdminName
     {
         var name = value?.Trim() ?? "";
         if (!Pattern().IsMatch(name))
-            throw new DomainException(
-                $"логин «{name}» недопустим: от 1 до {MaxLength} символов, латинские буквы, цифры, точка, дефис и подчёркивание");
+            throw new DomainException(string.Format(CoreText.AdminNameInvalid, name, MaxLength));
 
         return name;
     }

@@ -5,7 +5,7 @@
 @inject SignInManager<Admin> SignIn
 @inject NavigationManager Navigation
 
-<PageTitle>Вход в ctx-ui</PageTitle>
+<PageTitle>@PanelText.SignInTitle</PageTitle>
 
 <form class="entrance" method="post" @formname="login" @onsubmit="SignInAsync">
     <AntiforgeryToken />
@@ -13,19 +13,21 @@
     @if (_refused)
     {
         <p class="entrance-refusal" role="alert">
-            Неверный логин или пароль. После @PanelServices.MaxFailedSignIns ошибок подряд вход закрывается
-            на @((int)PanelServices.Lockout.TotalMinutes) минут.
+            @string.Format(PanelText.SignInRefused, PanelServices.MaxFailedSignIns, (int)PanelServices.Lockout.TotalMinutes)
         </p>
     }
     <label>
-        Логин
+        @PanelText.Login
         <input name="Input.Name" value="@Input.Name" autocomplete="username" autocapitalize="none" required autofocus />
     </label>
     <label>
-        Пароль
+        @PanelText.Password
         <input name="Input.Password" type="password" autocomplete="current-password" required />
     </label>
-    <button type="submit">Войти</button>
+    <button type="submit">@PanelText.SignIn</button>
+    <a href="@PanelLanguage.SwitchPath(Navigation)" lang="@PanelText.LanguageSwitchCulture" data-enhance-nav="false">
+        @PanelText.LanguageSwitch
+    </a>
 </form>
 
 @code {

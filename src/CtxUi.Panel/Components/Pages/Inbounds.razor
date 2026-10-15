@@ -3,13 +3,13 @@
 @inject IDialogService Dialogs
 @inject ISnackbar Snackbar
 
-<PageTitle>Inbounds</PageTitle>
+<PageTitle>@PanelText.Inbounds</PageTitle>
 
 <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-4">
-    <MudText Typo="Typo.h5">Inbounds</MudText>
+    <MudText Typo="Typo.h5">@PanelText.Inbounds</MudText>
     <MudSpacer />
     <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="AddAsync">
-        Добавить inbound
+        @PanelText.AddInbound
     </MudButton>
 </MudStack>
 
@@ -20,18 +20,18 @@
 else if (_rows.Count == 0)
 {
     <MudAlert Severity="Severity.Info">
-        Inbound'ов пока нет. Inbound — это адрес /mcp/&lt;slug&gt; на шлюзе, за которым стоит ваш MCP-сервер.
+        @PanelText.InboundsEmpty
     </MudAlert>
 }
 else
 {
     <MudTable Items="_rows" Dense="true" Hover="true" Elevation="1">
         <HeaderContent>
-            <MudTh>Адрес</MudTh>
-            <MudTh>Название</MudTh>
-            <MudTh>MCP-сервер</MudTh>
-            <MudTh>Клиентов</MudTh>
-            <MudTh>Включён</MudTh>
+            <MudTh>@PanelText.Address</MudTh>
+            <MudTh>@PanelText.Title</MudTh>
+            <MudTh>@PanelText.McpServer</MudTh>
+            <MudTh>@PanelText.ClientCount</MudTh>
+            <MudTh>@PanelText.Enabled</MudTh>
             <MudTh></MudTh>
         </HeaderContent>
         <RowTemplate>
@@ -44,9 +44,9 @@ else
                            ValueChanged="@(enabled => SwitchAsync(context.Inbound, enabled))" />
             </MudTd>
             <MudTd Style="text-align: right; white-space: nowrap">
-                <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" aria-label="Изменить" title="Изменить"
+                <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" aria-label="@PanelText.Edit" title="@PanelText.Edit"
                                OnClick="@(() => EditAsync(context.Inbound))" />
-                <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" aria-label="Удалить" title="Удалить"
+                <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" aria-label="@PanelText.Delete" title="@PanelText.Delete"
                                OnClick="@(() => RemoveAsync(context))" />
             </MudTd>
         </RowTemplate>
@@ -69,7 +69,7 @@ else
 
     private async Task AddAsync()
     {
-        var dialog = await Dialogs.ShowAsync<InboundDialog>("Новый inbound", FormOptions);
+        var dialog = await Dialogs.ShowAsync<InboundDialog>(PanelText.NewInbound, FormOptions);
         if (await dialog.Result is { Canceled: false })
             await LoadAsync();
     }
@@ -77,25 +77,25 @@ else
     private async Task EditAsync(Inbound inbound)
     {
         var parameters = new DialogParameters<InboundDialog> { { dialog => dialog.Slug, inbound.Slug } };
-        var dialog = await Dialogs.ShowAsync<InboundDialog>($"Inbound «{inbound.Slug}»", parameters, FormOptions);
+        var dialog = await Dialogs.ShowAsync<InboundDialog>(string.Format(PanelText.InboundTitle, inbound.Slug), parameters, FormOptions);
         if (await dialog.Result is { Canceled: false })
             await LoadAsync();
     }
 
     private Task SwitchAsync(Inbound inbound, bool enabled) => ApplyAsync(
         services => services.GetRequiredService<InboundService>().SetEnabledAsync(inbound.Slug, enabled),
-        $"Inbound «{inbound.Slug}» {(enabled ? "включён" : "выключен")}");
+        string.Format(enabled ? PanelText.InboundEnabled : PanelText.InboundDisabled, inbound.Slug));
 
     private async Task RemoveAsync(Row row)
     {
         var slug = row.Inbound.Slug;
         var confirmed = await Dialogs.ShowMessageBoxAsync(
-            $"Удалить inbound «{slug}»?",
-            $"Адрес /mcp/{slug} перестанет отвечать. Клиентов с доступом к нему: {row.Clients}.",
-            yesText: "Удалить",
-            cancelText: "Отмена");
+            string.Format(PanelText.RemoveInboundQuestion, slug),
+            string.Format(PanelText.RemoveInboundWarning, slug, row.Clients),
+            yesText: PanelText.Delete,
+            cancelText: PanelText.Cancel);
         if (confirmed == true)
-            await ApplyAsync(services => services.GetRequiredService<InboundService>().RemoveAsync(slug), $"Inbound «{slug}» удалён");
+            await ApplyAsync(services => services.GetRequiredService<InboundService>().RemoveAsync(slug), string.Format(PanelText.InboundRemoved, slug));
     }
 
     private async Task ApplyAsync(Func<IServiceProvider, Task> change, string done)

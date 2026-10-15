@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="AdminNameInvalid" xml:space="preserve">
+    <value>логин «{0}» недопустим: от 1 до {1} символов, латинские буквы, цифры, точка, дефис и подчёркивание</value>
+  </data>
+  <data name="ApiKeyNameInvalid" xml:space="preserve">
+    <value>название ключа «{0}» недопустимо: от 1 до {1} символов, латинские буквы, цифры, точка, дефис и подчёркивание</value>
+  </data>
+  <data name="ApiKeyExists" xml:space="preserve">
+    <value>ключ «{0}» уже есть</value>
+  </data>
+  <data name="ApiKeyNotFound" xml:space="preserve">
+    <value>ключ «{0}» не найден</value>
+  </data>
+  <data name="ClientExists" xml:space="preserve">
+    <value>клиент «{0}» уже есть</value>
+  </data>
+  <data name="ClientNotFound" xml:space="preserve">
+    <value>клиент «{0}» не найден</value>
+  </data>
+  <data name="ClientIdNotFound" xml:space="preserve">
+    <value>клиент не найден</value>
+  </data>
+  <data name="ClientNameEmpty" xml:space="preserve">
+    <value>имя клиента не может быть пустым</value>
+  </data>
+  <data name="ClientNameTooLong" xml:space="preserve">
+    <value>имя клиента длиннее {0} символов</value>
+  </data>
+  <data name="ClientNameControl" xml:space="preserve">
+    <value>имя клиента содержит управляющие символы</value>
+  </data>
+  <data name="ExpiryPassed" xml:space="preserve">
+    <value>срок {0:yyyy-MM-dd} уже прошёл</value>
+  </data>
+  <data name="InboundRequired" xml:space="preserve">
+    <value>укажите хотя бы один inbound</value>
+  </data>
+  <data name="InboundsMissing" xml:space="preserve">
+    <value>inbound не найден: {0}</value>
+  </data>
+  <data name="LimitOutOfRange" xml:space="preserve">
+    <value>{0}: допустимо целое от 1 до {1}, пустое значение снимает ограничение</value>
+  </data>
+  <data name="LimitRate" xml:space="preserve">
+    <value>лимит запросов в минуту</value>
+  </data>
+  <data name="LimitConcurrency" xml:space="preserve">
+    <value>лимит одновременных запросов</value>
+  </data>
+  <data name="LimitQuota" xml:space="preserve">
+    <value>квота вызовов</value>
+  </data>
+  <data name="LimitResetDays" xml:space="preserve">
+    <value>период сброса квоты в днях</value>
+  </data>
+  <data name="MetadataKeyInvalid" xml:space="preserve">
+    <value>ключ метаданных «{0}» недопустим: до 64 латинских букв, цифр и дефисов, дефис не по краям</value>
+  </data>
+  <data name="MetadataValueTooLong" xml:space="preserve">
+    <value>значение метаданных «{0}» длиннее {1} символов</value>
+  </data>
+  <data name="MetadataValueControl" xml:space="preserve">
+    <value>значение метаданных «{0}» содержит управляющие символы</value>
+  </data>
+  <data name="MetadataKeyDuplicate" xml:space="preserve">
+    <value>ключ метаданных «{0}» задан дважды</value>
+  </data>
+  <data name="MetadataTooMany" xml:space="preserve">
+    <value>метаданных больше {0} пар</value>
+  </data>
+  <data name="PairLineInvalid" xml:space="preserve">
+    <value>«{0}»: ожидается вид ключ=значение</value>
+  </data>
+  <data name="SlugInvalid" xml:space="preserve">
+    <value>slug «{0}» недопустим: от 1 до 64 символов, строчные латинские буквы, цифры и дефис, дефис не по краям</value>
+  </data>
+  <data name="InboundExists" xml:space="preserve">
+    <value>inbound «{0}» уже есть</value>
+  </data>
+  <data name="InboundNotFound" xml:space="preserve">
+    <value>inbound «{0}» не найден</value>
+  </data>
+  <data name="InboundNameInvalid" xml:space="preserve">
+    <value>название inbound'а должно быть одной строкой до {0} символов</value>
+  </data>
+  <data name="TimeoutOutOfRange" xml:space="preserve">
+    <value>таймаут запроса: допустимо целое от 1 до {0} секунд</value>
+  </data>
+  <data name="BodyLimitOutOfRange" xml:space="preserve">
+    <value>предел тела запроса: допустимо от {0} до {1} байт</value>
+  </data>
+  <data name="UrlInvalid" xml:space="preserve">
+    <value>адрес «{0}» недопустим: нужен полный адрес, начинающийся с http:// или https://</value>
+  </data>
+  <data name="UrlHasSecrets" xml:space="preserve">
+    <value>в адресе не должно быть логина, пароля и #фрагмента; секрет передавайте заголовком</value>
+  </data>
+  <data name="HeaderNameInvalid" xml:space="preserve">
+    <value>имя заголовка «{0}» недопустимо</value>
+  </data>
+  <data name="HeaderReserved" xml:space="preserve">
+    <value>заголовок «{0}» шлюз выставляет сам, задать его нельзя</value>
+  </data>
+  <data name="HeaderValueInvalid" xml:space="preserve">
+    <value>значение заголовка «{0}» должно быть непустой строкой из печатных символов ASCII</value>
+  </data>
+  <data name="HeaderDuplicate" xml:space="preserve">
+    <value>заголовок «{0}» задан дважды</value>
+  </data>
+  <data name="StatusActive" xml:space="preserve">
+    <value>активен</value>
+  </data>
+  <data name="StatusDisabled" xml:space="preserve">
+    <value>отключён</value>
+  </data>
+  <data name="StatusExpired" xml:space="preserve">
+    <value>истёк</value>
+  </data>
+  <data name="StatusExhausted" xml:space="preserve">
+    <value>исчерпан</value>
+  </data>
+  <data name="OutcomeOk" xml:space="preserve">
+    <value>выполнен</value>
+  </data>
+  <data name="OutcomeUpstreamRejected" xml:space="preserve">
+    <value>upstream отклонил</value>
+  </data>
+  <data name="OutcomeUpstreamFailed" xml:space="preserve">
+    <value>сбой upstream</value>
+  </data>
+  <data name="OutcomeClientAborted" xml:space="preserve">
+    <value>клиент оборвал</value>
+  </data>
+  <data name="OutcomeQuotaExhausted" xml:space="preserve">
+    <value>квота исчерпана</value>
+  </data>
+  <data name="OutcomeRateLimited" xml:space="preserve">
+    <value>частота превышена</value>
+  </data>
+  <data name="OutcomeConcurrencyLimited" xml:space="preserve">
+    <value>слишком много одновременных</value>
+  </data>
+  <data name="OutcomeBodyTooLarge" xml:space="preserve">
+    <value>тело слишком большое</value>
+  </data>
+  <data name="OutcomeNotJsonRpc" xml:space="preserve">
+    <value>не JSON-RPC</value>
+  </data>
+</root>

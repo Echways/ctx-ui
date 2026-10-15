@@ -12,28 +12,27 @@
             }
             @if (_secret is null)
             {
-                <MudTextField @bind-Value="_name" Label="Название" Immediate="true"
-                              HelperText="кому выдан ключ: латинские буквы, цифры, точка, дефис и подчёркивание" />
+                <MudTextField @bind-Value="_name" Label="@PanelText.Title" Immediate="true" HelperText="@PanelText.ApiKeyNameHelp" />
             }
             else
             {
-                <MudAlert Severity="Severity.Warning">Ключ показан один раз. Сохраните его сейчас: потом его не увидеть даже в панели.</MudAlert>
-                <MudTextField T="string" Value="_secret" Label="Ключ" ReadOnly="true" Variant="Variant.Outlined" Margin="Margin.Dense"
-                              HelperText="передаётся заголовком Authorization: Bearer <ключ>"
+                <MudAlert Severity="Severity.Warning">@PanelText.KeyShownOnce</MudAlert>
+                <MudTextField T="string" Value="_secret" Label="@PanelText.Key" ReadOnly="true" Variant="Variant.Outlined" Margin="Margin.Dense"
+                              HelperText="@PanelText.KeyHelp"
                               Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.ContentCopy"
-                              AdornmentAriaLabel="Скопировать ключ" OnAdornmentClick="CopyAsync" />
+                              AdornmentAriaLabel="@PanelText.CopyKey" OnAdornmentClick="CopyAsync" />
             }
         </MudStack>
     </DialogContent>
     <DialogActions>
         @if (_secret is null)
         {
-            <MudButton OnClick="@(() => MudDialog.Cancel())">Отмена</MudButton>
-            <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="IssueAsync">Выпустить</MudButton>
+            <MudButton OnClick="@(() => MudDialog.Cancel())">@PanelText.Cancel</MudButton>
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="IssueAsync">@PanelText.Issue</MudButton>
         }
         else
         {
-            <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="@(() => MudDialog.Close())">Закрыть</MudButton>
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="@(() => MudDialog.Close())">@PanelText.Close</MudButton>
         }
     </DialogActions>
 </MudDialog>
@@ -65,11 +64,11 @@
         try
         {
             await Js.InvokeVoidAsync("navigator.clipboard.writeText", _secret);
-            Snackbar.Add("Скопировано", Severity.Success);
+            Snackbar.Add(PanelText.Copied, Severity.Success);
         }
         catch (JSException)
         {
-            Snackbar.Add("Браузер разрешает копировать только на странице, открытой по HTTPS. Выделите текст и скопируйте его сами.", Severity.Warning);
+            Snackbar.Add(PanelText.CopyNeedsHttps, Severity.Warning);
         }
     }
 }

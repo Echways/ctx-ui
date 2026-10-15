@@ -15,31 +15,30 @@
             else if (_token is null)
             {
                 <MudAlert Severity="Severity.Warning" role="alert">
-                    Токен показать нельзя: его сохранённая копия не расшифрована, потерян каталог keys.
-                    Прежний токен продолжает работать у того, кому он выдан. Чтобы увидеть токен, выпустите новый.
+                    @PanelText.TokenLost
                 </MudAlert>
             }
             else
             {
-                <MudTextField T="string" Value="_token" Label="Токен" ReadOnly="true" Variant="Variant.Outlined" Margin="Margin.Dense"
+                <MudTextField T="string" Value="_token" Label="@PanelText.Token" ReadOnly="true" Variant="Variant.Outlined" Margin="Margin.Dense"
                               Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.ContentCopy"
-                              AdornmentAriaLabel="Скопировать токен" OnAdornmentClick="@(() => CopyAsync(_token))" />
+                              AdornmentAriaLabel="@PanelText.CopyToken" OnAdornmentClick="@(() => CopyAsync(_token))" />
                 @foreach (var slug in ConnectionText.Slugs(_client))
                 {
                     var address = ConnectionText.Address(PublicUrl, slug);
                     var withToken = ConnectionText.AddressWithToken(PublicUrl, _token, slug);
-                    <MudTextField T="string" Value="address" Label="@($"Адрес {slug}")" ReadOnly="true" Variant="Variant.Outlined"
-                                  Margin="Margin.Dense" HelperText="токен передаётся заголовком Authorization: Bearer <токен>"
+                    <MudTextField T="string" Value="address" Label="@string.Format(PanelText.AddressOf, slug)" ReadOnly="true" Variant="Variant.Outlined"
+                                  Margin="Margin.Dense" HelperText="@PanelText.TokenHeaderHelp"
                                   Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.ContentCopy"
-                                  AdornmentAriaLabel="@($"Скопировать адрес {slug}")" OnAdornmentClick="@(() => CopyAsync(address))" />
-                    <MudTextField T="string" Value="withToken" Label="@($"Адрес {slug} с токеном")" ReadOnly="true"
+                                  AdornmentAriaLabel="@string.Format(PanelText.CopyAddressOf, slug)" OnAdornmentClick="@(() => CopyAsync(address))" />
+                    <MudTextField T="string" Value="withToken" Label="@string.Format(PanelText.AddressWithTokenOf, slug)" ReadOnly="true"
                                   Variant="Variant.Outlined" Margin="Margin.Dense"
-                                  HelperText="для клиентов, которые не умеют задавать заголовки: claude.ai, ChatGPT"
+                                  HelperText="@PanelText.AddressWithTokenHelp"
                                   Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.ContentCopy"
-                                  AdornmentAriaLabel="@($"Скопировать адрес {slug} с токеном")"
+                                  AdornmentAriaLabel="@string.Format(PanelText.CopyAddressWithTokenOf, slug)"
                                   OnAdornmentClick="@(() => CopyAsync(withToken))" />
                 }
-                <MudTextField T="string" Value="_message" Label="Сообщение для клиента" ReadOnly="true" Lines="8"
+                <MudTextField T="string" Value="_message" Label="@PanelText.MessageForClient" ReadOnly="true" Lines="8"
                               Variant="Variant.Outlined" />
             }
         </MudStack>
@@ -47,9 +46,9 @@
     <DialogActions>
         @if (_token is not null)
         {
-            <MudButton StartIcon="@Icons.Material.Filled.ContentCopy" OnClick="@(() => CopyAsync(_message))">Скопировать сообщение</MudButton>
+            <MudButton StartIcon="@Icons.Material.Filled.ContentCopy" OnClick="@(() => CopyAsync(_message))">@PanelText.CopyMessage</MudButton>
         }
-        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="@(() => MudDialog.Close())">Закрыть</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="@(() => MudDialog.Close())">@PanelText.Close</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -92,11 +91,11 @@
         try
         {
             await Js.InvokeVoidAsync("navigator.clipboard.writeText", text);
-            Snackbar.Add("Скопировано", Severity.Success);
+            Snackbar.Add(PanelText.Copied, Severity.Success);
         }
         catch (JSException)
         {
-            Snackbar.Add("Браузер разрешает копировать только на странице, открытой по HTTPS. Выделите текст и скопируйте его сами.", Severity.Warning);
+            Snackbar.Add(PanelText.CopyNeedsHttps, Severity.Warning);
         }
     }
 }

@@ -34,6 +34,7 @@ public static class ServerApp
         app.UseForwardedHeaders();
         app.UseTokenPath();
         app.UseCtxUiPanelGate(GatewayServices.Path);
+        app.UseCtxUiPanelLanguage();
         app.UseCtxUiApiDocs();
         app.UseRouting();
         app.UseAuthentication();

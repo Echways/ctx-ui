@@ -10,11 +10,11 @@ public static class ClientName
     {
         var name = value?.Trim() ?? "";
         if (name.Length == 0)
-            throw new DomainException("имя клиента не может быть пустым");
+            throw new DomainException(CoreText.ClientNameEmpty);
         if (name.Length > MaxLength)
-            throw new DomainException($"имя клиента длиннее {MaxLength} символов");
+            throw new DomainException(string.Format(CoreText.ClientNameTooLong, MaxLength));
         if (name.Any(char.IsControl))
-            throw new DomainException("имя клиента содержит управляющие символы");
+            throw new DomainException(CoreText.ClientNameControl);
 
         return name;
     }

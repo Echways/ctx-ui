@@ -576,7 +576,4 @@
   <data name="Copy" xml:space="preserve">
     <value>Copy</value>
   </data>
-  <data name="TokenShownHere" xml:space="preserve">
-    <value>The whole token is shown only here</value>
-  </data>
 </root>

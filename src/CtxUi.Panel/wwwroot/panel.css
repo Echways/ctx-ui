@@ -19,6 +19,7 @@
     --night: #080C1C;
     --deep: #0F1530;
     --rule: #1E2648;
+    --line: #5A628A;
     --mist: #8A90AB;
     --light: #EEEBE5;
     --klein: #002FA7;
@@ -71,8 +72,9 @@ p {
     color: var(--white);
 }
 
-:focus-visible {
-    outline: 2px solid var(--glow);
+:focus-visible,
+:is(a, button, summary, svg, [tabindex]:not([tabindex="-1"]):not(.pointer-events-none)):focus-visible {
+    outline: 2px solid var(--ring, var(--glow)) !important;
     outline-offset: 3px;
 }
 
@@ -453,6 +455,7 @@ button.link:hover, .link:hover {
 }
 
 .tbl .mud-table-container {
+    position: relative;
     overflow-x: auto;
 }
 
@@ -555,7 +558,7 @@ button.link:hover, .link:hover {
     box-sizing: border-box;
     background: transparent;
     border: 0;
-    border-bottom: 1px solid var(--rule);
+    border-bottom: 1px solid var(--line);
     border-radius: 0;
     color: var(--light);
     caret-color: var(--glow);
@@ -786,6 +789,10 @@ button.link:hover, .link:hover {
 .mud-menu-item:hover, .mud-menu-item:focus-visible, .mud-list-item:hover, .mud-list-item.mud-selected-item {
     background: var(--rule) !important;
     outline: none;
+}
+
+.mud-list-item.mud-selected-item, .mud-list-item.mud-selected-item .mud-typography {
+    color: var(--light) !important;
 }
 
 .mud-menu-item.danger .mud-menu-item-text {
@@ -1058,7 +1065,7 @@ button.btn-k {
 }
 
 .mud-input.mud-input-underline::before {
-    border-bottom: 1px solid var(--rule) !important;
+    border-bottom: 1px solid var(--line) !important;
 }
 
 .mud-input.mud-input-underline:hover:not(.mud-disabled)::before {
@@ -1121,8 +1128,8 @@ button.btn-k {
     border-radius: 2px;
 }
 
-.kf :focus-visible {
-    outline-color: var(--white);
+.kf {
+    --ring: var(--white);
 }
 
 .kf-label {
@@ -1493,8 +1500,8 @@ svg.hz:focus-visible {
     overflow: hidden;
 }
 
-.entrance :focus-visible {
-    outline-color: var(--white);
+.entrance {
+    --ring: var(--white);
 }
 
 .entrance ::selection {
@@ -1546,7 +1553,7 @@ svg.hz:focus-visible {
 .signin input {
     background: transparent;
     border: 0;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.4);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.5);
     border-radius: 0;
     color: var(--white);
     caret-color: var(--white);
@@ -1635,4 +1642,11 @@ svg.hz:focus-visible {
     white-space: nowrap;
     pointer-events: none;
     user-select: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation: none !important;
+        transition: none !important;
+    }
 }

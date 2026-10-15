@@ -576,7 +576,4 @@
   <data name="Copy" xml:space="preserve">
     <value>Копировать</value>
   </data>
-  <data name="TokenShownHere" xml:space="preserve">
-    <value>Токен целиком виден только здесь</value>
-  </data>
 </root>

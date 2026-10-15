@@ -151,4 +151,41 @@ public class PanelShellTests
 
         Assert.Empty(foreign);
     }
+
+    [Fact]
+    public async Task Lists_do_not_scroll_the_page_sideways_on_a_tablet()
+    {
+        await using var gateway = await GatewayHost.StartAsync();
+        await gateway.AddInboundAsync("learn", "https://learn.example.org/mcp");
+        await gateway.AddInboundAsync("docs", "https://docs.example.org/mcp");
+        await gateway.AddInboundAsync("github", "https://github.example.org/mcp");
+        await gateway.AddClientAsync(
+            "Бот проверки домашних заданий",
+            ["learn", "docs", "github"],
+            new DateTimeOffset(2099, 1, 1, 0, 0, 0, TimeSpan.Zero),
+            limits: new CtxUi.Core.Clients.ClientLimits(QuotaCalls: 5000));
+        await using var session = await PanelSession.SignInAsync(gateway);
+        var page = session.Page;
+        await page.SetViewportSizeAsync(768, 900);
+
+        await page.GetByRole(AriaRole.Navigation).GetByRole(AriaRole.Link, new() { Name = "Клиенты" }).ClickAsync();
+        await Expect(page.GetByRole(AriaRole.Row)).ToHaveCountAsync(2);
+
+        Assert.Equal(0, await page.EvaluateAsync<int>("document.documentElement.scrollWidth - innerWidth"));
+    }
+
+    [Fact]
+    public async Task Keyboard_focus_is_always_visible()
+    {
+        await using var gateway = await GatewayHost.StartAsync();
+        await using var session = await PanelSession.SignInAsync(gateway);
+        var link = session.Page.GetByRole(AriaRole.Navigation).GetByRole(AriaRole.Link, new() { Name = "Клиенты" });
+
+        await link.FocusAsync();
+        await session.Page.Keyboard.PressAsync("Shift+Tab");
+        await session.Page.Keyboard.PressAsync("Tab");
+
+        await Expect(link).ToBeFocusedAsync();
+        await Expect(link).ToHaveCSSAsync("outline-style", "solid");
+    }
 }

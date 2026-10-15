@@ -1,5 +1,4 @@
-using System.Security.Cryptography;
-using System.Text;
+using System.Diagnostics.CodeAnalysis;
 
 namespace CtxUi.Core.Clients;
 
@@ -7,28 +6,13 @@ public static class AccessToken
 {
     public const string Prefix = "tnk_";
 
-    private const int SecretLength = 32;
-    private const int DisplayedSecretLength = 6;
-    private const string Alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    private static readonly PrefixedSecret Secret = new(Prefix, 32);
 
-    public static string Generate() => Prefix + RandomNumberGenerator.GetString(Alphabet, SecretLength);
+    public static string Generate() => Secret.Generate();
 
-    public static bool IsWellFormed(string? value)
-    {
-        if (value is null || value.Length != Prefix.Length + SecretLength || !value.StartsWith(Prefix, StringComparison.Ordinal))
-            return false;
+    public static bool IsWellFormed([NotNullWhen(true)] string? value) => Secret.IsWellFormed(value);
 
-        foreach (var symbol in value.AsSpan(Prefix.Length))
-        {
-            if (!char.IsAsciiLetterOrDigit(symbol))
-                return false;
-        }
+    public static string Hash(string token) => PrefixedSecret.Hash(token);
 
-        return true;
-    }
-
-    public static string Hash(string token) =>
-        Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(token)));
-
-    public static string DisplayPrefix(string token) => token[..(Prefix.Length + DisplayedSecretLength)];
+    public static string DisplayPrefix(string token) => Secret.DisplayPrefix(token);
 }

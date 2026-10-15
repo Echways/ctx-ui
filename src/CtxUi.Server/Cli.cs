@@ -9,6 +9,7 @@ using CtxUi.Core.Data;
 using CtxUi.Core.Inbounds;
 using CtxUi.Core.Settings;
 using CtxUi.Core.Usage;
+using CtxUi.Panel;
 using CtxUi.Panel.Accounts;
 using CtxUi.Server.Api;
 
@@ -397,11 +398,11 @@ public static class Cli
             }
 
             output.WriteLine($"Токен:   {token}");
-            foreach (var slug in client.Inbounds.Select(link => link.Inbound!.Slug).Order())
+            foreach (var slug in ConnectionText.Slugs(client))
             {
                 output.WriteLine($"Inbound «{slug}»:");
-                output.WriteLine($"  с заголовком Authorization: Bearer <токен>   {PublicUrl(services)}/mcp/{slug}");
-                output.WriteLine($"  адрес с токеном внутри                      {PublicUrl(services)}/k/{token}/mcp/{slug}");
+                output.WriteLine($"  с заголовком Authorization: Bearer <токен>   {ConnectionText.Address(PublicUrl(services), slug)}");
+                output.WriteLine($"  адрес с токеном внутри                      {ConnectionText.AddressWithToken(PublicUrl(services), token, slug)}");
             }
         }
     }

@@ -12,6 +12,7 @@ public static class UsageOutcomes
         UsageOutcome.RateLimited => "частота превышена",
         UsageOutcome.ConcurrencyLimited => "слишком много одновременных",
         UsageOutcome.BodyTooLarge => "тело слишком большое",
-        _ => "не JSON-RPC",
+        UsageOutcome.NotJsonRpc => "не JSON-RPC",
+        _ => outcome.ToString(),
     };
 }

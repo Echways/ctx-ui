@@ -22,7 +22,7 @@ public sealed class QuotaLedger
         var start = QuotaPeriod.StartAt(client.PeriodStartedAt, limits.ResetEveryDays, now);
         var resetsAt = QuotaPeriod.NextReset(client.PeriodStartedAt, limits.ResetEveryDays, now);
         var counter = _counters.GetOrAdd(client.Id, _ => new Counter());
-        lock (counter)
+        lock (counter.Gate)
         {
             if (counter.Since != start)
             {
@@ -45,7 +45,7 @@ public sealed class QuotaLedger
         if (!charge.Accepted || !_counters.TryGetValue(clientId, out var counter))
             return;
 
-        lock (counter)
+        lock (counter.Gate)
         {
             if (counter.Since != charge.PeriodStart)
                 return;
@@ -60,7 +60,7 @@ public sealed class QuotaLedger
         var changed = new List<(Counter Counter, StoredUsage Usage)>();
         foreach (var (clientId, counter) in _counters)
         {
-            lock (counter)
+            lock (counter.Gate)
             {
                 if (!counter.Dirty || counter.Since is not { } since)
                     continue;
@@ -81,7 +81,7 @@ public sealed class QuotaLedger
         {
             foreach (var (counter, _) in changed)
             {
-                lock (counter)
+                lock (counter.Gate)
                     counter.Dirty = true;
             }
 
@@ -91,6 +91,8 @@ public sealed class QuotaLedger
 
     private sealed class Counter
     {
+        public Lock Gate { get; } = new();
+
         public DateTimeOffset? Since { get; set; }
 
         public long Used { get; set; }

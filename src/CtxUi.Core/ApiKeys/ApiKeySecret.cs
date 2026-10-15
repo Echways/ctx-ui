@@ -1,6 +1,4 @@
 using System.Diagnostics.CodeAnalysis;
-using System.Security.Cryptography;
-using System.Text;
 
 namespace CtxUi.Core.ApiKeys;
 
@@ -8,28 +6,13 @@ public static class ApiKeySecret
 {
     public const string Prefix = "ctxk_";
 
-    private const int SecretLength = 40;
-    private const int DisplayedSecretLength = 6;
-    private const string Alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    private static readonly PrefixedSecret Secret = new(Prefix, 40);
 
-    public static string Generate() => Prefix + RandomNumberGenerator.GetString(Alphabet, SecretLength);
+    public static string Generate() => Secret.Generate();
 
-    public static bool IsWellFormed([NotNullWhen(true)] string? value)
-    {
-        if (value is null || value.Length != Prefix.Length + SecretLength || !value.StartsWith(Prefix, StringComparison.Ordinal))
-            return false;
+    public static bool IsWellFormed([NotNullWhen(true)] string? value) => Secret.IsWellFormed(value);
 
-        foreach (var symbol in value.AsSpan(Prefix.Length))
-        {
-            if (!char.IsAsciiLetterOrDigit(symbol))
-                return false;
-        }
+    public static string Hash(string secret) => PrefixedSecret.Hash(secret);
 
-        return true;
-    }
-
-    public static string Hash(string secret) =>
-        Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(secret)));
-
-    public static string DisplayPrefix(string secret) => secret[..(Prefix.Length + DisplayedSecretLength)];
+    public static string DisplayPrefix(string secret) => Secret.DisplayPrefix(secret);
 }

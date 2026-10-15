@@ -21,6 +21,7 @@ public static class ClientState
         ClientStatus.Disabled => "отключён",
         ClientStatus.Expired => "истёк",
         ClientStatus.Exhausted => "исчерпан",
-        _ => "активен",
+        ClientStatus.Active => "активен",
+        _ => status.ToString(),
     };
 }

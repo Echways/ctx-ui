@@ -160,10 +160,11 @@ public sealed class ClientService(CtxUiDbContext db, ISecretVault vault, TimePro
     {
         await db.Clients
             .Where(client => client.Id == clientId)
-            .ExecuteUpdateAsync(setters => setters.SetProperty(client => client.LastUsedAt, now), ct);
-        await db.Clients
-            .Where(client => client.Id == clientId && client.FirstUsedAt == null)
-            .ExecuteUpdateAsync(setters => setters.SetProperty(client => client.FirstUsedAt, now), ct);
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(client => client.LastUsedAt, now)
+                    .SetProperty(client => client.FirstUsedAt, client => client.FirstUsedAt ?? now),
+                ct);
     }
 
     public async Task<List<StoredUsage>> LoadUsageAsync(CancellationToken ct = default)

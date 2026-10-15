@@ -24,11 +24,11 @@ public static class GatewayServices
         return services;
     }
 
-    public static WebApplication UseCtxUiGateway(this WebApplication app)
+    public const string Path = "/mcp";
+
+    public static WebApplication MapCtxUiGateway(this WebApplication app)
     {
-        app.UseTokenPath();
-        app.UseRouting();
-        app.Map("/mcp/{slug}", app.Services.GetRequiredService<GatewayHandler>().HandleAsync);
+        app.Map(Path + "/{slug}", app.Services.GetRequiredService<GatewayHandler>().HandleAsync);
         return app;
     }
 

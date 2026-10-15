@@ -6,7 +6,9 @@ using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.DependencyInjection;
 using CtxUi.Core.Clients;
 using CtxUi.Core.Inbounds;
+using CtxUi.Core.Settings;
 using CtxUi.Gateway;
+using CtxUi.Panel.Accounts;
 using CtxUi.Server;
 
 namespace CtxUi.IntegrationTests;
@@ -28,6 +30,10 @@ public sealed class GatewayHost : IAsyncDisposable
     public string DataDir { get; }
 
     public string BaseUrl => App.Urls.First();
+
+    public string PanelPath { get; private set; } = "";
+
+    public string PanelUrl => $"{BaseUrl}/{PanelPath}/";
 
     public static async Task<GatewayHost> StartAsync(Action<WebApplicationBuilder>? configure = null)
     {
@@ -71,6 +77,9 @@ public sealed class GatewayHost : IAsyncDisposable
         IEnumerable<KeyValuePair<string, string>>? metadata = null,
         ClientLimits? limits = null) =>
         ArrangeAsync(services => services.GetRequiredService<ClientService>().AddAsync(name, slugs, expiresAt, metadata, limits));
+
+    public Task<IssuedAdmin> AddAdminAsync(string name = "root") =>
+        ChangeAsync(services => services.GetRequiredService<AdminAccounts>().AddAsync(name));
 
     public Task SetLimitsAsync(string name, ClientLimits limits) => ArrangeAsync(async services =>
     {
@@ -118,5 +127,6 @@ public sealed class GatewayHost : IAsyncDisposable
         await app.StartAsync();
         App = app;
         Http = new HttpClient { BaseAddress = new Uri(app.Urls.First()) };
+        PanelPath = await ChangeAsync(services => services.GetRequiredService<PanelSettings>().PathAsync());
     }
 }

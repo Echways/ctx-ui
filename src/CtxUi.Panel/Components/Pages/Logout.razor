@@ -1,0 +1,23 @@
+@page "/logout"
+@layout BareLayout
+@attribute [ExcludeFromInteractiveRouting]
+@inject SignInManager<Admin> SignIn
+@inject NavigationManager Navigation
+
+<PageTitle>Выход из ctx-ui</PageTitle>
+
+<form class="entrance" method="post" @formname="logout" @onsubmit="SignOutAsync">
+    <AntiforgeryToken />
+    <h1>ctx-ui</h1>
+    <p>Выйти из панели?</p>
+    <button type="submit">Выйти</button>
+    <a href="">Остаться</a>
+</form>
+
+@code {
+    private async Task SignOutAsync()
+    {
+        await SignIn.SignOutAsync();
+        Navigation.NavigateTo(new Uri(Navigation.BaseUri).AbsolutePath + "login");
+    }
+}

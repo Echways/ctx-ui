@@ -3,6 +3,7 @@
   <PropertyGroup>
     <AssemblyName>ctx-ui</AssemblyName>
     <RootNamespace>CtxUi.Server</RootNamespace>
+    <RequiresAspNetWebAssets>true</RequiresAspNetWebAssets>
   </PropertyGroup>
 
   <ItemGroup>

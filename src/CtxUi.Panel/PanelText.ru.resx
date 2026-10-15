@@ -285,9 +285,6 @@
   <data name="NotFoundHeading" xml:space="preserve">
     <value>Такой страницы нет</value>
   </data>
-  <data name="NotFoundText" xml:space="preserve">
-    <value>Адрес изменился или набран с ошибкой. Разделы панели перечислены в меню слева.</value>
-  </data>
   <data name="ActiveOfAll" xml:space="preserve">
     <value>{0} из {1}</value>
   </data>
@@ -521,5 +518,8 @@
   </data>
   <data name="PageTitle" xml:space="preserve">
     <value>{0} · ctx-ui</value>
+  </data>
+  <data name="BackToOverview" xml:space="preserve">
+    <value>Вернуться к обзору</value>
   </data>
 </root>

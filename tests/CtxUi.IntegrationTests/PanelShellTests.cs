@@ -128,8 +128,9 @@ public class PanelShellTests
 
         await page.GotoAsync("no-such-page");
 
-        await Expect(page.GetByText("Такой страницы нет")).ToBeVisibleAsync();
-        await page.GetByRole(AriaRole.Navigation).GetByRole(AriaRole.Link, new() { Name = "Обзор" }).ClickAsync();
+        await Expect(page.GetByRole(AriaRole.Heading, new() { Name = "Такой страницы нет" })).ToBeVisibleAsync();
+        await Expect(page).ToHaveTitleAsync("Страница не найдена · ctx-ui");
+        await page.GetByRole(AriaRole.Link, new() { Name = "Вернуться к обзору" }).ClickAsync();
         await Expect(page.GetByRole(AriaRole.Heading, new() { Name = "Обзор" })).ToBeVisibleAsync();
     }
 

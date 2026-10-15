@@ -7,28 +7,32 @@
 
 <PageTitle>@PanelText.SignInTitle</PageTitle>
 
-<form class="entrance" method="post" @formname="login" @onsubmit="SignInAsync">
-    <AntiforgeryToken />
-    <h1>ctx-ui</h1>
-    @if (_refused)
-    {
-        <p class="entrance-refusal" role="alert">
-            @string.Format(PanelText.SignInRefused, PanelServices.MaxFailedSignIns, (int)PanelServices.Lockout.TotalMinutes)
-        </p>
-    }
-    <label>
-        @PanelText.Login
-        <input name="Input.Name" value="@Input.Name" autocomplete="username" autocapitalize="none" required autofocus />
-    </label>
-    <label>
-        @PanelText.Password
-        <input name="Input.Password" type="password" autocomplete="current-password" required />
-    </label>
-    <button type="submit">@PanelText.SignIn</button>
-    <a href="@PanelLanguage.SwitchPath(Navigation)" lang="@PanelText.LanguageSwitchCulture" data-enhance-nav="false">
-        @PanelText.LanguageSwitch
-    </a>
-</form>
+<div class="entrance-in">
+    <div class="entrance-top">
+        @if (_refused)
+        {
+            <p class="refusal" role="alert">
+                @string.Format(PanelText.SignInRefused, PanelServices.MaxFailedSignIns, (int)PanelServices.Lockout.TotalMinutes)
+            </p>
+        }
+        <a href="@PanelLanguage.SwitchPath(Navigation)" lang="@PanelText.LanguageSwitchCulture" data-enhance-nav="false">
+            @PanelText.LanguageSwitch
+        </a>
+    </div>
+    <form class="signin" method="post" @formname="login" @onsubmit="SignInAsync">
+        <AntiforgeryToken />
+        <label>
+            <span>@PanelText.Login</span>
+            <input name="Input.Name" value="@Input.Name" autocomplete="username" autocapitalize="none" spellcheck="false" required autofocus />
+        </label>
+        <label>
+            <span>@PanelText.Password</span>
+            <input name="Input.Password" type="password" autocomplete="current-password" required />
+        </label>
+        <button type="submit">@PanelText.SignIn</button>
+    </form>
+</div>
+<h1 class="monument">ctx-ui</h1>
 
 @code {
     private bool _refused;

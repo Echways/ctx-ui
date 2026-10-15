@@ -6,13 +6,17 @@
 
 <PageTitle>@PanelText.SignOutTitle</PageTitle>
 
-<form class="entrance" method="post" @formname="logout" @onsubmit="SignOutAsync">
-    <AntiforgeryToken />
-    <h1>ctx-ui</h1>
-    <p>@PanelText.SignOutQuestion</p>
-    <button type="submit">@PanelText.SignOut</button>
-    <a href="">@PanelText.Stay</a>
-</form>
+<div class="entrance-in">
+    <form class="signin" method="post" @formname="logout" @onsubmit="SignOutAsync">
+        <AntiforgeryToken />
+        <p class="question">@PanelText.SignOutQuestion</p>
+        <div class="choice">
+            <button type="submit">@PanelText.SignOut</button>
+            <a href="">@PanelText.Stay</a>
+        </div>
+    </form>
+</div>
+<h1 class="monument">ctx-ui</h1>
 
 @code {
     private async Task SignOutAsync()

@@ -285,9 +285,6 @@
   <data name="NotFoundHeading" xml:space="preserve">
     <value>There is no such page</value>
   </data>
-  <data name="NotFoundText" xml:space="preserve">
-    <value>The address has changed or was mistyped. The panel sections are listed in the menu on the left.</value>
-  </data>
   <data name="ActiveOfAll" xml:space="preserve">
     <value>{0} of {1}</value>
   </data>
@@ -521,5 +518,8 @@
   </data>
   <data name="PageTitle" xml:space="preserve">
     <value>{0} · ctx-ui</value>
+  </data>
+  <data name="BackToOverview" xml:space="preserve">
+    <value>Back to overview</value>
   </data>
 </root>

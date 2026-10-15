@@ -53,6 +53,7 @@ public class PanelLanguageTests
         await using var session = await PanelSession.SignInAsync(gateway);
         var page = session.Page;
         await page.GetByRole(AriaRole.Banner).GetByRole(AriaRole.Button, new() { Name = "English" }).ClickAsync();
+        await Expect(page.Locator("html")).ToHaveAttributeAsync("lang", "en");
         await page.GetByRole(AriaRole.Navigation).GetByRole(AriaRole.Link, new() { Name = "Inbounds" }).ClickAsync();
 
         await page.GetByRole(AriaRole.Button, new() { Name = "Add inbound" }).ClickAsync();

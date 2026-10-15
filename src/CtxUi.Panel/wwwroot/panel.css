@@ -382,67 +382,151 @@ button.link:hover, .link:hover {
     }
 }
 
-.bare {
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: #f4f5f7;
-    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-}
-
 .entrance {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    width: 320px;
-    padding: 32px;
-    background: #fff;
-    border-radius: 8px;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
+    min-height: 100dvh;
+    overflow: hidden;
 }
 
-.entrance h1 {
+.entrance :focus-visible {
+    outline-color: var(--white);
+}
+
+.entrance ::selection {
+    background: var(--white);
+    color: var(--klein);
+}
+
+.entrance-in {
+    display: flex;
+    flex-direction: column;
+    gap: 64px;
+    padding: 32px var(--gutter) 48px;
+}
+
+.entrance-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 24px;
+    min-height: 20px;
+    font: 500 13px/20px var(--sans);
+}
+
+.entrance-top a {
+    margin-left: auto;
+    color: var(--white);
+    text-decoration: none;
+}
+
+.refusal {
     margin: 0;
-    font-size: 24px;
-    font-weight: 600;
+    max-width: 48ch;
+    color: var(--white);
 }
 
-.entrance label {
-    display: flex;
-    flex-direction: column;
+.signin {
+    display: grid;
+    gap: 28px;
+    width: min(280px, 100%);
+}
+
+.signin label {
+    display: grid;
     gap: 4px;
-    font-size: 14px;
-    color: #555;
+    font: 500 13px/20px var(--sans);
+    color: rgba(255, 255, 255, 0.72);
 }
 
-.entrance input {
-    padding: 10px;
-    font-size: 16px;
-    border: 1px solid #c4c7cc;
-    border-radius: 4px;
-}
-
-.entrance button {
-    padding: 10px;
-    font-size: 16px;
-    color: #fff;
-    background: #594ae2;
+.signin input {
+    background: transparent;
     border: 0;
-    border-radius: 4px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.4);
+    border-radius: 0;
+    color: var(--white);
+    caret-color: var(--white);
+    font: 400 17px/28px var(--sans);
+    padding: 4px 0 7px;
+    outline: none;
+}
+
+.signin input:hover {
+    border-bottom-color: rgba(255, 255, 255, 0.7);
+}
+
+.signin input:focus {
+    border-bottom: 2px solid var(--white);
+    padding-bottom: 6px;
+}
+
+.signin input:-webkit-autofill,
+.signin input:-webkit-autofill:hover,
+.signin input:-webkit-autofill:focus {
+    -webkit-text-fill-color: var(--white);
+    -webkit-box-shadow: 0 0 0 1000px var(--klein) inset;
+    caret-color: var(--white);
+}
+
+.signin button {
+    justify-self: start;
+    margin-top: 12px;
+    background: var(--white);
+    color: var(--klein);
+    font: 600 13px/20px var(--sans);
+    padding: 12px 26px;
+    border: 0;
+    border-radius: 2px;
     cursor: pointer;
 }
 
-.entrance a {
-    text-align: center;
-    color: #594ae2;
+.signin button:hover {
+    background: #E8ECFA;
 }
 
-.entrance-refusal {
+.signin .question {
     margin: 0;
-    padding: 10px;
-    font-size: 14px;
-    color: #8a1c1c;
-    background: #fdecea;
-    border-radius: 4px;
+    font: 200 28px/36px var(--sans);
+    letter-spacing: -0.02em;
+}
+
+.signin .choice {
+    display: flex;
+    align-items: center;
+    gap: 28px;
+}
+
+.signin .choice button {
+    margin-top: 0;
+}
+
+.signin a, .lost a {
+    font: 500 13px/20px var(--sans);
+    color: var(--white);
+    text-decoration: underline;
+    text-decoration-color: rgba(255, 255, 255, 0.55);
+    text-underline-offset: 4px;
+}
+
+.lost {
+    display: grid;
+    justify-items: start;
+    gap: 24px;
+    padding-top: 84px;
+}
+
+.lost h1 {
+    margin: 0;
+    font: 200 28px/36px var(--sans);
+    letter-spacing: -0.02em;
+}
+
+.monument {
+    position: absolute;
+    left: calc(var(--gutter) - 0.06em);
+    bottom: -0.235em;
+    margin: 0;
+    font: 200 clamp(116px, 27vw, 500px)/0.8 var(--sans);
+    letter-spacing: -0.055em;
+    white-space: nowrap;
+    pointer-events: none;
+    user-select: none;
 }

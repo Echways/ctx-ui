@@ -1,9 +1,15 @@
 @page "/{*path:nonfile}"
+@layout BareLayout
 
 <PageTitle>@string.Format(PanelText.PageTitle, PanelText.NotFoundTitle)</PageTitle>
 
-<MudText Typo="Typo.h5" GutterBottom="true">@PanelText.NotFoundHeading</MudText>
-<MudText>@PanelText.NotFoundText</MudText>
+<div class="entrance-in">
+    <div class="lost">
+        <h1>@PanelText.NotFoundHeading</h1>
+        <a href="">@PanelText.BackToOverview</a>
+    </div>
+</div>
+<div class="monument" aria-hidden="true">404</div>
 
 @code {
     [Parameter]

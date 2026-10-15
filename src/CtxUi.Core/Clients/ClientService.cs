@@ -78,8 +78,14 @@ public sealed class ClientService(CtxUiDbContext db, ISecretVault vault, TimePro
         return await db.Clients
                 .Include(client => client.Inbounds).ThenInclude(link => link.Inbound)
                 .SingleOrDefaultAsync(client => client.NameKey == key, ct)
-            ?? throw new DomainException($"клиент «{name.Trim()}» не найден");
+            ?? throw new NotFoundException($"клиент «{name.Trim()}» не найден");
     }
+
+    public async Task<Client> GetAsync(Guid id, CancellationToken ct = default) =>
+        await db.Clients.AsNoTracking()
+            .Include(client => client.Inbounds).ThenInclude(link => link.Inbound)
+            .SingleOrDefaultAsync(client => client.Id == id, ct)
+        ?? throw new NotFoundException("клиент не найден");
 
     public async Task UpdateAsync(string name, ClientUpdate update, CancellationToken ct = default)
     {

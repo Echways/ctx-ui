@@ -58,12 +58,14 @@ public sealed class InboundService(CtxUiDbContext db, ISecretVault vault, TimePr
     public Task<List<Inbound>> ListAsync(CancellationToken ct = default) =>
         db.Inbounds.AsNoTracking().OrderBy(inbound => inbound.Slug).ToListAsync(ct);
 
-    public async Task<Inbound> GetAsync(string slug, CancellationToken ct = default)
+    public Task<Inbound?> FindAsync(string slug, CancellationToken ct = default)
     {
         var wanted = slug.Trim();
-        return await db.Inbounds.SingleOrDefaultAsync(inbound => inbound.Slug == wanted, ct)
-            ?? throw new DomainException($"inbound «{slug}» не найден");
+        return db.Inbounds.SingleOrDefaultAsync(inbound => inbound.Slug == wanted, ct);
     }
+
+    public async Task<Inbound> GetAsync(string slug, CancellationToken ct = default) =>
+        await FindAsync(slug, ct) ?? throw new NotFoundException($"inbound «{slug}» не найден");
 
     public async Task UpdateAsync(string slug, InboundSettings settings, CancellationToken ct = default)
     {

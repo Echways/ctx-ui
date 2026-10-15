@@ -136,7 +136,7 @@ public class ClientQuotaTests
         await Clients(database).ResetQuotaAsync("иванов");
 
         Assert.Equal(TestData.Now.AddDays(3), (await Clients(database).GetAsync("Иванов")).PeriodStartedAt);
-        await Assert.ThrowsAsync<DomainException>(() => Clients(database).ResetQuotaAsync("Сидоров"));
+        await Assert.ThrowsAsync<NotFoundException>(() => Clients(database).ResetQuotaAsync("Сидоров"));
     }
 
     [Fact]

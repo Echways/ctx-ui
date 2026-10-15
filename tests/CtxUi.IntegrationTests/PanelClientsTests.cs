@@ -38,7 +38,7 @@ public class PanelClientsTests
 
         var page = await OpenClientsAsync(session);
 
-        await Expect(page).ToHaveTitleAsync("Клиенты");
+        await Expect(page).ToHaveTitleAsync("Клиенты · ctx-ui");
         await Expect(page.GetByText("Клиентов пока нет")).ToBeVisibleAsync();
         await Expect(page.GetByRole(AriaRole.Table)).ToHaveCountAsync(0);
     }

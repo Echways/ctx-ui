@@ -2,17 +2,16 @@
 @inject PanelBackend Backend
 @inject IDialogService Dialogs
 @inject ISnackbar Snackbar
+@inject TimeProvider Clock
 
-<PageTitle>@PanelText.ApiKeys</PageTitle>
-
-<MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-4">
-    <MudText Typo="Typo.h5">@PanelText.ApiKeys</MudText>
-    <MudSpacer />
+<PageHead Title="@PanelText.ApiKeys" Count="_keys?.Count" UpdatedAt="_loadedAt" OnRefresh="LoadAsync">
+    <Actions>
     <MudButton Href="swagger/" Target="_blank" StartIcon="@Icons.Material.Filled.Description">@PanelText.ApiDocs</MudButton>
     <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="AddAsync">
         @PanelText.IssueKey
     </MudButton>
-</MudStack>
+    </Actions>
+</PageHead>
 
 @if (_keys is null)
 {
@@ -49,11 +48,15 @@ else
     private static readonly DialogOptions FormOptions = new() { MaxWidth = MaxWidth.Small, FullWidth = true, BackdropClick = false };
 
     private List<ApiKey>? _keys;
+    private DateTimeOffset? _loadedAt;
 
     protected override Task OnInitializedAsync() => LoadAsync();
 
-    private async Task LoadAsync() =>
+    private async Task LoadAsync()
+    {
         _keys = await Backend.ReadAsync(services => services.GetRequiredService<ApiKeyService>().ListAsync());
+        _loadedAt = Clock.GetUtcNow();
+    }
 
     private async Task AddAsync()
     {

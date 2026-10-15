@@ -1,11 +1,9 @@
 @page "/journal"
 @inject PanelBackend Backend
+@inject TimeProvider Clock
 
-<PageTitle>@PanelText.Journal</PageTitle>
-
-<MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-4">
-    <MudText Typo="Typo.h5">@PanelText.Journal</MudText>
-    <MudSpacer />
+<PageHead Title="@PanelText.Journal" UpdatedAt="_loadedAt" OnRefresh="LoadAsync">
+    <Actions>
     <MudSelect T="Guid?" Value="_clientId" ValueChanged="FilterAsync" Label="@PanelText.Client" Variant="Variant.Outlined"
                Margin="Margin.Dense" Style="max-width: 280px">
         <MudSelectItem T="Guid?" Value="@((Guid?)null)">@PanelText.AllClients</MudSelectItem>
@@ -14,8 +12,9 @@
             <MudSelectItem T="Guid?" Value="@((Guid?)id)">@name</MudSelectItem>
         }
     </MudSelect>
-    <MudIconButton Icon="@Icons.Material.Filled.Refresh" aria-label="@PanelText.Refresh" title="@PanelText.Refresh" OnClick="LoadAsync" />
-</MudStack>
+    </Actions>
+</PageHead>
+<AutoRefresh OnTick="LoadAsync" />
 
 @if (_lines is null)
 {
@@ -58,6 +57,7 @@ else
     private Dictionary<Guid, string> _inbounds = new();
     private List<UsageEvent>? _lines;
     private Guid? _clientId;
+    private DateTimeOffset? _loadedAt;
 
     protected override Task OnInitializedAsync() => LoadAsync();
 
@@ -67,7 +67,13 @@ else
         return LoadAsync();
     }
 
-    private async Task LoadAsync() => (_clients, _inbounds, _lines) = await Backend.ReadAsync(async services =>
+    private async Task LoadAsync()
+    {
+        (_clients, _inbounds, _lines) = await ReadAsync();
+        _loadedAt = Clock.GetUtcNow();
+    }
+
+    private Task<(Dictionary<Guid, string>, Dictionary<Guid, string>, List<UsageEvent>)> ReadAsync() => Backend.ReadAsync(async services =>
     {
         var clients = await services.GetRequiredService<ClientService>().ListAsync();
         var inbounds = await services.GetRequiredService<InboundService>().ListAsync();

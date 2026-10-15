@@ -1,13 +1,9 @@
 @page "/"
 @inject PanelBackend Backend
+@inject TimeProvider Clock
 
-<PageTitle>@PanelText.Overview</PageTitle>
-
-<MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-4">
-    <MudText Typo="Typo.h5">@PanelText.Overview</MudText>
-    <MudSpacer />
-    <MudIconButton Icon="@Icons.Material.Filled.Refresh" aria-label="@PanelText.Refresh" title="@PanelText.Refresh" OnClick="LoadAsync" />
-</MudStack>
+<PageHead Title="@PanelText.Overview" UpdatedAt="_loadedAt" OnRefresh="LoadAsync" />
+<AutoRefresh OnTick="LoadAsync" />
 
 @if (_overview is null)
 {
@@ -88,6 +84,7 @@ else
 
 @code {
     private CtxUi.Core.Usage.Overview? _overview;
+    private DateTimeOffset? _loadedAt;
 
     private string FailureShare => _overview!.Calls == 0
         ? PanelText.NoCalls
@@ -95,6 +92,9 @@ else
 
     protected override Task OnInitializedAsync() => LoadAsync();
 
-    private async Task LoadAsync() =>
+    private async Task LoadAsync()
+    {
         _overview = await Backend.ReadAsync(services => services.GetRequiredService<OverviewService>().LoadAsync());
+        _loadedAt = Clock.GetUtcNow();
+    }
 }

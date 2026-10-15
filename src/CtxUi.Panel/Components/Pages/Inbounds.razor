@@ -2,16 +2,15 @@
 @inject PanelBackend Backend
 @inject IDialogService Dialogs
 @inject ISnackbar Snackbar
+@inject TimeProvider Clock
 
-<PageTitle>@PanelText.Inbounds</PageTitle>
-
-<MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-4">
-    <MudText Typo="Typo.h5">@PanelText.Inbounds</MudText>
-    <MudSpacer />
-    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="AddAsync">
-        @PanelText.AddInbound
-    </MudButton>
-</MudStack>
+<PageHead Title="@PanelText.Inbounds" Count="_rows?.Count" UpdatedAt="_loadedAt" OnRefresh="LoadAsync">
+    <Actions>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="AddAsync">
+            @PanelText.AddInbound
+        </MudButton>
+    </Actions>
+</PageHead>
 
 @if (_rows is null)
 {
@@ -57,15 +56,20 @@ else
     private static readonly DialogOptions FormOptions = new() { MaxWidth = MaxWidth.Small, FullWidth = true, BackdropClick = false };
 
     private List<Row>? _rows;
+    private DateTimeOffset? _loadedAt;
 
     protected override Task OnInitializedAsync() => LoadAsync();
 
-    private async Task LoadAsync() => _rows = await Backend.ReadAsync(async services =>
+    private async Task LoadAsync()
     {
-        var inbounds = services.GetRequiredService<InboundService>();
-        var clients = await inbounds.ClientCountsAsync();
-        return (await inbounds.ListAsync()).Select(inbound => new Row(inbound, clients.GetValueOrDefault(inbound.Id))).ToList();
-    });
+        _rows = await Backend.ReadAsync(async services =>
+        {
+            var inbounds = services.GetRequiredService<InboundService>();
+            var clients = await inbounds.ClientCountsAsync();
+            return (await inbounds.ListAsync()).Select(inbound => new Row(inbound, clients.GetValueOrDefault(inbound.Id))).ToList();
+        });
+        _loadedAt = Clock.GetUtcNow();
+    }
 
     private async Task AddAsync()
     {

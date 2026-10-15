@@ -1,6 +1,6 @@
 @page "/{*path:nonfile}"
 
-<PageTitle>@PanelText.NotFoundTitle</PageTitle>
+<PageTitle>@string.Format(PanelText.PageTitle, PanelText.NotFoundTitle)</PageTitle>
 
 <MudText Typo="Typo.h5" GutterBottom="true">@PanelText.NotFoundHeading</MudText>
 <MudText>@PanelText.NotFoundText</MudText>

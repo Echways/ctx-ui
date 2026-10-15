@@ -18,9 +18,6 @@
   <data name="LanguageSwitchCulture" xml:space="preserve">
     <value>en</value>
   </data>
-  <data name="Menu" xml:space="preserve">
-    <value>Меню</value>
-  </data>
   <data name="SignOut" xml:space="preserve">
     <value>Выйти</value>
   </data>
@@ -515,5 +512,14 @@
   </data>
   <data name="MessageWarning" xml:space="preserve">
     <value>Токен и адрес с токеном равносильны паролю: не передавайте их дальше.</value>
+  </data>
+  <data name="Sections" xml:space="preserve">
+    <value>Разделы</value>
+  </data>
+  <data name="UpdatedAt" xml:space="preserve">
+    <value>обновлено {0} UTC</value>
+  </data>
+  <data name="PageTitle" xml:space="preserve">
+    <value>{0} · ctx-ui</value>
   </data>
 </root>

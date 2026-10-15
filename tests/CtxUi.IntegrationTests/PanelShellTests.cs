@@ -16,9 +16,10 @@ public class PanelShellTests
         await session.FillLoginAsync("root", session.Password);
 
         await Expect(page).ToHaveURLAsync(gateway.PanelUrl);
-        await Expect(page).ToHaveTitleAsync("Обзор");
+        await Expect(page).ToHaveTitleAsync("Обзор · ctx-ui");
         await Expect(page.GetByRole(AriaRole.Heading, new() { Name = "Обзор" })).ToBeVisibleAsync();
-        await Expect(page.GetByRole(AriaRole.Navigation).GetByRole(AriaRole.Link, new() { Name = "Обзор" })).ToBeVisibleAsync();
+        await Expect(page.GetByRole(AriaRole.Navigation).GetByRole(AriaRole.Link, new() { Name = "Обзор" }))
+            .ToHaveAttributeAsync("aria-current", "page");
         await Expect(page.GetByRole(AriaRole.Banner)).ToContainTextAsync("root");
     }
 
@@ -36,17 +37,31 @@ public class PanelShellTests
     }
 
     [Fact]
-    public async Task Page_is_alive_the_menu_button_folds_the_navigation()
+    public async Task Current_section_is_marked_in_the_navigation()
+    {
+        await using var gateway = await GatewayHost.StartAsync();
+        await using var session = await PanelSession.SignInAsync(gateway);
+        var navigation = session.Page.GetByRole(AriaRole.Navigation);
+
+        await navigation.GetByRole(AriaRole.Link, new() { Name = "Журнал" }).ClickAsync();
+
+        await Expect(navigation.GetByRole(AriaRole.Link, new() { Name = "Журнал" })).ToHaveAttributeAsync("aria-current", "page");
+        await Expect(navigation.GetByRole(AriaRole.Link, new() { Name = "Обзор" })).Not.ToHaveAttributeAsync("aria-current", "page");
+    }
+
+    [Fact]
+    public async Task On_a_narrow_screen_the_admin_name_opens_the_account_menu()
     {
         await using var gateway = await GatewayHost.StartAsync();
         await using var session = await PanelSession.SignInAsync(gateway);
         var page = session.Page;
+        await page.SetViewportSizeAsync(390, 844);
+        await Expect(page.GetByRole(AriaRole.Navigation).GetByRole(AriaRole.Link, new() { Name = "Клиенты" })).ToBeInViewportAsync();
 
-        await page.GetByRole(AriaRole.Button, new() { Name = "Меню" }).ClickAsync();
-        await Expect(page.GetByRole(AriaRole.Navigation)).Not.ToBeInViewportAsync();
+        await page.GetByRole(AriaRole.Banner).GetByRole(AriaRole.Button, new() { Name = "root" }).ClickAsync();
+        await page.GetByRole(AriaRole.Menuitem, new() { Name = "Выйти" }).ClickAsync();
 
-        await page.GetByRole(AriaRole.Button, new() { Name = "Меню" }).ClickAsync();
-        await Expect(page.GetByRole(AriaRole.Navigation)).ToBeInViewportAsync();
+        await Expect(page.GetByText("Выйти из панели?")).ToBeVisibleAsync();
     }
 
     [Fact]

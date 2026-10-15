@@ -4,18 +4,15 @@
 @inject ISnackbar Snackbar
 @inject TimeProvider Clock
 
-<PageTitle>@PanelText.Clients</PageTitle>
-
-<MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-4">
-    <MudText Typo="Typo.h5">@PanelText.Clients</MudText>
-    <MudSpacer />
-    <MudTextField @bind-Value="_search" Label="@PanelText.SearchByName" Immediate="true" Clearable="true" Margin="Margin.Dense"
-                  Variant="Variant.Outlined" Style="max-width: 280px" />
-    <MudIconButton Icon="@Icons.Material.Filled.Refresh" aria-label="@PanelText.Refresh" title="@PanelText.Refresh" OnClick="LoadAsync" />
-    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PersonAdd" OnClick="AddAsync">
-        @PanelText.AddClient
-    </MudButton>
-</MudStack>
+<PageHead Title="@PanelText.Clients" Count="_clients?.Count" UpdatedAt="_clients is null ? null : _loadedAt" OnRefresh="LoadAsync">
+    <Actions>
+        <MudTextField @bind-Value="_search" Label="@PanelText.SearchByName" Immediate="true" Clearable="true" Margin="Margin.Dense"
+                      Variant="Variant.Outlined" Style="max-width: 280px" />
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PersonAdd" OnClick="AddAsync">
+            @PanelText.AddClient
+        </MudButton>
+    </Actions>
+</PageHead>
 
 @if (_clients is null)
 {

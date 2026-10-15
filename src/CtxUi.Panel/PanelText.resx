@@ -18,9 +18,6 @@
   <data name="LanguageSwitchCulture" xml:space="preserve">
     <value>ru</value>
   </data>
-  <data name="Menu" xml:space="preserve">
-    <value>Menu</value>
-  </data>
   <data name="SignOut" xml:space="preserve">
     <value>Sign out</value>
   </data>
@@ -515,5 +512,14 @@
   </data>
   <data name="MessageWarning" xml:space="preserve">
     <value>The token and the address with the token are as good as a password: do not pass them on.</value>
+  </data>
+  <data name="Sections" xml:space="preserve">
+    <value>Sections</value>
+  </data>
+  <data name="UpdatedAt" xml:space="preserve">
+    <value>updated {0} UTC</value>
+  </data>
+  <data name="PageTitle" xml:space="preserve">
+    <value>{0} · ctx-ui</value>
   </data>
 </root>

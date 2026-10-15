@@ -48,7 +48,7 @@ public class PanelJournalTests
 
         var page = await OpenJournalAsync(session);
 
-        await Expect(page).ToHaveTitleAsync("Журнал");
+        await Expect(page).ToHaveTitleAsync("Журнал · ctx-ui");
         await Expect(page.GetByText("Журнал пуст")).ToBeVisibleAsync();
     }
 
@@ -146,7 +146,24 @@ public class PanelJournalTests
 
         await Expect(Rows(page).Nth(1).GetByRole(AriaRole.Cell).Nth(3)).ToHaveTextAsync("tools/call " + hostile);
         await Expect(page.Locator("td img")).ToHaveCountAsync(0);
-        await Expect(page).ToHaveTitleAsync("Журнал");
+        await Expect(page).ToHaveTitleAsync("Журнал · ctx-ui");
+    }
+
+    [Fact]
+    public async Task Open_journal_rereads_itself()
+    {
+        await using var upstream = await FakeUpstream.StartAsync();
+        await using var gateway = await GatewayHost.StartAsync(
+            builder => builder.Configuration["CtxUi:AutoRefreshInterval"] = "00:00:00.300");
+        await gateway.AddInboundAsync("echo", upstream.McpUrl);
+        var issued = await gateway.AddClientAsync("Иванов", ["echo"]);
+        await using var session = await PanelSession.SignInAsync(gateway);
+        var page = await OpenJournalAsync(session);
+        await Expect(page.GetByText("Журнал пуст")).ToBeVisibleAsync();
+
+        await CallAsync(gateway, "echo", issued.Token, ToolsList);
+
+        await Expect(Rows(page)).ToHaveCountAsync(2);
     }
 
     [Fact]

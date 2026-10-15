@@ -35,7 +35,7 @@ public class PanelInboundsTests
 
         var page = await OpenInboundsAsync(session);
 
-        await Expect(page).ToHaveTitleAsync("Inbounds");
+        await Expect(page).ToHaveTitleAsync("Inbounds · ctx-ui");
         await Expect(page.GetByText("Inbound'ов пока нет")).ToBeVisibleAsync();
         await Expect(page.GetByRole(AriaRole.Table)).ToHaveCountAsync(0);
     }

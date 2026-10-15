@@ -25,7 +25,7 @@ public class PanelKeysTests
 
         var page = await OpenKeysAsync(session);
 
-        await Expect(page).ToHaveTitleAsync("Ключи API");
+        await Expect(page).ToHaveTitleAsync("Ключи API · ctx-ui");
         await Expect(page.GetByText("Ключей пока нет")).ToBeVisibleAsync();
         await Expect(page.GetByRole(AriaRole.Link, new() { Name = "Документация API" }))
             .ToHaveAttributeAsync("href", "swagger/");

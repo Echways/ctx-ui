@@ -10,5 +10,9 @@ public static class Words
 
     public static string Minute(DateTimeOffset moment) => moment.UtcDateTime.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture);
 
+    public static string Clock(DateTimeOffset moment) => moment.UtcDateTime.ToString("HH:mm", CultureInfo.InvariantCulture);
+
+    public static string Number(long value) => value.ToString("N0", CultureInfo.CurrentCulture);
+
     public static string Second(DateTimeOffset moment) => moment.UtcDateTime.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
 }

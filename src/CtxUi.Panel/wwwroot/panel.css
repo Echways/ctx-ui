@@ -138,6 +138,250 @@ code, .code {
     display: none;
 }
 
+button.link, .link {
+    font: 500 13px/20px var(--sans);
+    color: var(--mist);
+    background: none;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+    white-space: nowrap;
+    text-decoration: none;
+}
+
+button.link:hover, .link:hover {
+    color: var(--light);
+}
+
+.frame {
+    display: grid;
+    grid-template-columns: 176px minmax(0, 1fr);
+    min-height: 100dvh;
+    padding-inline: var(--gutter);
+}
+
+.side {
+    position: sticky;
+    top: 0;
+    align-self: start;
+    height: 100dvh;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 56px;
+    padding-block: 36px;
+    min-width: 0;
+}
+
+.brand {
+    font: 200 24px/28px var(--sans);
+    letter-spacing: -0.03em;
+    white-space: nowrap;
+}
+
+.nav {
+    display: grid;
+    gap: 2px;
+}
+
+.nav a {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 6px 0;
+    color: var(--mist);
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.nav a::before {
+    content: "";
+    width: 7px;
+    height: 7px;
+    flex: none;
+}
+
+.nav a:hover {
+    color: var(--light);
+}
+
+.nav a.active {
+    color: var(--light);
+    font-weight: 500;
+}
+
+.nav a.active::before {
+    background: var(--klein);
+    box-shadow: 0 0 0 1px rgba(74, 108, 255, 0.45);
+}
+
+.account {
+    margin-top: auto;
+    display: grid;
+    justify-items: start;
+    gap: 4px;
+    font: 500 13px/20px var(--sans);
+    color: var(--mist);
+}
+
+.account button {
+    font: inherit;
+    color: inherit;
+    background: none;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+}
+
+.account button:hover {
+    color: var(--light);
+}
+
+.account-menu {
+    display: none !important;
+}
+
+.account-menu .mud-button-root {
+    min-width: 0;
+    padding: 0;
+    font: 500 13px/20px var(--sans);
+    color: var(--mist);
+    background: none;
+}
+
+.account-menu .mud-button-root:hover {
+    color: var(--light);
+    background: none;
+}
+
+.main {
+    min-width: 0;
+    max-width: 1180px;
+    padding: 36px 0 128px 40px;
+}
+
+.head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 24px 40px;
+    margin-bottom: 56px;
+}
+
+.title {
+    margin: 0 0 0 -0.05em;
+    font: 200 52px/60px var(--sans);
+    letter-spacing: -0.035em;
+}
+
+.title .count {
+    position: relative;
+    top: 10px;
+    margin-left: 4px;
+    font: 500 13px/1 var(--sans);
+    letter-spacing: 0;
+    color: var(--mist);
+    vertical-align: top;
+}
+
+.summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 24px;
+    margin: 10px 0 0;
+    font: 500 13px/20px var(--sans);
+    color: var(--mist);
+}
+
+.stamp {
+    font: inherit;
+    color: inherit;
+    background: none;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+}
+
+.stamp:hover {
+    color: var(--light);
+}
+
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 16px 28px;
+}
+
+@media (max-width: 840px) {
+    .frame {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .side {
+        position: static;
+        height: auto;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 16px 24px;
+        padding-block: 18px 8px;
+    }
+
+    .nav {
+        grid-column: 1 / -1;
+        grid-row: 2;
+        display: flex;
+        gap: 20px;
+        overflow-x: auto;
+        scrollbar-width: none;
+    }
+
+    .nav a::before {
+        display: none;
+    }
+
+    .nav a.active {
+        text-decoration: underline;
+        text-decoration-color: var(--glow);
+        text-decoration-thickness: 2px;
+        text-underline-offset: 8px;
+    }
+
+    .account {
+        display: none;
+    }
+
+    .account-menu {
+        display: inline-flex !important;
+        grid-column: 2;
+        grid-row: 1;
+    }
+
+    .main {
+        padding: 28px 0 112px;
+    }
+
+    .title {
+        font-size: 32px;
+        line-height: 40px;
+        letter-spacing: -0.03em;
+    }
+
+    .title .count {
+        top: 4px;
+    }
+
+    .head {
+        margin-bottom: 36px;
+    }
+
+    .actions {
+        width: 100%;
+    }
+}
+
 .bare {
     min-height: 100vh;
     display: flex;

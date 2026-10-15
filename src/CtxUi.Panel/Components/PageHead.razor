@@ -1,0 +1,43 @@
+<PageTitle>@string.Format(PanelText.PageTitle, Title)</PageTitle>
+
+<div class="head">
+    <div>
+        <h1 class="title">@Title @if (Count is { } count)
+            {
+                <sup class="count">@Words.Number(count)</sup>
+            }</h1>
+        <p class="summary">
+            @Summary
+            @if (UpdatedAt is { } updatedAt)
+            {
+                <button type="button" class="stamp" aria-label="@PanelText.Refresh" title="@PanelText.Refresh" @onclick="OnRefresh">
+                    @string.Format(PanelText.UpdatedAt, Words.Clock(updatedAt))
+                </button>
+            }
+        </p>
+    </div>
+    @if (Actions is not null)
+    {
+        <div class="actions">@Actions</div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public string Title { get; set; } = "";
+
+    [Parameter]
+    public int? Count { get; set; }
+
+    [Parameter]
+    public RenderFragment? Summary { get; set; }
+
+    [Parameter]
+    public DateTimeOffset? UpdatedAt { get; set; }
+
+    [Parameter]
+    public EventCallback OnRefresh { get; set; }
+
+    [Parameter]
+    public RenderFragment? Actions { get; set; }
+}

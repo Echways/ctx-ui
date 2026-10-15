@@ -142,6 +142,8 @@ path="${panel#https://mcp.example.com}"
 check "login form is served under the secret path" equals 200 "$(panel_status "${path}login")"
 check "panel styles are in the archive" equals 200 "$(panel_status "${path}_content/MudBlazor/MudBlazor.min.css")"
 check "panel script is in the archive" equals 200 "$(panel_status "${path}_framework/blazor.web.js")"
+check "swagger ui is in the archive" equals 200 "$(panel_status "${path}swagger/index.html")"
+check "api asks for a key" equals 401 "$(panel_status "${path}api/v1/inbounds")"
 check "panel does not exist without the secret path" equals 404 "$(panel_status /login)"
 
 echo "== upgrade"

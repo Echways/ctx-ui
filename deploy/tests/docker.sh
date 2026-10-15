@@ -117,6 +117,13 @@ check "panel styles are in the image" equals 200 \
     "$(curl -sk -o /dev/null -w '%{http_code}' "https://localhost:18443${path}_content/MudBlazor/MudBlazor.min.css")"
 check "visitor is sent to the login form over https" contains "https://localhost:18443${path}login" \
     "$(curl -sk -o /dev/null -w '%{redirect_url}' "https://localhost:18443${path}")"
+check "swagger ui is in the image" equals 200 \
+    "$(curl -sk -o /dev/null -w '%{http_code}' "https://localhost:18443${path}swagger/index.html")"
+output="$(compose exec -T ctx-ui ctx-ui apikey add probe 2>&1)" || true
+key="$(echo "$output" | grep -o -E 'ctxk_[A-Za-z0-9]{40}' | head -n 1 || true)"
+check "apikey add prints a key" [ -n "$key" ]
+check "api answers through caddy with the key" equals 200 \
+    "$(curl -sk -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $key" "https://localhost:18443${path}api/v1/inbounds")"
 check "panel does not exist without the secret path" equals 404 \
     "$(curl -sk -o /dev/null -w '%{http_code}' https://localhost:18443/login)"
 

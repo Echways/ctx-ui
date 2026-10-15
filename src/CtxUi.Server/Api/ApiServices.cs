@@ -62,6 +62,7 @@ public static class ApiServices
         app.MapOpenApi("/openapi/{documentName}.json");
         var api = app.MapGroup(Prefix).RequireAuthorization(Policy).AddEndpointFilter<ApiChanges>();
         api.MapInbounds();
+        api.MapClients();
         app.Map("/api/{**rest}", () => Results.NotFound()).ExcludeFromDescription();
         return app;
     }

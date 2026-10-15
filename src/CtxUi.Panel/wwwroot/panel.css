@@ -1,0 +1,64 @@
+.bare {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f4f5f7;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+.entrance {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    width: 320px;
+    padding: 32px;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
+}
+
+.entrance h1 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 600;
+}
+
+.entrance label {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 14px;
+    color: #555;
+}
+
+.entrance input {
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #c4c7cc;
+    border-radius: 4px;
+}
+
+.entrance button {
+    padding: 10px;
+    font-size: 16px;
+    color: #fff;
+    background: #594ae2;
+    border: 0;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.entrance a {
+    text-align: center;
+    color: #594ae2;
+}
+
+.entrance-refusal {
+    margin: 0;
+    padding: 10px;
+    font-size: 14px;
+    color: #8a1c1c;
+    background: #fdecea;
+    border-radius: 4px;
+}

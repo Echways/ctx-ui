@@ -1,0 +1,81 @@
+@page "/journal"
+@inject PanelBackend Backend
+
+<PageTitle>Журнал</PageTitle>
+
+<MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-4">
+    <MudText Typo="Typo.h5">Журнал</MudText>
+    <MudSpacer />
+    <MudSelect T="Guid?" Value="_clientId" ValueChanged="FilterAsync" Label="Клиент" Variant="Variant.Outlined"
+               Margin="Margin.Dense" Style="max-width: 280px">
+        <MudSelectItem T="Guid?" Value="@((Guid?)null)">Все клиенты</MudSelectItem>
+        @foreach (var (id, name) in _clients.OrderBy(pair => pair.Value, StringComparer.CurrentCultureIgnoreCase))
+        {
+            <MudSelectItem T="Guid?" Value="@((Guid?)id)">@name</MudSelectItem>
+        }
+    </MudSelect>
+    <MudIconButton Icon="@Icons.Material.Filled.Refresh" aria-label="Обновить" title="Обновить" OnClick="LoadAsync" />
+</MudStack>
+
+@if (_lines is null)
+{
+    <MudProgressLinear Indeterminate="true" />
+}
+else if (_lines.Count == 0)
+{
+    <MudAlert Severity="Severity.Info">Журнал пуст: вызовов через шлюз ещё не было или они старше срока хранения.</MudAlert>
+}
+else
+{
+    <MudTable Items="_lines" Dense="true" Hover="true" Elevation="1">
+        <HeaderContent>
+            <MudTh>Время, UTC</MudTh>
+            <MudTh>Клиент</MudTh>
+            <MudTh>Inbound</MudTh>
+            <MudTh>Вызов</MudTh>
+            <MudTh>Исход</MudTh>
+            <MudTh>Длительность, мс</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd>@Words.Second(context.At)</MudTd>
+            <MudTd>@_clients.GetValueOrDefault(context.ClientId, Removed)</MudTd>
+            <MudTd>@_inbounds.GetValueOrDefault(context.InboundId, Removed)</MudTd>
+            <MudTd>@(context.Tool is null ? context.Method : $"{context.Method} {context.Tool}")</MudTd>
+            <MudTd>@UsageOutcomes.Text(context.Outcome)</MudTd>
+            <MudTd>@context.DurationMs</MudTd>
+        </RowTemplate>
+    </MudTable>
+    @if (_lines.Count == Shown)
+    {
+        <MudText Typo="Typo.caption" Class="mt-2">Показаны последние @Shown вызовов.</MudText>
+    }
+}
+
+@code {
+    private const int Shown = 200;
+    private const string Removed = "удалён";
+
+    private Dictionary<Guid, string> _clients = new();
+    private Dictionary<Guid, string> _inbounds = new();
+    private List<UsageEvent>? _lines;
+    private Guid? _clientId;
+
+    protected override Task OnInitializedAsync() => LoadAsync();
+
+    private Task FilterAsync(Guid? clientId)
+    {
+        _clientId = clientId;
+        return LoadAsync();
+    }
+
+    private async Task LoadAsync() => (_clients, _inbounds, _lines) = await Backend.ReadAsync(async services =>
+    {
+        var clients = await services.GetRequiredService<ClientService>().ListAsync();
+        var inbounds = await services.GetRequiredService<InboundService>().ListAsync();
+        var lines = await services.GetRequiredService<UsageStore>().RecentAsync(_clientId, Shown);
+        return (
+            clients.ToDictionary(client => client.Id, client => client.Name),
+            inbounds.ToDictionary(inbound => inbound.Id, inbound => inbound.Slug),
+            lines);
+    });
+}

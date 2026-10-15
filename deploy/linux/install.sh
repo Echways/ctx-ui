@@ -2,7 +2,7 @@
 set -euo pipefail
 
 default_version=""
-repo="Echways/mcp-ui"
+repo="Echways/ctx-ui"
 user="ctx-ui"
 home="/opt/ctx-ui"
 config_dir="/etc/ctx-ui"
@@ -278,6 +278,8 @@ main() {
 TLS сервис не поднимает: перед ним ставится Caddy или nginx.
 
 Дальше:
+  ctx-ui admin add admin
+      печатает адрес панели и пароль; inbound'ы и клиентов можно заводить в ней
   ctx-ui inbound add learn --url https://learn.microsoft.com/api/mcp
   ctx-ui client add "Иванов" --inbound learn
 EOF

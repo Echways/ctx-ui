@@ -1,125 +1,208 @@
 # ctx-ui
 
-Панель и шлюз для раздачи доступа к своим MCP-серверам в духе 3x-ui.
-Администратор заводит inbound (адрес и то, что за ним отдаётся), заводит
-клиента со сроком и выдаёт ему токен.
+**English** · [Русский](docs/ru/README.md)
 
-Сейчас готовы этапы 1 и 2: inbound'ы на удалённые MCP-серверы, лимиты и
-учёт вызовов, управление из командной строки.
+A gateway and web panel for sharing access to MCP servers, modelled on 3x-ui.
+An inbound is an address (`/mcp/<slug>`) backed by a remote MCP server. A
+client is a token with an expiry date, a set of inbounds and limits.
 
-## Установка
+Supports streamable HTTP inbounds, per-client limits and quotas, a call
+log, a web panel and a CLI.
 
-Бинарник и сервис systemd, Linux x86_64 или aarch64:
+## Install
+
+Binary + systemd, Linux x86_64/aarch64:
 
 ```bash
-curl -fsSL https://github.com/Echways/mcp-ui/releases/latest/download/install.sh | sudo bash
+curl -fsSL https://github.com/Echways/ctx-ui/releases/latest/download/install.sh | sudo bash
 ```
 
-Docker с Caddy и автоматическим сертификатом, обновление, удаление и
-резервная копия описаны в [docs/install.md](docs/install.md).
+Docker + Caddy, upgrade, removal, backup: [docs/install.md](docs/install.md).
+The service does not terminate TLS; put Caddy or nginx in front.
 
-Сервис сам TLS не поднимает: перед ним ставится Caddy или nginx.
-
-## Управление
-
-Запущенный сервис подхватывает изменения в течение секунды, перезапуск не
-нужен.
+## Quick start
 
 ```bash
+sudo ctx-ui admin add admin
 sudo ctx-ui inbound add learn --url https://learn.microsoft.com/api/mcp
-sudo ctx-ui client add "Иванов 4419" --inbound learn --expires 2027-07-01
-sudo ctx-ui client list
+sudo ctx-ui client add "Ivanov 4419" --inbound learn --expires 2027-07-01
 ```
 
-В Docker те же команды идут через `docker compose exec ctx-ui ctx-ui …`.
+`admin add` prints the login, a one-time password and the secret panel
+address. `client add` prints the token and the connection addresses. In
+Docker prefix commands with `docker compose exec ctx-ui`.
 
-| Команда | Что делает |
+Program output is in Russian.
+
+## Connecting a client
+
+| Method | Address |
 | --- | --- |
-| `inbound add <slug> --url <адрес>` | inbound на удалённый MCP-сервер; `--header Имя=значение` добавляет заголовок для него, `--forward-identity` передаёт личность клиента |
-| `inbound list`, `enable`, `disable`, `remove <slug>` | список и состояние |
-| `client add <имя> --inbound <slug>` | выпускает клиента, печатает токен и адреса; `--expires ГГГГ-ММ-ДД`, `--meta ключ=значение`, лимиты `--rate`, `--concurrency`, `--quota`, `--reset-days` |
-| `client show <имя>` | токен, адреса, лимиты и расход квоты |
-| `client set <имя>` | меняет срок (`--expires <дата>` или `never`), набор inbound'ов и лимиты; `none` снимает лимит |
-| `client reset <имя>` | обнуляет счётчик квоты и начинает период заново |
-| `client reissue <имя>` | новый токен, старый перестаёт работать |
-| `client list`, `enable`, `disable`, `remove <имя>` | список и состояние |
-| `usage days`, `usage log` | итоги по дням и последние вызовы; `--client <имя>` оставляет одного клиента |
-
-## Подключение клиента
-
-Токен передаётся заголовком `Authorization: Bearer <токен>` либо, если
-клиент не умеет задавать заголовки, прямо в адресе:
-`/k/<токен>/mcp/<slug>`. Адрес с токеном равносилен паролю.
+| header `Authorization: Bearer <token>` | `https://<host>/mcp/<slug>` |
+| token in the path, for clients without custom headers | `https://<host>/k/<token>/mcp/<slug>` |
 
 ```bash
 claude mcp add --transport http learn https://mcp.example.com/mcp/learn \
     --header "Authorization: Bearer tnk_..."
 ```
 
-## Лимиты
+A path with a token is a credential: treat it as a password.
 
-У клиента четыре необязательных ограничения. Не заданное ограничение не
-действует.
+## Panel
 
-| Параметр | Что ограничивает | Что получает клиент при превышении |
+Served only under a random 16-character path; any other path gets 404.
+
+| Section | Contents |
+| --- | --- |
+| Обзор (overview) | active clients, calls and upstream failures over 24 h; per-inbound and daily totals |
+| Inbounds | create, edit, enable/disable, delete |
+| Клиенты (clients) | create, edit, enable/disable, search, connection window, new token, quota reset |
+| Журнал (log) | recent calls, filter by client |
+
+Changes apply to the gateway immediately. The connection window shows the
+token, addresses and a ready-to-send message for the client.
+
+Request timeout (default 300 s, 1–3600) and request body limit (default
+4 MB, 1 KB–64 MB) of an inbound are set only in the panel.
+
+Sign-in: the password is generated (20 characters), shown once, stored as a
+hash. 5 failed attempts lock the login for 15 minutes. The session cookie
+lives 7 days with sliding expiration.
+
+## CLI
+
+Changes made by the CLI reach a running service within `RefreshInterval`
+(1 s). No restart needed.
+
+### admin
+
+| Command | Effect |
+| --- | --- |
+| `admin add <login>` | create an administrator; prints password and panel address |
+| `admin password <login>` | new password; closes sessions, lifts lockout |
+| `admin list` | list with lockout state |
+| `admin remove <login>` | delete |
+| `admin path [--new]` | show panel address; `--new` generates a new one, active after restart |
+
+Login: 1–64 characters, `A-Z a-z 0-9 . _ -`.
+
+### inbound
+
+| Command | Effect |
+| --- | --- |
+| `inbound add <slug> --url <url>` | add an inbound for a streamable HTTP MCP server |
+| `inbound list` | slug, state, URL |
+| `inbound enable\|disable <slug>` | toggle without deleting |
+| `inbound remove <slug>` | delete, revoking it from all clients |
+
+`add` options: `--name <text>` display name (default: slug);
+`--header Name=value` upstream header, repeatable, stored encrypted;
+`--forward-identity` send client identity headers upstream.
+
+Slug: 1–64 characters, `a-z 0-9 -`, no leading or trailing hyphen.
+
+### client
+
+| Command | Effect |
+| --- | --- |
+| `client add <name> --inbound <slug>` | issue a client; prints token and addresses |
+| `client show <name>` | token, addresses, limits, quota usage |
+| `client set <name>` | change expiry, inbounds, limits |
+| `client reset <name>` | zero the quota counter, restart the period |
+| `client reissue <name>` | new token; the old one stops working |
+| `client list` | name, state, expiry, last use, quota, inbounds |
+| `client enable\|disable <name>` | toggle without deleting |
+| `client remove <name>` | delete |
+
+Options for `add` and `set`:
+
+| Option | Meaning |
+| --- | --- |
+| `--inbound <slug>` | repeatable; in `set` replaces the whole set |
+| `--expires YYYY-MM-DD` | access closes at 00:00 UTC of that day; `never` in `set` removes expiry |
+| `--meta key=value` | `add` only; repeatable; sent as `X-Mcp-Meta-<key>` |
+| `--rate N` | requests per minute |
+| `--concurrency N` | simultaneous `POST` requests |
+| `--quota N` | `tools/call` per period |
+| `--reset-days N` | quota period length; without it the quota is one-off |
+
+In `set`, `none` removes a limit. Omitted options keep their values.
+
+Name: 1–100 characters, unique ignoring case, no control characters. Quote
+names with spaces.
+
+### usage
+
+| Command | Effect |
+| --- | --- |
+| `usage days [--days N]` | daily totals, last N days (default 7, max 3650) |
+| `usage log [--limit N]` | recent calls, newest first (default 50, max 1000) |
+
+Both accept `--client <name>`. Times are UTC. Data reaches the database every
+`FlushInterval` (5 s), so it lags slightly.
+
+## Limits
+
+Each limit is optional; unset means unlimited.
+
+| Limit | Counts | When exceeded |
 | --- | --- | --- |
-| `--rate N` | запросы в минуту, любые | HTTP 429 с заголовком `Retry-After` |
-| `--concurrency N` | одновременные запросы `POST` | HTTP 429 с `Retry-After: 1` |
-| `--quota N` | вызовы `tools/call` за период | ответ tool с `isError: true` и текстом, когда лимит обновится |
-| `--reset-days N` | длину периода квоты; без него квота выдаётся один раз | |
+| `--rate` | all requests, token bucket | HTTP 429, `Retry-After: <seconds until next>` |
+| `--concurrency` | in-flight `POST` | HTTP 429, `Retry-After: 1` |
+| `--quota` | `tools/call` per period | HTTP 200, tool result with `isError: true` and reset time |
 
-Квоту расходует только `tools/call`. Клиент с исчерпанной квотой
-по-прежнему подключается и видит список tools, а отказ приходит как обычный
-ответ tool, поэтому модель пересказывает его человеку. Вызов, на который
-upstream ответил ошибкой HTTP или не ответил вовсе, в квоту не идёт.
+The quota is spent only by `tools/call`. With an exhausted quota the client
+still connects and lists tools; the refusal is a tool result, so the model
+relays it to the user. Calls the upstream answered with HTTP ≥ 400 or did not
+answer are refunded.
 
 ```bash
-sudo ctx-ui client set "Иванов 4419" --quota 500 --reset-days 30 --rate 60
-sudo ctx-ui client set "Иванов 4419" --rate none
-sudo ctx-ui client reset "Иванов 4419"
-sudo ctx-ui usage days --client "Иванов 4419"
-sudo ctx-ui usage log --limit 20
+sudo ctx-ui client set "Ivanov 4419" --quota 500 --reset-days 30 --rate 60
+sudo ctx-ui client set "Ivanov 4419" --rate none
 ```
 
-Счётчики и журнал сервис записывает в базу раз в несколько секунд, поэтому
-команды показывают их с небольшим отставанием.
+## Gateway responses
 
-## Что получает upstream
+| Status | `error` | Cause |
+| --- | --- | --- |
+| 401 | `token_missing` | no token |
+| 401 | `token_unknown` | token not found |
+| 401 | `client_disabled` | client disabled |
+| 401 | `client_expired` | expiry passed |
+| 404 | `inbound_not_found` | no such inbound, disabled, or not granted |
+| 429 | `rate_limited`, `too_many_concurrent` | limit exceeded |
+| 413 | `body_too_large` | body over the inbound's limit |
+| 400 | JSON-RPC `-32600` | body is not valid JSON-RPC or batch > 100 |
 
-Шлюз убирает токен клиента и добавляет заголовки, заданные для inbound'а.
-С флагом `--forward-identity` добавляются `X-Mcp-Client-Id`,
-`X-Mcp-Client-Name` и `X-Mcp-Meta-<ключ>`; имя и значения закодированы
-процентами в UTF-8. Такие же заголовки, присланные самим клиентом, шлюз
-вырезает.
+## What the upstream receives
 
-## Документация
+The client's request with its token removed, plus the inbound's headers.
+With `--forward-identity`: `X-Mcp-Client-Id`, `X-Mcp-Client-Name`,
+`X-Mcp-Meta-<key>`, values percent-encoded UTF-8. Client-sent headers with
+these names are stripped.
 
-- [Установка](docs/install.md)
-- [Настройки](docs/configuration.md)
-- [Как это устроено](docs/internals.md)
-- [Выпуск релиза](docs/releasing.md)
+## Documentation
 
-## Разработка
+- [Installation](docs/install.md)
+- [Configuration](docs/configuration.md)
+- [Internals](docs/internals.md)
+- [Releasing](docs/releasing.md)
 
-Нужен .NET 10 SDK.
+## Development
+
+.NET 10 SDK.
 
 ```bash
 cd src/CtxUi.Server
-dotnet run
-dotnet run -- inbound list
-```
-
-Сервер слушает `http://127.0.0.1:8080` и хранит базу и ключи в каталоге
-`data` рядом с проектом.
-
-```bash
+dotnet run                    # http://127.0.0.1:8080, data in ./data
+dotnet run -- inbound list    # CLI
 dotnet test
 ```
 
-Интеграционные тесты поднимают шлюз и поддельный upstream на свободных
-портах, сеть наружу им не нужна. Проверки установки описаны в
-[docs/releasing.md](docs/releasing.md).
+Integration tests run the gateway and a fake upstream on free ports. Panel
+tests use headless Chromium via Playwright; the first run downloads it to
+`~/.cache/ms-playwright`. Install checks: [docs/releasing.md](docs/releasing.md).
 
-## Лицензия
+## License
 
 GPL-3.0.

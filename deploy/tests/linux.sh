@@ -46,6 +46,10 @@ status() {
     in_box curl -s -o /dev/null -w '%{http_code}' "$@" http://127.0.0.1:8080/mcp/smoke
 }
 
+panel_status() {
+    in_box curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:8080$1"
+}
+
 status_becomes() {
     local expected="$1" actual=""
     shift
@@ -129,6 +133,17 @@ output="$(in_box runuser -u nobody -- ctx-ui inbound list 2>&1)" && code=0 || co
 check "other users are refused" equals 1 "$code"
 check "refusal mentions sudo" contains "sudo" "$output"
 
+echo "== panel"
+output="$(in_box sh -c 'cd / && ctx-ui admin add root' 2>&1)" || true
+panel="$(echo "$output" | grep -o -E 'https://mcp\.example\.com/[a-z0-9]{16}/' | head -n 1 || true)"
+check "admin add prints the panel address" [ -n "$panel" ]
+check "admin add prints a password" contains "Пароль:  " "$output"
+path="${panel#https://mcp.example.com}"
+check "login form is served under the secret path" equals 200 "$(panel_status "${path}login")"
+check "panel styles are in the archive" equals 200 "$(panel_status "${path}_content/MudBlazor/MudBlazor.min.css")"
+check "panel script is in the archive" equals 200 "$(panel_status "${path}_framework/blazor.web.js")"
+check "panel does not exist without the secret path" equals 404 "$(panel_status /login)"
+
 echo "== upgrade"
 output="$(in_box bash /dist/install.sh --archive "/dist/$second" --public-url https://other.example.com 2>&1)" || true
 check "installer reports the upgrade" contains "ctx-ui обновлён с 0.0.1 до 0.0.2" "$output"
@@ -137,6 +152,8 @@ check "settings are untouched" contains "CtxUi__PublicUrl=https://mcp.example.co
 check "new version is in place" equals 0.0.2 "$(in_box cat /opt/ctx-ui/VERSION)"
 check "service is active after upgrade" equals active "$(in_box systemctl is-active ctx-ui)"
 check "client survives the upgrade" status_becomes 502 -H "Authorization: Bearer $token"
+check "panel address survives the upgrade" contains "$panel" "$(in_box sh -c 'cd / && ctx-ui admin path' 2>&1)"
+check "login form is served after the upgrade" equals 200 "$(panel_status "${path}login")"
 
 output="$(in_box bash /dist/install.sh --archive /dist/SHA256SUMS 2>&1)" && code=0 || code=$?
 check "refused archive leaves the service running" equals "1 active" "$code $(in_box systemctl is-active ctx-ui)"

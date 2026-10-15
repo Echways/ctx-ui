@@ -1,44 +1,52 @@
-# Настройки
+# Configuration
 
-Настройки читаются из переменных окружения. Имена совпадают во всех
-способах установки, отличается только место, где они записаны.
+**English** · [Русский](ru/configuration.md)
 
-| Способ установки | Где лежат | Как применить |
+Settings come from environment variables. Names are the same for every
+install method.
+
+| Install method | File | Apply |
 | --- | --- | --- |
-| бинарник | `/etc/ctx-ui/ctx-ui.env` | `sudo systemctl restart ctx-ui` |
-| Docker | `.env` рядом с `compose.yaml` | `docker compose up -d` |
-| из исходников | `src/CtxUi.Server/appsettings.json` или окружение | перезапуск |
+| binary | `/etc/ctx-ui/ctx-ui.env` | `sudo systemctl restart ctx-ui` |
+| Docker | `.env` next to `compose.yaml` | `docker compose up -d` |
+| source | `src/CtxUi.Server/appsettings.json` or environment | restart |
 
-## Переменные
+## Variables
 
-| Переменная | Ключ в `appsettings.json` | По умолчанию | Смысл |
+| Variable | `appsettings.json` key | Default | Meaning |
 | --- | --- | --- | --- |
-| `Urls` | `Urls` | `http://127.0.0.1:8080` | адрес, на котором слушает сервис |
-| `CtxUi__PublicUrl` | `CtxUi:PublicUrl` | `http://localhost:8080` | внешний адрес, с него начинаются адреса для клиентов |
-| `CtxUi__DataDir` | `CtxUi:DataDir` | `data` | каталог с базой и ключами |
-| `CtxUi__RefreshInterval` | `CtxUi:RefreshInterval` | `00:00:01` | как часто сервис проверяет изменения, сделанные командой `ctx-ui` |
-| `CtxUi__FlushInterval` | `CtxUi:FlushInterval` | `00:00:05` | как часто сервис записывает в базу счётчики квот и журнал вызовов |
-| `CtxUi__UsageRetentionDays` | `CtxUi:UsageRetentionDays` | `30` | сколько дней хранятся строки журнала вызовов; итоги по дням хранятся бессрочно |
+| `Urls` | `Urls` | `http://127.0.0.1:8080` | listen address |
+| `CtxUi__PublicUrl` | `CtxUi:PublicUrl` | `http://localhost:8080` | external address; prefix of client and panel addresses |
+| `CtxUi__DataDir` | `CtxUi:DataDir` | `data` | database and keys directory |
+| `CtxUi__RefreshInterval` | `CtxUi:RefreshInterval` | `00:00:01` | how often the server checks for CLI changes |
+| `CtxUi__FlushInterval` | `CtxUi:FlushInterval` | `00:00:05` | how often quota counters and the call log are written |
+| `CtxUi__UsageRetentionDays` | `CtxUi:UsageRetentionDays` | `30` | call log retention; daily totals are kept forever |
+| `CtxUi__SessionCheckInterval` | `CtxUi:SessionCheckInterval` | `00:01:00` | how often an open panel rechecks the administrator's session |
 
-Адрес прослушивания задаётся именно переменной `Urls`. `ASPNETCORE_URLS`
-не действует: её перекрывает значение из `appsettings.json`, который лежит
-рядом с программой.
+Use `Urls`, not `ASPNETCORE_URLS`: the latter is overridden by
+`appsettings.json`.
 
-## В Docker
+The panel path is stored in the database, not in settings:
+`ctx-ui admin path [--new]`.
 
-В `.env` задаются две переменные, остальное `compose.yaml` выводит сам.
+## Docker
 
-| Переменная | Смысл |
+`.env`:
+
+| Variable | Meaning |
 | --- | --- |
-| `CTX_UI_VERSION` | тег образа |
-| `CTX_UI_DOMAIN` | домен; из него получаются `CtxUi__PublicUrl` и адрес для Caddy |
+| `CTX_UI_VERSION` | image tag |
+| `CTX_UI_DOMAIN` | domain; sets `CtxUi__PublicUrl` and the Caddy site |
 
-Внутри образа заданы `Urls=http://0.0.0.0:8080` и `CtxUi__DataDir=/data`.
+The image sets `Urls=http://0.0.0.0:8080` and `CtxUi__DataDir=/data`.
 
-## Каталог данных
+## Data directory
 
-В нём лежат `ctx-ui.db` и каталог `keys`. Каталог `keys` нужен, чтобы
-показывать выпущенные токены и читать секретные заголовки inbound'ов. Без
-него токены продолжают работать, но показать их нельзя, только
-перевыпустить, а inbound'ы с секретными заголовками выключаются до
-повторного добавления.
+| Path | Contents |
+| --- | --- |
+| `ctx-ui.db` | SQLite database |
+| `keys/` | Data Protection keys |
+
+Losing `keys/`: tokens still work but cannot be shown, only reissued;
+inbounds with secret headers are disabled until the headers are re-entered;
+panel sessions are invalidated.

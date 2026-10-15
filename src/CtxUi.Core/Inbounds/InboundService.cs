@@ -4,36 +4,52 @@ using CtxUi.Core.Secrets;
 
 namespace CtxUi.Core.Inbounds;
 
+public sealed record InboundSettings
+{
+    public string? Name { get; init; }
+
+    public required string Url { get; init; }
+
+    public bool ForwardIdentity { get; init; }
+
+    public int RequestTimeoutSeconds { get; init; } = Inbound.DefaultRequestTimeoutSeconds;
+
+    public int MaxBodyBytes { get; init; } = Inbound.DefaultMaxBodyBytes;
+
+    public IEnumerable<KeyValuePair<string, string>>? UpstreamHeaders { get; init; }
+}
+
 public sealed class InboundService(CtxUiDbContext db, ISecretVault vault, TimeProvider clock)
 {
     public const int MaxNameLength = 100;
 
-    public async Task<Inbound> AddHttpAsync(
+    public Task<Inbound> AddHttpAsync(
         string slug,
         string? name,
         string url,
         IEnumerable<KeyValuePair<string, string>>? upstreamHeaders = null,
         bool forwardIdentity = false,
-        CancellationToken ct = default)
+        CancellationToken ct = default) =>
+        AddHttpAsync(
+            slug,
+            new InboundSettings { Name = name, Url = url, UpstreamHeaders = upstreamHeaders, ForwardIdentity = forwardIdentity },
+            ct);
+
+    public async Task<Inbound> AddHttpAsync(string slug, InboundSettings settings, CancellationToken ct = default)
     {
         var parsedSlug = Slug.Parse(slug);
-        var parsedName = ParseName(name, parsedSlug);
-        var parsedUrl = ParseUrl(url);
-        var headers = UpstreamHeaders.Parse(upstreamHeaders);
-        if (await db.Inbounds.AnyAsync(inbound => inbound.Slug == parsedSlug, ct))
-            throw new DomainException($"inbound «{parsedSlug}» уже есть");
-
         var inbound = new Inbound
         {
             Id = Guid.NewGuid(),
             Slug = parsedSlug,
-            Name = parsedName,
+            Name = parsedSlug,
             Kind = InboundKind.Http,
-            Url = parsedUrl.AbsoluteUri,
-            UpstreamHeadersSealed = UpstreamHeaders.Seal(vault, headers),
-            ForwardIdentity = forwardIdentity,
             CreatedAt = clock.GetUtcNow(),
         };
+        Apply(inbound, settings);
+        if (await db.Inbounds.AnyAsync(known => known.Slug == parsedSlug, ct))
+            throw new DomainException($"inbound «{parsedSlug}» уже есть");
+
         db.Inbounds.Add(inbound);
         await db.SaveChangesAsync(ct);
         return inbound;
@@ -42,24 +58,59 @@ public sealed class InboundService(CtxUiDbContext db, ISecretVault vault, TimePr
     public Task<List<Inbound>> ListAsync(CancellationToken ct = default) =>
         db.Inbounds.AsNoTracking().OrderBy(inbound => inbound.Slug).ToListAsync(ct);
 
+    public async Task<Inbound> GetAsync(string slug, CancellationToken ct = default)
+    {
+        var wanted = slug.Trim();
+        return await db.Inbounds.SingleOrDefaultAsync(inbound => inbound.Slug == wanted, ct)
+            ?? throw new DomainException($"inbound «{slug}» не найден");
+    }
+
+    public async Task UpdateAsync(string slug, InboundSettings settings, CancellationToken ct = default)
+    {
+        Apply(await GetAsync(slug, ct), settings);
+        await db.SaveChangesAsync(ct);
+    }
+
+    public IReadOnlyList<string>? HeaderNames(Inbound inbound) =>
+        UpstreamHeaders.Open(vault, inbound.UpstreamHeadersSealed)?.Keys.Order(StringComparer.OrdinalIgnoreCase).ToList();
+
+    public Task<Dictionary<Guid, int>> ClientCountsAsync(CancellationToken ct = default) =>
+        db.ClientInbounds.AsNoTracking()
+            .GroupBy(link => link.InboundId)
+            .Select(group => new { InboundId = group.Key, Clients = group.Count() })
+            .ToDictionaryAsync(row => row.InboundId, row => row.Clients, ct);
+
     public async Task SetEnabledAsync(string slug, bool enabled, CancellationToken ct = default)
     {
-        var inbound = await FindAsync(slug, ct);
+        var inbound = await GetAsync(slug, ct);
         inbound.Enabled = enabled;
         await db.SaveChangesAsync(ct);
     }
 
     public async Task RemoveAsync(string slug, CancellationToken ct = default)
     {
-        db.Inbounds.Remove(await FindAsync(slug, ct));
+        db.Inbounds.Remove(await GetAsync(slug, ct));
         await db.SaveChangesAsync(ct);
     }
 
-    private async Task<Inbound> FindAsync(string slug, CancellationToken ct)
+    private void Apply(Inbound inbound, InboundSettings settings)
     {
-        var wanted = slug.Trim();
-        return await db.Inbounds.SingleOrDefaultAsync(inbound => inbound.Slug == wanted, ct)
-            ?? throw new DomainException($"inbound «{slug}» не найден");
+        var name = ParseName(settings.Name, inbound.Slug);
+        var url = ParseUrl(settings.Url);
+        if (settings.RequestTimeoutSeconds is < 1 or > Inbound.RequestTimeoutCeiling)
+            throw new DomainException($"таймаут запроса: допустимо целое от 1 до {Inbound.RequestTimeoutCeiling} секунд");
+        if (settings.MaxBodyBytes is < Inbound.MaxBodyBytesFloor or > Inbound.MaxBodyBytesCeiling)
+            throw new DomainException(
+                $"предел тела запроса: допустимо от {Inbound.MaxBodyBytesFloor} до {Inbound.MaxBodyBytesCeiling} байт");
+        var headers = settings.UpstreamHeaders is null ? null : UpstreamHeaders.Parse(settings.UpstreamHeaders);
+
+        inbound.Name = name;
+        inbound.Url = url.AbsoluteUri;
+        inbound.ForwardIdentity = settings.ForwardIdentity;
+        inbound.RequestTimeoutSeconds = settings.RequestTimeoutSeconds;
+        inbound.MaxBodyBytes = settings.MaxBodyBytes;
+        if (headers is not null)
+            inbound.UpstreamHeadersSealed = UpstreamHeaders.Seal(vault, headers);
     }
 
     private static string ParseName(string? name, string fallback)

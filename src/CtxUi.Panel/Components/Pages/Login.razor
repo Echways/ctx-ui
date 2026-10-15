@@ -1,0 +1,62 @@
+@page "/login"
+@layout BareLayout
+@attribute [AllowAnonymous]
+@attribute [ExcludeFromInteractiveRouting]
+@inject SignInManager<Admin> SignIn
+@inject NavigationManager Navigation
+
+<PageTitle>Вход в ctx-ui</PageTitle>
+
+<form class="entrance" method="post" @formname="login" @onsubmit="SignInAsync">
+    <AntiforgeryToken />
+    <h1>ctx-ui</h1>
+    @if (_refused)
+    {
+        <p class="entrance-refusal" role="alert">
+            Неверный логин или пароль. После @PanelServices.MaxFailedSignIns ошибок подряд вход закрывается
+            на @((int)PanelServices.Lockout.TotalMinutes) минут.
+        </p>
+    }
+    <label>
+        Логин
+        <input name="Input.Name" value="@Input.Name" autocomplete="username" autocapitalize="none" required autofocus />
+    </label>
+    <label>
+        Пароль
+        <input name="Input.Password" type="password" autocomplete="current-password" required />
+    </label>
+    <button type="submit">Войти</button>
+</form>
+
+@code {
+    private bool _refused;
+
+    [SupplyParameterFromForm]
+    private Credentials Input { get; set; } = default!;
+
+    [SupplyParameterFromQuery]
+    private string? ReturnUrl { get; set; }
+
+    protected override void OnInitialized() => Input ??= new Credentials();
+
+    private async Task SignInAsync()
+    {
+        var result = await SignIn.PasswordSignInAsync(
+            Input.Name ?? "", Input.Password ?? "", isPersistent: true, lockoutOnFailure: true);
+        if (!result.Succeeded)
+        {
+            _refused = true;
+            return;
+        }
+
+        var home = new Uri(Navigation.BaseUri).AbsolutePath;
+        Navigation.NavigateTo(ReturnUrl is not null && ReturnUrl.StartsWith(home, StringComparison.Ordinal) ? ReturnUrl : home);
+    }
+
+    private sealed class Credentials
+    {
+        public string? Name { get; set; }
+
+        public string? Password { get; set; }
+    }
+}

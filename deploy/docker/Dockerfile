@@ -5,6 +5,7 @@ WORKDIR /source
 COPY Directory.Build.props Directory.Packages.props ./
 COPY src/CtxUi.Core/CtxUi.Core.csproj src/CtxUi.Core/
 COPY src/CtxUi.Gateway/CtxUi.Gateway.csproj src/CtxUi.Gateway/
+COPY src/CtxUi.Panel/CtxUi.Panel.csproj src/CtxUi.Panel/
 COPY src/CtxUi.Server/CtxUi.Server.csproj src/CtxUi.Server/
 RUN dotnet restore src/CtxUi.Server -a $TARGETARCH
 COPY src/ src/

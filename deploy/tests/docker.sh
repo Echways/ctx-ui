@@ -51,6 +51,20 @@ response_becomes() {
     return 1
 }
 
+data_mode_becomes() {
+    local expected="$1" actual=""
+    for _ in $(seq 1 30); do
+        actual="$(compose exec -T ctx-ui stat -c '%a %u' /data 2>&1 || true)"
+        if [ "$actual" = "$expected" ]; then
+            return 0
+        fi
+        sleep 1
+    done
+    echo "      expected: $expected"
+    echo "      actual:   $actual"
+    return 1
+}
+
 docker build -q -f "$root/deploy/docker/Dockerfile" --build-arg "VERSION=$version" \
     -t "ghcr.io/echways/ctx-ui:$version" "$root" > /dev/null
 
@@ -79,7 +93,7 @@ compose up -d > /dev/null 2>&1
 
 echo "== container"
 check "runs without root" equals 1654 "$(compose exec -T ctx-ui id -u)"
-check "data directory is private" equals "700 1654" "$(compose exec -T ctx-ui stat -c '%a %u' /data)"
+check "data directory is private" data_mode_becomes "700 1654"
 
 echo "== command line"
 output="$(compose exec -T ctx-ui ctx-ui inbound add echo --url http://upstream:9000/mcp 2>&1)" || true
@@ -91,6 +105,20 @@ check "client add prints a token" [ -n "$token" ]
 echo "== through caddy"
 check "request without a token is rejected" response_becomes " 401"
 check "request with the token reaches the upstream" response_becomes "pong 200" -H "Authorization: Bearer $token"
+
+echo "== panel"
+output="$(compose exec -T ctx-ui ctx-ui admin add root 2>&1)" || true
+panel="$(echo "$output" | grep -o -E 'https://localhost/[a-z0-9]{16}/' | head -n 1 || true)"
+check "admin add prints the panel address" [ -n "$panel" ]
+path="${panel#https://localhost}"
+check "login form is served through caddy" equals 200 \
+    "$(curl -sk -o /dev/null -w '%{http_code}' "https://localhost:18443${path}login")"
+check "panel styles are in the image" equals 200 \
+    "$(curl -sk -o /dev/null -w '%{http_code}' "https://localhost:18443${path}_content/MudBlazor/MudBlazor.min.css")"
+check "visitor is sent to the login form over https" contains "https://localhost:18443${path}login" \
+    "$(curl -sk -o /dev/null -w '%{redirect_url}' "https://localhost:18443${path}")"
+check "panel does not exist without the secret path" equals 404 \
+    "$(curl -sk -o /dev/null -w '%{http_code}' https://localhost:18443/login)"
 
 echo "== restart"
 compose restart ctx-ui > /dev/null 2>&1

@@ -1,14 +1,12 @@
-﻿using System;
+using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
 namespace CtxUi.Core.Data.Migrations
 {
-    /// <inheritdoc />
     public partial class Limits : Migration
     {
-        /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.AddColumn<int>(
@@ -112,7 +110,6 @@ namespace CtxUi.Core.Data.Migrations
             migrationBuilder.Sql("UPDATE Clients SET PeriodStartedAt = CreatedAt;");
         }
 
-        /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(

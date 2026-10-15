@@ -2,6 +2,7 @@
   <Folder Name="/src/">
     <Project Path="src/CtxUi.Core/CtxUi.Core.csproj" />
     <Project Path="src/CtxUi.Gateway/CtxUi.Gateway.csproj" />
+    <Project Path="src/CtxUi.Panel/CtxUi.Panel.csproj" />
     <Project Path="src/CtxUi.Server/CtxUi.Server.csproj" />
   </Folder>
   <Folder Name="/tests/">

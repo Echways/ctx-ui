@@ -1,0 +1,11 @@
+@page "/{*path:nonfile}"
+
+<PageTitle>Страница не найдена</PageTitle>
+
+<MudText Typo="Typo.h5" GutterBottom="true">Такой страницы нет</MudText>
+<MudText>Адрес изменился или набран с ошибкой. Разделы панели перечислены в меню слева.</MudText>
+
+@code {
+    [Parameter]
+    public string? Path { get; set; }
+}

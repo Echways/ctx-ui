@@ -1,0 +1,185 @@
+@page "/clients"
+@inject PanelBackend Backend
+@inject IDialogService Dialogs
+@inject ISnackbar Snackbar
+@inject TimeProvider Clock
+
+<PageTitle>Клиенты</PageTitle>
+
+<MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-4">
+    <MudText Typo="Typo.h5">Клиенты</MudText>
+    <MudSpacer />
+    <MudTextField @bind-Value="_search" Label="Поиск по имени" Immediate="true" Clearable="true" Margin="Margin.Dense"
+                  Variant="Variant.Outlined" Style="max-width: 280px" />
+    <MudIconButton Icon="@Icons.Material.Filled.Refresh" aria-label="Обновить" title="Обновить" OnClick="LoadAsync" />
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PersonAdd" OnClick="AddAsync">
+        Добавить клиента
+    </MudButton>
+</MudStack>
+
+@if (_clients is null)
+{
+    <MudProgressLinear Indeterminate="true" />
+}
+else if (_clients.Count == 0)
+{
+    <MudAlert Severity="Severity.Info">
+        Клиентов пока нет. Клиент — это тот, кому выдан токен: у него свой срок, свои лимиты и свой набор inbound'ов.
+    </MudAlert>
+}
+else if (Shown.Count == 0)
+{
+    <MudAlert Severity="Severity.Info">Никто не найден: в именах клиентов нет «@_search».</MudAlert>
+}
+else
+{
+    <MudTable Items="Shown" Dense="true" Hover="true" Elevation="1">
+        <HeaderContent>
+            <MudTh>Имя</MudTh>
+            <MudTh>Состояние</MudTh>
+            <MudTh>Срок, UTC</MudTh>
+            <MudTh>Обращался, UTC</MudTh>
+            <MudTh>Вызовы</MudTh>
+            <MudTh>Inbounds</MudTh>
+            <MudTh>Доступ</MudTh>
+            <MudTh></MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd>@context.Name</MudTd>
+            <MudTd>
+                <MudChip T="string" Size="Size.Small" Color="Tint(ClientState.Of(context, _loadedAt))">
+                    @ClientState.Text(ClientState.Of(context, _loadedAt))
+                </MudChip>
+            </MudTd>
+            <MudTd>@(context.ExpiresAt is { } expiresAt ? $"до {Words.Day(expiresAt)}" : "бессрочно")</MudTd>
+            <MudTd>@(context.LastUsedAt is { } usedAt ? Words.Minute(usedAt) : "не обращался")</MudTd>
+            <MudTd>@QuotaPeriod.UsedCalls(context, _loadedAt)/@(context.QuotaCalls?.ToString() ?? "∞")</MudTd>
+            <MudTd>@string.Join(", ", context.Inbounds.Select(link => link.Inbound!.Slug).Order())</MudTd>
+            <MudTd>
+                <MudSwitch T="bool" Value="context.Enabled" Color="Color.Primary"
+                           ValueChanged="@(enabled => SwitchAsync(context, enabled))" />
+            </MudTd>
+            <MudTd Style="text-align: right; white-space: nowrap">
+                <MudIconButton Icon="@Icons.Material.Filled.Link" Size="Size.Small" aria-label="Подключение" title="Подключение"
+                               OnClick="@(() => ConnectAsync(context))" />
+                <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" aria-label="Изменить" title="Изменить"
+                               OnClick="@(() => EditAsync(context))" />
+                <MudIconButton Icon="@Icons.Material.Filled.RestartAlt" Size="Size.Small" aria-label="Сбросить квоту" title="Сбросить квоту"
+                               OnClick="@(() => ResetAsync(context))" />
+                <MudIconButton Icon="@Icons.Material.Filled.Key" Size="Size.Small" aria-label="Новый токен" title="Новый токен"
+                               OnClick="@(() => ReissueAsync(context))" />
+                <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" aria-label="Удалить" title="Удалить"
+                               OnClick="@(() => RemoveAsync(context))" />
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+}
+
+@code {
+    private static readonly DialogOptions ConnectionOptions = new() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+    private static readonly DialogOptions FormOptions = new() { MaxWidth = MaxWidth.Small, FullWidth = true, BackdropClick = false };
+
+    private List<Client>? _clients;
+    private DateTimeOffset _loadedAt;
+    private string? _search;
+
+    private List<Client> Shown => string.IsNullOrWhiteSpace(_search)
+        ? _clients!
+        : _clients!.Where(client => client.Name.Contains(_search.Trim(), StringComparison.CurrentCultureIgnoreCase)).ToList();
+
+    protected override Task OnInitializedAsync() => LoadAsync();
+
+    private static Color Tint(ClientStatus status) => status switch
+    {
+        ClientStatus.Active => Color.Success,
+        ClientStatus.Exhausted => Color.Warning,
+        ClientStatus.Expired => Color.Error,
+        _ => Color.Default,
+    };
+
+    private async Task LoadAsync()
+    {
+        _clients = await Backend.ReadAsync(services => services.GetRequiredService<ClientService>().ListAsync());
+        _loadedAt = Clock.GetUtcNow();
+    }
+
+    private Task SwitchAsync(Client client, bool enabled) => ApplyAsync(
+        services => services.GetRequiredService<ClientService>().SetEnabledAsync(client.Name, enabled),
+        $"Клиент «{client.Name}» {(enabled ? "включён" : "отключён")}");
+
+    private Task ResetAsync(Client client) => ApplyAsync(
+        services => services.GetRequiredService<ClientService>().ResetQuotaAsync(client.Name),
+        $"Счётчик квоты клиента «{client.Name}» обнулён, период начат заново");
+
+    private async Task AddAsync()
+    {
+        var dialog = await Dialogs.ShowAsync<ClientDialog>("Новый клиент", FormOptions);
+        if (await dialog.Result is not { Canceled: false, Data: string name })
+            return;
+
+        await LoadAsync();
+        await ConnectAsync(name);
+    }
+
+    private async Task EditAsync(Client client)
+    {
+        var parameters = new DialogParameters<ClientDialog> { { dialog => dialog.Name, client.Name } };
+        var dialog = await Dialogs.ShowAsync<ClientDialog>($"Клиент «{client.Name}»", parameters, FormOptions);
+        if (await dialog.Result is { Canceled: false })
+            await LoadAsync();
+    }
+
+    private Task ConnectAsync(Client client) => ConnectAsync(client.Name);
+
+    private Task ConnectAsync(string name) => Dialogs.ShowAsync<ConnectionDialog>(
+        $"Подключение: {name}",
+        new DialogParameters<ConnectionDialog> { { dialog => dialog.Name, name } },
+        ConnectionOptions);
+
+    private async Task ReissueAsync(Client client)
+    {
+        var confirmed = await Dialogs.ShowMessageBoxAsync(
+            $"Выпустить новый токен для «{client.Name}»?",
+            "Прежний токен сразу перестанет работать: клиенту придётся заменить его в своих настройках.",
+            yesText: "Выпустить",
+            cancelText: "Отмена");
+        if (confirmed != true)
+            return;
+
+        await ApplyAsync(
+            services => services.GetRequiredService<ClientService>().ReissueAsync(client.Name),
+            $"Клиенту «{client.Name}» выпущен новый токен");
+        if (_clients!.Any(known => known.Id == client.Id))
+            await ConnectAsync(client);
+    }
+
+    private async Task RemoveAsync(Client client)
+    {
+        var confirmed = await Dialogs.ShowMessageBoxAsync(
+            $"Удалить клиента «{client.Name}»?",
+            "Его токен сразу перестанет работать. Записи журнала о нём останутся.",
+            yesText: "Удалить",
+            cancelText: "Отмена");
+        if (confirmed == true)
+        {
+            await ApplyAsync(
+                services => services.GetRequiredService<ClientService>().RemoveAsync(client.Name),
+                $"Клиент «{client.Name}» удалён");
+        }
+    }
+
+    private async Task ApplyAsync(Func<IServiceProvider, Task> change, string done)
+    {
+        try
+        {
+            await Backend.ChangeAsync(change);
+            Snackbar.Add(done, Severity.Success);
+        }
+        catch (DomainException exception)
+        {
+            Snackbar.Add(Words.Sentence(exception.Message), Severity.Error);
+        }
+
+        await LoadAsync();
+    }
+}

@@ -18,6 +18,8 @@ public sealed record ClientUpdate
     public IReadOnlyCollection<string>? InboundSlugs { get; init; }
 
     public ClientLimits? Limits { get; init; }
+
+    public IEnumerable<KeyValuePair<string, string>>? Metadata { get; init; }
 }
 
 public sealed class ClientService(CtxUiDbContext db, ISecretVault vault, TimeProvider clock)
@@ -95,6 +97,9 @@ public sealed class ClientService(CtxUiDbContext db, ISecretVault vault, TimePro
             foreach (var inboundId in wanted.Except(client.Inbounds.Select(link => link.InboundId)).ToList())
                 client.Inbounds.Add(new ClientInbound { ClientId = client.Id, InboundId = inboundId });
         }
+
+        if (update.Metadata is not null)
+            client.Metadata = ClientMetadata.Parse(update.Metadata);
 
         if (update.Limits is { } limits)
         {

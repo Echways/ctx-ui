@@ -3,12 +3,14 @@
   <PropertyGroup>
     <AssemblyName>ctx-ui</AssemblyName>
     <RootNamespace>CtxUi.Server</RootNamespace>
+    <RequiresAspNetWebAssets>true</RequiresAspNetWebAssets>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="System.CommandLine" />
     <ProjectReference Include="..\CtxUi.Core\CtxUi.Core.csproj" />
     <ProjectReference Include="..\CtxUi.Gateway\CtxUi.Gateway.csproj" />
+    <ProjectReference Include="..\CtxUi.Panel\CtxUi.Panel.csproj" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(SelfContained)' == 'true'">

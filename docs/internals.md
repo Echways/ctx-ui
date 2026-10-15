@@ -1,292 +1,342 @@
-# Как это устроено
+# Internals
 
-Здесь записаны решения, которые не видны из кода с первого взгляда. В
-самом коде комментариев нет: объяснения живут в этом файле.
+**English** · [Русский](ru/internals.md)
 
-## Сервер и командная строка
+Design decisions not evident from the code.
 
-Сервер и команда `ctx-ui` — один исполняемый файл. Первый аргумент
-`inbound`, `client` или `usage` включает режим командной строки, иначе
-стартует сервер. Оба режима регистрируют сервисы одной функцией
-(`ServiceRegistration.AddCtxUi`), потому что должны видеть одну базу и одни
-ключи шифрования.
+## Projects
 
-`ServerApp.Build` принимает обратный вызов. Он нужен тестам, чтобы
-подменить порт, каталог данных и часы. `ServerApp.InitializeAsync`
-применяет миграции и загружает маршруты до старта, чтобы первый запрос не
-увидел пустую таблицу.
+| Project | Role |
+| --- | --- |
+| `CtxUi.Core` | domain, EF Core model, migrations, services |
+| `CtxUi.Gateway` | `/mcp/<slug>` handling, limits, quota, call log |
+| `CtxUi.Panel` | Blazor Server panel (MudBlazor), sign-in |
+| `CtxUi.Server` | entry point: server or CLI |
 
-Команда пишет журнал в stderr, чтобы её вывод можно было разбирать
-скриптом.
+## Server and CLI
 
-`DomainException` означает нарушение правила предметной области. Её текст
-показывается администратору как есть, поэтому пишется по-русски и без
-внутренних подробностей.
+One executable. First argument `inbound`, `client`, `usage` or `admin` →
+CLI; otherwise → server. Both register services via
+`ServiceRegistration.AddCtxUi` so they share the database and keys.
 
-## Таблица маршрутов
+- `ServerApp.Build` takes a callback: tests override port, data directory,
+  clock.
+- `ServerApp.InitializeAsync` migrates and loads routes and the panel path
+  before start; the first request never sees an empty table.
+- The application name is set explicitly: ASP.NET Core uses it to find the
+  static web assets manifest, and under the test host it would be
+  `testhost`.
+- `UseStaticWebAssets` is always called: from source and in tests MudBlazor
+  assets are in the NuGet cache; in a published build it is a no-op.
+- CLI logs go to stderr; stdout is parseable.
+- `DomainException` = broken domain rule. Its message is shown to the
+  administrator verbatim: Russian, no internal details.
 
-Шлюз не ходит в базу на каждом запросе. Он читает `RoutingSnapshot`:
-неизменяемую таблицу маршрутов и клиентов. После изменения в базе строится
-новый снимок и целиком подменяет старый; `SnapshotStore` отдаёт текущий без
-блокировок.
+## Routing table
 
-Чтобы сервер узнал об изменении, сделанном другим процессом, в базе есть
-единственная строка со счётчиком изменений (`RoutingState`):
+The gateway does not query the database per request. It reads a
+`RoutingSnapshot`, an immutable table of routes and clients. A change
+produces a new snapshot that replaces the old one; `SnapshotStore` serves it
+lock-free.
 
-- любое отслеживаемое изменение в `CtxUiDbContext` увеличивает счётчик.
-  Прирост делается в SQL, а не в памяти, чтобы два процесса не затёрли
-  изменения друг друга;
-- `SnapshotRefresher` раз в `RefreshInterval` сравнивает счётчик с
-  ревизией загруженного снимка и перечитывает таблицу, только если они
-  отличаются;
-- загрузчик читает ревизию раньше данных. Если данные изменятся между
-  двумя чтениями, снимок получит старую ревизию с новыми данными и на
-  следующей проверке перечитается. Обратный порядок мог бы пропустить
-  изменение;
-- у снимка до первой загрузки ревизия `-1`: она не совпадает ни с одной
-  ревизией в базе.
+Cross-process change detection uses one row with a counter
+(`RoutingState`):
 
-Отметка времени обращения клиента идёт мимо отслеживания изменений, через
-`ExecuteUpdateAsync`. Она не увеличивает счётчик и не заставляет сервер
-перечитывать таблицу на каждый запрос.
+- `CtxUiDbContext.SaveChangesAsync` increments it in the same transaction
+  when an `Inbound`, `Client` or `ClientInbound` changed. The increment is
+  SQL, not in memory, so concurrent processes do not lose increments;
+- `SnapshotRefresher` compares it with the loaded revision every
+  `RefreshInterval` and reloads only on mismatch;
+- the loader reads the revision before the data. A change in between yields
+  old revision + new data, fixed on the next check. The reverse order could
+  miss a change;
+- the initial snapshot has revision `-1`, which matches nothing.
 
-## Токен не должен попасть в журнал
+Last-use stamps and quota counters are written with `ExecuteUpdateAsync`,
+bypassing change tracking; the call log tables are not routing entities.
+None of them trigger a reload.
 
-Адрес вида `/k/<токен>/mcp/<slug>` существует для клиентов, которые не
-умеют задавать заголовки. Middleware, вырезающий токен из пути, стоит
-первым в конвейере, поэтому маршрутизация и журнал токена уже не видят.
-Порядок в `UseCtxUiGateway` менять нельзя.
+## Token never reaches the log
 
-Категории журнала, которые пишут исходный адрес запроса или шумят на
-каждом обращении, заглушены кодом (`AddCtxUiFilters`), а не в
-`appsettings.json`. Так защита от утечки токена не зависит от файла
-настроек, который администратор может заменить.
+`/k/<token>/mcp/<slug>` exists for clients without custom headers. The
+middleware that strips the token is first in the pipeline, before routing
+and logging. Pipeline order is fixed in `ServerApp.Build`; do not change it.
 
-В запись о запросе идёт slug только известного inbound'а. Произвольная
-строка из адреса в журнал не попадает.
+Log categories that print the raw URL or are noisy per request are
+filtered in code (`AddCtxUiFilters`), not in `appsettings.json`, so leak
+protection does not depend on a replaceable file.
 
-Открытый токен существует только в значении `IssuedClient`, которое
-возвращается при выпуске. В базе лежат его хеш и зашифрованная копия.
+Request log entries contain only the slug of a known inbound, never an
+arbitrary path segment.
 
-## Пересылка в upstream
+The plaintext token exists only in `IssuedClient` at issue time. The
+database stores a SHA-256 hash and an encrypted copy.
 
-`HttpUpstream` пересылает запрос прозрачно: тело и ответ идут потоком без
-разбора. Поэтому работают любая ревизия протокола MCP и ответы SSE.
+## Forwarding
 
-Адрес upstream берётся из inbound'а целиком. Путь и строка запроса клиента
-в него не попадают.
+`HttpUpstream` streams request and response bodies without parsing them, so
+any MCP protocol revision and SSE work.
 
-Токен клиента предназначен шлюзу и дальше не передаётся. Заголовки
-личности (`X-Mcp-Client-*`, `X-Mcp-Meta-*`) выставляет только шлюз:
-присланные клиентом вырезаются до того, как добавятся настоящие. Заголовки
-HTTP несут только ASCII, поэтому имя клиента и значения метаданных
-кодируются процентами в UTF-8.
+- Upstream URL is the inbound's URL as is; the client's path and query are
+  not appended.
+- The client token is not forwarded.
+- `X-Mcp-Client-*` and `X-Mcp-Meta-*` are set only by the gateway; client
+  copies are stripped first.
+- Header values are ASCII, so names and metadata are percent-encoded UTF-8.
 
-## Клиенты
+## Clients
 
-Имя клиента уникально без учёта регистра. Ключ уникальности
-(`ClientName.Key`) хранится отдельной колонкой, потому что SQLite
-сравнивает без учёта регистра только латиницу, а имена обычно кириллицей.
-Ключ строится нормализацией NFKC и переводом в верхний регистр, для этого
-нужна библиотека ICU.
+- Names are unique ignoring case. The key (`ClientName.Key`: NFKC +
+  upper case) is a separate column because SQLite's case folding covers only
+  Latin letters. Requires ICU.
+- Inbound links are edited by diff: remove + re-add of the same link in one
+  context conflicts on the composite key.
+- `ClientUpdate`: `ExpiresAt = null` means "never" only with
+  `ChangeExpiry = true`; `InboundSlugs = null` means "unchanged".
+- `TouchThrottle` limits last-use writes. `ClientTouch` never throws: a
+  stats failure must not fail the request.
+- `--expires 2027-07-01` is parsed as 00:00 UTC. Default parsing would use
+  server local time.
 
-При изменении набора inbound'ов клиента набор правится разницей: удаление
-и повторное добавление той же связи в одном контексте конфликтует по
-составному ключу.
+## Limits and quota
 
-В `ClientUpdate` поле `ExpiresAt = null` означает «бессрочно» только при
-`ChangeExpiry = true`; `InboundSlugs = null` означает «набор не менять».
+Check order in `GatewayHandler`: token/access → rate → concurrency → quota.
+Cheapest first; the body is read only after the first three pass.
 
-Обращения клиента записываются не на каждый запрос: `TouchThrottle`
-решает, пора ли писать. Сбой записи статистики не должен ронять запрос
-клиента, поэтому `ClientTouch` не бросает исключений.
+**Rate and concurrency.** `ClientLimiter` keeps one
+`System.Threading.RateLimiting` limiter per client, partitioned by client +
+limit value: a new value applies on the next request and the library
+disposes the old limiter. Rate is a token bucket with capacity = limit and
+continuous refill. `Retry-After` is computed by the gateway as time until
+one token returns; the library would report a full minute.
 
-Дата в `--expires 2027-07-01` означает полночь UTC: с этого момента доступ
-закрыт. Разбор по умолчанию взял бы полночь по часам сервера и сдвинул срок
-на часовой пояс.
+Limiters use the system clock (the library does not accept
+`TimeProvider`), so the refill test sleeps.
 
-## Лимиты и квота
+Concurrency counts only `POST`. MCP clients keep a `GET` notification stream
+open; counting it would block a client with limit 1 forever. Rate counts all
+methods.
 
-Порядок проверок в `GatewayHandler`: токен и доступ, частота, параллелизм,
-квота. Каждая следующая проверка дороже предыдущей, поэтому тело запроса
-читается только после первых трёх.
+**Body.** For `POST` the gateway buffers the body up to
+`Inbound.MaxBodyBytes` (default 4 MB) and forwards the same bytes. The
+response still streams.
 
-**Частота и параллелизм.** `ClientLimiter` держит по ограничителю из
-`System.Threading.RateLimiting` на клиента. Ключ раздела составлен из
-клиента и значения лимита, поэтому новое значение действует со следующего
-запроса, а прежний ограничитель библиотека убирает сама. Частоту считает
-корзина токенов: запас равен лимиту и пополняется равномерно, а не раз в
-минуту. Подсказку `Retry-After` шлюз вычисляет сам как время возврата
-одного запроса: библиотека для любой корзины называет целую минуту.
+`RpcEnvelope` extracts only `id`, `method`, `params.name` and rejects input
+two parsers could read differently: duplicate keys, trailing documents,
+depth > 256. Otherwise a `tools/call` could pass as `ping` and skip the
+quota. Such requests get 400 and are not forwarded.
 
-Ограничители идут по системным часам, а не по `TimeProvider`: других
-библиотека не принимает. Поэтому тест пополнения ждёт по-настоящему.
+A JSON-RPC batch (protocol revisions before 2025-06-18) is charged per
+`tools/call` it contains and passes all-or-nothing. Max 100 messages.
 
-Параллелизм считается только для `POST`. Клиент MCP всё время работы
-держит открытым поток `GET` для уведомлений; если бы поток занимал место,
-клиент с лимитом 1 не сделал бы ни одного вызова. Частота считает запросы
-всех методов.
+Method and tool names are client input shown in the panel and stored in the
+database: truncated to 128 characters, control characters replaced, never
+written to the server log.
 
-**Тело запроса.** Чтобы узнать метод, шлюз читает тело `POST` в память
-целиком, но не больше `Inbound.MaxBodyBytes` (4 МБ; пока меняется только в
-базе), и отдаёт upstream те же байты. Ответ по-прежнему идёт потоком.
+**Quota.** The period is computed, not stored: `QuotaPeriod.StartAt` counts
+whole reset intervals from `Client.PeriodStartedAt`. Single writer per
+field:
 
-`RpcEnvelope` берёт из тела только `id`, `method` и `params.name` и
-отклоняет всё, что два разборщика могли бы понять по-разному: повторённое
-поле, второй документ после первого, вложенность глубже 256. Иначе вызов
-можно было бы провести мимо квоты: шлюз увидел бы `ping`, а upstream
-увидел бы `tools/call`. Такой запрос получает 400 и до upstream не доходит.
+| Field | Writer |
+| --- | --- |
+| `PeriodStartedAt` | administrator (`client reset`, first quota, new interval) |
+| `UsedCalls`, `UsedSince` | server |
 
-Пакет JSON-RPC (массив сообщений, ревизии протокола до 2025-06-18)
-списывает с квоты столько, сколько в нём `tools/call`, и проходит либо
-целиком, либо никак. В пакете не больше 100 сообщений.
+A counter whose `UsedSince` is not the current period start reads as zero.
+This one rule covers scheduled reset, manual reset and period change.
+Changing the quota size does not touch the period.
 
-Имя метода и имя tool приходят от клиента, а попадают в базу и на экран
-администратора. `RpcEnvelope` обрезает их до 128 символов и заменяет
-управляющие символы. В журнал сервера они не пишутся совсем.
+Counters live in `QuotaLedger`. `QuotaSaver` writes changed ones every
+`FlushInterval` and on shutdown; they are loaded at start. A crash loses at
+most one interval.
 
-**Квота.** Период квоты не хранится, а вычисляется: `QuotaPeriod.StartAt`
-отсчитывает целое число интервалов сброса от `Client.PeriodStartedAt`.
-Администратор меняет только эту точку отсчёта (команда `client reset`,
-первая квота клиента, новый интервал сброса), сервер меняет только счётчик
-`UsedCalls` и отметку `UsedSince`, к какому периоду счётчик относится. У
-каждого поля один писатель, поэтому команда и сервис не затирают изменения
-друг друга. Счётчик, чья отметка не равна началу текущего периода,
-считается нулевым: так срабатывают и плановый сброс, и сброс
-администратором, и запуск после смены периода.
+A call is charged before forwarding and refunded on upstream status ≥ 400 or
+no response. 4xx is refunded too: the call did not run, and a typical cause
+(wrong upstream header) is not the client's fault. A client-aborted call is
+not refunded: the upstream may have run it.
 
-Изменение размера квоты период не трогает: использованное остаётся.
+Quota refusal is HTTP 200 with a tool result, `isError: true`: MCP clients
+show HTTP errors as "server unavailable", while a tool result reaches the
+model. `id` is copied from the request byte for byte. Other messages in the
+batch get JSON-RPC `-32000`; a request with no `id` gets 202 with no body.
 
-Счётчики живут в памяти, в `QuotaLedger`. `QuotaSaver` раз в
-`FlushInterval` и при остановке записывает изменившиеся через
-`ExecuteUpdateAsync`, без прироста ревизии маршрутов. При старте счётчики
-читаются из базы. После аварийной остановки теряется не больше одного
-интервала.
+## Call log
 
-Вызов списывается до пересылки и возвращается, если upstream ответил
-статусом от 400 или не ответил. Спека называет только 5xx и обрыв; 4xx
-добавлены, потому что при них вызов тоже не выполнен, а частая причина,
-неверный заголовок для upstream, от клиента не зависит. Вызов, оборванный
-клиентом, не возвращается: upstream мог его выполнить.
+`UsageJournal` is an in-memory queue (10 000 records). `UsageWriter` flushes
+it every `FlushInterval` and on shutdown: `UsageEvents` rows and `UsageDays`
+counters in one transaction. On overflow records are dropped and the count
+is logged as a warning; accounting never blocks requests.
 
-Отказ по квоте приходит как HTTP 200 с результатом tool и `isError: true`.
-Ошибку HTTP клиенты MCP показывают как «сервер недоступен», а результат
-tool модель читает и пересказывает. `id` копируется из запроса побайтно,
-чтобы большие числа и экранирование не изменились. Остальные запросы того
-же пакета получают ошибку JSON-RPC `-32000`, сообщение без `id` получает
-202 без тела.
+| Request | Log row | Day counter |
+| --- | --- | --- |
+| message with a method | yes | yes |
+| refused before the method is read (rate, concurrency, body size/format) | no | yes |
+| `GET` stream, `DELETE` session | no | no |
 
-## Журнал вызовов
+Pre-parse refusals stay out of the log so a client cannot flood it with
+requests that were never served.
 
-Записи о вызовах шлюз кладёт в очередь в памяти (`UsageJournal`).
-`UsageWriter` раз в `FlushInterval` и при остановке пишет их пачкой: строки
-в `UsageEvents` и счётчики дня в `UsageDays` одной транзакцией. Если
-очередь на 10 000 записей заполнена, новые записи теряются, а в журнал
-сервера идёт предупреждение с их числом: учёт не должен останавливать
-запросы.
+`UpstreamRejected` = 4xx; `UpstreamFailed` = 5xx or no response. JSON-RPC
+errors inside a 200 are invisible: responses are not parsed.
 
-Строка журнала есть у каждого сообщения с методом. Отказы, которые шлюз
-выносит до чтения метода (частота, параллелизм, слишком большое или
-неразборчивое тело), попадают только в счётчик дня. Иначе клиент мог бы
-заполнить журнал запросами, которые шлюз даже не обслуживал. Потоки `GET`
-и закрытие сессии `DELETE` в учёт не идут.
+Accounting tables have no foreign keys to clients and inbounds: a batch
+write does not fail on a just-deleted client, and history of deleted ones
+remains (`usage log` prints «удалён»).
 
-Исход `UpstreamRejected` означает ответ 4xx, `UpstreamFailed` означает 5xx
-или отсутствие ответа. Ошибку JSON-RPC внутри ответа 200 шлюз не видит:
-ответ он не разбирает.
+Rows older than `UsageRetentionDays` are pruned hourly; day counters are
+kept forever. Days are UTC.
 
-Таблицы учёта не связаны с клиентами и inbound'ами внешними ключами.
-Запись пачки не падает, если клиента удалили секунду назад, а история
-удалённых остаётся: `usage log` пишет вместо имени «удалён».
+## Panel
 
-Счётчик ревизии маршрутов увеличивают только изменения inbound'ов,
-клиентов и их связей. Иначе каждая пачка журнала заставляла бы сервер
-перечитывать таблицу маршрутов.
+**Secret path.** Random 16 characters, stored in `Settings`, created on
+first access, read once at server start (changing it requires a restart).
+`PanelGate` runs right after token stripping:
 
-Строки старше `UsageRetentionDays` удаляются раз в час, счётчики дней
-хранятся бессрочно. День считается по UTC.
+| Request path | Result |
+| --- | --- |
+| starts with the secret | passes; prefix moved to `PathBase` |
+| `/mcp/<slug>` | passes to the gateway |
+| anything else under `/mcp` | 404 from the gateway |
+| anything else | 404, empty body |
 
-## Хранение
+The open-path list is in `ServerApp.Build`; a new endpoint is closed until
+added. The gateway owns all of `/mcp` so the panel's not-found route cannot
+answer `/mcp` or `/mcp/a/b` with a redirect to its login.
 
-SQLite не умеет сравнивать `DateTimeOffset`, поэтому время хранится числом
-миллисекунд UTC (`UnixMillisConverter`).
+The secret path is stripped before routing and never logged. The cookie is
+scoped to it.
 
-`ISecretVault` — обратимое шифрование секретов, которые нужно уметь
-показать или использовать снова: копии токенов и заголовки для upstream.
-`Open` возвращает `null`, если значение не расшифровать: ключи потеряны
-или данные повреждены. Так же ведёт себя чтение заголовков inbound'а, и
-такой inbound выпадает из таблицы маршрутов с предупреждением, а сервер
-продолжает работать.
+**Sign-in.** ASP.NET Core Identity over one table, `Admins`, via a custom
+`AdminStore`. The EF Core store would pull an ASP.NET package and four
+tables into `CtxUi.Core`. `AdminAccounts` needs only the password hasher, so
+`ctx-ui admin` runs without a web host.
 
-`DesignTimeFactory` нужна только команде `dotnet ef`, чтобы построить
-модель без запуска сервера.
+- Passwords are generated (20 letters/digits); user-chosen passwords are not
+  supported, so lockout (5 attempts, 15 min) is a second line of defence.
+- Identity's lockout uses the system clock, not `TimeProvider` (second
+  exception after rate limiters).
+- The failure counter is read-then-write, not atomic: parallel guessing may
+  get slightly more than five attempts.
+- Wrong password, unknown login and locked login produce the same response.
 
-## Тесты
+Sign-in and sign-out pages are static SSR: cookies can only be set in an
+HTTP response. Other pages are interactive server without prerendering, so
+data loads once.
 
-- `TestDatabase`: SQLite в памяти с применёнными миграциями. Живёт, пока
-  открыто соединение.
-- `FakeVault.Broken` изображает потерю ключей: всё запечатанное перестаёт
-  открываться.
-- `GatewayHost`: шлюз на свободном порту со своим временным каталогом
-  данных. Данные можно изменить двумя способами: через сервисы с
-  немедленным применением и так, как это сделал бы другой процесс, без
-  обновления таблицы маршрутов.
-- `FakeUpstream`: настоящий HTTP-сервер на свободном порту, который
-  запоминает пришедшие запросы.
-- `CapturingLogs` собирает всё, что сервер пишет в журнал, чтобы тест мог
-  искать утечки токена.
-- `Eventually` ждёт, пока условие станет истинным. Нужен там, где изменение
-  применяет фоновая задача.
-- `Pipeline` прогоняет запрос через вырезание токена без сервера.
-- `McpEndToEndTests` ставит настоящий сервер MCP за шлюз и настоящий клиент
-  MCP перед ним.
-- `GatewayHost.RestartAsync` останавливает сервер и поднимает его на том же
-  каталоге данных. Так проверяется, что счётчики и журнал переживают
-  перезапуск.
-- `CliRunner` запускает команду `ctx-ui` внутри теста на заданном каталоге
-  данных, в том числе на каталоге работающего `GatewayHost`.
-- Подменённые часы двигают срок и период квоты. Ограничители частоты идут
-  по настоящим часам, поэтому их тесты не ждут минуту, а проверяют отказ
-  сразу после исчерпания запаса.
+«Выйти» does a full page load: the interactive router does not know static
+pages and would route the sign-out URL to the not-found page.
 
-Временные каталоги тестов удаляются в конце. Ошибка удаления игнорируется:
-если каталог держит антивирус или ОС, он уйдёт при следующей очистке
-временной папки.
+**Sessions.** The cookie carries the admin's `SecurityStamp`; a new password
+or deletion changes it. Every `SessionCheckInterval` both the cookie handler
+and the open page (`AdminSessionState`) validate it; an interactive page
+makes no HTTP requests and would otherwise live until the tab closes.
 
-## Сборка и поставка
+Authorization is enforced on endpoints (`RequireAuthorization`, including the
+WebSocket) and on pages (`[Authorize]` in `Pages/_Imports.razor`) so an open
+page closes when the session becomes invalid.
 
-**ICU внутри архива.** Самодостаточному бинарнику нужна ICU, а на
-минимальных серверах её нет: без неё программа падает на старте. Режим без
-ICU не подходит, потому что в нём не работает нормализация NFKC и ключи
-имён клиентов получились бы другими. Поэтому при самодостаточной публикации
-в архив кладётся своя ICU (пакет `Microsoft.ICU.ICU4C.Runtime`, условие по
-`SelfContained` в `CtxUi.Server.csproj`). Образ Docker использует ICU
-базового образа.
+**Data access.** `CtxUi.Core` services are scoped per request; a panel page
+lives for hours and handles events concurrently. Pages call `PanelBackend`,
+which runs each action in a new scope: `ReadAsync`, `ChangeAsync`.
+`ChangeAsync` then reloads routes via `IRoutingRefresh` without waiting for
+`RefreshInterval`. The interface lives in `CtxUi.Core` and is implemented in
+the gateway; the panel does not reference the gateway.
 
-**Библиотеки рядом с бинарником.** `libe_sqlite3.so` и ICU лежат файлами,
-а не упакованы внутрь. Упакованные библиотеки при старте распаковываются в
-домашний каталог, которого у пользователя `ctx-ui` нет.
+**Secrets on screen.** Upstream header values are never sent to the panel;
+the edit dialog gets names only. The connection dialog shows the token by
+design. Tool and method names in the log are client input; Blazor renders
+them as text.
 
-**Рабочий каталог.** Программа ищет `appsettings.json` в текущем каталоге.
-Его фиксируют юнит (`WorkingDirectory`), команда управления (`cd`) и образ
-(`WORKDIR`). Сама программа пути не угадывает, чтобы `dotnet run` в
-разработке вёл себя как раньше.
+**Reverse proxy.** `X-Forwarded-Proto` is trusted from any source: it sets
+the cookie's `Secure` flag and keeps redirects on `https`. A forged header
+affects only the forger's responses. `X-Forwarded-For` is ignored.
 
-**Команда управления.** `/usr/local/bin/ctx-ui` читает
-`/etc/ctx-ui/ctx-ui.env` и запускает бинарник от пользователя `ctx-ui`.
-Иначе команда, запущенная от root, оставила бы в каталоге данных файлы,
-которые сервис не может прочитать. Файл настроек разбирается построчно и
-не исполняется как shell.
+**No external requests.** Styles, scripts and fonts are served locally; the
+panel works offline and leaks its address to no one.
 
-**Проверка архива установщиком.** Наличие бинарника проверяется как
-наличие файла, а не права на запуск: на серверах с `/tmp`, смонтированным
-`noexec`, проверка права на запуск всегда отрицательна.
+Times are shown in UTC and labelled as such.
 
-**Образ.** Сборочная стадия идёт на платформе раннера и публикует под
-целевую архитектуру. В итоговой стадии нет команд `RUN`, поэтому образ под
-arm64 собирается на x64 без эмуляции. `.dockerignore` лежит рядом с
-Dockerfile под именем `Dockerfile.dockerignore`, чтобы не занимать корень.
+## Storage
 
-**Один скрипт упаковки.** `deploy/package.sh` собирает все файлы релиза.
-Им пользуются и workflow `release`, и `deploy/tests/linux.sh`, поэтому
-установщик проверяется на тех же архивах, что уходят в релиз.
+- SQLite cannot compare `DateTimeOffset`; time is stored as UTC milliseconds
+  (`UnixMillisConverter`).
+- `ISecretVault` is reversible encryption (Data Protection) for token copies
+  and upstream headers. `Open` returns `null` on lost keys or corrupt data.
+  An inbound with unreadable headers is dropped from routing with a warning;
+  the server keeps running.
+- `DesignTimeFactory` exists only for `dotnet ef`.
+- Generated migrations are stripped of generator comments
+  (`// <auto-generated />`, `/// <inheritdoc />`).
+
+## Tests
+
+| Helper | Purpose |
+| --- | --- |
+| `TestDatabase` | in-memory SQLite with migrations; lives while the connection is open |
+| `FakeVault.Broken` | simulates lost keys |
+| `GatewayHost` | gateway on a free port with its own temp data dir; changes via services (immediate) or as another process would (no refresh); `RestartAsync` restarts on the same data |
+| `FakeUpstream` | real HTTP server recording requests |
+| `CapturingLogs` | captures server logs to check for token leaks |
+| `Eventually` | polls until a condition holds (background effects) |
+| `Pipeline` | runs token stripping without a server |
+| `CliRunner` | runs the CLI in-process against a data dir, including a running `GatewayHost`'s |
+| `McpEndToEndTests` | real MCP server behind the gateway, real MCP client in front |
+| `PanelClient` | HTTP-only browser: cookies, no redirects, reads the antiforgery token from the form |
+| `PanelSession` | real Chromium via Playwright; one browser per run, clean profile per test |
+
+- A fake clock drives expiry and quota periods. Rate limiters use the real
+  clock, so their tests check refusal right after the bucket empties.
+- "Immediately, no restart" tests set `RefreshInterval` to 1 h; otherwise
+  the 50 ms background check would hide a panel that fails to refresh
+  routes.
+- Panel tests keep the real clock: the browser validates cookie expiry
+  itself. Expired clients are made by editing the date in the database.
+- Playwright tests locate elements by role and label, not MudBlazor classes.
+- CI installs Chromium system libraries in a separate step; its `playwright`
+  version must match `Microsoft.Playwright` in `Directory.Packages.props`.
+- Temp directories are deleted at the end; deletion errors are ignored.
+
+## Build and delivery
+
+**ICU in the archive.** Self-contained builds need ICU; minimal servers lack
+it and the program crashes at start. Invariant mode breaks NFKC, which
+changes client name keys. Self-contained publish bundles
+`Microsoft.ICU.ICU4C.Runtime` (a `SelfContained` condition in
+`CtxUi.Server.csproj`). The Docker image uses the base image's ICU.
+
+**Native libraries as files.** `libe_sqlite3.so` and ICU are not bundled into
+the single file: bundled libraries are extracted to the home directory,
+which the `ctx-ui` user does not have.
+
+**Working directory.** `appsettings.json` is read from the current
+directory, fixed by the unit (`WorkingDirectory`), the CLI wrapper (`cd`)
+and the image (`WORKDIR`). The program does not guess paths, so `dotnet run`
+works unchanged.
+
+**CLI wrapper.** `/usr/local/bin/ctx-ui` reads `/etc/ctx-ui/ctx-ui.env` line
+by line (not sourced as shell) and runs the binary as `ctx-ui`; running as
+root would create files the service cannot read.
+
+**Panel static files.** `wwwroot` plus
+`ctx-ui.staticwebassets.endpoints.json` next to the binary; the service
+fails to start without the manifest, so packaging keeps it. The Blazor
+script lands in `wwwroot` only via `RequiresAspNetWebAssets` in
+`CtxUi.Server.csproj`: the SDK adds it automatically only when `.razor`
+files are in the same project, and they are in `CtxUi.Panel`.
+
+**Installer archive check.** The binary is checked with `-f`, not `-x`:
+with `/tmp` mounted `noexec`, `-x` is always false.
+
+**Image.** The build stage runs on the build platform and cross-publishes
+for the target; the final stage has no `RUN`, so arm64 builds on x64
+without emulation. `.dockerignore` is `Dockerfile.dockerignore` next to the
+Dockerfile to keep the root clean.
+
+**Data directory mode.** The program sets `700` on the data directory and
+`keys/` at every start, not only when it creates them. The mode of `/data`
+in the image and of a volume created from it depends on the Docker version:
+`COPY --chmod` alone has produced `755`.
+
+**Packaging.** `deploy/package.sh` builds all release files. The `release`
+workflow and `deploy/tests/linux.sh` both use it, so the installer is tested
+on the same archives that ship.

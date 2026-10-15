@@ -1,0 +1,9 @@
+<Router AppAssembly="typeof(Routes).Assembly">
+    <Found Context="route">
+        <AuthorizeRouteView RouteData="route" DefaultLayout="typeof(MainLayout)">
+            <NotAuthorized>
+                <ToLogin />
+            </NotAuthorized>
+        </AuthorizeRouteView>
+    </Found>
+</Router>

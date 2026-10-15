@@ -1,6 +1,10 @@
-# Выпуск релиза
+# Releasing
 
-Релиз собирается сам, когда в репозиторий попадает тег вида `vX.Y.Z`.
+**English** · [Русский](ru/releasing.md)
+
+Pushing a `vX.Y.Z` tag triggers the `release` workflow: tests, archives,
+image, GitHub Release with notes generated from commits. Failed tests
+publish nothing.
 
 ```bash
 git switch main
@@ -9,63 +13,49 @@ git tag v0.1.0
 git push origin v0.1.0
 ```
 
-Workflow `release` прогоняет тесты, собирает архивы и образ и создаёт
-GitHub Release с заметками из коммитов. Если тесты падают, ничего не
-публикуется.
+## Version
 
-## Номер версии
+Taken from the tag only: `v0.1.0` → `0.1.0`. Accepted forms: `v1.2.3`,
+`v1.2.3-rc.1`; anything else fails the first step.
 
-Тег задаёт версию: `v0.1.0` даёт версию `0.1.0`. Больше нигде её писать не
-нужно. Тег, не похожий на `v1.2.3` или `v1.2.3-rc.1`, останавливает
-workflow на первом шаге.
+A suffixed tag is a pre-release: the image gets only the exact tag
+(`0.2.0-rc.1`); `latest` and `releases/latest` keep pointing at the last
+regular release.
 
-Тег с суффиксом, например `v0.2.0-rc.1`, даёт пробный релиз: он помечен
-как pre-release, образ получает только тег `0.2.0-rc.1`, а `latest` и
-ссылка `releases/latest` продолжают указывать на прошлый обычный релиз.
+## Artifacts
 
-## Что публикуется
-
-| Артефакт | Что это |
+| Artifact | Contents |
 | --- | --- |
-| `ctx-ui-X.Y.Z-linux-x64.tar.gz`, `ctx-ui-X.Y.Z-linux-arm64.tar.gz` | программа, юнит systemd, команда управления |
-| `install.sh` | установщик, в который вписана версия релиза |
-| `ctx-ui-X.Y.Z-docker.tar.gz` | `compose.yaml`, `Caddyfile`, `.env.example` с версией |
-| `SHA256SUMS` | контрольные суммы файлов выше |
-| `ghcr.io/echways/ctx-ui` | образ под amd64 и arm64 с тегами `X.Y.Z`, `X.Y`, `latest` |
+| `ctx-ui-X.Y.Z-linux-x64.tar.gz`, `ctx-ui-X.Y.Z-linux-arm64.tar.gz` | program, systemd unit, CLI wrapper |
+| `install.sh` | installer with the version embedded |
+| `ctx-ui-X.Y.Z-docker.tar.gz` | `compose.yaml`, `Caddyfile`, `.env.example` |
+| `SHA256SUMS` | checksums of the above |
+| `ghcr.io/echways/ctx-ui` | amd64 + arm64 image, tags `X.Y.Z`, `X.Y`, `latest` |
 
-## После первого релиза
+## After the first release
 
-Пакет `ctx-ui` в ghcr.io создаётся приватным. Его нужно один раз сделать
-публичным: страница пакета на GitHub, Package settings, Change visibility,
-Public. До этого `docker compose pull` у других людей отвечает `denied`.
+The ghcr.io package is created private. Once: package page → Package
+settings → Change visibility → Public. Until then `docker compose pull`
+returns `denied` for others.
 
-Там же стоит проверить, что пакет привязан к репозиторию `mcp-ui`: тогда
-следующие релизы смогут в него писать.
+On the same page, confirm the package is linked to the `ctx-ui` repository,
+otherwise later releases cannot push to it.
 
-## Проверка до тега
+## Local checks
 
-Те же проверки, что идут в CI, запускаются локально. Нужны .NET 10 SDK и
-Docker.
+Same as CI. Requires the .NET 10 SDK and Docker.
 
 ```bash
 dotnet test
 deploy/tests/docker.sh
-deploy/tests/linux.sh
+deploy/tests/linux.sh          # privileged Ubuntu container with systemd, real installer
+deploy/package.sh 0.1.0 dist   # build all release files without publishing
 ```
 
-`deploy/tests/linux.sh` поднимает привилегированный контейнер Ubuntu с
-systemd и ставит в него программу настоящим установщиком.
+## Failed release
 
-Собрать все файлы релиза без публикации:
-
-```bash
-deploy/package.sh 0.1.0 dist
-```
-
-## Если релиз не получился
-
-Упавшее задание перезапускается на странице запуска в Actions. Если тег
-поставлен не туда, он удаляется вместе с релизом и ставится заново:
+Rerun the failed job from its Actions page. Wrong tag: delete the release
+and the tag, then tag again.
 
 ```bash
 gh release delete v0.1.0 --yes

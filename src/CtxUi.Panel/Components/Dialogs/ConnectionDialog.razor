@@ -1,0 +1,102 @@
+@using Microsoft.Extensions.Options
+@using Microsoft.JSInterop
+@inject PanelBackend Backend
+@inject IOptions<PanelOptions> Options
+@inject IJSRuntime Js
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <DialogContent>
+        <MudStack Spacing="3">
+            @if (_client is null)
+            {
+                <MudProgressLinear Indeterminate="true" />
+            }
+            else if (_token is null)
+            {
+                <MudAlert Severity="Severity.Warning" role="alert">
+                    Токен показать нельзя: его сохранённая копия не расшифрована, потерян каталог keys.
+                    Прежний токен продолжает работать у того, кому он выдан. Чтобы увидеть токен, выпустите новый.
+                </MudAlert>
+            }
+            else
+            {
+                <MudTextField T="string" Value="_token" Label="Токен" ReadOnly="true" Variant="Variant.Outlined" Margin="Margin.Dense"
+                              Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.ContentCopy"
+                              AdornmentAriaLabel="Скопировать токен" OnAdornmentClick="@(() => CopyAsync(_token))" />
+                @foreach (var slug in ConnectionText.Slugs(_client))
+                {
+                    var address = ConnectionText.Address(PublicUrl, slug);
+                    var withToken = ConnectionText.AddressWithToken(PublicUrl, _token, slug);
+                    <MudTextField T="string" Value="address" Label="@($"Адрес {slug}")" ReadOnly="true" Variant="Variant.Outlined"
+                                  Margin="Margin.Dense" HelperText="токен передаётся заголовком Authorization: Bearer <токен>"
+                                  Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.ContentCopy"
+                                  AdornmentAriaLabel="@($"Скопировать адрес {slug}")" OnAdornmentClick="@(() => CopyAsync(address))" />
+                    <MudTextField T="string" Value="withToken" Label="@($"Адрес {slug} с токеном")" ReadOnly="true"
+                                  Variant="Variant.Outlined" Margin="Margin.Dense"
+                                  HelperText="для клиентов, которые не умеют задавать заголовки: claude.ai, ChatGPT"
+                                  Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.ContentCopy"
+                                  AdornmentAriaLabel="@($"Скопировать адрес {slug} с токеном")"
+                                  OnAdornmentClick="@(() => CopyAsync(withToken))" />
+                }
+                <MudTextField T="string" Value="_message" Label="Сообщение для клиента" ReadOnly="true" Lines="8"
+                              Variant="Variant.Outlined" />
+            }
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        @if (_token is not null)
+        {
+            <MudButton StartIcon="@Icons.Material.Filled.ContentCopy" OnClick="@(() => CopyAsync(_message))">Скопировать сообщение</MudButton>
+        }
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="@(() => MudDialog.Close())">Закрыть</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private Client? _client;
+    private string? _token;
+    private string _message = "";
+
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter]
+    public string Name { get; set; } = "";
+
+    private string PublicUrl => Options.Value.PublicUrl;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            (_client, _token) = await Backend.ReadAsync(async services =>
+            {
+                var clients = services.GetRequiredService<ClientService>();
+                return (await clients.GetAsync(Name), await clients.RevealAsync(Name));
+            });
+        }
+        catch (DomainException exception)
+        {
+            Snackbar.Add(Words.Sentence(exception.Message), Severity.Error);
+            MudDialog.Cancel();
+            return;
+        }
+
+        if (_token is not null)
+            _message = ConnectionText.Message(PublicUrl, _client, _token);
+    }
+
+    private async Task CopyAsync(string text)
+    {
+        try
+        {
+            await Js.InvokeVoidAsync("navigator.clipboard.writeText", text);
+            Snackbar.Add("Скопировано", Severity.Success);
+        }
+        catch (JSException)
+        {
+            Snackbar.Add("Браузер разрешает копировать только на странице, открытой по HTTPS. Выделите текст и скопируйте его сами.", Severity.Warning);
+        }
+    }
+}

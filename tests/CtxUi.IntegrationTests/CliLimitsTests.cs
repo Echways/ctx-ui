@@ -142,6 +142,9 @@ public sealed class CliLimitsTests : IDisposable
         await Eventually.TrueAsync(
             async () => (await CliRunner.RunAsync(gateway.DataDir, "usage", "log")).Output.Split('\n').Length > 3,
             "журнал дошёл до базы");
+        await Eventually.TrueAsync(
+            async () => (await CliRunner.RunAsync(gateway.DataDir, "client", "list")).Output.Contains("2/2"),
+            "счётчик квоты дошёл до базы");
         var listed = await CliRunner.RunAsync(gateway.DataDir, "client", "list");
         var shown = await CliRunner.RunAsync(gateway.DataDir, "client", "show", "Иванов 4419");
         var log = await CliRunner.RunAsync(gateway.DataDir, "usage", "log");

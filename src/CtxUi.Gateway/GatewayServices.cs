@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using CtxUi.Core.Clients;
+using CtxUi.Core.Routing;
 
 namespace CtxUi.Gateway;
 
@@ -12,6 +14,7 @@ public static class GatewayServices
         services.Configure<GatewayOptions>(section);
         services.AddHttpForwarder();
         services.AddSingleton<SnapshotStore>();
+        services.AddSingleton<IRoutingRefresh>(provider => provider.GetRequiredService<SnapshotStore>());
         services.AddHostedService<SnapshotRefresher>();
         services.AddSingleton<HttpUpstream>();
         services.AddSingleton<ClientTouch>();
@@ -24,11 +27,16 @@ public static class GatewayServices
         return services;
     }
 
-    public static WebApplication UseCtxUiGateway(this WebApplication app)
+    public const string Path = "/mcp";
+
+    public static WebApplication MapCtxUiGateway(this WebApplication app)
     {
-        app.UseTokenPath();
-        app.UseRouting();
-        app.Map("/mcp/{slug}", app.Services.GetRequiredService<GatewayHandler>().HandleAsync);
+        app.Map(Path + "/{slug}", app.Services.GetRequiredService<GatewayHandler>().HandleAsync);
+        app.Map(Path + "/{**rest}", context =>
+        {
+            context.Response.StatusCode = StatusCodes.Status404NotFound;
+            return Task.CompletedTask;
+        });
         return app;
     }
 

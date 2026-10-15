@@ -1,0 +1,16 @@
+<MudPaper Class="pa-4" Elevation="1" role="group" aria-label="@Title">
+    <MudText Typo="Typo.caption">@Title</MudText>
+    <MudText Typo="Typo.h4">@Value</MudText>
+    <MudText Typo="Typo.body2">@Note</MudText>
+</MudPaper>
+
+@code {
+    [Parameter, EditorRequired]
+    public string Title { get; set; } = "";
+
+    [Parameter, EditorRequired]
+    public string Value { get; set; } = "";
+
+    [Parameter]
+    public string? Note { get; set; }
+}

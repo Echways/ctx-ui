@@ -30,7 +30,6 @@ for arch in x64 arm64; do
     dotnet publish "$root/src/CtxUi.Server" -c Release -r "linux-$arch" --self-contained \
         -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=true -p:DebugType=none \
         -p:Version="$version" -o "$stage"
-    rm -f "$stage"/*.staticwebassets.endpoints.json
     cp "$root/LICENSE" "$root/deploy/linux/ctx-ui.sh" "$root/deploy/linux/ctx-ui.service" "$stage/"
     echo "$version" > "$stage/VERSION"
     chmod 755 "$stage/ctx-ui" "$stage/ctx-ui.sh"

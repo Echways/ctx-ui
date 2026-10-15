@@ -1,0 +1,87 @@
+@page "/keys"
+@inject PanelBackend Backend
+@inject IDialogService Dialogs
+@inject ISnackbar Snackbar
+
+<PageTitle>Ключи API</PageTitle>
+
+<MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-4">
+    <MudText Typo="Typo.h5">Ключи API</MudText>
+    <MudSpacer />
+    <MudButton Href="swagger/" Target="_blank" StartIcon="@Icons.Material.Filled.Description">Документация API</MudButton>
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="AddAsync">
+        Выпустить ключ
+    </MudButton>
+</MudStack>
+
+@if (_keys is null)
+{
+    <MudProgressLinear Indeterminate="true" />
+}
+else if (_keys.Count == 0)
+{
+    <MudAlert Severity="Severity.Info">
+        Ключей пока нет. Ключ нужен программам, которые управляют шлюзом через REST API: боту, скрипту выдачи доступа.
+    </MudAlert>
+}
+else
+{
+    <MudTable Items="_keys" Dense="true" Hover="true" Elevation="1">
+        <HeaderContent>
+            <MudTh>Название</MudTh>
+            <MudTh>Ключ</MudTh>
+            <MudTh>Выпущен (UTC)</MudTh>
+            <MudTh></MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd>@context.Name</MudTd>
+            <MudTd>@(context.SecretPrefix)…</MudTd>
+            <MudTd>@Words.Day(context.CreatedAt)</MudTd>
+            <MudTd Style="text-align: right">
+                <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" aria-label="Отозвать" title="Отозвать"
+                               OnClick="@(() => RemoveAsync(context))" />
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+}
+
+@code {
+    private static readonly DialogOptions FormOptions = new() { MaxWidth = MaxWidth.Small, FullWidth = true, BackdropClick = false };
+
+    private List<ApiKey>? _keys;
+
+    protected override Task OnInitializedAsync() => LoadAsync();
+
+    private async Task LoadAsync() =>
+        _keys = await Backend.ReadAsync(services => services.GetRequiredService<ApiKeyService>().ListAsync());
+
+    private async Task AddAsync()
+    {
+        var dialog = await Dialogs.ShowAsync<ApiKeyDialog>("Новый ключ API", FormOptions);
+        if (await dialog.Result is { Canceled: false })
+            await LoadAsync();
+    }
+
+    private async Task RemoveAsync(ApiKey key)
+    {
+        var confirmed = await Dialogs.ShowMessageBoxAsync(
+            $"Отозвать ключ «{key.Name}»?",
+            "Запросы с этим ключом сразу начнут получать 401.",
+            yesText: "Отозвать",
+            cancelText: "Отмена");
+        if (confirmed != true)
+            return;
+
+        try
+        {
+            await Backend.ChangeAsync(services => services.GetRequiredService<ApiKeyService>().RemoveAsync(key.Name));
+            Snackbar.Add($"Ключ «{key.Name}» отозван", Severity.Success);
+        }
+        catch (DomainException exception)
+        {
+            Snackbar.Add(Words.Sentence(exception.Message), Severity.Error);
+        }
+
+        await LoadAsync();
+    }
+}

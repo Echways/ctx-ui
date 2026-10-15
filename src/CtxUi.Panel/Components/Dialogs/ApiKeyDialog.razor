@@ -1,0 +1,75 @@
+@using Microsoft.JSInterop
+@inject PanelBackend Backend
+@inject IJSRuntime Js
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <DialogContent>
+        <MudStack Spacing="3">
+            @if (_error is not null)
+            {
+                <MudAlert Severity="Severity.Error" role="alert">@_error</MudAlert>
+            }
+            @if (_secret is null)
+            {
+                <MudTextField @bind-Value="_name" Label="Название" Immediate="true"
+                              HelperText="кому выдан ключ: латинские буквы, цифры, точка, дефис и подчёркивание" />
+            }
+            else
+            {
+                <MudAlert Severity="Severity.Warning">Ключ показан один раз. Сохраните его сейчас: потом его не увидеть даже в панели.</MudAlert>
+                <MudTextField T="string" Value="_secret" Label="Ключ" ReadOnly="true" Variant="Variant.Outlined" Margin="Margin.Dense"
+                              HelperText="передаётся заголовком Authorization: Bearer <ключ>"
+                              Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.ContentCopy"
+                              AdornmentAriaLabel="Скопировать ключ" OnAdornmentClick="CopyAsync" />
+            }
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        @if (_secret is null)
+        {
+            <MudButton OnClick="@(() => MudDialog.Cancel())">Отмена</MudButton>
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="IssueAsync">Выпустить</MudButton>
+        }
+        else
+        {
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="@(() => MudDialog.Close())">Закрыть</MudButton>
+        }
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private string? _error;
+    private string _name = "";
+    private string? _secret;
+
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    private async Task IssueAsync()
+    {
+        try
+        {
+            var issued = await Backend.ReadAsync(services => services.GetRequiredService<ApiKeyService>().AddAsync(_name));
+            _secret = issued.Secret;
+            _error = null;
+        }
+        catch (DomainException exception)
+        {
+            _error = Words.Sentence(exception.Message);
+        }
+    }
+
+    private async Task CopyAsync()
+    {
+        try
+        {
+            await Js.InvokeVoidAsync("navigator.clipboard.writeText", _secret);
+            Snackbar.Add("Скопировано", Severity.Success);
+        }
+        catch (JSException)
+        {
+            Snackbar.Add("Браузер разрешает копировать только на странице, открытой по HTTPS. Выделите текст и скопируйте его сами.", Severity.Warning);
+        }
+    }
+}

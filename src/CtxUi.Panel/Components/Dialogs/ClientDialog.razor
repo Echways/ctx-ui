@@ -1,0 +1,122 @@
+@inject PanelBackend Backend
+
+<MudDialog>
+    <DialogContent>
+        <MudStack Spacing="3">
+            @if (_error is not null)
+            {
+                <MudAlert Severity="Severity.Error" role="alert">@_error</MudAlert>
+            }
+            @if (_inbounds is { Count: 0 })
+            {
+                <MudAlert Severity="Severity.Info">Сначала добавьте inbound: клиенту нужно выдать доступ хотя бы к одному.</MudAlert>
+            }
+            <MudTextField @bind-Value="_name" Label="Имя" Immediate="true" Disabled="Name is not null"
+                          HelperText="как клиент будет называться в списке и в журнале" />
+            <div>
+                <MudText Typo="Typo.caption">Доступ к inbound'ам</MudText>
+                @foreach (var inbound in _inbounds ?? [])
+                {
+                    <MudCheckBox T="bool" Value="_chosen.Contains(inbound.Slug)" Dense="true"
+                                 ValueChanged="@(chosen => Choose(inbound.Slug, chosen))"
+                                 Label="@(inbound.Enabled ? inbound.Slug : $"{inbound.Slug} (выключен)")" />
+                }
+            </div>
+            <MudTextField T="DateTime?" @bind-Value="_expires" Label="Срок действия" InputType="InputType.Date" Format="yyyy-MM-dd"
+                          Immediate="true" HelperText="с начала этого дня по UTC доступ закрыт; пусто — бессрочно" />
+            <MudNumericField T="int?" @bind-Value="_rate" Label="Запросов в минуту" Immediate="true" HideSpinButtons="true"
+                             HelperText="пусто — без ограничения" />
+            <MudNumericField T="int?" @bind-Value="_concurrency" Label="Одновременных запросов" Immediate="true"
+                             HideSpinButtons="true" HelperText="пусто — без ограничения" />
+            <MudNumericField T="int?" @bind-Value="_quota" Label="Квота вызовов инструментов" Immediate="true"
+                             HideSpinButtons="true" HelperText="сколько tools/call можно сделать за период; пусто — без квоты" />
+            <MudNumericField T="int?" @bind-Value="_resetDays" Label="Обновлять квоту каждые, дней" Immediate="true"
+                             HideSpinButtons="true" HelperText="пусто — квота выдаётся один раз" />
+            <MudTextField @bind-Value="_metadata" Label="Метаданные" Immediate="true" Lines="2"
+                          HelperText="по одной паре в строке: ключ=значение. Уходят upstream заголовками X-Mcp-Meta-*" />
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => MudDialog.Cancel())">Отмена</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" Disabled="_inbounds is not { Count: > 0 }" OnClick="SaveAsync">
+            Сохранить
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private readonly HashSet<string> _chosen = new(StringComparer.Ordinal);
+
+    private List<Inbound>? _inbounds;
+    private string? _error;
+    private string _name = "";
+    private DateTime? _expires;
+    private DateTime? _storedExpires;
+    private int? _rate;
+    private int? _concurrency;
+    private int? _quota;
+    private int? _resetDays;
+    private string? _metadata;
+
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter]
+    public string? Name { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _inbounds = await Backend.ReadAsync(services => services.GetRequiredService<InboundService>().ListAsync());
+        if (Name is null)
+            return;
+
+        var client = await Backend.ReadAsync(services => services.GetRequiredService<ClientService>().GetAsync(Name));
+        _name = client.Name;
+        _chosen.UnionWith(client.Inbounds.Select(link => link.Inbound!.Slug));
+        _expires = _storedExpires = client.ExpiresAt?.UtcDateTime.Date;
+        _rate = client.RatePerMinute;
+        _concurrency = client.MaxConcurrency;
+        _quota = client.QuotaCalls;
+        _resetDays = client.ResetEveryDays;
+        _metadata = string.Join('\n', client.Metadata.OrderBy(pair => pair.Key, StringComparer.Ordinal).Select(pair => $"{pair.Key}={pair.Value}"));
+    }
+
+    private void Choose(string slug, bool chosen)
+    {
+        if (chosen)
+            _chosen.Add(slug);
+        else
+            _chosen.Remove(slug);
+    }
+
+    private async Task SaveAsync()
+    {
+        try
+        {
+            var limits = new ClientLimits(_rate, _concurrency, _quota, _resetDays);
+            var metadata = PairLines.ParseText(_metadata);
+            DateTimeOffset? expires = _expires is { } day ? new DateTimeOffset(day.Date, TimeSpan.Zero) : null;
+            var name = await Backend.ChangeAsync(async services =>
+            {
+                var clients = services.GetRequiredService<ClientService>();
+                if (Name is null)
+                    return (await clients.AddAsync(_name, _chosen, expires, metadata, limits)).Client.Name;
+
+                await clients.UpdateAsync(Name, new ClientUpdate
+                {
+                    ChangeExpiry = _expires != _storedExpires,
+                    ExpiresAt = expires,
+                    InboundSlugs = _chosen,
+                    Limits = limits,
+                    Metadata = metadata,
+                });
+                return Name;
+            });
+            MudDialog.Close(DialogResult.Ok(name));
+        }
+        catch (DomainException exception)
+        {
+            _error = Words.Sentence(exception.Message);
+        }
+    }
+}

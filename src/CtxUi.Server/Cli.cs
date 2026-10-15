@@ -200,8 +200,8 @@ public static class Cli
         Command UsageCommand()
         {
             var client = new Option<string?>("--client") { Description = "только этот клиент" };
-            var days = new Option<int>("--days") { Description = "за сколько последних дней, по умолчанию 7", DefaultValueFactory = _ => 7 };
-            var limit = new Option<int>("--limit") { Description = "сколько последних строк, по умолчанию 50", DefaultValueFactory = _ => 50 };
+            var days = new Option<int>("--days") { Description = "за сколько последних дней, по умолчанию 7", DefaultValueFactory = _ => UsageStore.DefaultDays };
+            var limit = new Option<int>("--limit") { Description = "сколько последних строк, по умолчанию 50", DefaultValueFactory = _ => UsageStore.DefaultLines };
 
             async Task<Guid?> ClientIdAsync(ParseResult parse, IServiceProvider services, CancellationToken ct) =>
                 parse.GetValue(client) is { } wanted
@@ -212,7 +212,7 @@ public static class Cli
             {
                 Leaf("days", "итоги по дням", [client, days], async (parse, services, ct) =>
                 {
-                    var span = InRange("--days", parse.GetValue(days), MaxUsageDays);
+                    var span = InRange("--days", parse.GetValue(days), UsageStore.MaxDays);
                     var today = DateOnly.FromDateTime(services.GetRequiredService<TimeProvider>().GetUtcNow().UtcDateTime);
                     var totals = await services.GetRequiredService<UsageStore>()
                         .DailyAsync(await ClientIdAsync(parse, services, ct), today.AddDays(1 - span), ct);
@@ -229,7 +229,7 @@ public static class Cli
                 }),
                 Leaf("log", "последние вызовы, новые сверху", [client, limit], async (parse, services, ct) =>
                 {
-                    var count = InRange("--limit", parse.GetValue(limit), MaxUsageLines);
+                    var count = InRange("--limit", parse.GetValue(limit), UsageStore.MaxLines);
                     var lines = await services.GetRequiredService<UsageStore>()
                         .RecentAsync(await ClientIdAsync(parse, services, ct), count, ct);
                     var clients = (await services.GetRequiredService<ClientService>().ListAsync(ct))
@@ -371,8 +371,6 @@ public static class Cli
         }
     }
 
-    private const int MaxUsageDays = 3_650;
-    private const int MaxUsageLines = 1_000;
     private const string Removed = "удалён";
 
     private static string DescribeLimits(Client client)

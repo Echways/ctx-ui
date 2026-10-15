@@ -63,6 +63,7 @@ public static class ApiServices
         var api = app.MapGroup(Prefix).RequireAuthorization(Policy).AddEndpointFilter<ApiChanges>();
         api.MapInbounds();
         api.MapClients();
+        api.MapUsage();
         app.Map("/api/{**rest}", () => Results.NotFound()).ExcludeFromDescription();
         return app;
     }

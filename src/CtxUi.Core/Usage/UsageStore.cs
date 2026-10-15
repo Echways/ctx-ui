@@ -5,6 +5,11 @@ namespace CtxUi.Core.Usage;
 
 public sealed class UsageStore(CtxUiDbContext db)
 {
+    public const int DefaultDays = 7;
+    public const int MaxDays = 3_650;
+    public const int DefaultLines = 50;
+    public const int MaxLines = 1_000;
+
     public async Task AppendAsync(IReadOnlyCollection<UsageRecord> records, CancellationToken ct = default)
     {
         if (records.Count == 0)

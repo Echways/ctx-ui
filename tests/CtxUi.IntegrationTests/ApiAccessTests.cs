@@ -147,6 +147,8 @@ public class ApiAccessTests
         Assert.Equal("bearer", document.GetProperty("components").GetProperty("securitySchemes").GetProperty("ApiKey").GetProperty("scheme").GetString());
         var paths = document.GetProperty("paths").EnumerateObject().Select(path => path.Name).ToList();
         Assert.Contains("/api/v1/inbounds/{slug}", paths);
+        Assert.Contains("/api/v1/clients/{id}/reissue", paths);
+        Assert.Contains("/api/v1/usage/log", paths);
         Assert.All(paths, path => Assert.StartsWith("/api/v1/", path));
         Assert.DoesNotContain(paths, path => path.Contains("rest", StringComparison.Ordinal));
     }

@@ -57,8 +57,12 @@ else
                            ValueChanged="@(enabled => SwitchAsync(context, enabled))" />
             </MudTd>
             <MudTd Style="text-align: right; white-space: nowrap">
+                <MudIconButton Icon="@Icons.Material.Filled.Link" Size="Size.Small" aria-label="Подключение" title="Подключение"
+                               OnClick="@(() => ConnectAsync(context))" />
                 <MudIconButton Icon="@Icons.Material.Filled.RestartAlt" Size="Size.Small" aria-label="Сбросить квоту" title="Сбросить квоту"
                                OnClick="@(() => ResetAsync(context))" />
+                <MudIconButton Icon="@Icons.Material.Filled.Key" Size="Size.Small" aria-label="Новый токен" title="Новый токен"
+                               OnClick="@(() => ReissueAsync(context))" />
                 <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" aria-label="Удалить" title="Удалить"
                                OnClick="@(() => RemoveAsync(context))" />
             </MudTd>
@@ -67,6 +71,8 @@ else
 }
 
 @code {
+    private static readonly DialogOptions ConnectionOptions = new() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+
     private List<Client>? _clients;
     private DateTimeOffset _loadedAt;
     private string? _search;
@@ -98,6 +104,28 @@ else
     private Task ResetAsync(Client client) => ApplyAsync(
         services => services.GetRequiredService<ClientService>().ResetQuotaAsync(client.Name),
         $"Счётчик квоты клиента «{client.Name}» обнулён, период начат заново");
+
+    private Task ConnectAsync(Client client) => Dialogs.ShowAsync<ConnectionDialog>(
+        $"Подключение: {client.Name}",
+        new DialogParameters<ConnectionDialog> { { dialog => dialog.Name, client.Name } },
+        ConnectionOptions);
+
+    private async Task ReissueAsync(Client client)
+    {
+        var confirmed = await Dialogs.ShowMessageBoxAsync(
+            $"Выпустить новый токен для «{client.Name}»?",
+            "Прежний токен сразу перестанет работать: клиенту придётся заменить его в своих настройках.",
+            yesText: "Выпустить",
+            cancelText: "Отмена");
+        if (confirmed != true)
+            return;
+
+        await ApplyAsync(
+            services => services.GetRequiredService<ClientService>().ReissueAsync(client.Name),
+            $"Клиенту «{client.Name}» выпущен новый токен");
+        if (_clients!.Any(known => known.Id == client.Id))
+            await ConnectAsync(client);
+    }
 
     private async Task RemoveAsync(Client client)
     {

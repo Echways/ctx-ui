@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="MudBlazor" />
     <ProjectReference Include="..\CtxUi.Core\CtxUi.Core.csproj" />
   </ItemGroup>
 

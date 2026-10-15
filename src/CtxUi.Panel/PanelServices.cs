@@ -1,9 +1,12 @@
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using MudBlazor.Services;
 using CtxUi.Core.Admins;
 using CtxUi.Core.Data;
 using CtxUi.Core.Settings;
@@ -18,8 +21,10 @@ public static class PanelServices
 
     public static readonly TimeSpan Lockout = TimeSpan.FromMinutes(15);
 
-    public static IServiceCollection AddCtxUiPanel(this IServiceCollection services)
+    public static IServiceCollection AddCtxUiPanel(this IServiceCollection services, IConfiguration section)
     {
+        services.Configure<PanelOptions>(section);
+        var sessionCheck = section.Get<PanelOptions>()?.SessionCheckInterval ?? new PanelOptions().SessionCheckInterval;
         services.AddSingleton<PanelGate>();
         services.AddIdentityCore<Admin>(options =>
             {
@@ -38,9 +43,12 @@ public static class PanelServices
             options.ExpireTimeSpan = TimeSpan.FromDays(7);
             options.SlidingExpiration = true;
         });
+        services.Configure<SecurityStampValidatorOptions>(options => options.ValidationInterval = sessionCheck);
         services.AddAuthorization();
         services.AddCascadingAuthenticationState();
         services.AddRazorComponents().AddInteractiveServerComponents();
+        services.AddScoped<AuthenticationStateProvider, AdminSessionState>();
+        services.AddMudServices();
         return services;
     }
 

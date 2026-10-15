@@ -20,7 +20,7 @@ public static class ServerApp
         builder.Logging.AddCtxUiFilters();
         builder.Services.AddCtxUi(builder.Configuration);
         builder.Services.AddCtxUiGateway(builder.Configuration.GetSection(CtxUiOptions.Section));
-        builder.Services.AddCtxUiPanel();
+        builder.Services.AddCtxUiPanel(builder.Configuration.GetSection(CtxUiOptions.Section));
         builder.Services.Configure<ForwardedHeadersOptions>(options =>
         {
             options.ForwardedHeaders = ForwardedHeaders.XForwardedProto;

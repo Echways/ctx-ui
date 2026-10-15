@@ -96,6 +96,27 @@ public class PanelAccessTests
     }
 
     [Fact]
+    public async Task Panel_brings_its_own_fonts_icon_and_night_colour()
+    {
+        await using var gateway = await GatewayHost.StartAsync();
+        using var panel = new PanelClient(gateway);
+
+        using var form = await panel.GetAsync("login");
+        using var sans = await panel.GetAsync("_content/CtxUi.Panel/fonts/onest.woff2");
+        using var mono = await panel.GetAsync("_content/CtxUi.Panel/fonts/martian-mono.woff2");
+        using var icon = await panel.GetAsync("_content/CtxUi.Panel/favicon.svg");
+        var html = await PanelClient.PageAsync(form);
+
+        Assert.Contains("<meta name=\"theme-color\" content=\"#080C1C\"", html);
+        Assert.Contains("rel=\"icon\"", html);
+        Assert.Contains("rel=\"preload\"", html);
+        Assert.Equal(HttpStatusCode.OK, sans.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, mono.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, icon.StatusCode);
+        Assert.Equal("image/svg+xml", icon.Content.Headers.ContentType?.MediaType);
+    }
+
+    [Fact]
     public async Task Right_password_opens_the_panel()
     {
         await using var gateway = await GatewayHost.StartAsync();

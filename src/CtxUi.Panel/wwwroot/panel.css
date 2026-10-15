@@ -1,3 +1,143 @@
+@font-face {
+    font-family: "Onest";
+    src: url("fonts/onest.woff2") format("woff2");
+    font-weight: 100 900;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "Martian Mono";
+    src: url("fonts/martian-mono.woff2") format("woff2");
+    font-weight: 100 800;
+    font-stretch: 75% 112.5%;
+    font-style: normal;
+    font-display: swap;
+}
+
+:root {
+    --night: #080C1C;
+    --deep: #0F1530;
+    --rule: #1E2648;
+    --mist: #8A90AB;
+    --light: #EEEBE5;
+    --klein: #002FA7;
+    --glow: #4A6CFF;
+    --vermilion: #FF5A3C;
+    --ochre: #E3A63E;
+    --white: #FFFFFF;
+    --scrim: rgba(8, 12, 28, 0.6);
+    --sans: "Onest", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "Martian Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+    --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+    --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.86' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23g)'/%3E%3C/svg%3E");
+    --pigment: radial-gradient(120% 90% at 18% 8%, rgba(255, 255, 255, 0.07), transparent 62%), radial-gradient(110% 110% at 100% 100%, rgba(0, 4, 40, 0.38), transparent 70%), var(--klein);
+    --gutter: 16px;
+    color-scheme: dark;
+    scrollbar-width: thin;
+    scrollbar-color: var(--rule) transparent;
+}
+
+@media (min-width: 841px) {
+    :root {
+        --gutter: 40px;
+    }
+}
+
+html:hover {
+    scrollbar-color: var(--mist) transparent;
+}
+
+body {
+    margin: 0;
+    background: var(--night);
+    color: var(--light);
+    font: 400 15px/24px var(--sans);
+    font-variant-numeric: tabular-nums;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3 {
+    text-wrap: balance;
+}
+
+p {
+    text-wrap: pretty;
+}
+
+::selection {
+    background: var(--klein);
+    color: var(--white);
+}
+
+:focus-visible {
+    outline: 2px solid var(--glow);
+    outline-offset: 3px;
+}
+
+input, textarea, select {
+    caret-color: var(--glow);
+}
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+    -webkit-text-fill-color: var(--light);
+    -webkit-box-shadow: 0 0 0 1000px var(--deep) inset;
+    caret-color: var(--glow);
+}
+
+code, .code {
+    font-family: var(--mono);
+    font-size: 13px;
+    line-height: 20px;
+    font-weight: 400;
+    font-stretch: 87%;
+    letter-spacing: -0.01em;
+}
+
+.sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+}
+
+.pigment {
+    position: relative;
+    isolation: isolate;
+    background: var(--pigment);
+    color: var(--white);
+}
+
+.pigment::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: var(--grain);
+    background-size: 220px 220px;
+    mix-blend-mode: overlay;
+    opacity: 0.34;
+    pointer-events: none;
+    z-index: 0;
+    border-radius: inherit;
+}
+
+.pigment > * {
+    position: relative;
+    z-index: 1;
+}
+
+.mud-ripple::after {
+    display: none;
+}
+
 .bare {
     min-height: 100vh;
     display: flex;

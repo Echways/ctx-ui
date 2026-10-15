@@ -2,6 +2,7 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using CtxUi.Core.ApiKeys;
 using CtxUi.Core.Clients;
 using CtxUi.Core.Data;
 using CtxUi.Core.Inbounds;
@@ -26,6 +27,7 @@ public static class CoreServices
         services.AddScoped<UsageStore>();
         services.AddScoped<OverviewService>();
         services.AddScoped<PanelSettings>();
+        services.AddScoped<ApiKeyService>();
         return services;
     }
 }

@@ -1114,6 +1114,151 @@ button.btn-k {
     }
 }
 
+.kf {
+    display: grid;
+    gap: 22px;
+    padding: 30px 32px 28px;
+    border-radius: 2px;
+}
+
+.kf :focus-visible {
+    outline-color: var(--white);
+}
+
+.kf-label {
+    font: 500 13px/20px var(--sans);
+    color: rgba(255, 255, 255, 0.72);
+}
+
+.kf-token {
+    display: flex;
+    flex-wrap: wrap;
+    column-gap: 0.55em;
+    font: 300 24px/36px var(--mono);
+    letter-spacing: -0.01em;
+    overflow-wrap: anywhere;
+}
+
+.kf-token .g:first-child {
+    opacity: 0.58;
+    margin-right: -0.55em;
+}
+
+.kf-copy {
+    justify-self: start;
+    padding: 0;
+    background: none;
+    border: 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.55);
+    font: 500 13px/20px var(--sans);
+    color: var(--white);
+    cursor: pointer;
+}
+
+.kf-copy:hover {
+    border-bottom-color: var(--white);
+}
+
+.kf-lost {
+    margin: 0;
+    max-width: 44ch;
+}
+
+.kf-white {
+    justify-self: start;
+    padding: 12px 26px;
+    background: var(--white);
+    color: var(--klein);
+    border: 0;
+    border-radius: 2px;
+    font: 600 13px/20px var(--sans);
+    cursor: pointer;
+}
+
+.slugs {
+    display: grid;
+    gap: 28px;
+}
+
+.slug h3 {
+    margin: 0 0 6px;
+    font: 500 13px/20px var(--mono);
+}
+
+.cl {
+    display: grid;
+    grid-template-columns: 128px minmax(0, 1fr) auto;
+    gap: 16px;
+    align-items: baseline;
+    padding: 11px 0;
+    border-bottom: 1px solid var(--rule);
+}
+
+.slug h3 + .cl {
+    border-top: 1px solid var(--rule);
+}
+
+.cl output {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.lbl {
+    font: 500 13px/20px var(--sans);
+    color: var(--mist);
+}
+
+.message {
+    display: grid;
+    gap: 10px;
+}
+
+.msg {
+    margin: 0;
+    padding: 16px 18px;
+    background: var(--night);
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    font: 400 12.5px/20px var(--mono);
+    font-stretch: 87%;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .kf.born .g {
+        animation: born 0.48s var(--ease) both;
+        animation-delay: calc(var(--i) * 56ms);
+    }
+}
+
+@keyframes born {
+    from {
+        opacity: 0;
+        filter: blur(4px);
+    }
+}
+
+@media (max-width: 840px) {
+    .kf {
+        padding: 24px 20px;
+    }
+
+    .kf-token {
+        font-size: 20px;
+        line-height: 32px;
+    }
+
+    .cl {
+        grid-template-columns: minmax(0, 1fr) auto;
+    }
+
+    .cl .lbl {
+        grid-column: 1 / -1;
+    }
+}
+
 .block {
     margin-top: 112px;
 }

@@ -375,17 +375,8 @@
   <data name="CopyToken" xml:space="preserve">
     <value>Copy token</value>
   </data>
-  <data name="AddressOf" xml:space="preserve">
-    <value>Address {0}</value>
-  </data>
-  <data name="TokenHeaderHelp" xml:space="preserve">
-    <value>the token is sent in the header Authorization: Bearer &lt;token&gt;</value>
-  </data>
   <data name="CopyAddressOf" xml:space="preserve">
     <value>Copy address {0}</value>
-  </data>
-  <data name="AddressWithTokenOf" xml:space="preserve">
-    <value>Address {0} with token</value>
   </data>
   <data name="AddressWithTokenHelp" xml:space="preserve">
     <value>for clients that can't set headers: claude.ai, ChatGPT</value>
@@ -578,5 +569,17 @@
   </data>
   <data name="ReissueYes" xml:space="preserve">
     <value>Issue a new token</value>
+  </data>
+  <data name="WithHeader" xml:space="preserve">
+    <value>With header</value>
+  </data>
+  <data name="WithTokenInPath" xml:space="preserve">
+    <value>With token in path</value>
+  </data>
+  <data name="Copy" xml:space="preserve">
+    <value>Copy</value>
+  </data>
+  <data name="TokenShownHere" xml:space="preserve">
+    <value>The whole token is shown only here</value>
   </data>
 </root>

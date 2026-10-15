@@ -1,7 +1,4 @@
-@using Microsoft.JSInterop
 @inject PanelBackend Backend
-@inject IJSRuntime Js
-@inject ISnackbar Snackbar
 
 <Sheet>
     <ChildContent>
@@ -15,10 +12,9 @@
         }
         else
         {
+            <KeyField Label="@PanelText.Key" Value="@_secret" CopyLabel="@PanelText.CopyKey" Born="true" />
             <p class="hint">@PanelText.KeyShownOnce</p>
-            <MudTextField T="string" Value="_secret" Label="@PanelText.Key" ReadOnly="true" HelperText="@PanelText.KeyHelp"
-                          Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.ContentCopy"
-                          AdornmentAriaLabel="@PanelText.CopyKey" OnAdornmentClick="CopyAsync" />
+            <p class="hint">@PanelText.KeyHelp</p>
         }
     </ChildContent>
     <Actions>
@@ -49,19 +45,6 @@
         catch (DomainException exception)
         {
             _error = Words.Sentence(exception.Message);
-        }
-    }
-
-    private async Task CopyAsync()
-    {
-        try
-        {
-            await Js.InvokeVoidAsync("navigator.clipboard.writeText", _secret);
-            Snackbar.Add(PanelText.Copied, Severity.Success);
-        }
-        catch (JSException)
-        {
-            Snackbar.Add(PanelText.CopyNeedsHttps, Severity.Warning);
         }
     }
 }

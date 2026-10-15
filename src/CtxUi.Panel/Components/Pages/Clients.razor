@@ -130,7 +130,7 @@ else
             return;
 
         await LoadAsync();
-        await ConnectAsync(name);
+        await ConnectAsync(name, fresh: true);
     }
 
     private async Task EditAsync(Client client)
@@ -141,12 +141,18 @@ else
             await LoadAsync();
     }
 
-    private Task ConnectAsync(Client client) => ConnectAsync(client.Name);
+    private Task ConnectAsync(Client client) => ConnectAsync(client.Name, fresh: false);
 
-    private Task ConnectAsync(string name) => Dialogs.ShowAsync<ConnectionDialog>(
-        string.Format(PanelText.ConnectionTitle, name),
-        new DialogParameters<ConnectionDialog> { { dialog => dialog.Name, name } },
-        Sheet.View);
+    private async Task ConnectAsync(string name, bool fresh)
+    {
+        var dialog = await Dialogs.ShowAsync<ConnectionDialog>(
+            string.Format(PanelText.ConnectionTitle, name),
+            new DialogParameters<ConnectionDialog> { { sheet => sheet.Name, name }, { sheet => sheet.Fresh, fresh } },
+            Sheet.View);
+        if (await dialog.Result is { Canceled: false, Data: ConnectionDialog.Reissue }
+            && _clients!.FirstOrDefault(known => known.Name == name) is { } client)
+            await ReissueAsync(client);
+    }
 
     private async Task ReissueAsync(Client client)
     {
@@ -158,7 +164,7 @@ else
             services => services.GetRequiredService<ClientService>().ReissueAsync(client.Name),
             string.Format(PanelText.TokenReissued, client.Name));
         if (_clients!.Any(known => known.Id == client.Id))
-            await ConnectAsync(client);
+            await ConnectAsync(client.Name, fresh: true);
     }
 
     private async Task RemoveAsync(Client client)

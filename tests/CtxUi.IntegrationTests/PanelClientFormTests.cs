@@ -53,7 +53,7 @@ public class PanelClientFormTests
         await AddAsync(page);
 
         await Expect(Dialog(page)).ToContainTextAsync("Подключение: Иванов 4419");
-        var token = await Field(page, "Токен").InputValueAsync();
+        var token = (await Dialog(page).GetByLabel("Токен", new() { Exact = true }).TextContentAsync())!;
         using var allowed = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/echo", token));
         using var other = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/docs", token));
         await Dialog(page).GetByRole(AriaRole.Button, new() { Name = "Закрыть" }).ClickAsync();
@@ -93,8 +93,9 @@ public class PanelClientFormTests
         Assert.Equal(["docs", "echo"], stored.Inbounds.Select(link => link.Inbound!.Slug).Order());
         Assert.Equal("4419", stored.Metadata["group"]);
         Assert.Equal("50", stored.Metadata["storage-mb"]);
-        await Expect(Field(page, "Сообщение для клиента")).ToHaveValueAsync(
-            new System.Text.RegularExpressions.Regex("Доступ действует до 2099-12-31 \\(UTC\\)\\.\nВызовов инструментов: 500 каждые 30 дн\\."));
+        Assert.Contains(
+            "Доступ действует до 2099-12-31 (UTC).\nВызовов инструментов: 500 каждые 30 дн.",
+            await Dialog(page).GetByLabel("Сообщение для клиента", new() { Exact = true }).TextContentAsync());
     }
 
     [Fact]

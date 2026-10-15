@@ -27,8 +27,12 @@ public class PanelConnectionTests
 
     private static ILocator Dialog(IPage page) => page.GetByRole(AriaRole.Dialog);
 
-    private static ILocator Field(IPage page, string label) =>
-        Dialog(page).GetByRole(AriaRole.Textbox, new() { Name = label, Exact = true });
+    private static ILocator Token(IPage page) => Dialog(page).GetByLabel("Токен", new() { Exact = true });
+
+    private static ILocator Address(IPage page, string slug, string kind) =>
+        Dialog(page).GetByRole(AriaRole.Region, new() { Name = slug, Exact = true }).GetByLabel(kind, new() { Exact = true });
+
+    private static ILocator Message(IPage page) => Dialog(page).GetByLabel("Сообщение для клиента", new() { Exact = true });
 
     private static Task<string> ClipboardAsync(IPage page) => page.EvaluateAsync<string>("navigator.clipboard.readText()");
 
@@ -45,12 +49,11 @@ public class PanelConnectionTests
         await Row(page, "Иванов 4419").GetByRole(AriaRole.Button, new() { Name = "Подключение" }).ClickAsync();
 
         await Expect(Dialog(page)).ToContainTextAsync("Подключение: Иванов 4419");
-        await Expect(Field(page, "Токен")).ToHaveValueAsync(issued.Token);
-        await Expect(Field(page, "Адрес learn")).ToHaveValueAsync($"{PublicUrl}/mcp/learn");
-        await Expect(Field(page, "Адрес learn с токеном")).ToHaveValueAsync($"{PublicUrl}/k/{issued.Token}/mcp/learn");
-        await Expect(Field(page, "Адрес docs")).ToHaveValueAsync($"{PublicUrl}/mcp/docs");
-        await Expect(Field(page, "Сообщение для клиента")).ToHaveValueAsync(
-            ConnectionTextOf(issued.Client.Name, issued.Token));
+        await Expect(Token(page)).ToHaveTextAsync(issued.Token);
+        await Expect(Address(page, "learn", "С заголовком")).ToHaveTextAsync($"{PublicUrl}/mcp/learn");
+        await Expect(Address(page, "learn", "С токеном в пути")).ToHaveTextAsync($"{PublicUrl}/k/{issued.Token}/mcp/learn");
+        await Expect(Address(page, "docs", "С заголовком")).ToHaveTextAsync($"{PublicUrl}/mcp/docs");
+        Assert.Equal(ConnectionTextOf(issued.Client.Name, issued.Token), await Message(page).TextContentAsync());
 
         await Dialog(page).GetByRole(AriaRole.Button, new() { Name = "Закрыть" }).ClickAsync();
         await Expect(Dialog(page)).ToHaveCountAsync(0);
@@ -89,7 +92,7 @@ public class PanelConnectionTests
         await Row(page, "Иванов").GetByRole(AriaRole.Button, new() { Name = "Подключение" }).ClickAsync();
 
         await Dialog(page).GetByRole(AriaRole.Button, new() { Name = "Скопировать токен" }).ClickAsync();
-        await Expect(page.GetByText("Скопировано")).ToBeVisibleAsync();
+        await Expect(Dialog(page).GetByRole(AriaRole.Button, new() { Name = "Скопировать токен" })).ToHaveTextAsync("Скопировано");
         var token = await ClipboardAsync(page);
         await Dialog(page).GetByRole(AriaRole.Button, new() { Name = "Скопировать адрес learn с токеном" }).ClickAsync();
         await Eventually.TrueAsync(async () => await ClipboardAsync(page) != token, "адрес попал в буфер обмена");
@@ -114,7 +117,7 @@ public class PanelConnectionTests
         var page = await OpenClientsAsync(session);
         await Row(page, "Иванов").GetByRole(AriaRole.Button, new() { Name = "Подключение" }).ClickAsync();
 
-        var shown = await Field(page, "Адрес learn с токеном").InputValueAsync();
+        var shown = (await Address(page, "learn", "С токеном в пути").TextContentAsync())!;
         using var response = await gateway.Http.SendAsync(GatewayHost.Post(shown[PublicUrl.Length..]));
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -138,7 +141,7 @@ public class PanelConnectionTests
         await RowMenu.ChooseAsync(Row(page, "Иванов"), "Новый токен");
         await Dialog(page).GetByRole(AriaRole.Button, new() { Name = "Выпустить" }).ClickAsync();
         await Expect(Dialog(page)).ToContainTextAsync("Подключение: Иванов");
-        var fresh = await Field(page, "Токен").InputValueAsync();
+        var fresh = (await Token(page).TextContentAsync())!;
         using var old = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/learn", issued.Token));
         using var renewed = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/learn", fresh));
 
@@ -163,7 +166,8 @@ public class PanelConnectionTests
         await Row(page, "Иванов").GetByRole(AriaRole.Button, new() { Name = "Подключение" }).ClickAsync();
 
         await Expect(Dialog(page).GetByRole(AriaRole.Alert)).ToContainTextAsync("Токен показать нельзя");
-        await Expect(Field(page, "Токен")).ToHaveCountAsync(0);
+        await Expect(Token(page)).ToHaveCountAsync(0);
+        await Expect(Dialog(page).GetByRole(AriaRole.Button, new() { Name = "Выпустить новый токен" })).ToBeVisibleAsync();
         Assert.DoesNotContain(issued.Token, await page.ContentAsync());
     }
 }

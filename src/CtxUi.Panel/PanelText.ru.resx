@@ -375,17 +375,8 @@
   <data name="CopyToken" xml:space="preserve">
     <value>Скопировать токен</value>
   </data>
-  <data name="AddressOf" xml:space="preserve">
-    <value>Адрес {0}</value>
-  </data>
-  <data name="TokenHeaderHelp" xml:space="preserve">
-    <value>токен передаётся заголовком Authorization: Bearer &lt;токен&gt;</value>
-  </data>
   <data name="CopyAddressOf" xml:space="preserve">
     <value>Скопировать адрес {0}</value>
-  </data>
-  <data name="AddressWithTokenOf" xml:space="preserve">
-    <value>Адрес {0} с токеном</value>
   </data>
   <data name="AddressWithTokenHelp" xml:space="preserve">
     <value>для клиентов, которые не умеют задавать заголовки: claude.ai, ChatGPT</value>
@@ -578,5 +569,17 @@
   </data>
   <data name="ReissueYes" xml:space="preserve">
     <value>Выпустить новый токен</value>
+  </data>
+  <data name="WithHeader" xml:space="preserve">
+    <value>С заголовком</value>
+  </data>
+  <data name="WithTokenInPath" xml:space="preserve">
+    <value>С токеном в пути</value>
+  </data>
+  <data name="Copy" xml:space="preserve">
+    <value>Копировать</value>
+  </data>
+  <data name="TokenShownHere" xml:space="preserve">
+    <value>Токен целиком виден только здесь</value>
   </data>
 </root>

@@ -51,6 +51,7 @@ public static class PanelServices
         services.AddRazorComponents().AddInteractiveServerComponents();
         services.AddScoped<AuthenticationStateProvider, AdminSessionState>();
         services.AddMudServices();
+        services.AddScoped<Clipboard>();
         services.Configure<RequestLocalizationOptions>(options =>
         {
             options.SetDefaultCulture(PanelLanguage.Default)

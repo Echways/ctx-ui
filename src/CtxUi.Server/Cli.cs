@@ -3,18 +3,20 @@ using System.Globalization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using CtxUi.Core;
+using CtxUi.Core.ApiKeys;
 using CtxUi.Core.Clients;
 using CtxUi.Core.Data;
 using CtxUi.Core.Inbounds;
 using CtxUi.Core.Settings;
 using CtxUi.Core.Usage;
 using CtxUi.Panel.Accounts;
+using CtxUi.Server.Api;
 
 namespace CtxUi.Server;
 
 public static class Cli
 {
-    public static bool Handles(string[] args) => args.Length > 0 && args[0] is "inbound" or "client" or "usage" or "admin";
+    public static bool Handles(string[] args) => args.Length > 0 && args[0] is "inbound" or "client" or "usage" or "admin" or "apikey";
 
     public static async Task<int> RunAsync(
         string[] args,
@@ -31,9 +33,9 @@ public static class Cli
         builder.Services.AddCtxUi(builder.Configuration);
         using var host = builder.Build();
 
-        var root = new RootCommand("ctx-ui: inbound'ы, клиенты, учёт вызовов и вход в панель")
+        var root = new RootCommand("ctx-ui: inbound'ы, клиенты, учёт вызовов, вход в панель и ключи API")
         {
-            InboundCommand(), ClientCommand(), UsageCommand(), AdminCommand(),
+            InboundCommand(), ClientCommand(), UsageCommand(), AdminCommand(), ApiKeyCommand(),
         };
         return await root.Parse(args).InvokeAsync(new InvocationConfiguration { Output = output, Error = error });
 
@@ -306,6 +308,39 @@ public static class Cli
 
                     output.WriteLine($"Панель:  {PanelUrl(services, await settings.RenewPathAsync(ct))}");
                     output.WriteLine("Новый адрес начнёт работать после перезапуска сервиса, до тех пор действует прежний");
+                }),
+            };
+        }
+
+        Command ApiKeyCommand()
+        {
+            var name = new Argument<string>("name") { Description = "название: латинские буквы, цифры, точка, дефис, подчёркивание" };
+
+            return new Command("apikey", "ключи для REST API; API и Swagger UI живут под адресом панели")
+            {
+                Leaf("add", "выпустить ключ и показать его", [name], async (parse, services, ct) =>
+                {
+                    var issued = await services.GetRequiredService<ApiKeyService>().AddAsync(parse.GetValue(name)!, ct);
+                    var panel = PanelUrl(services, await services.GetRequiredService<PanelSettings>().PathAsync(ct));
+                    output.WriteLine($"Ключ «{issued.Key.Name}» выпущен");
+                    output.WriteLine($"Ключ:     {issued.Secret}");
+                    output.WriteLine($"API:      {panel}{ApiServices.Prefix.TrimStart('/')}/");
+                    output.WriteLine($"Swagger:  {panel}{ApiServices.SwaggerPath}/");
+                    output.WriteLine("Ключ показан один раз. Потерянный ключ не восстановить: удалите его и выпустите новый.");
+                }),
+                Leaf("list", "показать ключи", [], async (_, services, ct) =>
+                {
+                    var keys = await services.GetRequiredService<ApiKeyService>().ListAsync(ct);
+                    foreach (var key in keys)
+                        output.WriteLine($"{key.Name,-24} {key.SecretPrefix}…  выпущен {Date(key.CreatedAt, "yyyy-MM-dd")}");
+
+                    if (keys.Count == 0)
+                        output.WriteLine("Ключей нет. Выпустите: ctx-ui apikey add <название>");
+                }),
+                Leaf("remove", "отозвать ключ; запросы с ним сразу получают 401", [name], async (parse, services, ct) =>
+                {
+                    await services.GetRequiredService<ApiKeyService>().RemoveAsync(parse.GetValue(name)!, ct);
+                    output.WriteLine($"Ключ «{parse.GetValue(name)!.Trim()}» отозван");
                 }),
             };
         }

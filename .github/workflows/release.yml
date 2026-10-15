@@ -27,6 +27,7 @@ jobs:
       - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 10.0.x
+      - run: npx --yes playwright@1.63.0 install-deps chromium
       - run: dotnet test -c Release
 
   assets:

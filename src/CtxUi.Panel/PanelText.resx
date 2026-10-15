@@ -87,9 +87,6 @@
   <data name="Enabled" xml:space="preserve">
     <value>Enabled</value>
   </data>
-  <data name="StateOn" xml:space="preserve">
-    <value>enabled</value>
-  </data>
   <data name="StateOff" xml:space="preserve">
     <value>disabled</value>
   </data>
@@ -285,53 +282,17 @@
   <data name="NotFoundHeading" xml:space="preserve">
     <value>There is no such page</value>
   </data>
-  <data name="ActiveOfAll" xml:space="preserve">
-    <value>{0} of {1}</value>
-  </data>
-  <data name="ActiveOfAllNote" xml:space="preserve">
-    <value>active of all</value>
-  </data>
-  <data name="SeenToday" xml:space="preserve">
-    <value>Seen in 24 hours</value>
-  </data>
-  <data name="SeenTodayNote" xml:space="preserve">
-    <value>clients</value>
-  </data>
-  <data name="CallsToday" xml:space="preserve">
-    <value>Calls in 24 hours</value>
-  </data>
-  <data name="CallsTodayNote" xml:space="preserve">
-    <value>tool calls among them: {0}</value>
-  </data>
-  <data name="FailuresToday" xml:space="preserve">
-    <value>Upstream failures in 24 hours</value>
-  </data>
   <data name="NoCalls" xml:space="preserve">
     <value>no calls</value>
   </data>
   <data name="FailureShare" xml:space="preserve">
     <value>{0}% of calls</value>
   </data>
-  <data name="FirstAccessLead" xml:space="preserve">
-    <value>To grant the first access,</value>
-  </data>
-  <data name="FirstAccessInbound" xml:space="preserve">
-    <value>add an inbound</value>
-  </data>
-  <data name="FirstAccessThen" xml:space="preserve">
-    <value>then</value>
-  </data>
-  <data name="FirstAccessClient" xml:space="preserve">
-    <value>a client</value>
-  </data>
   <data name="CallsInDayColumn" xml:space="preserve">
     <value>Calls in 24 hours</value>
   </data>
   <data name="UpstreamFailuresColumn" xml:space="preserve">
     <value>Upstream failures</value>
-  </data>
-  <data name="ByDay" xml:space="preserve">
-    <value>By day, UTC</value>
   </data>
   <data name="DayColumn" xml:space="preserve">
     <value>Day</value>
@@ -521,5 +482,56 @@
   </data>
   <data name="BackToOverview" xml:space="preserve">
     <value>Back to overview</value>
+  </data>
+  <data name="HorizonLabel" xml:space="preserve">
+    <value>Calls in the last 24 hours by 15 minutes: {0} in total, {1} failed. Left and right arrows move between quarters.</value>
+  </data>
+  <data name="HorizonHint" xml:space="preserve">
+    <value>Last 24 hours, 15 minutes per stroke</value>
+  </data>
+  <data name="HorizonQuarter" xml:space="preserve">
+    <value>{0}–{1} UTC</value>
+  </data>
+  <data name="QuarterCalls" xml:space="preserve">
+    <value>{n, plural, =0 {no calls} one {{number} call} other {{number} calls}}</value>
+  </data>
+  <data name="QuarterFailures" xml:space="preserve">
+    <value>{n, plural, one {{number} failure} other {{number} failures}}</value>
+  </data>
+  <data name="Now" xml:space="preserve">
+    <value>now</value>
+  </data>
+  <data name="FigureCalls" xml:space="preserve">
+    <value>{n, plural, one {call} other {calls}} in 24 hours</value>
+  </data>
+  <data name="FigureTools" xml:space="preserve">
+    <value>{0} of them tool calls</value>
+  </data>
+  <data name="FigureActive" xml:space="preserve">
+    <value>{n, plural, other {active now}}</value>
+  </data>
+  <data name="FigureOfClients" xml:space="preserve">
+    <value>of {number} {n, plural, one {client} other {clients}}</value>
+  </data>
+  <data name="FigureSeen" xml:space="preserve">
+    <value>{n, plural, one {client came by} other {clients came by}}</value>
+  </data>
+  <data name="FigureInDay" xml:space="preserve">
+    <value>in 24 hours</value>
+  </data>
+  <data name="FigureFailures" xml:space="preserve">
+    <value>upstream {n, plural, one {failure} other {failures}}</value>
+  </data>
+  <data name="Silence" xml:space="preserve">
+    <value>The gateway gives nothing away yet</value>
+  </data>
+  <data name="LastDays" xml:space="preserve">
+    <value>Last 7 days</value>
+  </data>
+  <data name="DaysInDetail" xml:space="preserve">
+    <value>Day by day in detail</value>
+  </data>
+  <data name="Today" xml:space="preserve">
+    <value>today</value>
   </data>
 </root>

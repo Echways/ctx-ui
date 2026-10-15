@@ -382,6 +382,388 @@ button.link:hover, .link:hover {
     }
 }
 
+.btn-k {
+    display: inline-block;
+    font: 600 13px/20px var(--sans);
+    padding: 10px 18px;
+    border-radius: 2px;
+    white-space: nowrap;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.btn-k:hover {
+    filter: brightness(1.16);
+}
+
+.note, .nothing {
+    color: var(--mist);
+}
+
+.note {
+    margin-left: 4px;
+}
+
+.bad-t {
+    color: var(--vermilion) !important;
+}
+
+.warn-t {
+    color: var(--ochre) !important;
+}
+
+.num {
+    text-align: right !important;
+}
+
+.placeholder {
+    display: grid;
+    gap: 12px;
+}
+
+.placeholder i {
+    display: block;
+    height: 52px;
+    background: var(--deep);
+}
+
+.empty {
+    display: grid;
+    gap: 24px;
+    justify-items: start;
+    padding-block: 24px;
+}
+
+.empty h2, .empty p {
+    margin: 0;
+    font: 200 28px/36px var(--sans);
+    letter-spacing: -0.02em;
+}
+
+.tbl.mud-table {
+    margin-left: -14px;
+    background: transparent;
+    color: var(--light);
+    box-shadow: none;
+    border-radius: 0;
+}
+
+.tbl .mud-table-container {
+    overflow-x: auto;
+}
+
+.tbl .mud-table-cell {
+    padding: 14px 18px 14px 0;
+    border-bottom: 1px solid var(--rule);
+    font: 400 15px/24px var(--sans);
+    color: inherit;
+}
+
+.tbl .mud-table-cell:first-child {
+    padding-left: 14px;
+}
+
+.tbl .mud-table-cell:last-child {
+    padding-right: 14px;
+}
+
+.tbl .mud-table-head .mud-table-cell {
+    padding-top: 0;
+    padding-bottom: 12px;
+    font: 500 13px/20px var(--sans);
+    color: var(--mist);
+    white-space: nowrap;
+}
+
+.tbl .mud-table-body .mud-table-row {
+    transition: background-color 0.12s;
+}
+
+.tbl .mud-table-body .mud-table-row:hover {
+    background: var(--deep);
+}
+
+.tbl .mud-table-row.dim, .tbl .mud-table-row.dim code {
+    color: var(--mist);
+}
+
+.tbl.mud-xs-table {
+    margin-left: 0;
+}
+
+.tbl.mud-xs-table .mud-table-body {
+    border-top: 1px solid var(--rule);
+}
+
+.tbl.mud-xs-table .mud-table-body .mud-table-row {
+    display: block;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--rule);
+}
+
+.tbl.mud-xs-table .mud-table-body .mud-table-row:hover {
+    background: none;
+}
+
+.tbl.mud-xs-table .mud-table-cell,
+.tbl.mud-xs-table .mud-table-row .mud-table-cell:last-child {
+    gap: 16px;
+    padding: 3px 0;
+    border: 0;
+    min-height: 0;
+}
+
+.tbl.mud-xs-table .mud-table-cell::before {
+    font: 500 13px/20px var(--sans);
+    color: var(--mist);
+}
+
+.tbl.mud-xs-table .mud-table-cell:empty {
+    display: none;
+}
+
+.tbl.mud-xs-table .mud-table-body .mud-table-cell:first-child {
+    padding: 0 0 8px;
+    font: 500 17px/24px var(--sans);
+}
+
+.tbl.mud-xs-table .mud-table-body .mud-table-cell:first-child code {
+    font-size: 15px;
+}
+
+.tbl.mud-xs-table .mud-table-body .mud-table-cell:first-child::before {
+    content: none;
+}
+
+.block {
+    margin-top: 112px;
+}
+
+.block > h2 {
+    margin: 0 0 24px;
+    font: 500 20px/28px var(--sans);
+    letter-spacing: -0.01em;
+}
+
+.hz-read {
+    min-height: 20px;
+    margin: 0 0 18px;
+    font: 500 13px/20px var(--sans);
+    color: var(--mist);
+}
+
+.hz-read.on {
+    color: var(--light);
+}
+
+svg.hz {
+    display: block;
+    width: 100%;
+    overflow: visible;
+    cursor: crosshair;
+}
+
+svg.hz:focus-visible {
+    outline-offset: 10px;
+}
+
+.hz .base {
+    fill: var(--rule);
+}
+
+.hz .tick {
+    fill: var(--mist);
+    opacity: 0.5;
+}
+
+.hz .s {
+    stroke: var(--light);
+    stroke-width: 2px;
+    transition: opacity 0.12s;
+}
+
+.hz .z {
+    fill: var(--mist);
+    opacity: 0.55;
+}
+
+.hz .f {
+    fill: var(--vermilion);
+    transition: opacity 0.12s;
+}
+
+.hz .now {
+    fill: var(--glow);
+}
+
+.hz .hit {
+    fill: transparent;
+}
+
+.hz.focusing .s, .hz.focusing .f {
+    opacity: 0.35;
+}
+
+.hz .s.on, .hz .f.on, .hz .z.on {
+    opacity: 1;
+}
+
+.hz-axis {
+    position: relative;
+    height: 20px;
+    margin-top: 12px;
+    font: 500 12px/20px var(--sans);
+    color: var(--mist);
+}
+
+.hz-axis span {
+    position: absolute;
+    top: 0;
+    transform: translateX(-50%);
+    white-space: nowrap;
+}
+
+.hz-axis .now-label {
+    right: 0;
+    transform: none;
+    color: var(--light);
+}
+
+.figs {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 40px 32px;
+    margin-top: 88px;
+}
+
+.fig {
+    margin: 0;
+}
+
+.fig b {
+    display: block;
+    margin-left: -0.05em;
+    font: 200 80px/80px var(--sans);
+    letter-spacing: -0.045em;
+    white-space: nowrap;
+}
+
+.fig figcaption span {
+    display: block;
+    font: 500 13px/20px var(--sans);
+    color: var(--mist);
+}
+
+.fig figcaption span:first-child {
+    margin-top: 18px;
+}
+
+.fig.alarm b {
+    color: var(--vermilion);
+}
+
+.days {
+    display: grid;
+    gap: 12px;
+}
+
+.day {
+    display: grid;
+    grid-template-columns: 160px 72px minmax(0, 1fr);
+    gap: 28px;
+    align-items: center;
+}
+
+.day-name {
+    font: 500 13px/20px var(--sans);
+    color: var(--mist);
+}
+
+.day-bar {
+    height: 2px;
+    background: var(--light);
+    opacity: 0.6;
+}
+
+.day.today .day-bar {
+    opacity: 1;
+}
+
+.day.today .day-name {
+    color: var(--light);
+}
+
+.more-days {
+    margin-top: 28px;
+}
+
+.more-days summary {
+    display: inline-block;
+    list-style: none;
+    cursor: pointer;
+    font: 500 13px/20px var(--sans);
+    color: var(--mist);
+}
+
+.more-days summary::-webkit-details-marker {
+    display: none;
+}
+
+.more-days summary:hover {
+    color: var(--light);
+}
+
+.more-days[open] summary {
+    margin-bottom: 20px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .hz.grow .s {
+        transform-box: fill-box;
+        transform-origin: 50% 100%;
+        animation: rise 0.62s var(--ease) backwards;
+        animation-delay: calc(var(--i) * 6ms);
+    }
+
+    .hz.grow .f {
+        animation: appear 0.3s ease backwards;
+        animation-delay: calc(700ms + var(--i) * 6ms);
+    }
+}
+
+@keyframes rise {
+    from {
+        transform: scaleY(0);
+    }
+}
+
+@keyframes appear {
+    from {
+        opacity: 0;
+    }
+}
+
+@media (max-width: 840px) {
+    .figs {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        margin-top: 64px;
+    }
+
+    .fig b {
+        font-size: 56px;
+        line-height: 56px;
+    }
+
+    .block {
+        margin-top: 80px;
+    }
+
+    .day {
+        grid-template-columns: 112px 56px minmax(0, 1fr);
+        gap: 16px;
+    }
+}
+
 .entrance {
     min-height: 100dvh;
     overflow: hidden;

@@ -12,6 +12,7 @@
     <PackageVersion Include="System.CommandLine" Version="2.0.13" />
     <PackageVersion Include="ModelContextProtocol.AspNetCore" Version="2.2.0" />
     <PackageVersion Include="MudBlazor" Version="9.11.0" />
+    <PackageVersion Include="MessageFormat" Version="8.0.0" />
     <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.13" />
     <PackageVersion Include="Swashbuckle.AspNetCore.SwaggerUI" Version="10.3.0" />
     <PackageVersion Include="Microsoft.ICU.ICU4C.Runtime" Version="$(IcuVersion)" />

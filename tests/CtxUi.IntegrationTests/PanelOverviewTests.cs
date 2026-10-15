@@ -14,7 +14,9 @@ public class PanelOverviewTests
     private const string ToolCall = """{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"echo","arguments":{}}}""";
     private const string ToolsList = """{"jsonrpc":"2.0","id":1,"method":"tools/list"}""";
 
-    private static ILocator Tile(IPage page, string title) => page.GetByRole(AriaRole.Group, new() { Name = title });
+    private static ILocator Figure(IPage page, string name) => page.GetByRole(AriaRole.Figure, new() { Name = name });
+
+    private static ILocator Horizon(IPage page) => page.GetByRole(AriaRole.Img, new() { Name = "Вызовы за последние сутки" });
 
     private static ILocator Row(IPage page, string text) => page.GetByRole(AriaRole.Row).Filter(new() { HasText = text });
 
@@ -30,13 +32,13 @@ public class PanelOverviewTests
         await using var session = await PanelSession.SignInAsync(gateway);
         var page = session.Page;
 
-        await Expect(Tile(page, "Клиенты")).ToContainTextAsync("0 из 0");
-        await Expect(Tile(page, "Вызовы за сутки")).ToContainTextAsync("0");
-        await Expect(page.GetByText("Чтобы выдать первый доступ")).ToBeVisibleAsync();
+        await Expect(Horizon(page)).ToHaveAttributeAsync("aria-label", new System.Text.RegularExpressions.Regex("всего 0"));
+        await Expect(page.GetByRole(AriaRole.Heading, new() { Name = "Шлюз ещё ничего не раздаёт" })).ToBeVisibleAsync();
+        await Expect(page.GetByRole(AriaRole.Figure)).ToHaveCountAsync(0);
         await Expect(page.GetByRole(AriaRole.Table)).ToHaveCountAsync(0);
 
-        await page.GetByRole(AriaRole.Link, new() { Name = "добавьте inbound" }).ClickAsync();
-        await Expect(page.GetByRole(AriaRole.Heading, new() { Name = "Inbounds" })).ToBeVisibleAsync();
+        await page.GetByRole(AriaRole.Link, new() { Name = "Добавить inbound" }).ClickAsync();
+        await Expect(page.GetByRole(AriaRole.Dialog)).ToContainTextAsync("Новый inbound");
     }
 
     [Fact]
@@ -72,21 +74,20 @@ public class PanelOverviewTests
         await using var session = await PanelSession.SignInAsync(gateway);
         var page = session.Page;
 
-        await Expect(Tile(page, "Клиенты")).ToContainTextAsync("1 из 2");
-        await Expect(Tile(page, "Обращались за сутки")).ToContainTextAsync("1");
-        await Expect(Tile(page, "Вызовы за сутки")).ToContainTextAsync("4");
-        await Expect(Tile(page, "Вызовы за сутки")).ToContainTextAsync("инструментов: 3");
-        await Expect(Tile(page, "Сбои upstream за сутки")).ToContainTextAsync("1");
-        await Expect(Tile(page, "Сбои upstream за сутки")).ToContainTextAsync("25 %");
-        await Expect(Row(page, "/mcp/echo")).ToContainTextAsync("включён");
-        await Expect(Row(page, "/mcp/echo").GetByRole(AriaRole.Cell)).ToHaveTextAsync(["/mcp/echo", "echo", "включён", "2", "3", "0"]);
-        await Expect(Row(page, "/mcp/broken").GetByRole(AriaRole.Cell)).ToHaveTextAsync(["/mcp/broken", "broken", "включён", "1", "1", "1"]);
-        await Expect(Row(page, "/mcp/idle").GetByRole(AriaRole.Cell)).ToHaveTextAsync(["/mcp/idle", "idle", "выключен", "0", "0", "0"]);
-        var today = DateTimeOffset.UtcNow.ToString("yyyy-MM-dd");
+        await Expect(Figure(page, "1 из 2 клиентов")).ToContainTextAsync("активен сейчас");
+        await Expect(Figure(page, "1 клиент заходил")).ToBeVisibleAsync();
+        await Expect(Figure(page, "4 вызова за сутки")).ToContainTextAsync("3 из них к инструментам");
+        await Expect(Figure(page, "1 сбой upstream")).ToContainTextAsync("25 % вызовов");
+        await Expect(Horizon(page)).ToHaveAttributeAsync("aria-label", new System.Text.RegularExpressions.Regex("всего 4, сбоев 1"));
+        await Expect(Row(page, "/mcp/echo").GetByRole(AriaRole.Cell)).ToHaveTextAsync(["/mcp/echo", "echo", "2", "3", "–"]);
+        await Expect(Row(page, "/mcp/broken").GetByRole(AriaRole.Cell)).ToHaveTextAsync(["/mcp/broken", "broken", "1", "1", "1"]);
+        await Expect(Row(page, "/mcp/idle").GetByRole(AriaRole.Cell)).ToHaveTextAsync(["/mcp/idle", "idle выключен", "–", "–", "–"]);
+        await page.GetByText("Подробно по дням").ClickAsync();
+        var today = DateTimeOffset.UtcNow.ToString("d MMMM", System.Globalization.CultureInfo.GetCultureInfo("ru"));
         await Expect(Row(page, today).GetByRole(AriaRole.Cell).Nth(1)).ToHaveTextAsync("4");
         await Expect(Row(page, today).GetByRole(AriaRole.Cell).Nth(2)).ToHaveTextAsync("3");
         await Expect(Row(page, today).GetByRole(AriaRole.Cell).Nth(3)).ToHaveTextAsync("1");
-        await Expect(Row(page, today).GetByRole(AriaRole.Cell).Nth(4)).ToHaveTextAsync("0");
+        await Expect(Row(page, today).GetByRole(AriaRole.Cell).Nth(4)).ToHaveTextAsync("–");
     }
 
     [Fact]
@@ -98,12 +99,33 @@ public class PanelOverviewTests
         var issued = await gateway.AddClientAsync("Иванов", ["echo"]);
         await using var session = await PanelSession.SignInAsync(gateway);
         var page = session.Page;
-        await Expect(Tile(page, "Вызовы за сутки")).ToContainTextAsync("0");
+        await Expect(Figure(page, "0 вызовов за сутки")).ToBeVisibleAsync();
         using var call = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/echo", issued.Token, ToolCall));
         await JournalHasAsync(gateway, 1);
 
         await page.GetByRole(AriaRole.Button, new() { Name = "Обновить" }).ClickAsync();
 
-        await Expect(Tile(page, "Вызовы за сутки")).ToContainTextAsync("инструментов: 1");
+        await Expect(Figure(page, "1 вызов за сутки")).ToContainTextAsync("1 из них к инструментам");
+    }
+
+    [Fact]
+    public async Task Horizon_reads_out_the_quarter_chosen_with_the_arrow_keys()
+    {
+        await using var upstream = await FakeUpstream.StartAsync();
+        await using var gateway = await GatewayHost.StartAsync();
+        await gateway.AddInboundAsync("echo", upstream.McpUrl);
+        var issued = await gateway.AddClientAsync("Иванов", ["echo"]);
+        using var first = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/echo", issued.Token, ToolCall));
+        using var second = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/echo", issued.Token, ToolCall));
+        await JournalHasAsync(gateway, 2);
+        await using var session = await PanelSession.SignInAsync(gateway);
+        var page = session.Page;
+
+        await Horizon(page).FocusAsync();
+        await page.Keyboard.PressAsync("ArrowLeft");
+
+        await Expect(page.GetByRole(AriaRole.Status)).ToContainTextAsync("UTC · 2 вызова");
+        await page.Keyboard.PressAsync("ArrowLeft");
+        await Expect(page.GetByRole(AriaRole.Status)).ToContainTextAsync("UTC · ни одного вызова");
     }
 }

@@ -3,6 +3,7 @@
 @inject IDialogService Dialogs
 @inject ISnackbar Snackbar
 @inject TimeProvider Clock
+@inject NavigationManager Navigation
 
 <PageHead Title="@PanelText.Inbounds" Count="_rows?.Count" UpdatedAt="_loadedAt" OnRefresh="LoadAsync">
     <Actions>
@@ -58,7 +59,19 @@ else
     private List<Row>? _rows;
     private DateTimeOffset? _loadedAt;
 
+    [SupplyParameterFromQuery(Name = "add")]
+    private bool Add { get; set; }
+
     protected override Task OnInitializedAsync() => LoadAsync();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || !Add)
+            return;
+
+        Navigation.NavigateTo("inbounds", replace: true);
+        await AddAsync();
+    }
 
     private async Task LoadAsync()
     {

@@ -87,9 +87,6 @@
   <data name="Enabled" xml:space="preserve">
     <value>Включён</value>
   </data>
-  <data name="StateOn" xml:space="preserve">
-    <value>включён</value>
-  </data>
   <data name="StateOff" xml:space="preserve">
     <value>выключен</value>
   </data>
@@ -285,53 +282,17 @@
   <data name="NotFoundHeading" xml:space="preserve">
     <value>Такой страницы нет</value>
   </data>
-  <data name="ActiveOfAll" xml:space="preserve">
-    <value>{0} из {1}</value>
-  </data>
-  <data name="ActiveOfAllNote" xml:space="preserve">
-    <value>активных из всех</value>
-  </data>
-  <data name="SeenToday" xml:space="preserve">
-    <value>Обращались за сутки</value>
-  </data>
-  <data name="SeenTodayNote" xml:space="preserve">
-    <value>клиентов</value>
-  </data>
-  <data name="CallsToday" xml:space="preserve">
-    <value>Вызовы за сутки</value>
-  </data>
-  <data name="CallsTodayNote" xml:space="preserve">
-    <value>из них инструментов: {0}</value>
-  </data>
-  <data name="FailuresToday" xml:space="preserve">
-    <value>Сбои upstream за сутки</value>
-  </data>
   <data name="NoCalls" xml:space="preserve">
     <value>вызовов не было</value>
   </data>
   <data name="FailureShare" xml:space="preserve">
     <value>{0} % вызовов</value>
   </data>
-  <data name="FirstAccessLead" xml:space="preserve">
-    <value>Чтобы выдать первый доступ,</value>
-  </data>
-  <data name="FirstAccessInbound" xml:space="preserve">
-    <value>добавьте inbound</value>
-  </data>
-  <data name="FirstAccessThen" xml:space="preserve">
-    <value>а затем</value>
-  </data>
-  <data name="FirstAccessClient" xml:space="preserve">
-    <value>клиента</value>
-  </data>
   <data name="CallsInDayColumn" xml:space="preserve">
     <value>Вызовов за сутки</value>
   </data>
   <data name="UpstreamFailuresColumn" xml:space="preserve">
     <value>Сбоев upstream</value>
-  </data>
-  <data name="ByDay" xml:space="preserve">
-    <value>По дням, UTC</value>
   </data>
   <data name="DayColumn" xml:space="preserve">
     <value>День</value>
@@ -521,5 +482,56 @@
   </data>
   <data name="BackToOverview" xml:space="preserve">
     <value>Вернуться к обзору</value>
+  </data>
+  <data name="HorizonLabel" xml:space="preserve">
+    <value>Вызовы за последние сутки по 15 минут: всего {0}, сбоев {1}. Стрелки влево и вправо переходят между отрезками.</value>
+  </data>
+  <data name="HorizonHint" xml:space="preserve">
+    <value>Последние сутки, по 15 минут на штрих</value>
+  </data>
+  <data name="HorizonQuarter" xml:space="preserve">
+    <value>{0}–{1} UTC</value>
+  </data>
+  <data name="QuarterCalls" xml:space="preserve">
+    <value>{n, plural, =0 {ни одного вызова} one {{number} вызов} few {{number} вызова} many {{number} вызовов} other {{number} вызова}}</value>
+  </data>
+  <data name="QuarterFailures" xml:space="preserve">
+    <value>{n, plural, one {{number} сбой} few {{number} сбоя} many {{number} сбоев} other {{number} сбоя}}</value>
+  </data>
+  <data name="Now" xml:space="preserve">
+    <value>сейчас</value>
+  </data>
+  <data name="FigureCalls" xml:space="preserve">
+    <value>{n, plural, one {вызов} few {вызова} many {вызовов} other {вызова}} за сутки</value>
+  </data>
+  <data name="FigureTools" xml:space="preserve">
+    <value>{0} из них к инструментам</value>
+  </data>
+  <data name="FigureActive" xml:space="preserve">
+    <value>{n, plural, one {активен} other {активны}} сейчас</value>
+  </data>
+  <data name="FigureOfClients" xml:space="preserve">
+    <value>из {number} {n, plural, one {клиента} other {клиентов}}</value>
+  </data>
+  <data name="FigureSeen" xml:space="preserve">
+    <value>{n, plural, one {клиент заходил} few {клиента заходили} many {клиентов заходили} other {клиента заходили}}</value>
+  </data>
+  <data name="FigureInDay" xml:space="preserve">
+    <value>за сутки</value>
+  </data>
+  <data name="FigureFailures" xml:space="preserve">
+    <value>{n, plural, one {сбой} few {сбоя} many {сбоев} other {сбоя}} upstream</value>
+  </data>
+  <data name="Silence" xml:space="preserve">
+    <value>Шлюз ещё ничего не раздаёт</value>
+  </data>
+  <data name="LastDays" xml:space="preserve">
+    <value>Последние 7 дней</value>
+  </data>
+  <data name="DaysInDetail" xml:space="preserve">
+    <value>Подробно по дням</value>
+  </data>
+  <data name="Today" xml:space="preserve">
+    <value>сегодня</value>
   </data>
 </root>

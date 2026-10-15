@@ -1,98 +1,97 @@
 @page "/"
+@using Microsoft.JSInterop
 @inject PanelBackend Backend
 @inject TimeProvider Clock
+@inject IJSRuntime Js
 
 <PageHead Title="@PanelText.Overview" UpdatedAt="_loadedAt" OnRefresh="LoadAsync" />
 <AutoRefresh OnTick="LoadAsync" />
 
 @if (_overview is null)
 {
-    <MudProgressLinear Indeterminate="true" />
+    <div class="placeholder" aria-hidden="true"><i></i><i></i><i></i></div>
 }
 else
 {
-    <MudGrid Class="mb-2">
-        <MudItem xs="12" sm="6" md="3">
-            <Tile Title="@PanelText.Clients" Value="@string.Format(PanelText.ActiveOfAll, _overview.ActiveClients, _overview.Clients)"
-                  Note="@PanelText.ActiveOfAllNote" />
-        </MudItem>
-        <MudItem xs="12" sm="6" md="3">
-            <Tile Title="@PanelText.SeenToday" Value="@_overview.SeenClients.ToString()" Note="@PanelText.SeenTodayNote" />
-        </MudItem>
-        <MudItem xs="12" sm="6" md="3">
-            <Tile Title="@PanelText.CallsToday" Value="@_overview.Calls.ToString()"
-                  Note="@string.Format(PanelText.CallsTodayNote, _overview.ToolCalls)" />
-        </MudItem>
-        <MudItem xs="12" sm="6" md="3">
-            <Tile Title="@PanelText.FailuresToday" Value="@_overview.Failures.ToString()" Note="@FailureShare" />
-        </MudItem>
-    </MudGrid>
+    <Horizon Quarters="_overview.Quarters" Grow="_grow" />
 
     @if (_overview.Inbounds.Count == 0)
     {
-        <MudAlert Severity="Severity.Info">
-            @PanelText.FirstAccessLead <MudLink Href="inbounds">@PanelText.FirstAccessInbound</MudLink>,
-            @PanelText.FirstAccessThen <MudLink Href="clients">@PanelText.FirstAccessClient</MudLink>.
-        </MudAlert>
+        <div class="empty">
+            <h2>@PanelText.Silence</h2>
+            <a class="btn-k pigment" href="inbounds?add=true">@PanelText.AddInbound</a>
+        </div>
     }
     else
     {
-        <MudText Typo="Typo.h6" Class="mt-4 mb-2">@PanelText.Inbounds</MudText>
-        <MudTable Items="_overview.Inbounds" Dense="true" Hover="true" Elevation="1">
-            <HeaderContent>
-                <MudTh>@PanelText.Address</MudTh>
-                <MudTh>@PanelText.Title</MudTh>
-                <MudTh>@PanelText.State</MudTh>
-                <MudTh>@PanelText.ClientCount</MudTh>
-                <MudTh>@PanelText.CallsInDayColumn</MudTh>
-                <MudTh>@PanelText.UpstreamFailuresColumn</MudTh>
-            </HeaderContent>
-            <RowTemplate>
-                <MudTd>/mcp/@context.Slug</MudTd>
-                <MudTd>@context.Name</MudTd>
-                <MudTd>@(context.Enabled ? PanelText.StateOn : PanelText.StateOff)</MudTd>
-                <MudTd>@context.Clients</MudTd>
-                <MudTd>@context.Calls</MudTd>
-                <MudTd>@context.Failures</MudTd>
-            </RowTemplate>
-        </MudTable>
-    }
+        <div class="figs">
+            <Figure Value="_overview.Calls" First="@Words.Count(PanelText.FigureCalls, _overview.Calls)"
+                    Second="@string.Format(PanelText.FigureTools, Words.Number(_overview.ToolCalls))" />
+            <Figure Value="_overview.ActiveClients" First="@Words.Count(PanelText.FigureOfClients, _overview.Clients)"
+                    Second="@Words.Count(PanelText.FigureActive, _overview.ActiveClients)" />
+            <Figure Value="_overview.SeenClients" First="@Words.Count(PanelText.FigureSeen, _overview.SeenClients)" Second="@PanelText.FigureInDay" />
+            <Figure Value="_overview.Failures" First="@Words.Count(PanelText.FigureFailures, _overview.Failures)" Second="@FailureShare"
+                    Alarm="_overview.Failures > 0" />
+        </div>
 
-    @if (_overview.Days.Count > 0)
-    {
-        <MudText Typo="Typo.h6" Class="mt-6 mb-2">@PanelText.ByDay</MudText>
-        <MudTable Items="_overview.Days.Reverse()" Dense="true" Hover="true" Elevation="1">
-            <HeaderContent>
-                <MudTh>@PanelText.DayColumn</MudTh>
-                <MudTh>@PanelText.CallCountColumn</MudTh>
-                <MudTh>@PanelText.ToolsColumn</MudTh>
-                <MudTh>@PanelText.UpstreamFailuresColumn</MudTh>
-                <MudTh>@PanelText.RefusalsColumn</MudTh>
-                <MudTh>@PanelText.AverageColumn</MudTh>
-            </HeaderContent>
-            <RowTemplate>
-                <MudTd>@context.Day.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture)</MudTd>
-                <MudTd>@context.Calls</MudTd>
-                <MudTd>@context.ToolCalls</MudTd>
-                <MudTd>@context.Errors</MudTd>
-                <MudTd>@context.Refused</MudTd>
-                <MudTd>@(context.Calls == 0 ? 0 : context.DurationMs / context.Calls)</MudTd>
-            </RowTemplate>
-        </MudTable>
+        <section class="block">
+            <h2>@PanelText.Inbounds</h2>
+            <MudTable Items="_overview.Inbounds" Elevation="0" Class="tbl" RowClassFunc="@((inbound, _) => inbound.Enabled ? "" : "dim")">
+                <HeaderContent>
+                    <MudTh>@PanelText.Address</MudTh>
+                    <MudTh>@PanelText.Title</MudTh>
+                    <MudTh Class="num">@PanelText.ClientCount</MudTh>
+                    <MudTh Class="num">@PanelText.CallsInDayColumn</MudTh>
+                    <MudTh Class="num">@PanelText.UpstreamFailuresColumn</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd><code>/mcp/@context.Slug</code></MudTd>
+                    <MudTd DataLabel="@PanelText.Title">
+                        @if (context.Enabled)
+                        {
+                            @context.Name
+                        }
+                        else
+                        {
+                            <span>@($"{context.Name} ")<span class="note">@PanelText.StateOff</span></span>
+                        }
+                    </MudTd>
+                    <MudTd DataLabel="@PanelText.ClientCount" Class="num">@Words.OrDash(context.Clients)</MudTd>
+                    <MudTd DataLabel="@PanelText.CallsInDayColumn" Class="num">@Words.OrDash(context.Calls)</MudTd>
+                    <MudTd DataLabel="@PanelText.UpstreamFailuresColumn" Class="@(context.Failures > 0 ? "num bad-t" : "num")">@Words.OrDash(context.Failures)</MudTd>
+                </RowTemplate>
+            </MudTable>
+        </section>
+
+        <section class="block">
+            <h2>@PanelText.LastDays</h2>
+            <DayBars Days="_overview.Days" Today="DateOnly.FromDateTime(_loadedAt!.Value.UtcDateTime)" />
+        </section>
     }
 }
 
 @code {
     private CtxUi.Core.Usage.Overview? _overview;
     private DateTimeOffset? _loadedAt;
+    private bool _grow;
 
     private string FailureShare => _overview!.Calls == 0
         ? PanelText.NoCalls
-        : string.Format(PanelText.FailureShare, Math.Round(100.0 * _overview.Failures / _overview.Calls));
+        : string.Format(PanelText.FailureShare, Math.Round(100.0 * _overview.Failures / _overview.Calls, 1));
 
-    protected override Task OnInitializedAsync() => LoadAsync();
+    protected override async Task OnInitializedAsync()
+    {
+        _grow = await Js.InvokeAsync<bool>("ctxUi.firstVisit", "ctx-ui:horizon");
+        await ReadAsync();
+    }
 
-    private async Task LoadAsync()
+    private Task LoadAsync()
+    {
+        _grow = false;
+        return ReadAsync();
+    }
+
+    private async Task ReadAsync()
     {
         _overview = await Backend.ReadAsync(services => services.GetRequiredService<OverviewService>().LoadAsync());
         _loadedAt = Clock.GetUtcNow();

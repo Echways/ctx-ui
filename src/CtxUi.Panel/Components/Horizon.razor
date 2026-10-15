@@ -1,0 +1,109 @@
+@using System.Globalization
+
+<div class="horizon">
+    <p class="hz-read @(_chosen is null ? "" : "on")" role="status">@Readout</p>
+    <svg class="hz @(_chosen is null ? "" : "focusing") @(Grow ? "grow" : "")" height="@Height" role="img" tabindex="0" aria-label="@Label"
+         @onkeydown="Move" @onblur="Release" @onmouseleave="Release">
+        <rect class="base" x="0" y="@Base" width="100%" height="1" />
+        @foreach (var tick in Ticks)
+        {
+            <rect class="tick" x="@Percent(tick)" y="@(Base + 4)" width="1" height="5" />
+        }
+        @for (var slot = 0; slot < Quarters.Count; slot++)
+        {
+            var quarter = Quarters[slot];
+            var x = Percent(slot + 0.5);
+            var on = slot == _chosen ? "on" : "";
+            if (quarter.Calls == 0)
+            {
+                <rect class="z @on" x="@x" y="@(Base - 1)" width="1" height="1" />
+                continue;
+            }
+
+            var top = Base - Stroke(quarter.Calls);
+            <line class="s @on" x1="@x" x2="@x" y1="@Base" y2="@Number(top)" style="--i: @slot" />
+            if (quarter.Failures > 0)
+            {
+                <circle class="f @on" cx="@x" cy="@Number(top - 7)" r="2.6" style="--i: @slot" />
+            }
+        }
+        <circle class="now" cx="100%" cy="@Number(Base + 0.5)" r="3.5" />
+        @for (var slot = 0; slot < Quarters.Count; slot++)
+        {
+            var chosen = slot;
+            <rect class="hit" x="@Percent(slot)" y="0" width="@Percent(1)" height="@Height" @onmouseenter="() => _chosen = chosen" />
+        }
+    </svg>
+    <div class="hz-axis" aria-hidden="true">
+        @foreach (var tick in Ticks)
+        {
+            <span style="left: @Percent(tick)">@Words.Clock(Quarters[tick].Start)</span>
+        }
+        <span class="now-label">@PanelText.Now</span>
+    </div>
+</div>
+
+@code {
+    private const int Height = 168;
+    private const int Base = 148;
+    private const int Tallest = 120;
+    private const int Lowest = 3;
+    private static readonly TimeSpan Length = TimeSpan.FromMinutes(15);
+
+    private int? _chosen;
+
+    [Parameter, EditorRequired]
+    public IReadOnlyList<Quarter> Quarters { get; set; } = [];
+
+    [Parameter]
+    public bool Grow { get; set; }
+
+    private int Peak => Math.Max(1, Quarters.Max(quarter => quarter.Calls));
+
+    private IEnumerable<int> Ticks => Enumerable.Range(0, Quarters.Count)
+        .Where(slot => Quarters[slot].Start is { Minute: 0 } start && start.UtcDateTime.Hour % 6 == 0);
+
+    private string Label => string.Format(
+        PanelText.HorizonLabel, Words.Number(Quarters.Sum(quarter => quarter.Calls)), Words.Number(Quarters.Sum(quarter => quarter.Failures)));
+
+    private string Readout
+    {
+        get
+        {
+            if (_chosen is not { } slot)
+                return PanelText.HorizonHint;
+
+            var quarter = Quarters[slot];
+            var parts = new List<string>
+            {
+                string.Format(PanelText.HorizonQuarter, Words.Clock(quarter.Start), Words.Clock(quarter.Start + Length)),
+                Words.Count(PanelText.QuarterCalls, quarter.Calls),
+            };
+            if (quarter.Failures > 0)
+                parts.Add(Words.Count(PanelText.QuarterFailures, quarter.Failures));
+            return string.Join(" · ", parts);
+        }
+    }
+
+    private double Stroke(int calls) => Math.Max(Lowest, Math.Sqrt((double)calls / Peak) * Tallest);
+
+    private string Percent(double slot) => Number(slot * 100 / Quarters.Count) + "%";
+
+    private static string Number(double value) => value.ToString("0.###", CultureInfo.InvariantCulture);
+
+    private void Release() => _chosen = null;
+
+    private void Move(KeyboardEventArgs key)
+    {
+        var last = Quarters.Count - 1;
+        _chosen = key.Key switch
+        {
+            "ArrowLeft" => _chosen is { } slot ? Math.Max(0, slot - 1) : last,
+            "ArrowRight" => _chosen is { } slot ? Math.Min(last, slot + 1) : last,
+            "Home" => 0,
+            "End" => last,
+            "Escape" => null,
+            _ => _chosen,
+        };
+    }
+}

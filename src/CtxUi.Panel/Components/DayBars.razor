@@ -1,0 +1,55 @@
+@using System.Globalization
+
+<div class="days">
+    @foreach (var day in Shown)
+    {
+        var today = day.Day == Today;
+        <div class="day @(today ? "today" : "")" title="@Detail(day)">
+            <span class="day-name">@Name(day.Day)@(today ? ", " + PanelText.Today : "")</span>
+            <span class="num">@Words.Number(day.Calls)</span>
+            <span class="day-bar" style="width: @Share(day.Calls)"></span>
+        </div>
+    }
+</div>
+<details class="more-days">
+    <summary>@PanelText.DaysInDetail</summary>
+    <MudTable Items="Shown.AsEnumerable().Reverse()" Elevation="0" Class="tbl">
+        <HeaderContent>
+            <MudTh>@PanelText.DayColumn</MudTh>
+            <MudTh Class="num">@PanelText.CallCountColumn</MudTh>
+            <MudTh Class="num">@PanelText.ToolsColumn</MudTh>
+            <MudTh Class="num">@PanelText.UpstreamFailuresColumn</MudTh>
+            <MudTh Class="num">@PanelText.RefusalsColumn</MudTh>
+            <MudTh Class="num">@PanelText.AverageColumn</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd>@Name(context.Day)</MudTd>
+            <MudTd DataLabel="@PanelText.CallCountColumn" Class="num">@Words.OrDash(context.Calls)</MudTd>
+            <MudTd DataLabel="@PanelText.ToolsColumn" Class="num">@Words.OrDash(context.ToolCalls)</MudTd>
+            <MudTd DataLabel="@PanelText.UpstreamFailuresColumn" Class="num">@Words.OrDash(context.Errors)</MudTd>
+            <MudTd DataLabel="@PanelText.RefusalsColumn" Class="num">@Words.OrDash(context.Refused)</MudTd>
+            <MudTd DataLabel="@PanelText.AverageColumn" Class="num">@Words.OrDash(context.Calls == 0 ? 0 : context.DurationMs / context.Calls)</MudTd>
+        </RowTemplate>
+    </MudTable>
+</details>
+
+@code {
+    [Parameter, EditorRequired]
+    public IReadOnlyList<DailyTotal> Days { get; set; } = [];
+
+    [Parameter, EditorRequired]
+    public DateOnly Today { get; set; }
+
+    private List<DailyTotal> Shown => Enumerable.Range(1 - OverviewService.DaysShown, OverviewService.DaysShown)
+        .Select(offset => Today.AddDays(offset))
+        .Select(day => Days.FirstOrDefault(total => total.Day == day) ?? new DailyTotal(day, 0, 0, 0, 0, 0))
+        .ToList();
+
+    private string Name(DateOnly day) => day.ToString("d MMMM", CultureInfo.CurrentCulture);
+
+    private string Share(int calls) =>
+        (100.0 * calls / Math.Max(1, Shown.Max(day => day.Calls))).ToString("0.#", CultureInfo.InvariantCulture) + "%";
+
+    private static string Detail(DailyTotal day) =>
+        $"{PanelText.UpstreamFailuresColumn}: {day.Errors} · {PanelText.RefusalsColumn}: {day.Refused}";
+}

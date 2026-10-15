@@ -2,162 +2,206 @@
 
 **English** · [Русский](docs/ru/README.md)
 
-A panel and a gateway for sharing access to your own MCP servers, in the
-spirit of 3x-ui. The administrator creates an inbound (an address and what is
-served behind it), creates a client with an expiry date and hands them a
-token.
+A gateway and web panel for sharing access to MCP servers, modelled on 3x-ui.
+An inbound is an address (`/mcp/<slug>`) backed by a remote MCP server. A
+client is a token with an expiry date, a set of inbounds and limits.
 
-Stages 1–3 are done: inbounds for remote MCP servers, limits and call
-accounting, a browser panel and command-line management.
+Done: stages 1–3. HTTP inbounds, per-client limits and quotas, call log,
+panel, CLI.
 
-## Installation
+## Install
 
-A binary with a systemd service, Linux x86_64 or aarch64:
+Binary + systemd, Linux x86_64/aarch64:
 
 ```bash
 curl -fsSL https://github.com/Echways/mcp-ui/releases/latest/download/install.sh | sudo bash
 ```
 
-Docker with Caddy and an automatic certificate, upgrading, removal and
-backups are described in [docs/install.md](docs/install.md).
+Docker + Caddy, upgrade, removal, backup: [docs/install.md](docs/install.md).
+The service does not terminate TLS; put Caddy or nginx in front.
 
-The service does not terminate TLS itself: put Caddy or nginx in front of it.
-
-## Panel
-
-The panel lives at a secret address. The address and the password are
-printed by the command:
+## Quick start
 
 ```bash
 sudo ctx-ui admin add admin
-```
-
-```text
-Администратор «admin» добавлен
-Логин:   admin
-Пароль:  Wq7c…
-Панель:  https://mcp.example.com/k3v9x0q2m7c1b8zd/
-```
-
-The program speaks Russian: `Логин` is the login, `Пароль` the password and
-`Панель` the panel address.
-
-The panel has four sections: «Обзор» (overview: clients, calls and failures
-over the last 24 hours), «Inbounds», «Клиенты» (clients) and «Журнал» (call
-log). The gateway applies changes at once, without a restart. After a client
-is added, the «Подключение» (connection) window opens: the token, the
-addresses and a ready-made message for the person who was given access.
-
-| Command | What it does |
-| --- | --- |
-| `admin add <login>` | adds an administrator, prints the password and the panel address |
-| `admin password <login>` | issues a new password, closes open sessions and lifts the login lockout |
-| `admin list`, `admin remove <login>` | list and removal |
-| `admin path` | shows the panel address; `--new` replaces it, the new one works after the service restarts |
-
-The password is shown once and stored only as a hash. Five wrong passwords
-in a row lock that login out for 15 minutes. At any address other than the
-secret one the panel answers 404.
-
-## Command-line management
-
-Everything the panel does can also be done with a command. A running
-service picks such changes up within a second, no restart needed.
-
-```bash
 sudo ctx-ui inbound add learn --url https://learn.microsoft.com/api/mcp
 sudo ctx-ui client add "Ivanov 4419" --inbound learn --expires 2027-07-01
-sudo ctx-ui client list
 ```
 
-In Docker the same commands go through `docker compose exec ctx-ui ctx-ui …`.
+`admin add` prints the login, a one-time password and the secret panel
+address. `client add` prints the token and the connection addresses. In
+Docker prefix commands with `docker compose exec ctx-ui`.
 
-| Command | What it does |
-| --- | --- |
-| `inbound add <slug> --url <address>` | an inbound for a remote MCP server; `--header Name=value` adds a header for it, `--forward-identity` passes the client identity on |
-| `inbound list`, `enable`, `disable`, `remove <slug>` | list and state |
-| `client add <name> --inbound <slug>` | issues a client, prints the token and the addresses; `--expires YYYY-MM-DD`, `--meta key=value`, limits `--rate`, `--concurrency`, `--quota`, `--reset-days` |
-| `client show <name>` | token, addresses, limits and quota usage |
-| `client set <name>` | changes the expiry (`--expires <date>` or `never`), the set of inbounds and the limits; `none` removes a limit |
-| `client reset <name>` | zeroes the quota counter and starts the period over |
-| `client reissue <name>` | a new token, the old one stops working |
-| `client list`, `enable`, `disable`, `remove <name>` | list and state |
-| `usage days`, `usage log` | daily totals and recent calls; `--client <name>` keeps a single client |
+Program output is in Russian.
 
 ## Connecting a client
 
-The token goes in the `Authorization: Bearer <token>` header or, if the
-client cannot set headers, right in the address:
-`/k/<token>/mcp/<slug>`. An address with a token is as good as a password.
+| Method | Address |
+| --- | --- |
+| header `Authorization: Bearer <token>` | `https://<host>/mcp/<slug>` |
+| token in the path, for clients without custom headers | `https://<host>/k/<token>/mcp/<slug>` |
 
 ```bash
 claude mcp add --transport http learn https://mcp.example.com/mcp/learn \
     --header "Authorization: Bearer tnk_..."
 ```
 
+A path with a token is a credential: treat it as a password.
+
+## Panel
+
+Served only under a random 16-character path; any other path gets 404.
+
+| Section | Contents |
+| --- | --- |
+| Обзор (overview) | active clients, calls and upstream failures over 24 h; per-inbound and daily totals |
+| Inbounds | create, edit, enable/disable, delete |
+| Клиенты (clients) | create, edit, enable/disable, search, connection window, new token, quota reset |
+| Журнал (log) | recent calls, filter by client |
+
+Changes apply to the gateway immediately. The connection window shows the
+token, addresses and a ready-to-send message for the client.
+
+Request timeout (default 300 s, 1–3600) and request body limit (default
+4 MB, 1 KB–64 MB) of an inbound are set only in the panel.
+
+Sign-in: the password is generated (20 characters), shown once, stored as a
+hash. 5 failed attempts lock the login for 15 minutes. The session cookie
+lives 7 days with sliding expiration.
+
+## CLI
+
+Changes made by the CLI reach a running service within `RefreshInterval`
+(1 s). No restart needed.
+
+### admin
+
+| Command | Effect |
+| --- | --- |
+| `admin add <login>` | create an administrator; prints password and panel address |
+| `admin password <login>` | new password; closes sessions, lifts lockout |
+| `admin list` | list with lockout state |
+| `admin remove <login>` | delete |
+| `admin path [--new]` | show panel address; `--new` generates a new one, active after restart |
+
+Login: 1–64 characters, `A-Z a-z 0-9 . _ -`.
+
+### inbound
+
+| Command | Effect |
+| --- | --- |
+| `inbound add <slug> --url <url>` | add an inbound for a streamable HTTP MCP server |
+| `inbound list` | slug, state, URL |
+| `inbound enable\|disable <slug>` | toggle without deleting |
+| `inbound remove <slug>` | delete, revoking it from all clients |
+
+`add` options: `--name <text>` display name (default: slug);
+`--header Name=value` upstream header, repeatable, stored encrypted;
+`--forward-identity` send client identity headers upstream.
+
+Slug: 1–64 characters, `a-z 0-9 -`, no leading or trailing hyphen.
+
+### client
+
+| Command | Effect |
+| --- | --- |
+| `client add <name> --inbound <slug>` | issue a client; prints token and addresses |
+| `client show <name>` | token, addresses, limits, quota usage |
+| `client set <name>` | change expiry, inbounds, limits |
+| `client reset <name>` | zero the quota counter, restart the period |
+| `client reissue <name>` | new token; the old one stops working |
+| `client list` | name, state, expiry, last use, quota, inbounds |
+| `client enable\|disable <name>` | toggle without deleting |
+| `client remove <name>` | delete |
+
+Options for `add` and `set`:
+
+| Option | Meaning |
+| --- | --- |
+| `--inbound <slug>` | repeatable; in `set` replaces the whole set |
+| `--expires YYYY-MM-DD` | access closes at 00:00 UTC of that day; `never` in `set` removes expiry |
+| `--meta key=value` | `add` only; repeatable; sent as `X-Mcp-Meta-<key>` |
+| `--rate N` | requests per minute |
+| `--concurrency N` | simultaneous `POST` requests |
+| `--quota N` | `tools/call` per period |
+| `--reset-days N` | quota period length; without it the quota is one-off |
+
+In `set`, `none` removes a limit. Omitted options keep their values.
+
+Name: 1–100 characters, unique ignoring case, no control characters. Quote
+names with spaces.
+
+### usage
+
+| Command | Effect |
+| --- | --- |
+| `usage days [--days N]` | daily totals, last N days (default 7, max 3650) |
+| `usage log [--limit N]` | recent calls, newest first (default 50, max 1000) |
+
+Both accept `--client <name>`. Times are UTC. Data reaches the database every
+`FlushInterval` (5 s), so it lags slightly.
+
 ## Limits
 
-A client has four optional limits. A limit that is not set does not apply.
+Each limit is optional; unset means unlimited.
 
-| Option | What it limits | What the client gets when it is exceeded |
+| Limit | Counts | When exceeded |
 | --- | --- | --- |
-| `--rate N` | requests per minute, of any kind | HTTP 429 with a `Retry-After` header |
-| `--concurrency N` | simultaneous `POST` requests | HTTP 429 with `Retry-After: 1` |
-| `--quota N` | `tools/call` calls per period | a tool result with `isError: true` and the time the limit resets |
-| `--reset-days N` | the length of the quota period; without it the quota is granted once | |
+| `--rate` | all requests, token bucket | HTTP 429, `Retry-After: <seconds until next>` |
+| `--concurrency` | in-flight `POST` | HTTP 429, `Retry-After: 1` |
+| `--quota` | `tools/call` per period | HTTP 200, tool result with `isError: true` and reset time |
 
-Only `tools/call` uses up the quota. A client with an exhausted quota still
-connects and sees the list of tools, and the refusal arrives as an ordinary
-tool result, so the model relays it to the person. A call that the upstream
-answered with an HTTP error or did not answer at all does not count.
+The quota is spent only by `tools/call`. With an exhausted quota the client
+still connects and lists tools; the refusal is a tool result, so the model
+relays it to the user. Calls the upstream answered with HTTP ≥ 400 or did not
+answer are refunded.
 
 ```bash
 sudo ctx-ui client set "Ivanov 4419" --quota 500 --reset-days 30 --rate 60
 sudo ctx-ui client set "Ivanov 4419" --rate none
-sudo ctx-ui client reset "Ivanov 4419"
-sudo ctx-ui usage days --client "Ivanov 4419"
-sudo ctx-ui usage log --limit 20
 ```
 
-The service writes counters and the call log to the database every few
-seconds, so the commands show them with a slight delay.
+## Gateway responses
+
+| Status | `error` | Cause |
+| --- | --- | --- |
+| 401 | `token_missing` | no token |
+| 401 | `token_unknown` | token not found |
+| 401 | `client_disabled` | client disabled |
+| 401 | `client_expired` | expiry passed |
+| 404 | `inbound_not_found` | no such inbound, disabled, or not granted |
+| 429 | `rate_limited`, `too_many_concurrent` | limit exceeded |
+| 413 | `body_too_large` | body over the inbound's limit |
+| 400 | JSON-RPC `-32600` | body is not valid JSON-RPC or batch > 100 |
 
 ## What the upstream receives
 
-The gateway removes the client token and adds the headers configured for
-the inbound. With `--forward-identity` it adds `X-Mcp-Client-Id`,
-`X-Mcp-Client-Name` and `X-Mcp-Meta-<key>`; the name and the values are
-percent-encoded UTF-8. The gateway strips the same headers when the client
-sends them itself.
+The client's request with its token removed, plus the inbound's headers.
+With `--forward-identity`: `X-Mcp-Client-Id`, `X-Mcp-Client-Name`,
+`X-Mcp-Meta-<key>`, values percent-encoded UTF-8. Client-sent headers with
+these names are stripped.
 
 ## Documentation
 
 - [Installation](docs/install.md)
 - [Configuration](docs/configuration.md)
-- [How it works](docs/internals.md)
+- [Internals](docs/internals.md)
 - [Releasing](docs/releasing.md)
 
 ## Development
 
-Requires the .NET 10 SDK.
+.NET 10 SDK.
 
 ```bash
 cd src/CtxUi.Server
-dotnet run
-dotnet run -- inbound list
-```
-
-The server listens on `http://127.0.0.1:8080` and keeps the database and the
-keys in the `data` directory next to the project.
-
-```bash
+dotnet run                    # http://127.0.0.1:8080, data in ./data
+dotnet run -- inbound list    # CLI
 dotnet test
 ```
 
-Integration tests start the gateway and a fake upstream on free ports. Panel
-tests open it in headless Chromium; on the first run it is downloaded to
-`~/.cache/ms-playwright`, and only that needs the network. Installation
-checks are described in [docs/releasing.md](docs/releasing.md).
+Integration tests run the gateway and a fake upstream on free ports. Panel
+tests use headless Chromium via Playwright; the first run downloads it to
+`~/.cache/ms-playwright`. Install checks: [docs/releasing.md](docs/releasing.md).
 
 ## License
 

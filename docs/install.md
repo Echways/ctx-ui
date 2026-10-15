@@ -2,62 +2,63 @@
 
 **English** · [Русский](ru/install.md)
 
-There are two ways: a binary with systemd and Docker with Caddy. Both install
-the same gateway and are managed with the same `ctx-ui` command.
+Two methods: binary + systemd, or Docker + Caddy. Same program, same
+`ctx-ui` command.
 
-Linux on x86_64 or aarch64 is required. There are no builds for Windows,
-macOS or Alpine.
+Platforms: Linux x86_64, aarch64. No builds for Windows, macOS, Alpine.
 
 ## Binary and systemd
+
+Requires root, systemd, `curl`, `tar`, `sha256sum`, `runuser`, `useradd`.
 
 ```bash
 curl -fsSL https://github.com/Echways/mcp-ui/releases/latest/download/install.sh | sudo bash
 ```
 
-The installer asks for two addresses:
+The installer asks for two addresses (on first install only):
 
-- **the external address**: the one clients see the gateway at, for example
-  `https://mcp.example.com`. The addresses printed by `ctx-ui client add`
-  start with it;
-- **the listen address**: where the service itself listens. The default is
-  `http://127.0.0.1:8080`, that is, only for a reverse proxy on the same
-  machine.
+- external address: what clients see, e.g. `https://mcp.example.com`;
+  prefix of all client and panel addresses;
+- listen address: default `http://127.0.0.1:8080`, reachable only by a local
+  reverse proxy.
 
-Without a terminal no questions are asked; the values come from options or
-variables:
+Without a terminal, values come from options or variables:
 
 | Option | Variable | Default |
 | --- | --- | --- |
 | `--public-url` | `CTX_UI_PUBLIC_URL` | `http://localhost:8080` |
 | `--listen` | `CTX_UI_LISTEN` | `http://127.0.0.1:8080` |
-| `--version` | `CTX_UI_VERSION` | the version of the release the installer came from |
-| `--archive` | none | the archive is downloaded from the release page |
-| none | `CTX_UI_DOWNLOAD_URL` | the GitHub release page; the address of a mirror holding the archive and `SHA256SUMS` |
+| `--version` | `CTX_UI_VERSION` | version of the release the installer came from |
+| `--archive <file>` | — | download from the release |
+| — | `CTX_UI_DOWNLOAD_URL` | release page; mirror holding the archive and `SHA256SUMS` |
 
 ```bash
 curl -fsSL https://github.com/Echways/mcp-ui/releases/latest/download/install.sh \
     | sudo bash -s -- --public-url https://mcp.example.com
 ```
 
-The downloaded archive is checked against `SHA256SUMS` of the same release.
-On a mismatch the installation stops and the system is left unchanged.
+The archive is verified against the release's `SHA256SUMS`; on mismatch the
+installer stops before changing anything.
 
-### What goes where
+If `/etc/ctx-ui/ctx-ui.env` exists, it is kept and `--public-url`/`--listen`
+are ignored. Edit the file and restart the service instead.
 
-| Path | What is there | On upgrade |
+### Layout
+
+| Path | Contents | On upgrade |
 | --- | --- | --- |
-| `/opt/ctx-ui/` | the program | replaced entirely |
-| `/etc/ctx-ui/ctx-ui.env` | settings | left alone |
-| `/var/lib/ctx-ui/` | the database and the encryption keys | left alone |
-| `/usr/local/bin/ctx-ui` | the management command | replaced |
-| `/etc/systemd/system/ctx-ui.service` | the service | replaced |
+| `/opt/ctx-ui/` | program | replaced |
+| `/etc/ctx-ui/ctx-ui.env` | settings | kept |
+| `/var/lib/ctx-ui/` | database, keys | kept |
+| `/usr/local/bin/ctx-ui` | CLI wrapper | replaced |
+| `/etc/systemd/system/ctx-ui.service` | unit | replaced |
 
-The service runs as the `ctx-ui` system user. The `ctx-ui` command is run
-with `sudo` and switches to that user by itself.
+The service runs as system user `ctx-ui`. Run the CLI with `sudo`; the
+wrapper loads `ctx-ui.env` and switches to `ctx-ui` itself.
 
 ### TLS
 
-The service does not terminate TLS. A reverse proxy goes in front of it.
+The service speaks plain HTTP. Put a reverse proxy in front.
 
 Caddy:
 
@@ -70,6 +71,11 @@ mcp.example.com {
 nginx:
 
 ```nginx
+map $http_upgrade $connection_upgrade {
+    default upgrade;
+    ''      close;
+}
+
 server {
     listen 443 ssl;
     server_name mcp.example.com;
@@ -88,47 +94,33 @@ server {
 }
 ```
 
-The `$connection_upgrade` variable is defined once in the `http` block:
+The `map` block goes in `http`.
 
-```nginx
-map $http_upgrade $connection_upgrade {
-    default upgrade;
-    ''      close;
-}
-```
+| Directive | Why |
+| --- | --- |
+| `proxy_buffering off` | streaming MCP responses (SSE) |
+| `Upgrade`, `Connection` | panel WebSocket |
+| `X-Forwarded-Proto` | `Secure` flag on the panel cookie, `https` redirects |
+| `access_log off` | paths contain the token (`/k/<token>/…`) and the secret panel path |
+| `proxy_read_timeout 1h` | long-lived MCP streams |
 
-`proxy_buffering off` is needed for streaming MCP responses. `Upgrade` and
-`Connection` are needed by the panel: it holds a WebSocket.
-`X-Forwarded-Proto` tells the service that the outside is HTTPS: without it
-the panel login cookie does not get the `Secure` flag. `access_log off` is
-needed because an address like `/k/<token>/mcp/<slug>` contains the token and
-the panel address contains its secret path: the access log would record them
-in full. Caddy does all of this by itself.
+Caddy handles all of this by default.
 
 ### Panel
 
 ```bash
-sudo ctx-ui admin add admin
+sudo ctx-ui admin add admin          # login, password, panel address
+sudo ctx-ui admin password admin     # new password
+sudo ctx-ui admin path               # panel address
 ```
-
-The command prints the login, the password and the panel address. The
-password is shown once; a forgotten one is replaced with
-`sudo ctx-ui admin password admin`. `sudo ctx-ui admin path` shows the panel
-address again.
 
 ### Upgrade
 
-The same installer from the new release. Settings and data stay, no
-questions are asked.
+Rerun the installer. Settings and data are kept, no questions asked.
 
 ```bash
 curl -fsSL https://github.com/Echways/mcp-ui/releases/latest/download/install.sh | sudo bash
-```
-
-A specific version:
-
-```bash
-curl -fsSL https://github.com/Echways/mcp-ui/releases/download/v0.1.0/install.sh | sudo bash
+curl -fsSL https://github.com/Echways/mcp-ui/releases/download/v0.1.0/install.sh | sudo bash   # specific version
 ```
 
 ### Removal
@@ -138,15 +130,13 @@ curl -fsSL https://github.com/Echways/mcp-ui/releases/latest/download/install.sh
     | sudo bash -s -- --uninstall
 ```
 
-The program, the service and the command are removed; settings and data
-stay. `--uninstall --purge` removes them too, along with the `ctx-ui` user.
+Removes the program, unit and CLI; keeps settings and data. Add `--purge` to
+also delete `/etc/ctx-ui`, `/var/lib/ctx-ui` and the `ctx-ui` user.
 
 ## Docker and Caddy
 
-You need Docker with Compose and a domain pointing at the server: Caddy gets
-a certificate for it by itself, so ports 80 and 443 must be open.
-
-Take the version from the releases page and put it in the first line.
+Requires Docker Compose, a domain pointing at the server, open ports 80 and
+443. Caddy obtains the certificate.
 
 ```bash
 VERSION=0.1.0
@@ -155,7 +145,7 @@ cd ctx-ui
 cp .env.example .env
 ```
 
-Write the domain into `.env`:
+`.env`:
 
 ```
 CTX_UI_VERSION=0.1.0
@@ -165,50 +155,34 @@ CTX_UI_DOMAIN=mcp.example.com
 ```bash
 docker compose up -d
 docker compose exec ctx-ui ctx-ui admin add admin
-```
-
-The command prints the panel address and the password; inbounds and clients
-are created in the panel or with the same commands as in the binary
-installation:
-
-```bash
 docker compose exec ctx-ui ctx-ui inbound add learn --url https://learn.microsoft.com/api/mcp
 docker compose exec ctx-ui ctx-ui client add "Ivanov" --inbound learn
 ```
 
-The container does not run as root, the gateway port is not published, and
-only Caddy faces the outside. The database and the keys live in the
-`ctx-ui-data` volume.
+The container runs as non-root with all capabilities dropped; port 8080 is
+not published, only Caddy is exposed. Data lives in the `ctx-ui-data`
+volume.
 
 ### Upgrade
 
-Change `CTX_UI_VERSION` in `.env`, then:
+Set the new `CTX_UI_VERSION` in `.env`:
 
 ```bash
 docker compose pull
 docker compose up -d
 ```
 
-### First release
-
-The image lives at `ghcr.io/echways/ctx-ui`. If `docker compose pull`
-answers `denied`, the package has not been made public yet, see
-[releasing.md](releasing.md).
+`denied` on pull: the ghcr.io package is still private, see
+[releasing.md](releasing.md#after-the-first-release).
 
 ## Backup
-
-Copy the data and the settings together:
 
 | Method | Data | Settings |
 | --- | --- | --- |
 | binary | `/var/lib/ctx-ui/` | `/etc/ctx-ui/ctx-ui.env` |
-| Docker | the `ctx-ui-data` volume | `.env` |
+| Docker | volume `ctx-ui-data` | `.env` |
 
-The `keys` directory inside the data matters as much as the database:
-without it issued tokens keep working but cannot be shown, only reissued,
-and inbounds with secret headers are disabled until they are added again.
-Open panel sessions are closed without it too: everyone has to sign in
-again.
-
-Better stop the service before copying: an SQLite database consists of
-several files, and a copy taken while it runs may come out inconsistent.
+Back up `keys/` together with the database; see
+[configuration.md](configuration.md#data-directory) for what is lost
+without it. Stop the service first: SQLite keeps several files, and a live
+copy may be inconsistent.

@@ -139,6 +139,25 @@ public class PanelClientsTests
     }
 
     [Fact]
+    public async Task Notice_of_a_change_appears_at_the_bottom_left_without_an_icon()
+    {
+        await using var gateway = await StartWithoutPollingAsync();
+        await gateway.AddInboundAsync("echo", "https://echo.example.org/mcp");
+        await gateway.AddClientAsync("Иванов", ["echo"]);
+        await using var session = await PanelSession.SignInAsync(gateway);
+        var page = await OpenClientsAsync(session);
+
+        await Row(page, "Иванов").GetByRole(AriaRole.Switch).UncheckAsync();
+
+        var notice = page.GetByText("Клиент «Иванов» отключён");
+        await Expect(notice).ToBeVisibleAsync();
+        var box = (await notice.BoundingBoxAsync())!;
+        Assert.True(box.X < 120, $"notice starts at x={box.X}");
+        Assert.True(box.Y > page.ViewportSize!.Height / 2, $"notice starts at y={box.Y}");
+        await Expect(page.Locator(".mud-snackbar svg")).ToHaveCountAsync(0);
+    }
+
+    [Fact]
     public async Task Quota_reset_gives_the_calls_back_at_once()
     {
         await using var upstream = await FakeUpstream.StartAsync();

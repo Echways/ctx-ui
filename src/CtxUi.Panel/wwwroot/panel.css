@@ -45,10 +45,6 @@
     }
 }
 
-html:hover {
-    scrollbar-color: var(--mist) transparent;
-}
-
 body {
     margin: 0;
     background: var(--night);
@@ -1264,6 +1260,31 @@ button.btn-k {
     .cl .lbl {
         grid-column: 1 / -1;
     }
+}
+
+.mud-snackbar-location-bottom-left {
+    left: var(--gutter);
+    bottom: 24px;
+}
+
+.mud-snackbar {
+    min-width: 0;
+    max-width: min(480px, calc(100vw - 2 * var(--gutter)));
+    padding: 12px 18px;
+    background: var(--light) !important;
+    color: var(--night) !important;
+    border-radius: 0;
+    box-shadow: none;
+    font: 500 13px/20px var(--sans);
+}
+
+.mud-snackbar .mud-snackbar-content-message {
+    padding: 0;
+}
+
+.mud-snackbar.mud-alert-filled-error, .mud-snackbar.mud-alert-filled-warning {
+    box-shadow: inset 3px 0 0 var(--vermilion);
+    padding-left: 21px;
 }
 
 .block {

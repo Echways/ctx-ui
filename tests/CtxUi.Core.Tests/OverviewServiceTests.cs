@@ -126,4 +126,45 @@ public class OverviewServiceTests
         Assert.Equal([new DateOnly(2026, 10, 6), new DateOnly(2026, 10, 12)], overview.Days.Select(day => day.Day));
         Assert.Equal((1, 1), (overview.Days[1].Calls, overview.Days[1].Refused));
     }
+
+    [Fact]
+    public async Task Day_is_cut_into_ninety_six_quarters_ending_with_the_current_one()
+    {
+        await using var database = await TestDatabase.CreateAsync();
+        _clock.Advance(TimeSpan.FromMinutes(7));
+
+        var quarters = (await LoadAsync(database)).Quarters;
+
+        Assert.Equal(96, quarters.Count);
+        Assert.Equal(TestData.Now.AddMinutes(-95 * 15), quarters[0].Start);
+        Assert.Equal(TestData.Now, quarters[^1].Start);
+        Assert.All(quarters.Zip(quarters.Skip(1)), pair => Assert.Equal(TimeSpan.FromMinutes(15), pair.Second.Start - pair.First.Start));
+        Assert.All(quarters, quarter => Assert.Equal((0, 0), (quarter.Calls, quarter.Failures)));
+    }
+
+    [Fact]
+    public async Task Calls_fall_into_the_quarter_they_were_made_in()
+    {
+        await using var database = await TestDatabase.CreateAsync();
+        _clock.Advance(TimeSpan.FromMinutes(7));
+        var first = TestData.Now.AddMinutes(-95 * 15);
+        await new UsageStore(database.NewContext()).AppendAsync(
+        [
+            Call(Stranger, Stranger, first.AddMilliseconds(-1)),
+            Call(Stranger, Stranger, first),
+            Call(Stranger, Stranger, first.AddMinutes(15).AddMilliseconds(-1), UsageOutcome.UpstreamFailed),
+            Call(Stranger, Stranger, first.AddMinutes(15)),
+            Call(Stranger, Stranger, TestData.Now.AddMinutes(-1), UsageOutcome.QuotaExhausted),
+            Call(Stranger, Stranger, TestData.Now.AddMinutes(7)),
+            Call(Stranger, Stranger, TestData.Now.AddMinutes(7), UsageOutcome.UpstreamFailed),
+        ]);
+
+        var quarters = (await LoadAsync(database)).Quarters;
+
+        Assert.Equal((2, 1), (quarters[0].Calls, quarters[0].Failures));
+        Assert.Equal((1, 0), (quarters[1].Calls, quarters[1].Failures));
+        Assert.Equal((0, 0), (quarters[94].Calls, quarters[94].Failures));
+        Assert.Equal((2, 1), (quarters[^1].Calls, quarters[^1].Failures));
+        Assert.Equal(5, quarters.Sum(quarter => quarter.Calls));
+    }
 }

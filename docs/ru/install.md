@@ -12,7 +12,7 @@
 Нужны root, systemd, `curl`, `tar`, `sha256sum`, `runuser`, `useradd`.
 
 ```bash
-curl -fsSL https://github.com/Echways/mcp-ui/releases/latest/download/install.sh | sudo bash
+curl -fsSL https://github.com/Echways/ctx-ui/releases/latest/download/install.sh | sudo bash
 ```
 
 Установщик спрашивает два адреса (только при первой установке):
@@ -33,7 +33,7 @@ curl -fsSL https://github.com/Echways/mcp-ui/releases/latest/download/install.sh
 | — | `CTX_UI_DOWNLOAD_URL` | страница релиза; зеркало с архивом и `SHA256SUMS` |
 
 ```bash
-curl -fsSL https://github.com/Echways/mcp-ui/releases/latest/download/install.sh \
+curl -fsSL https://github.com/Echways/ctx-ui/releases/latest/download/install.sh \
     | sudo bash -s -- --public-url https://mcp.example.com
 ```
 
@@ -119,14 +119,14 @@ sudo ctx-ui admin path               # адрес панели
 Повторный запуск установщика. Настройки и данные сохраняются, вопросов нет.
 
 ```bash
-curl -fsSL https://github.com/Echways/mcp-ui/releases/latest/download/install.sh | sudo bash
-curl -fsSL https://github.com/Echways/mcp-ui/releases/download/v0.1.0/install.sh | sudo bash   # конкретная версия
+curl -fsSL https://github.com/Echways/ctx-ui/releases/latest/download/install.sh | sudo bash
+curl -fsSL https://github.com/Echways/ctx-ui/releases/download/v0.1.0/install.sh | sudo bash   # конкретная версия
 ```
 
 ### Удаление
 
 ```bash
-curl -fsSL https://github.com/Echways/mcp-ui/releases/latest/download/install.sh \
+curl -fsSL https://github.com/Echways/ctx-ui/releases/latest/download/install.sh \
     | sudo bash -s -- --uninstall
 ```
 
@@ -140,7 +140,7 @@ curl -fsSL https://github.com/Echways/mcp-ui/releases/latest/download/install.sh
 
 ```bash
 VERSION=0.1.0
-curl -fsSL https://github.com/Echways/mcp-ui/releases/download/v$VERSION/ctx-ui-$VERSION-docker.tar.gz | tar -xz
+curl -fsSL https://github.com/Echways/ctx-ui/releases/download/v$VERSION/ctx-ui-$VERSION-docker.tar.gz | tar -xz
 cd ctx-ui
 cp .env.example .env
 ```

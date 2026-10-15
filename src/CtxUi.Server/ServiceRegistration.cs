@@ -38,8 +38,13 @@ public static class ServiceRegistration
     private static void CreatePrivateDirectory(string path)
     {
         if (OperatingSystem.IsWindows())
+        {
             Directory.CreateDirectory(path);
-        else
-            Directory.CreateDirectory(path, OwnerOnly);
+            return;
+        }
+
+        Directory.CreateDirectory(path, OwnerOnly);
+        if (File.GetUnixFileMode(path) != OwnerOnly)
+            File.SetUnixFileMode(path, OwnerOnly);
     }
 }

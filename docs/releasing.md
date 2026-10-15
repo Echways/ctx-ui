@@ -38,7 +38,7 @@ The ghcr.io package is created private. Once: package page → Package
 settings → Change visibility → Public. Until then `docker compose pull`
 returns `denied` for others.
 
-On the same page, confirm the package is linked to the `mcp-ui` repository,
+On the same page, confirm the package is linked to the `ctx-ui` repository,
 otherwise later releases cannot push to it.
 
 ## Local checks

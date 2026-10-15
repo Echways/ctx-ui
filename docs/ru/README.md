@@ -6,15 +6,15 @@
 Inbound — адрес (`/mcp/<slug>`), за которым стоит удалённый MCP-сервер.
 Клиент — токен со сроком, набором inbound'ов и лимитами.
 
-Готово: этапы 1–3. HTTP-inbound'ы, лимиты и квоты клиентов, журнал вызовов,
-панель, CLI.
+Есть HTTP-inbound'ы (streamable HTTP), лимиты и квоты клиентов, журнал
+вызовов, веб-панель и CLI.
 
 ## Установка
 
 Бинарник + systemd, Linux x86_64/aarch64:
 
 ```bash
-curl -fsSL https://github.com/Echways/mcp-ui/releases/latest/download/install.sh | sudo bash
+curl -fsSL https://github.com/Echways/ctx-ui/releases/latest/download/install.sh | sudo bash
 ```
 
 Docker + Caddy, обновление, удаление, резервная копия: [install.md](install.md).

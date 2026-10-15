@@ -2,7 +2,7 @@
 set -euo pipefail
 
 default_version=""
-repo="Echways/mcp-ui"
+repo="Echways/ctx-ui"
 user="ctx-ui"
 home="/opt/ctx-ui"
 config_dir="/etc/ctx-ui"

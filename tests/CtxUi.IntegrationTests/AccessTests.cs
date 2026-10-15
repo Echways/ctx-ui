@@ -198,6 +198,30 @@ public class AccessTests
     }
 
     [Fact]
+    public async Task Existing_data_directory_is_closed_to_others()
+    {
+        if (OperatingSystem.IsWindows())
+            return;
+
+        var dataDir = Directory.CreateTempSubdirectory("ctx-ui-").FullName;
+        try
+        {
+            File.SetUnixFileMode(dataDir, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute
+                | UnixFileMode.GroupRead | UnixFileMode.GroupExecute | UnixFileMode.OtherRead | UnixFileMode.OtherExecute);
+
+            await CliRunner.RunAsync(dataDir, "client", "list");
+
+            Assert.Equal(
+                UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute,
+                File.GetUnixFileMode(dataDir));
+        }
+        finally
+        {
+            Directory.Delete(dataDir, recursive: true);
+        }
+    }
+
+    [Fact]
     public async Task Token_never_appears_in_the_log_whatever_way_it_arrives()
     {
         var logs = new CapturingLogs();

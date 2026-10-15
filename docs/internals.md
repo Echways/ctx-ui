@@ -2,8 +2,7 @@
 
 **English** · [Русский](ru/internals.md)
 
-Design decisions not evident from the code. The code has no comments; the
-explanations are here.
+Design decisions not evident from the code.
 
 ## Projects
 
@@ -332,6 +331,11 @@ with `/tmp` mounted `noexec`, `-x` is always false.
 for the target; the final stage has no `RUN`, so arm64 builds on x64
 without emulation. `.dockerignore` is `Dockerfile.dockerignore` next to the
 Dockerfile to keep the root clean.
+
+**Data directory mode.** The program sets `700` on the data directory and
+`keys/` at every start, not only when it creates them. The mode of `/data`
+in the image and of a volume created from it depends on the Docker version:
+`COPY --chmod` alone has produced `755`.
 
 **Packaging.** `deploy/package.sh` builds all release files. The `release`
 workflow and `deploy/tests/linux.sh` both use it, so the installer is tested

@@ -6,15 +6,15 @@ A gateway and web panel for sharing access to MCP servers, modelled on 3x-ui.
 An inbound is an address (`/mcp/<slug>`) backed by a remote MCP server. A
 client is a token with an expiry date, a set of inbounds and limits.
 
-Done: stages 1–3. HTTP inbounds, per-client limits and quotas, call log,
-panel, CLI.
+Supports streamable HTTP inbounds, per-client limits and quotas, a call
+log, a web panel and a CLI.
 
 ## Install
 
 Binary + systemd, Linux x86_64/aarch64:
 
 ```bash
-curl -fsSL https://github.com/Echways/mcp-ui/releases/latest/download/install.sh | sudo bash
+curl -fsSL https://github.com/Echways/ctx-ui/releases/latest/download/install.sh | sudo bash
 ```
 
 Docker + Caddy, upgrade, removal, backup: [docs/install.md](docs/install.md).

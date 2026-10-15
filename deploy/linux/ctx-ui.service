@@ -1,6 +1,6 @@
 [Unit]
 Description=ctx-ui MCP gateway
-Documentation=https://github.com/Echways/mcp-ui
+Documentation=https://github.com/Echways/ctx-ui
 After=network-online.target
 Wants=network-online.target
 

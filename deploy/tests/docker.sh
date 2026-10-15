@@ -51,6 +51,20 @@ response_becomes() {
     return 1
 }
 
+data_mode_becomes() {
+    local expected="$1" actual=""
+    for _ in $(seq 1 30); do
+        actual="$(compose exec -T ctx-ui stat -c '%a %u' /data 2>&1 || true)"
+        if [ "$actual" = "$expected" ]; then
+            return 0
+        fi
+        sleep 1
+    done
+    echo "      expected: $expected"
+    echo "      actual:   $actual"
+    return 1
+}
+
 docker build -q -f "$root/deploy/docker/Dockerfile" --build-arg "VERSION=$version" \
     -t "ghcr.io/echways/ctx-ui:$version" "$root" > /dev/null
 
@@ -79,7 +93,7 @@ compose up -d > /dev/null 2>&1
 
 echo "== container"
 check "runs without root" equals 1654 "$(compose exec -T ctx-ui id -u)"
-check "data directory is private" equals "700 1654" "$(compose exec -T ctx-ui stat -c '%a %u' /data)"
+check "data directory is private" data_mode_becomes "700 1654"
 
 echo "== command line"
 output="$(compose exec -T ctx-ui ctx-ui inbound add echo --url http://upstream:9000/mcp 2>&1)" || true

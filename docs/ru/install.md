@@ -1,5 +1,7 @@
 # Установка
 
+[English](../install.md) · **Русский**
+
 Есть два способа: бинарник с systemd и Docker с Caddy. Оба ставят один и
 тот же шлюз и управляются одной и той же командой `ctx-ui`.
 
@@ -75,6 +77,9 @@ server {
         proxy_pass http://127.0.0.1:8080;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $connection_upgrade;
         proxy_buffering off;
         proxy_read_timeout 1h;
         access_log off;
@@ -82,9 +87,32 @@ server {
 }
 ```
 
-`proxy_buffering off` нужен для потоковых ответов MCP. `access_log off`
-нужен потому, что адрес вида `/k/<токен>/mcp/<slug>` содержит токен, а
-журнал доступа записал бы его целиком.
+Переменная `$connection_upgrade` задаётся один раз в блоке `http`:
+
+```nginx
+map $http_upgrade $connection_upgrade {
+    default upgrade;
+    ''      close;
+}
+```
+
+`proxy_buffering off` нужен для потоковых ответов MCP. `Upgrade` и
+`Connection` нужны панели: она держит WebSocket. `X-Forwarded-Proto`
+сообщает сервису, что снаружи HTTPS: без него cookie входа в панель не
+получит отметку `Secure`. `access_log off` нужен потому, что адрес вида
+`/k/<токен>/mcp/<slug>` содержит токен, а адрес панели содержит её
+секретный путь: журнал доступа записал бы их целиком. Caddy всё это делает
+сам.
+
+### Панель
+
+```bash
+sudo ctx-ui admin add admin
+```
+
+Команда печатает логин, пароль и адрес панели. Пароль показывается один
+раз; забытый заменяется командой `sudo ctx-ui admin password admin`. Адрес
+панели повторно показывает `sudo ctx-ui admin path`.
 
 ### Обновление
 
@@ -134,6 +162,13 @@ CTX_UI_DOMAIN=mcp.example.com
 
 ```bash
 docker compose up -d
+docker compose exec ctx-ui ctx-ui admin add admin
+```
+
+Команда печатает адрес панели и пароль; inbound'ы и клиенты заводятся в
+панели или теми же командами, что и при установке бинарником:
+
+```bash
 docker compose exec ctx-ui ctx-ui inbound add learn --url https://learn.microsoft.com/api/mcp
 docker compose exec ctx-ui ctx-ui client add "Иванов" --inbound learn
 ```
@@ -167,6 +202,7 @@ docker compose up -d
 Каталог `keys` внутри данных так же важен, как база: без него выпущенные
 токены продолжают работать, но показать их нельзя, только перевыпустить, а
 inbound'ы с секретными заголовками выключаются до повторного добавления.
+Открытые сеансы панели без него тоже закрываются: входить придётся заново.
 
 Перед копированием сервис лучше остановить: база SQLite состоит из
 нескольких файлов, и копия на ходу может получиться несогласованной.

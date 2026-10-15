@@ -232,6 +232,11 @@ with no body. The list of open addresses is set in `ServerApp.Build`. A new
 address that is not on that list stays closed rather than opening by
 accident.
 
+An open path belongs wholly to its owner. Everything under `/mcp` that is not
+`/mcp/<slug>` gets 404 from the gateway itself; otherwise the panel's "no such
+page" route would answer `/mcp` or `/mcp/a/b` outside the secret path with a
+redirect to its login form.
+
 Like the token, the secret path is cut out of the address before routing and
 never reaches the server log. The login cookie is bound to the secret path
 and the browser does not send it outside of it.

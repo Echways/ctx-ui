@@ -31,6 +31,22 @@ public class PanelAccessTests
         Assert.Equal("", await response.Content.ReadAsStringAsync());
     }
 
+    [Theory]
+    [InlineData("/mcp")]
+    [InlineData("/mcp/")]
+    [InlineData("/mcp/echo/extra")]
+    [InlineData("/mcp/echo/login")]
+    public async Task Addresses_under_the_gateway_path_never_reach_the_panel(string path)
+    {
+        await using var gateway = await GatewayHost.StartAsync();
+        using var http = new HttpClient(new HttpClientHandler { AllowAutoRedirect = false }) { BaseAddress = new Uri(gateway.BaseUrl) };
+
+        using var response = await http.GetAsync(path);
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        Assert.Equal("", await response.Content.ReadAsStringAsync());
+    }
+
     [Fact]
     public async Task Secret_path_typed_without_the_slash_leads_to_the_one_with_it()
     {

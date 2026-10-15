@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using CtxUi.Core.Clients;
@@ -31,6 +32,11 @@ public static class GatewayServices
     public static WebApplication MapCtxUiGateway(this WebApplication app)
     {
         app.Map(Path + "/{slug}", app.Services.GetRequiredService<GatewayHandler>().HandleAsync);
+        app.Map(Path + "/{**rest}", context =>
+        {
+            context.Response.StatusCode = StatusCodes.Status404NotFound;
+            return Task.CompletedTask;
+        });
         return app;
     }
 

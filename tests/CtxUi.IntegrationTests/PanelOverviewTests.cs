@@ -1,0 +1,109 @@
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Playwright;
+using CtxUi.Core.Clients;
+using CtxUi.Core.Inbounds;
+using CtxUi.Core.Usage;
+using static Microsoft.Playwright.Assertions;
+
+namespace CtxUi.IntegrationTests;
+
+public class PanelOverviewTests
+{
+    private const string ToolCall = """{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"echo","arguments":{}}}""";
+    private const string ToolsList = """{"jsonrpc":"2.0","id":1,"method":"tools/list"}""";
+
+    private static ILocator Tile(IPage page, string title) => page.GetByRole(AriaRole.Group, new() { Name = title });
+
+    private static ILocator Row(IPage page, string text) => page.GetByRole(AriaRole.Row).Filter(new() { HasText = text });
+
+    private static Task JournalHasAsync(GatewayHost gateway, int calls) => Eventually.TrueAsync(
+        () => gateway.ChangeAsync(async services =>
+            (await services.GetRequiredService<UsageStore>().RecentAsync(null, 100)).Count == calls),
+        "журнал дошёл до базы");
+
+    [Fact]
+    public async Task Fresh_installation_shows_zeroes_and_leads_to_the_first_step()
+    {
+        await using var gateway = await GatewayHost.StartAsync();
+        await using var session = await PanelSession.SignInAsync(gateway);
+        var page = session.Page;
+
+        await Expect(Tile(page, "Клиенты")).ToContainTextAsync("0 из 0");
+        await Expect(Tile(page, "Вызовы за сутки")).ToContainTextAsync("0");
+        await Expect(page.GetByText("Чтобы выдать первый доступ")).ToBeVisibleAsync();
+        await Expect(page.GetByRole(AriaRole.Table)).ToHaveCountAsync(0);
+
+        await page.GetByRole(AriaRole.Link, new() { Name = "добавьте inbound" }).ClickAsync();
+        await Expect(page.GetByRole(AriaRole.Heading, new() { Name = "Inbounds" })).ToBeVisibleAsync();
+    }
+
+    [Fact]
+    public async Task Numbers_tell_about_clients_inbounds_and_the_calls_of_the_last_day()
+    {
+        await using var upstream = await FakeUpstream.StartAsync((app, _) =>
+            app.Map("/broken", context =>
+            {
+                context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+                return Task.CompletedTask;
+            }));
+        await using var gateway = await GatewayHost.StartAsync();
+        await gateway.AddInboundAsync("echo", upstream.McpUrl);
+        await gateway.AddInboundAsync("broken", upstream.BaseUrl + "/broken");
+        await gateway.AddInboundAsync("idle", upstream.McpUrl);
+        var issued = await gateway.AddClientAsync("Иванов", ["echo", "broken"]);
+        await gateway.AddClientAsync("Отключённый", ["echo"]);
+        await gateway.ArrangeAsync(async services =>
+        {
+            await services.GetRequiredService<InboundService>().SetEnabledAsync("idle", false);
+            await services.GetRequiredService<ClientService>().SetEnabledAsync("Отключённый", false);
+            return true;
+        });
+        using var first = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/echo", issued.Token, ToolCall));
+        using var second = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/echo", issued.Token, ToolCall));
+        using var listed = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/echo", issued.Token, ToolsList));
+        using var failed = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/broken", issued.Token, ToolCall));
+        await JournalHasAsync(gateway, 4);
+        await Eventually.TrueAsync(
+            () => gateway.ChangeAsync(async services =>
+                (await services.GetRequiredService<ClientService>().GetAsync("Иванов")).LastUsedAt is not null),
+            "отметка обращения дошла до базы");
+        await using var session = await PanelSession.SignInAsync(gateway);
+        var page = session.Page;
+
+        await Expect(Tile(page, "Клиенты")).ToContainTextAsync("1 из 2");
+        await Expect(Tile(page, "Обращались за сутки")).ToContainTextAsync("1");
+        await Expect(Tile(page, "Вызовы за сутки")).ToContainTextAsync("4");
+        await Expect(Tile(page, "Вызовы за сутки")).ToContainTextAsync("инструментов: 3");
+        await Expect(Tile(page, "Сбои upstream за сутки")).ToContainTextAsync("1");
+        await Expect(Tile(page, "Сбои upstream за сутки")).ToContainTextAsync("25 %");
+        await Expect(Row(page, "/mcp/echo")).ToContainTextAsync("включён");
+        await Expect(Row(page, "/mcp/echo").GetByRole(AriaRole.Cell)).ToHaveTextAsync(["/mcp/echo", "echo", "включён", "2", "3", "0"]);
+        await Expect(Row(page, "/mcp/broken").GetByRole(AriaRole.Cell)).ToHaveTextAsync(["/mcp/broken", "broken", "включён", "1", "1", "1"]);
+        await Expect(Row(page, "/mcp/idle").GetByRole(AriaRole.Cell)).ToHaveTextAsync(["/mcp/idle", "idle", "выключен", "0", "0", "0"]);
+        var today = DateTimeOffset.UtcNow.ToString("yyyy-MM-dd");
+        await Expect(Row(page, today).GetByRole(AriaRole.Cell).Nth(1)).ToHaveTextAsync("4");
+        await Expect(Row(page, today).GetByRole(AriaRole.Cell).Nth(2)).ToHaveTextAsync("3");
+        await Expect(Row(page, today).GetByRole(AriaRole.Cell).Nth(3)).ToHaveTextAsync("1");
+        await Expect(Row(page, today).GetByRole(AriaRole.Cell).Nth(4)).ToHaveTextAsync("0");
+    }
+
+    [Fact]
+    public async Task Refresh_button_brings_the_calls_made_since_the_page_was_opened()
+    {
+        await using var upstream = await FakeUpstream.StartAsync();
+        await using var gateway = await GatewayHost.StartAsync();
+        await gateway.AddInboundAsync("echo", upstream.McpUrl);
+        var issued = await gateway.AddClientAsync("Иванов", ["echo"]);
+        await using var session = await PanelSession.SignInAsync(gateway);
+        var page = session.Page;
+        await Expect(Tile(page, "Вызовы за сутки")).ToContainTextAsync("0");
+        using var call = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/echo", issued.Token, ToolCall));
+        await JournalHasAsync(gateway, 1);
+
+        await page.GetByRole(AriaRole.Button, new() { Name = "Обновить" }).ClickAsync();
+
+        await Expect(Tile(page, "Вызовы за сутки")).ToContainTextAsync("инструментов: 1");
+    }
+}

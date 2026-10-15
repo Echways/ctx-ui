@@ -1,5 +1,98 @@
 @page "/"
+@inject PanelBackend Backend
 
 <PageTitle>Обзор</PageTitle>
 
-<MudText Typo="Typo.h5" GutterBottom="true">Обзор</MudText>
+<MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-4">
+    <MudText Typo="Typo.h5">Обзор</MudText>
+    <MudSpacer />
+    <MudIconButton Icon="@Icons.Material.Filled.Refresh" aria-label="Обновить" title="Обновить" OnClick="LoadAsync" />
+</MudStack>
+
+@if (_overview is null)
+{
+    <MudProgressLinear Indeterminate="true" />
+}
+else
+{
+    <MudGrid Class="mb-2">
+        <MudItem xs="12" sm="6" md="3">
+            <Tile Title="Клиенты" Value="@($"{_overview.ActiveClients} из {_overview.Clients}")" Note="активных из всех" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <Tile Title="Обращались за сутки" Value="@_overview.SeenClients.ToString()" Note="клиентов" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <Tile Title="Вызовы за сутки" Value="@_overview.Calls.ToString()" Note="@($"из них инструментов: {_overview.ToolCalls}")" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <Tile Title="Сбои upstream за сутки" Value="@_overview.Failures.ToString()" Note="@FailureShare" />
+        </MudItem>
+    </MudGrid>
+
+    @if (_overview.Inbounds.Count == 0)
+    {
+        <MudAlert Severity="Severity.Info">
+            Чтобы выдать первый доступ, <MudLink Href="inbounds">добавьте inbound</MudLink>,
+            а затем <MudLink Href="clients">клиента</MudLink>.
+        </MudAlert>
+    }
+    else
+    {
+        <MudText Typo="Typo.h6" Class="mt-4 mb-2">Inbounds</MudText>
+        <MudTable Items="_overview.Inbounds" Dense="true" Hover="true" Elevation="1">
+            <HeaderContent>
+                <MudTh>Адрес</MudTh>
+                <MudTh>Название</MudTh>
+                <MudTh>Состояние</MudTh>
+                <MudTh>Клиентов</MudTh>
+                <MudTh>Вызовов за сутки</MudTh>
+                <MudTh>Сбоев upstream</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd>/mcp/@context.Slug</MudTd>
+                <MudTd>@context.Name</MudTd>
+                <MudTd>@(context.Enabled ? "включён" : "выключен")</MudTd>
+                <MudTd>@context.Clients</MudTd>
+                <MudTd>@context.Calls</MudTd>
+                <MudTd>@context.Failures</MudTd>
+            </RowTemplate>
+        </MudTable>
+    }
+
+    @if (_overview.Days.Count > 0)
+    {
+        <MudText Typo="Typo.h6" Class="mt-6 mb-2">По дням, UTC</MudText>
+        <MudTable Items="_overview.Days.Reverse()" Dense="true" Hover="true" Elevation="1">
+            <HeaderContent>
+                <MudTh>День</MudTh>
+                <MudTh>Вызовов</MudTh>
+                <MudTh>Инструментов</MudTh>
+                <MudTh>Сбоев upstream</MudTh>
+                <MudTh>Отказов шлюза</MudTh>
+                <MudTh>В среднем, мс</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd>@context.Day.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture)</MudTd>
+                <MudTd>@context.Calls</MudTd>
+                <MudTd>@context.ToolCalls</MudTd>
+                <MudTd>@context.Errors</MudTd>
+                <MudTd>@context.Refused</MudTd>
+                <MudTd>@(context.Calls == 0 ? 0 : context.DurationMs / context.Calls)</MudTd>
+            </RowTemplate>
+        </MudTable>
+    }
+}
+
+@code {
+    private CtxUi.Core.Usage.Overview? _overview;
+
+    private string FailureShare => _overview!.Calls == 0
+        ? "вызовов не было"
+        : $"{Math.Round(100.0 * _overview.Failures / _overview.Calls)} % вызовов";
+
+    protected override Task OnInitializedAsync() => LoadAsync();
+
+    private async Task LoadAsync() =>
+        _overview = await Backend.ReadAsync(services => services.GetRequiredService<OverviewService>().LoadAsync());
+}

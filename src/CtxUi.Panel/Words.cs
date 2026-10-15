@@ -23,6 +23,4 @@ public static class Words
 
     public static string Count(string pattern, long count) => MessageFormatter.Format(
         pattern, new Dictionary<string, object?> { ["n"] = count, ["number"] = Number(count) }, CultureInfo.CurrentUICulture);
-
-    public static string Second(DateTimeOffset moment) => moment.UtcDateTime.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
 }

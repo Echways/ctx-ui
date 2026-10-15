@@ -25,7 +25,7 @@
     <value>Обзор</value>
   </data>
   <data name="Inbounds" xml:space="preserve">
-    <value>Inbounds</value>
+    <value>Inbound'ы</value>
   </data>
   <data name="Inbound" xml:space="preserve">
     <value>Inbound</value>
@@ -60,14 +60,11 @@
   <data name="Close" xml:space="preserve">
     <value>Закрыть</value>
   </data>
-  <data name="Issue" xml:space="preserve">
-    <value>Выпустить</value>
-  </data>
   <data name="Copied" xml:space="preserve">
     <value>Скопировано</value>
   </data>
   <data name="CopyNeedsHttps" xml:space="preserve">
-    <value>Браузер разрешает копировать только на странице, открытой по HTTPS. Выделите текст и скопируйте его сами.</value>
+    <value>Браузер копирует только на странице, открытой по HTTPS: выделите текст и скопируйте его сами</value>
   </data>
   <data name="Name" xml:space="preserve">
     <value>Имя</value>
@@ -82,7 +79,7 @@
     <value>Состояние</value>
   </data>
   <data name="ClientCount" xml:space="preserve">
-    <value>Клиентов</value>
+    <value>Клиенты</value>
   </data>
   <data name="Enabled" xml:space="preserve">
     <value>Включён</value>
@@ -220,7 +217,7 @@
     <value>Длительность</value>
   </data>
   <data name="JournalLimit" xml:space="preserve">
-    <value>Показаны последние {0} вызовов.</value>
+    <value>Показаны не больше {number} последних {n, plural, one {вызова} other {вызовов}}</value>
   </data>
   <data name="ApiDocs" xml:space="preserve">
     <value>Документация API</value>
@@ -235,7 +232,7 @@
     <value>Ключ</value>
   </data>
   <data name="IssuedColumn" xml:space="preserve">
-    <value>Выпущен (UTC)</value>
+    <value>Выпущен, UTC</value>
   </data>
   <data name="Revoke" xml:space="preserve">
     <value>Отозвать</value>
@@ -289,22 +286,22 @@
     <value>{0} % вызовов</value>
   </data>
   <data name="CallsInDayColumn" xml:space="preserve">
-    <value>Вызовов за сутки</value>
+    <value>Вызовы за сутки</value>
   </data>
   <data name="UpstreamFailuresColumn" xml:space="preserve">
-    <value>Сбоев upstream</value>
+    <value>Сбои upstream</value>
   </data>
   <data name="DayColumn" xml:space="preserve">
     <value>День</value>
   </data>
   <data name="CallCountColumn" xml:space="preserve">
-    <value>Вызовов</value>
+    <value>Вызовы</value>
   </data>
   <data name="ToolsColumn" xml:space="preserve">
-    <value>Инструментов</value>
+    <value>К инструментам</value>
   </data>
   <data name="RefusalsColumn" xml:space="preserve">
-    <value>Отказов шлюза</value>
+    <value>Отказы шлюза</value>
   </data>
   <data name="AverageColumn" xml:space="preserve">
     <value>В среднем, мс</value>
@@ -313,7 +310,7 @@
     <value>кому выдан ключ: латинские буквы, цифры, точка, дефис и подчёркивание</value>
   </data>
   <data name="KeyShownOnce" xml:space="preserve">
-    <value>Ключ показан один раз. Сохраните его сейчас: потом его не увидеть даже в панели.</value>
+    <value>Ключ показан один раз: сохраните его сейчас, потом его не увидеть даже в панели</value>
   </data>
   <data name="KeyHelp" xml:space="preserve">
     <value>передаётся заголовком Authorization: Bearer &lt;ключ&gt;</value>
@@ -322,7 +319,7 @@
     <value>Скопировать ключ</value>
   </data>
   <data name="AddInboundFirst" xml:space="preserve">
-    <value>Сначала добавьте inbound: клиенту нужно выдать доступ хотя бы к одному.</value>
+    <value>Сначала добавьте inbound: клиенту нужен доступ хотя бы к одному</value>
   </data>
   <data name="ClientNameHelp" xml:space="preserve">
     <value>как клиент будет называться в списке и в журнале</value>
@@ -364,10 +361,10 @@
     <value>Метаданные</value>
   </data>
   <data name="MetadataHelp" xml:space="preserve">
-    <value>по одной паре в строке: ключ=значение. Уходят upstream заголовками X-Mcp-Meta-*</value>
+    <value>по одной паре в строке, ключ=значение; уходят upstream заголовками X-Mcp-Meta-*</value>
   </data>
   <data name="TokenLost" xml:space="preserve">
-    <value>Токен показать нельзя: его сохранённая копия не расшифрована, потерян каталог keys. Прежний токен продолжает работать у того, кому он выдан. Чтобы увидеть токен, выпустите новый.</value>
+    <value>Токен показать нельзя: его сохранённая копия не читается, потерян каталог keys. Выпустите новый, и прежний перестанет работать</value>
   </data>
   <data name="Token" xml:space="preserve">
     <value>Токен</value>
@@ -409,7 +406,7 @@
     <value>Заголовки для upstream</value>
   </data>
   <data name="UpstreamHeadersHelp" xml:space="preserve">
-    <value>по одному в строке: Имя=значение. Хранятся зашифрованными и после сохранения не показываются</value>
+    <value>по одному в строке, Имя=значение; хранятся зашифрованными и после сохранения не показываются</value>
   </data>
   <data name="ForwardIdentity" xml:space="preserve">
     <value>Передавать upstream личность клиента</value>
@@ -421,13 +418,13 @@
     <value>Предел тела запроса, КБ</value>
   </data>
   <data name="HeadersLost" xml:space="preserve">
-    <value>Заголовки для upstream не расшифрованы: потерян каталог keys. Задайте их заново.</value>
+    <value>Заголовки для upstream не расшифровать, потерян каталог keys: задайте их заново</value>
   </data>
   <data name="HeadersNone" xml:space="preserve">
-    <value>Заголовков для upstream нет.</value>
+    <value>Заголовков для upstream нет</value>
   </data>
   <data name="HeadersSet" xml:space="preserve">
-    <value>Заданы заголовки: {0}. Значения не показываются.</value>
+    <value>Заданы заголовки: {0} — значения не показываются</value>
   </data>
   <data name="MessageIntro" xml:space="preserve">
     <value>Доступ к MCP-серверам для «{0}».</value>

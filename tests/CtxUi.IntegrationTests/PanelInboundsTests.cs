@@ -14,8 +14,8 @@ public class PanelInboundsTests
 
     private static async Task<IPage> OpenInboundsAsync(PanelSession session)
     {
-        await session.Page.GetByRole(AriaRole.Navigation).GetByRole(AriaRole.Link, new() { Name = "Inbounds" }).ClickAsync();
-        await Expect(session.Page.GetByRole(AriaRole.Heading, new() { Name = "Inbounds" })).ToBeVisibleAsync();
+        await session.Page.GetByRole(AriaRole.Navigation).GetByRole(AriaRole.Link, new() { Name = "Inbound'ы" }).ClickAsync();
+        await Expect(session.Page.GetByRole(AriaRole.Heading, new() { Name = "Inbound'ы" })).ToBeVisibleAsync();
         return session.Page;
     }
 
@@ -35,7 +35,7 @@ public class PanelInboundsTests
 
         var page = await OpenInboundsAsync(session);
 
-        await Expect(page).ToHaveTitleAsync("Inbounds · ctx-ui");
+        await Expect(page).ToHaveTitleAsync("Inbound'ы · ctx-ui");
         await Expect(page.GetByText("Inbound'ов пока нет")).ToBeVisibleAsync();
         await Expect(page.GetByRole(AriaRole.Table)).ToHaveCountAsync(0);
     }

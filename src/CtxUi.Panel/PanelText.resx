@@ -60,14 +60,11 @@
   <data name="Close" xml:space="preserve">
     <value>Close</value>
   </data>
-  <data name="Issue" xml:space="preserve">
-    <value>Issue</value>
-  </data>
   <data name="Copied" xml:space="preserve">
     <value>Copied</value>
   </data>
   <data name="CopyNeedsHttps" xml:space="preserve">
-    <value>The browser allows copying only on a page opened over HTTPS. Select the text and copy it yourself.</value>
+    <value>The browser copies only on a page opened over HTTPS: select the text and copy it yourself</value>
   </data>
   <data name="Name" xml:space="preserve">
     <value>Name</value>
@@ -220,7 +217,7 @@
     <value>Duration</value>
   </data>
   <data name="JournalLimit" xml:space="preserve">
-    <value>Showing the last {0} calls.</value>
+    <value>At most the last {number} {n, plural, one {call} other {calls}} are shown</value>
   </data>
   <data name="ApiDocs" xml:space="preserve">
     <value>API docs</value>
@@ -235,7 +232,7 @@
     <value>Key</value>
   </data>
   <data name="IssuedColumn" xml:space="preserve">
-    <value>Issued (UTC)</value>
+    <value>Issued, UTC</value>
   </data>
   <data name="Revoke" xml:space="preserve">
     <value>Revoke</value>
@@ -301,7 +298,7 @@
     <value>Calls</value>
   </data>
   <data name="ToolsColumn" xml:space="preserve">
-    <value>Tools</value>
+    <value>Tool calls</value>
   </data>
   <data name="RefusalsColumn" xml:space="preserve">
     <value>Gateway refusals</value>
@@ -313,7 +310,7 @@
     <value>who the key is issued to: Latin letters, digits, dot, hyphen and underscore</value>
   </data>
   <data name="KeyShownOnce" xml:space="preserve">
-    <value>The key is shown once. Save it now: later you can't see it, not even in the panel.</value>
+    <value>The key is shown once: save it now, later you can't see it, not even in the panel</value>
   </data>
   <data name="KeyHelp" xml:space="preserve">
     <value>sent in the header Authorization: Bearer &lt;key&gt;</value>
@@ -322,7 +319,7 @@
     <value>Copy key</value>
   </data>
   <data name="AddInboundFirst" xml:space="preserve">
-    <value>Add an inbound first: a client must be given access to at least one.</value>
+    <value>Add an inbound first: a client needs access to at least one</value>
   </data>
   <data name="ClientNameHelp" xml:space="preserve">
     <value>how the client is called in the list and in the log</value>
@@ -364,10 +361,10 @@
     <value>Metadata</value>
   </data>
   <data name="MetadataHelp" xml:space="preserve">
-    <value>one pair per line: key=value. Sent upstream as X-Mcp-Meta-* headers</value>
+    <value>one pair per line, key=value; sent upstream as X-Mcp-Meta-* headers</value>
   </data>
   <data name="TokenLost" xml:space="preserve">
-    <value>The token can't be shown: its stored copy can't be decrypted, the keys directory is lost. The old token keeps working for whoever has it. To see a token, issue a new one.</value>
+    <value>The token can't be shown: its stored copy can't be read because the keys directory is lost. Issue a new one, and the old one stops working</value>
   </data>
   <data name="Token" xml:space="preserve">
     <value>Token</value>
@@ -409,7 +406,7 @@
     <value>Upstream headers</value>
   </data>
   <data name="UpstreamHeadersHelp" xml:space="preserve">
-    <value>one per line: Name=value. Stored encrypted and not shown after saving</value>
+    <value>one per line, Name=value; stored encrypted and never shown after saving</value>
   </data>
   <data name="ForwardIdentity" xml:space="preserve">
     <value>Forward client identity upstream</value>
@@ -421,13 +418,13 @@
     <value>Request body limit, KB</value>
   </data>
   <data name="HeadersLost" xml:space="preserve">
-    <value>Upstream headers can't be decrypted: the keys directory is lost. Set them again.</value>
+    <value>Upstream headers can't be decrypted because the keys directory is lost: set them again</value>
   </data>
   <data name="HeadersNone" xml:space="preserve">
-    <value>No upstream headers.</value>
+    <value>No upstream headers</value>
   </data>
   <data name="HeadersSet" xml:space="preserve">
-    <value>Headers set: {0}. Values are not shown.</value>
+    <value>Headers set: {0} — values are not shown</value>
   </data>
   <data name="MessageIntro" xml:space="preserve">
     <value>Access to MCP servers for “{0}”.</value>
@@ -499,7 +496,7 @@
     <value>{0} of them tool calls</value>
   </data>
   <data name="FigureActive" xml:space="preserve">
-    <value>{n, plural, other {active now}}</value>
+    <value>active now</value>
   </data>
   <data name="FigureOfClients" xml:space="preserve">
     <value>of {number} {n, plural, one {client} other {clients}}</value>

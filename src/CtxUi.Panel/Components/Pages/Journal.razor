@@ -57,7 +57,7 @@ else
     </MudTable>
     @if (_lines.Count == Shown)
     {
-        <p class="tail">@string.Format(PanelText.JournalLimit, Shown)</p>
+        <p class="tail">@Words.Count(PanelText.JournalLimit, Shown)</p>
     }
 }
 

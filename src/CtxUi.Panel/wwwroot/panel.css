@@ -34,6 +34,11 @@
     --spring: cubic-bezier(0.32, 0.72, 0, 1);
     --soft: 14px;
     --wash: rgba(238, 235, 229, 0.045);
+    --round: 12px;
+    --pane: 24px;
+    --edge: inset 0 0 0 1px rgba(238, 235, 229, 0.06);
+    --lift: 0 24px 56px -28px rgba(0, 0, 0, 0.6);
+    --hairline-x: linear-gradient(90deg, transparent, var(--rule) 10%, var(--rule) 90%, transparent);
     --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.86' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23g)'/%3E%3C/svg%3E");
     --pigment: radial-gradient(120% 90% at 18% 8%, rgba(255, 255, 255, 0.07), transparent 62%), radial-gradient(110% 110% at 100% 100%, rgba(0, 4, 40, 0.38), transparent 70%), var(--klein);
     --gutter: 16px;
@@ -79,6 +84,10 @@ p {
 
 input, textarea, select {
     caret-color: var(--glow);
+}
+
+input.line:focus-visible, .signin input:focus-visible {
+    outline: none !important;
 }
 
 input:-webkit-autofill,
@@ -148,6 +157,7 @@ button.link, .link {
     cursor: pointer;
     white-space: nowrap;
     text-decoration: none;
+    transition: color 0.3s var(--spring);
 }
 
 button.link:hover, .link:hover {
@@ -433,15 +443,22 @@ button.link:hover, .link:hover {
 .btn-k {
     display: inline-block;
     font: 600 13px/20px var(--sans);
-    padding: 10px 18px;
-    border-radius: 2px;
+    padding: 10px 20px;
+    border-radius: var(--round);
     white-space: nowrap;
     text-decoration: none;
     cursor: pointer;
+    box-shadow: 0 10px 28px -14px rgba(0, 47, 167, 0.9), inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+    transition: filter 0.4s var(--spring), transform 0.4s var(--spring), box-shadow 0.4s var(--spring);
 }
 
 .btn-k:hover {
     filter: brightness(1.16);
+    box-shadow: 0 14px 32px -12px rgba(0, 47, 167, 1), inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+}
+
+.btn-k:active, .btn-danger:active, .kf-white:active, .signin button:active {
+    transform: scale(0.97);
 }
 
 .note, .nothing {
@@ -472,7 +489,28 @@ button.link:hover, .link:hover {
 .placeholder i {
     display: block;
     height: 52px;
+    border-radius: var(--soft);
     background: var(--deep);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .placeholder i {
+        animation: breathe 1.6s ease-in-out infinite alternate;
+    }
+
+    .placeholder i:nth-child(2) {
+        animation-delay: 0.2s;
+    }
+
+    .placeholder i:nth-child(3) {
+        animation-delay: 0.4s;
+    }
+}
+
+@keyframes breathe {
+    to {
+        opacity: 0.45;
+    }
 }
 
 .empty {
@@ -631,6 +669,7 @@ button.link:hover, .link:hover {
     font: 400 15px/24px var(--sans);
     padding: 6px 0 7px;
     outline: none;
+    transition: border-color 0.3s var(--spring);
 }
 
 .line::placeholder {
@@ -734,14 +773,18 @@ button.link:hover, .link:hover {
 .bar {
     position: relative;
     width: 104px;
-    height: 2px;
+    height: 4px;
+    border-radius: 2px;
     background: var(--rule);
+    overflow: hidden;
 }
 
 .bar b {
     position: absolute;
     inset: 0 auto 0 0;
+    border-radius: inherit;
     background: var(--light);
+    transition: width 0.6s var(--spring);
 }
 
 .bar.warn b {
@@ -775,7 +818,7 @@ button.link:hover, .link:hover {
     border-radius: 7px;
     background: var(--rule) !important;
     opacity: 1 !important;
-    transition: background-color 0.16s;
+    transition: background-color 0.4s var(--spring);
 }
 
 .mud-switch .mud-switch-base {
@@ -788,7 +831,7 @@ button.link:hover, .link:hover {
     padding: 0;
     background: none !important;
     transform: none !important;
-    transition: transform 0.16s;
+    transition: transform 0.45s var(--spring);
 }
 
 .mud-switch .mud-switch-base.mud-checked {
@@ -821,31 +864,39 @@ button.link:hover, .link:hover {
     width: 28px;
     height: 28px;
     padding: 0;
+    border-radius: 50%;
     color: var(--mist);
     font: 400 18px/28px var(--sans);
     background: none;
+    transition: color 0.3s var(--spring), background-color 0.3s var(--spring);
 }
 
 .more .mud-button-root:hover {
     color: var(--light);
-    background: none;
+    background: var(--wash);
 }
 
 .mud-popover.mud-paper {
     background: var(--deep);
     color: var(--light);
-    border: 1px solid var(--rule);
-    border-radius: 0;
-    box-shadow: none;
+    border: 0;
+    border-radius: var(--soft);
+    box-shadow: var(--edge), var(--lift);
+}
+
+body:has(.mud-overlay-dialog) .mud-popover:has(.mud-menu-list) {
+    visibility: hidden;
 }
 
 .mud-menu-list, .mud-list.mud-select-list {
-    padding: 6px 0;
+    padding: 6px;
 }
 
 .mud-menu-item, .mud-list-item {
-    padding: 8px 18px;
+    padding: 8px 12px;
     min-height: 0;
+    border-radius: 9px;
+    transition: background-color 0.25s var(--spring);
 }
 
 .mud-menu-item .mud-menu-item-text, .mud-list-item .mud-list-item-text p {
@@ -889,28 +940,30 @@ button.link:hover, .link:hover {
 
 .mud-overlay-dialog .mud-overlay-scrim {
     background: var(--scrim) !important;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
 }
 
 .mud-dialog {
     background: var(--deep);
     color: var(--light);
-    border-radius: 0;
-    box-shadow: none;
+    border-radius: var(--pane);
+    box-shadow: var(--edge), var(--lift);
 }
 
 .mud-dialog.sheet {
     position: fixed;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    width: min(560px, 100%);
+    top: 12px;
+    right: 12px;
+    bottom: 12px;
+    width: min(560px, calc(100% - 24px));
     max-width: 100%;
-    height: 100dvh;
+    height: auto;
     max-height: none;
     margin: 0;
     display: flex;
     flex-direction: column;
-    border-left: 1px solid var(--rule);
+    overflow: hidden;
 }
 
 .mud-dialog.sheet > .mud-focus-trap,
@@ -951,7 +1004,7 @@ button.link:hover, .link:hover {
     align-items: center;
     gap: 24px;
     padding: 18px 32px;
-    border-top: 1px solid var(--rule);
+    background: var(--hairline-x) 0 0 / 100% 1px no-repeat;
 }
 
 .sheet-foot:empty {
@@ -990,7 +1043,6 @@ button.link:hover, .link:hover {
 
 .mud-dialog.confirm {
     width: min(440px, calc(100% - 32px));
-    border: 1px solid var(--rule);
 }
 
 .confirm-head.mud-dialog-title {
@@ -1030,9 +1082,10 @@ button.btn-k {
     color: var(--vermilion);
     background: none;
     border: 1px solid var(--vermilion);
-    padding: 9px 17px;
-    border-radius: 2px;
+    padding: 9px 19px;
+    border-radius: var(--round);
     cursor: pointer;
+    transition: background-color 0.4s var(--spring), transform 0.4s var(--spring);
 }
 
 .btn-danger:hover {
@@ -1059,13 +1112,14 @@ button.btn-k {
 
 .mud-checkbox .mud-icon-button {
     flex: none;
-    width: 14px;
-    height: 14px;
+    width: 16px;
+    height: 16px;
     padding: 0;
     margin: 0 14px 0 0;
     border: 1px solid var(--mist);
-    border-radius: 2px;
+    border-radius: 5px;
     background: none !important;
+    transition: background-color 0.3s var(--spring), border-color 0.3s var(--spring);
 }
 
 .mud-checkbox .mud-icon-button svg {
@@ -1074,7 +1128,7 @@ button.btn-k {
 
 .mud-checkbox .mud-icon-button.mud-checkbox-true {
     border-color: var(--light);
-    background: var(--light) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'%3E%3Cpath d='M3 7.2l2.6 2.6L11 4.4' fill='none' stroke='%23080C1C' stroke-width='1.6'/%3E%3C/svg%3E") center / 12px no-repeat !important;
+    background: var(--light) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'%3E%3Cpath d='M3 7.2l2.6 2.6L11 4.4' fill='none' stroke='%23080C1C' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 12px no-repeat !important;
 }
 
 .mud-checkbox:has(input:focus-visible) .mud-icon-button {
@@ -1138,8 +1192,14 @@ button.btn-k {
     border-bottom: 1px solid var(--mist) !important;
 }
 
+.mud-input.mud-input-underline::before {
+    transition: border-color 0.3s var(--spring) !important;
+}
+
 .mud-input.mud-input-underline::after {
     border-bottom: 2px solid var(--glow) !important;
+    border-radius: 1px;
+    transition: transform 0.5s var(--spring) !important;
 }
 
 .mud-input.mud-disabled {
@@ -1159,13 +1219,38 @@ button.btn-k {
 
 @media (prefers-reduced-motion: no-preference) {
     .mud-dialog.sheet {
-        animation: sheet-in 0.24s var(--ease) both;
+        animation: sheet-in 0.55s var(--spring) both;
+    }
+
+    .mud-dialog.confirm {
+        animation: pop-in 0.45s var(--spring) both;
+    }
+
+    .mud-overlay-dialog .mud-overlay-scrim {
+        animation: appear 0.35s ease both;
     }
 }
 
 @keyframes sheet-in {
     from {
-        transform: translateX(100%);
+        transform: translateX(calc(100% + 24px));
+    }
+}
+
+@keyframes pop-in {
+    from {
+        opacity: 0;
+        transform: scale(0.94);
+    }
+}
+
+@media (max-width: 600px) {
+    .mud-dialog.sheet {
+        top: 8px;
+        right: 8px;
+        bottom: 8px;
+        width: calc(100% - 16px);
+        border-radius: 20px;
     }
 }
 
@@ -1191,7 +1276,8 @@ button.btn-k {
     display: grid;
     gap: 22px;
     padding: 30px 32px 28px;
-    border-radius: 2px;
+    border-radius: 20px;
+    box-shadow: 0 18px 48px -20px rgba(0, 47, 167, 0.8);
 }
 
 .kf {
@@ -1219,17 +1305,19 @@ button.btn-k {
 
 .kf-copy {
     justify-self: start;
-    padding: 0;
-    background: none;
+    margin-left: -12px;
+    padding: 4px 12px;
+    background: rgba(255, 255, 255, 0.1);
     border: 0;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.55);
+    border-radius: 999px;
     font: 500 13px/20px var(--sans);
     color: var(--white);
     cursor: pointer;
+    transition: background-color 0.3s var(--spring);
 }
 
 .kf-copy:hover {
-    border-bottom-color: var(--white);
+    background: rgba(255, 255, 255, 0.18);
 }
 
 .kf-lost {
@@ -1243,9 +1331,14 @@ button.btn-k {
     background: var(--white);
     color: var(--klein);
     border: 0;
-    border-radius: 2px;
+    border-radius: var(--round);
     font: 600 13px/20px var(--sans);
     cursor: pointer;
+    transition: background-color 0.3s var(--spring), transform 0.4s var(--spring);
+}
+
+.kf-white:hover {
+    background: #E8ECFA;
 }
 
 .slugs {
@@ -1263,12 +1356,19 @@ button.btn-k {
     grid-template-columns: 128px minmax(0, 1fr) auto;
     gap: 16px;
     align-items: baseline;
-    padding: 11px 0;
-    border-bottom: 1px solid var(--rule);
+    margin-inline: -12px;
+    padding: 11px 12px;
+    border-radius: var(--round);
+    background: var(--hairline-x) 0 100% / 100% 1px no-repeat;
+    transition: background-color 0.3s var(--spring);
 }
 
-.slug h3 + .cl {
-    border-top: 1px solid var(--rule);
+.cl:hover {
+    background-color: var(--wash);
+}
+
+.cl:last-child {
+    background-image: none;
 }
 
 .cl output {
@@ -1291,8 +1391,9 @@ button.btn-k {
     margin: 0;
     padding: 16px 18px;
     background: var(--night);
-    border: 1px solid var(--rule);
-    border-radius: 2px;
+    border: 0;
+    border-radius: var(--soft);
+    box-shadow: var(--edge);
     font: 400 12.5px/20px var(--mono);
     font-stretch: 87%;
     white-space: pre-wrap;
@@ -1343,8 +1444,8 @@ button.btn-k {
     padding: 12px 18px;
     background: var(--light) !important;
     color: var(--night) !important;
-    border-radius: 0;
-    box-shadow: none;
+    border-radius: var(--soft);
+    box-shadow: 0 18px 48px -18px rgba(0, 0, 0, 0.8);
     font: 500 13px/20px var(--sans);
 }
 
@@ -1831,6 +1932,7 @@ svg.hz:focus-visible {
     font: 400 17px/28px var(--sans);
     padding: 4px 0 7px;
     outline: none;
+    transition: border-color 0.3s var(--spring);
 }
 
 .signin input:hover {
@@ -1858,8 +1960,10 @@ svg.hz:focus-visible {
     font: 600 13px/20px var(--sans);
     padding: 12px 26px;
     border: 0;
-    border-radius: 2px;
+    border-radius: var(--round);
     cursor: pointer;
+    box-shadow: 0 14px 34px -16px rgba(0, 4, 40, 0.9);
+    transition: background-color 0.3s var(--spring), transform 0.4s var(--spring);
 }
 
 .signin button:hover {
@@ -1888,6 +1992,29 @@ svg.hz:focus-visible {
     text-decoration: underline;
     text-decoration-color: rgba(255, 255, 255, 0.55);
     text-underline-offset: 4px;
+    transition: text-decoration-color 0.3s var(--spring);
+}
+
+.signin a:hover, .lost a:hover {
+    text-decoration-color: var(--white);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .entrance-in {
+        animation: settle 0.9s var(--spring) backwards;
+    }
+
+    .monument {
+        animation: surface 1.4s var(--spring) backwards;
+        animation-delay: 120ms;
+    }
+}
+
+@keyframes surface {
+    from {
+        opacity: 0;
+        transform: translateY(0.12em);
+    }
 }
 
 .lost {

@@ -14,6 +14,7 @@
             @if (UpdatedAt is { } updatedAt)
             {
                 <button type="button" class="stamp" aria-label="@PanelText.Refresh" title="@PanelText.Refresh" @onclick="OnRefresh">
+                    <i @key="updatedAt" aria-hidden="true"></i>
                     @string.Format(PanelText.UpdatedAt, Words.Clock(updatedAt))
                 </button>
             }

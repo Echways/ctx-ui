@@ -1,5 +1,7 @@
 @inherits LayoutComponentBase
+@using Microsoft.JSInterop
 @inject NavigationManager Navigation
+@inject IJSRuntime Js
 
 <MudThemeProvider Theme="PanelTheme.Theme" IsDarkMode="true" />
 <MudPopoverProvider />
@@ -9,7 +11,8 @@
 <div class="frame">
     <header class="side">
         <span class="brand">ctx-ui</span>
-        <nav class="nav" aria-label="@PanelText.Sections">
+        <nav class="nav" aria-label="@PanelText.Sections" @ref="_nav">
+            <span class="mark pigment" aria-hidden="true"></span>
             <NavLink href="" Match="NavLinkMatch.All">@PanelText.Overview</NavLink>
             <NavLink href="clients">@PanelText.Clients</NavLink>
             <NavLink href="inbounds">@PanelText.Inbounds</NavLink>
@@ -36,6 +39,14 @@
 </div>
 
 @code {
+    private ElementReference _nav;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+            await Js.InvokeVoidAsync("ctxUi.followMark", _nav);
+    }
+
     private void SwitchLanguage() => Navigation.NavigateTo(PanelLanguage.SwitchPath(Navigation), forceLoad: true);
 
     private void SignOut() => Navigation.NavigateTo("logout", forceLoad: true);

@@ -1,13 +1,13 @@
 @using System.Globalization
 
 <div class="days">
-    @foreach (var day in Shown)
+    @foreach (var (day, index) in Shown.Select((day, index) => (day, index)))
     {
         var today = day.Day == Today;
         <div class="day @(today ? "today" : "")" title="@Detail(day)">
             <span class="day-name">@Name(day.Day)@(today ? ", " + PanelText.Today : "")</span>
             <span class="num">@Words.Number(day.Calls)</span>
-            <span class="day-bar" style="width: @Share(day.Calls)"></span>
+            <span class="day-bar" style="width: @Share(day.Calls); --i: @index"></span>
         </div>
     }
 </div>

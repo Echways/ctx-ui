@@ -13,61 +13,63 @@
 }
 else
 {
-    <Horizon Quarters="_overview.Quarters" Grow="_grow" />
+    <div class="@(_grow ? "arrive" : "")">
+        <Horizon Quarters="_overview.Quarters" Grow="_grow" />
 
-    @if (_overview.Inbounds.Count == 0)
-    {
-        <div class="empty">
-            <h2>@PanelText.Silence</h2>
-            <a class="btn-k pigment" href="inbounds?add=true">@PanelText.AddInbound</a>
-        </div>
-    }
-    else
-    {
-        <div class="figs">
-            <Figure Value="_overview.Calls" First="@Words.Count(PanelText.FigureCalls, _overview.Calls)"
-                    Second="@string.Format(PanelText.FigureTools, Words.Number(_overview.ToolCalls))" />
-            <Figure Value="_overview.ActiveClients" First="@Words.Count(PanelText.FigureOfClients, _overview.Clients)"
-                    Second="@Words.Count(PanelText.FigureActive, _overview.ActiveClients)" />
-            <Figure Value="_overview.SeenClients" First="@Words.Count(PanelText.FigureSeen, _overview.SeenClients)" Second="@PanelText.FigureInDay" />
-            <Figure Value="_overview.Failures" First="@Words.Count(PanelText.FigureFailures, _overview.Failures)" Second="@FailureShare"
-                    Alarm="_overview.Failures > 0" />
-        </div>
+        @if (_overview.Inbounds.Count == 0)
+        {
+            <div class="empty">
+                <h2>@PanelText.Silence</h2>
+                <a class="btn-k pigment" href="inbounds?add=true">@PanelText.AddInbound</a>
+            </div>
+        }
+        else
+        {
+            <div class="figs">
+                <Figure Value="_overview.Calls" First="@Words.Count(PanelText.FigureCalls, _overview.Calls)"
+                        Second="@string.Format(PanelText.FigureTools, Words.Number(_overview.ToolCalls))" />
+                <Figure Value="_overview.ActiveClients" First="@Words.Count(PanelText.FigureOfClients, _overview.Clients)"
+                        Second="@Words.Count(PanelText.FigureActive, _overview.ActiveClients)" />
+                <Figure Value="_overview.SeenClients" First="@Words.Count(PanelText.FigureSeen, _overview.SeenClients)" Second="@PanelText.FigureInDay" />
+                <Figure Value="_overview.Failures" First="@Words.Count(PanelText.FigureFailures, _overview.Failures)" Second="@FailureShare"
+                        Alarm="_overview.Failures > 0" />
+            </div>
 
-        <section class="block">
-            <h2>@PanelText.Inbounds</h2>
-            <MudTable Items="_overview.Inbounds" Elevation="0" Class="tbl" RowClassFunc="@((inbound, _) => inbound.Enabled ? "" : "dim")">
-                <HeaderContent>
-                    <MudTh>@PanelText.Address</MudTh>
-                    <MudTh>@PanelText.Title</MudTh>
-                    <MudTh Class="num">@PanelText.ClientCount</MudTh>
-                    <MudTh Class="num">@PanelText.CallsInDayColumn</MudTh>
-                    <MudTh Class="num">@PanelText.UpstreamFailuresColumn</MudTh>
-                </HeaderContent>
-                <RowTemplate>
-                    <MudTd><code>/mcp/@context.Slug</code></MudTd>
-                    <MudTd DataLabel="@PanelText.Title">
-                        @if (context.Enabled)
-                        {
-                            @context.Name
-                        }
-                        else
-                        {
-                            <span>@($"{context.Name} ")<span class="note">@PanelText.StateOff</span></span>
-                        }
-                    </MudTd>
-                    <MudTd DataLabel="@PanelText.ClientCount" Class="num">@Words.OrDash(context.Clients)</MudTd>
-                    <MudTd DataLabel="@PanelText.CallsInDayColumn" Class="num">@Words.OrDash(context.Calls)</MudTd>
-                    <MudTd DataLabel="@PanelText.UpstreamFailuresColumn" Class="@(context.Failures > 0 ? "num bad-t" : "num")">@Words.OrDash(context.Failures)</MudTd>
-                </RowTemplate>
-            </MudTable>
-        </section>
+            <section class="block">
+                <h2>@PanelText.Inbounds</h2>
+                <MudTable Items="_overview.Inbounds" Elevation="0" Class="tbl" RowClassFunc="@((inbound, _) => inbound.Enabled ? "" : "dim")">
+                    <HeaderContent>
+                        <MudTh>@PanelText.Address</MudTh>
+                        <MudTh>@PanelText.Title</MudTh>
+                        <MudTh Class="num">@PanelText.ClientCount</MudTh>
+                        <MudTh Class="num">@PanelText.CallsInDayColumn</MudTh>
+                        <MudTh Class="num">@PanelText.UpstreamFailuresColumn</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd><code>/mcp/@context.Slug</code></MudTd>
+                        <MudTd DataLabel="@PanelText.Title">
+                            @if (context.Enabled)
+                            {
+                                @context.Name
+                            }
+                            else
+                            {
+                                <span>@($"{context.Name} ")<span class="note">@PanelText.StateOff</span></span>
+                            }
+                        </MudTd>
+                        <MudTd DataLabel="@PanelText.ClientCount" Class="num">@Words.OrDash(context.Clients)</MudTd>
+                        <MudTd DataLabel="@PanelText.CallsInDayColumn" Class="num">@Words.OrDash(context.Calls)</MudTd>
+                        <MudTd DataLabel="@PanelText.UpstreamFailuresColumn" Class="@(context.Failures > 0 ? "num bad-t" : "num")">@Words.OrDash(context.Failures)</MudTd>
+                    </RowTemplate>
+                </MudTable>
+            </section>
 
-        <section class="block">
-            <h2>@PanelText.LastDays</h2>
-            <DayBars Days="_overview.Days" Today="DateOnly.FromDateTime(_loadedAt!.Value.UtcDateTime)" />
-        </section>
-    }
+            <section class="block">
+                <h2>@PanelText.LastDays</h2>
+                <DayBars Days="_overview.Days" Today="DateOnly.FromDateTime(_loadedAt!.Value.UtcDateTime)" />
+            </section>
+        }
+    </div>
 }
 
 @code {

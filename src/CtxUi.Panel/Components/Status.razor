@@ -1,0 +1,13 @@
+<span class="st @Tone"><i></i>@ClientState.Text(Value)</span>
+
+@code {
+    [Parameter, EditorRequired]
+    public ClientStatus Value { get; set; }
+
+    private string Tone => Value switch
+    {
+        ClientStatus.Exhausted => "warn",
+        ClientStatus.Expired => "bad",
+        _ => "",
+    };
+}

@@ -3,6 +3,7 @@
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <PackageReference Include="MudBlazor" />
+    <PackageReference Include="MessageFormat" />
     <ProjectReference Include="..\CtxUi.Core\CtxUi.Core.csproj" />
   </ItemGroup>
 

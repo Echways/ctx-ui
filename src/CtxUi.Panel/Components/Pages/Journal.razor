@@ -1,65 +1,90 @@
 @page "/journal"
+@using System.Globalization
 @inject PanelBackend Backend
+@inject TimeProvider Clock
 
-<PageTitle>@PanelText.Journal</PageTitle>
-
-<MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-4">
-    <MudText Typo="Typo.h5">@PanelText.Journal</MudText>
-    <MudSpacer />
-    <MudSelect T="Guid?" Value="_clientId" ValueChanged="FilterAsync" Label="@PanelText.Client" Variant="Variant.Outlined"
-               Margin="Margin.Dense" Style="max-width: 280px">
-        <MudSelectItem T="Guid?" Value="@((Guid?)null)">@PanelText.AllClients</MudSelectItem>
-        @foreach (var (id, name) in _clients.OrderBy(pair => pair.Value, StringComparer.CurrentCultureIgnoreCase))
+<PageHead Title="@PanelText.Journal" UpdatedAt="_loadedAt" OnRefresh="LoadAsync">
+    <Summary>
+        @if (_lines is { Count: > 0 })
         {
-            <MudSelectItem T="Guid?" Value="@((Guid?)id)">@name</MudSelectItem>
+            <span>@Words.Count(PanelText.JournalSummary, _lines.Count)</span>
         }
-    </MudSelect>
-    <MudIconButton Icon="@Icons.Material.Filled.Refresh" aria-label="@PanelText.Refresh" title="@PanelText.Refresh" OnClick="LoadAsync" />
-</MudStack>
+    </Summary>
+    <Actions>
+        <MudSelect T="Guid?" Value="_clientId" ValueChanged="FilterAsync" Label="@PanelText.Client" Class="filter" Dense="true">
+            <MudSelectItem T="Guid?" Value="@((Guid?)null)">@PanelText.AllClients</MudSelectItem>
+            @foreach (var (id, name) in _clients.OrderBy(pair => pair.Value, StringComparer.CurrentCultureIgnoreCase))
+            {
+                <MudSelectItem T="Guid?" Value="@((Guid?)id)">@name</MudSelectItem>
+            }
+        </MudSelect>
+    </Actions>
+</PageHead>
+<AutoRefresh OnTick="LoadAsync" />
 
 @if (_lines is null)
 {
-    <MudProgressLinear Indeterminate="true" />
+    <div class="placeholder" aria-hidden="true"><i></i><i></i><i></i></div>
 }
 else if (_lines.Count == 0)
 {
-    <MudAlert Severity="Severity.Info">@PanelText.JournalEmpty</MudAlert>
+    <div class="empty">
+        <p>@PanelText.JournalEmpty</p>
+    </div>
 }
 else
 {
-    <MudTable Items="_lines" Dense="true" Hover="true" Elevation="1">
+    <MudTable Items="_lines" Elevation="0" Class="tbl dense" GroupBy="ByDay">
         <HeaderContent>
             <MudTh>@PanelText.TimeColumn</MudTh>
             <MudTh>@PanelText.Client</MudTh>
             <MudTh>@PanelText.Inbound</MudTh>
             <MudTh>@PanelText.CallColumn</MudTh>
             <MudTh>@PanelText.OutcomeColumn</MudTh>
-            <MudTh>@PanelText.DurationColumn</MudTh>
+            <MudTh Class="num">@PanelText.DurationColumn</MudTh>
         </HeaderContent>
+        <GroupHeaderTemplate>
+            <MudTd colspan="6" Class="day-row">@(((DateOnly)context.Key!).ToString("d MMMM", CultureInfo.CurrentCulture))</MudTd>
+        </GroupHeaderTemplate>
         <RowTemplate>
-            <MudTd>@Words.Second(context.At)</MudTd>
-            <MudTd>@_clients.GetValueOrDefault(context.ClientId, PanelText.Removed)</MudTd>
-            <MudTd>@_inbounds.GetValueOrDefault(context.InboundId, PanelText.Removed)</MudTd>
-            <MudTd>@(context.Tool is null ? context.Method : $"{context.Method} {context.Tool}")</MudTd>
-            <MudTd>@UsageOutcomes.Text(context.Outcome)</MudTd>
-            <MudTd>@context.DurationMs</MudTd>
+            <MudTd><code>@Words.Clock(context.At, seconds: true)</code></MudTd>
+            <MudTd DataLabel="@PanelText.Client">@_clients.GetValueOrDefault(context.ClientId, PanelText.Removed)</MudTd>
+            <MudTd DataLabel="@PanelText.Inbound"><code>@_inbounds.GetValueOrDefault(context.InboundId, PanelText.Removed)</code></MudTd>
+            <MudTd DataLabel="@PanelText.CallColumn"><code>@(context.Tool is null ? context.Method : $"{context.Method} {context.Tool}")</code></MudTd>
+            <MudTd DataLabel="@PanelText.OutcomeColumn" Class="@Tone(context.Outcome)">@UsageOutcomes.Text(context.Outcome)</MudTd>
+            <MudTd DataLabel="@PanelText.DurationColumn" Class="num">@string.Format(PanelText.Milliseconds, Words.Number(context.DurationMs))</MudTd>
         </RowTemplate>
     </MudTable>
     @if (_lines.Count == Shown)
     {
-        <MudText Typo="Typo.caption" Class="mt-2">@string.Format(PanelText.JournalLimit, Shown)</MudText>
+        <p class="tail">@Words.Count(PanelText.JournalLimit, Shown)</p>
     }
 }
 
 @code {
     private const int Shown = 200;
 
+    private static readonly TableGroupDefinition<UsageEvent> ByDay = new()
+    {
+        Selector = line => DateOnly.FromDateTime(line.At.UtcDateTime),
+        Expandable = false,
+        Indentation = false,
+    };
+
     private Dictionary<Guid, string> _clients = new();
     private Dictionary<Guid, string> _inbounds = new();
     private List<UsageEvent>? _lines;
     private Guid? _clientId;
+    private DateTimeOffset? _loadedAt;
 
     protected override Task OnInitializedAsync() => LoadAsync();
+
+    private static string Tone(UsageOutcome outcome) => outcome switch
+    {
+        UsageOutcome.UpstreamFailed => "bad-t",
+        _ when !UsageRecord.IsForwarded(outcome) => "warn-t",
+        _ => "",
+    };
 
     private Task FilterAsync(Guid? clientId)
     {
@@ -67,7 +92,13 @@ else
         return LoadAsync();
     }
 
-    private async Task LoadAsync() => (_clients, _inbounds, _lines) = await Backend.ReadAsync(async services =>
+    private async Task LoadAsync()
+    {
+        (_clients, _inbounds, _lines) = await ReadAsync();
+        _loadedAt = Clock.GetUtcNow();
+    }
+
+    private Task<(Dictionary<Guid, string>, Dictionary<Guid, string>, List<UsageEvent>)> ReadAsync() => Backend.ReadAsync(async services =>
     {
         var clients = await services.GetRequiredService<ClientService>().ListAsync();
         var inbounds = await services.GetRequiredService<InboundService>().ListAsync();

@@ -18,9 +18,6 @@
   <data name="LanguageSwitchCulture" xml:space="preserve">
     <value>ru</value>
   </data>
-  <data name="Menu" xml:space="preserve">
-    <value>Menu</value>
-  </data>
   <data name="SignOut" xml:space="preserve">
     <value>Sign out</value>
   </data>
@@ -63,14 +60,11 @@
   <data name="Close" xml:space="preserve">
     <value>Close</value>
   </data>
-  <data name="Issue" xml:space="preserve">
-    <value>Issue</value>
-  </data>
   <data name="Copied" xml:space="preserve">
     <value>Copied</value>
   </data>
   <data name="CopyNeedsHttps" xml:space="preserve">
-    <value>The browser allows copying only on a page opened over HTTPS. Select the text and copy it yourself.</value>
+    <value>The browser copies only on a page opened over HTTPS: select the text and copy it yourself</value>
   </data>
   <data name="Name" xml:space="preserve">
     <value>Name</value>
@@ -90,9 +84,6 @@
   <data name="Enabled" xml:space="preserve">
     <value>Enabled</value>
   </data>
-  <data name="StateOn" xml:space="preserve">
-    <value>enabled</value>
-  </data>
   <data name="StateOff" xml:space="preserve">
     <value>disabled</value>
   </data>
@@ -106,16 +97,16 @@
     <value>Add client</value>
   </data>
   <data name="ClientsEmpty" xml:space="preserve">
-    <value>No clients yet. A client is whoever has been issued a token: with its own expiry date, limits and set of inbounds.</value>
+    <value>No clients yet: issue the first token</value>
   </data>
   <data name="ClientsNotFound" xml:space="preserve">
-    <value>Nobody found: no client name contains “{0}”.</value>
+    <value>Nobody named “{0}”</value>
   </data>
   <data name="ExpiryColumn" xml:space="preserve">
     <value>Expires, UTC</value>
   </data>
   <data name="LastSeenColumn" xml:space="preserve">
-    <value>Last seen, UTC</value>
+    <value>Last call, UTC</value>
   </data>
   <data name="CallsColumn" xml:space="preserve">
     <value>Calls</value>
@@ -181,7 +172,7 @@
     <value>Add inbound</value>
   </data>
   <data name="InboundsEmpty" xml:space="preserve">
-    <value>No inbounds yet. An inbound is an address /mcp/&lt;slug&gt; on the gateway backed by your MCP server.</value>
+    <value>No inbounds yet: put your first MCP server behind the gateway</value>
   </data>
   <data name="McpServer" xml:space="preserve">
     <value>MCP server</value>
@@ -211,7 +202,7 @@
     <value>All clients</value>
   </data>
   <data name="JournalEmpty" xml:space="preserve">
-    <value>The log is empty: there have been no calls through the gateway yet, or they are older than the retention period.</value>
+    <value>The log is empty: no calls yet, or they are older than the retention period</value>
   </data>
   <data name="TimeColumn" xml:space="preserve">
     <value>Time, UTC</value>
@@ -223,10 +214,10 @@
     <value>Outcome</value>
   </data>
   <data name="DurationColumn" xml:space="preserve">
-    <value>Duration, ms</value>
+    <value>Duration</value>
   </data>
   <data name="JournalLimit" xml:space="preserve">
-    <value>Showing the last {0} calls.</value>
+    <value>At most the last {number} {n, plural, one {call} other {calls}} are shown</value>
   </data>
   <data name="ApiDocs" xml:space="preserve">
     <value>API docs</value>
@@ -235,13 +226,13 @@
     <value>Issue key</value>
   </data>
   <data name="KeysEmpty" xml:space="preserve">
-    <value>No keys yet. A key is needed by programs that manage the gateway through the REST API: a bot, an access provisioning script.</value>
+    <value>No keys yet: a key lets a script manage the gateway through the REST API</value>
   </data>
   <data name="Key" xml:space="preserve">
     <value>Key</value>
   </data>
   <data name="IssuedColumn" xml:space="preserve">
-    <value>Issued (UTC)</value>
+    <value>Issued, UTC</value>
   </data>
   <data name="Revoke" xml:space="preserve">
     <value>Revoke</value>
@@ -288,56 +279,17 @@
   <data name="NotFoundHeading" xml:space="preserve">
     <value>There is no such page</value>
   </data>
-  <data name="NotFoundText" xml:space="preserve">
-    <value>The address has changed or was mistyped. The panel sections are listed in the menu on the left.</value>
-  </data>
-  <data name="ActiveOfAll" xml:space="preserve">
-    <value>{0} of {1}</value>
-  </data>
-  <data name="ActiveOfAllNote" xml:space="preserve">
-    <value>active of all</value>
-  </data>
-  <data name="SeenToday" xml:space="preserve">
-    <value>Seen in 24 hours</value>
-  </data>
-  <data name="SeenTodayNote" xml:space="preserve">
-    <value>clients</value>
-  </data>
-  <data name="CallsToday" xml:space="preserve">
-    <value>Calls in 24 hours</value>
-  </data>
-  <data name="CallsTodayNote" xml:space="preserve">
-    <value>tool calls among them: {0}</value>
-  </data>
-  <data name="FailuresToday" xml:space="preserve">
-    <value>Upstream failures in 24 hours</value>
-  </data>
   <data name="NoCalls" xml:space="preserve">
     <value>no calls</value>
   </data>
   <data name="FailureShare" xml:space="preserve">
     <value>{0}% of calls</value>
   </data>
-  <data name="FirstAccessLead" xml:space="preserve">
-    <value>To grant the first access,</value>
-  </data>
-  <data name="FirstAccessInbound" xml:space="preserve">
-    <value>add an inbound</value>
-  </data>
-  <data name="FirstAccessThen" xml:space="preserve">
-    <value>then</value>
-  </data>
-  <data name="FirstAccessClient" xml:space="preserve">
-    <value>a client</value>
-  </data>
   <data name="CallsInDayColumn" xml:space="preserve">
     <value>Calls in 24 hours</value>
   </data>
   <data name="UpstreamFailuresColumn" xml:space="preserve">
     <value>Upstream failures</value>
-  </data>
-  <data name="ByDay" xml:space="preserve">
-    <value>By day, UTC</value>
   </data>
   <data name="DayColumn" xml:space="preserve">
     <value>Day</value>
@@ -346,7 +298,7 @@
     <value>Calls</value>
   </data>
   <data name="ToolsColumn" xml:space="preserve">
-    <value>Tools</value>
+    <value>Tool calls</value>
   </data>
   <data name="RefusalsColumn" xml:space="preserve">
     <value>Gateway refusals</value>
@@ -358,7 +310,7 @@
     <value>who the key is issued to: Latin letters, digits, dot, hyphen and underscore</value>
   </data>
   <data name="KeyShownOnce" xml:space="preserve">
-    <value>The key is shown once. Save it now: later you can't see it, not even in the panel.</value>
+    <value>The key is shown once: save it now, later you can't see it, not even in the panel</value>
   </data>
   <data name="KeyHelp" xml:space="preserve">
     <value>sent in the header Authorization: Bearer &lt;key&gt;</value>
@@ -367,7 +319,7 @@
     <value>Copy key</value>
   </data>
   <data name="AddInboundFirst" xml:space="preserve">
-    <value>Add an inbound first: a client must be given access to at least one.</value>
+    <value>Add an inbound first: a client needs access to at least one</value>
   </data>
   <data name="ClientNameHelp" xml:space="preserve">
     <value>how the client is called in the list and in the log</value>
@@ -409,10 +361,10 @@
     <value>Metadata</value>
   </data>
   <data name="MetadataHelp" xml:space="preserve">
-    <value>one pair per line: key=value. Sent upstream as X-Mcp-Meta-* headers</value>
+    <value>one pair per line, key=value; sent upstream as X-Mcp-Meta-* headers</value>
   </data>
   <data name="TokenLost" xml:space="preserve">
-    <value>The token can't be shown: its stored copy can't be decrypted, the keys directory is lost. The old token keeps working for whoever has it. To see a token, issue a new one.</value>
+    <value>The token can't be shown: its stored copy can't be read because the keys directory is lost. Issue a new one, and the old one stops working</value>
   </data>
   <data name="Token" xml:space="preserve">
     <value>Token</value>
@@ -420,17 +372,8 @@
   <data name="CopyToken" xml:space="preserve">
     <value>Copy token</value>
   </data>
-  <data name="AddressOf" xml:space="preserve">
-    <value>Address {0}</value>
-  </data>
-  <data name="TokenHeaderHelp" xml:space="preserve">
-    <value>the token is sent in the header Authorization: Bearer &lt;token&gt;</value>
-  </data>
   <data name="CopyAddressOf" xml:space="preserve">
     <value>Copy address {0}</value>
-  </data>
-  <data name="AddressWithTokenOf" xml:space="preserve">
-    <value>Address {0} with token</value>
   </data>
   <data name="AddressWithTokenHelp" xml:space="preserve">
     <value>for clients that can't set headers: claude.ai, ChatGPT</value>
@@ -463,7 +406,7 @@
     <value>Upstream headers</value>
   </data>
   <data name="UpstreamHeadersHelp" xml:space="preserve">
-    <value>one per line: Name=value. Stored encrypted and not shown after saving</value>
+    <value>one per line, Name=value; stored encrypted and never shown after saving</value>
   </data>
   <data name="ForwardIdentity" xml:space="preserve">
     <value>Forward client identity upstream</value>
@@ -475,13 +418,13 @@
     <value>Request body limit, KB</value>
   </data>
   <data name="HeadersLost" xml:space="preserve">
-    <value>Upstream headers can't be decrypted: the keys directory is lost. Set them again.</value>
+    <value>Upstream headers can't be decrypted because the keys directory is lost: set them again</value>
   </data>
   <data name="HeadersNone" xml:space="preserve">
-    <value>No upstream headers.</value>
+    <value>No upstream headers</value>
   </data>
   <data name="HeadersSet" xml:space="preserve">
-    <value>Headers set: {0}. Values are not shown.</value>
+    <value>Headers set: {0} — values are not shown</value>
   </data>
   <data name="MessageIntro" xml:space="preserve">
     <value>Access to MCP servers for “{0}”.</value>
@@ -515,5 +458,122 @@
   </data>
   <data name="MessageWarning" xml:space="preserve">
     <value>The token and the address with the token are as good as a password: do not pass them on.</value>
+  </data>
+  <data name="Sections" xml:space="preserve">
+    <value>Sections</value>
+  </data>
+  <data name="UpdatedAt" xml:space="preserve">
+    <value>updated {0} UTC</value>
+  </data>
+  <data name="PageTitle" xml:space="preserve">
+    <value>{0} · ctx-ui</value>
+  </data>
+  <data name="BackToOverview" xml:space="preserve">
+    <value>Back to overview</value>
+  </data>
+  <data name="HorizonLabel" xml:space="preserve">
+    <value>Calls in the last 24 hours by 15 minutes: {0} in total, {1} failed. Left and right arrows move between quarters.</value>
+  </data>
+  <data name="HorizonHint" xml:space="preserve">
+    <value>Last 24 hours, 15 minutes per stroke</value>
+  </data>
+  <data name="HorizonQuarter" xml:space="preserve">
+    <value>{0}–{1} UTC</value>
+  </data>
+  <data name="QuarterCalls" xml:space="preserve">
+    <value>{n, plural, =0 {no calls} one {{number} call} other {{number} calls}}</value>
+  </data>
+  <data name="QuarterFailures" xml:space="preserve">
+    <value>{n, plural, one {{number} failure} other {{number} failures}}</value>
+  </data>
+  <data name="Now" xml:space="preserve">
+    <value>now</value>
+  </data>
+  <data name="FigureCalls" xml:space="preserve">
+    <value>{n, plural, one {call} other {calls}} in 24 hours</value>
+  </data>
+  <data name="FigureTools" xml:space="preserve">
+    <value>{0} of them tool calls</value>
+  </data>
+  <data name="FigureActive" xml:space="preserve">
+    <value>active now</value>
+  </data>
+  <data name="FigureOfClients" xml:space="preserve">
+    <value>of {number} {n, plural, one {client} other {clients}}</value>
+  </data>
+  <data name="FigureSeen" xml:space="preserve">
+    <value>{n, plural, one {client came by} other {clients came by}}</value>
+  </data>
+  <data name="FigureInDay" xml:space="preserve">
+    <value>in 24 hours</value>
+  </data>
+  <data name="FigureFailures" xml:space="preserve">
+    <value>upstream {n, plural, one {failure} other {failures}}</value>
+  </data>
+  <data name="Silence" xml:space="preserve">
+    <value>The gateway gives nothing away yet</value>
+  </data>
+  <data name="LastDays" xml:space="preserve">
+    <value>Last 7 days</value>
+  </data>
+  <data name="DaysInDetail" xml:space="preserve">
+    <value>Day by day in detail</value>
+  </data>
+  <data name="Today" xml:space="preserve">
+    <value>today</value>
+  </data>
+  <data name="ClearSearch" xml:space="preserve">
+    <value>Clear search</value>
+  </data>
+  <data name="MoreActions" xml:space="preserve">
+    <value>More actions: {0}</value>
+  </data>
+  <data name="AccessOf" xml:space="preserve">
+    <value>Access: {0}</value>
+  </data>
+  <data name="ClientsSummary" xml:space="preserve">
+    <value>{number} active</value>
+  </data>
+  <data name="InboundsSummary" xml:space="preserve">
+    <value>{number} enabled</value>
+  </data>
+  <data name="JournalSummary" xml:space="preserve">
+    <value>last {number} {n, plural, one {call} other {calls}}</value>
+  </data>
+  <data name="KeysSummary" xml:space="preserve">
+    <value>for the REST API and scripts</value>
+  </data>
+  <data name="Milliseconds" xml:space="preserve">
+    <value>{0} ms</value>
+  </data>
+  <data name="Actions" xml:space="preserve">
+    <value>Actions</value>
+  </data>
+  <data name="GroupWho" xml:space="preserve">
+    <value>Who</value>
+  </data>
+  <data name="GroupWhere" xml:space="preserve">
+    <value>Where to</value>
+  </data>
+  <data name="GroupHowLong" xml:space="preserve">
+    <value>For how long</value>
+  </data>
+  <data name="GroupHowMuch" xml:space="preserve">
+    <value>How much</value>
+  </data>
+  <data name="GroupLimits" xml:space="preserve">
+    <value>Limits</value>
+  </data>
+  <data name="ReissueYes" xml:space="preserve">
+    <value>Issue a new token</value>
+  </data>
+  <data name="WithHeader" xml:space="preserve">
+    <value>With header</value>
+  </data>
+  <data name="WithTokenInPath" xml:space="preserve">
+    <value>With token in path</value>
+  </data>
+  <data name="Copy" xml:space="preserve">
+    <value>Copy</value>
   </data>
 </root>

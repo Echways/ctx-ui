@@ -2,74 +2,77 @@
 @inject PanelBackend Backend
 @inject IDialogService Dialogs
 @inject ISnackbar Snackbar
+@inject TimeProvider Clock
 
-<PageTitle>@PanelText.ApiKeys</PageTitle>
-
-<MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-4">
-    <MudText Typo="Typo.h5">@PanelText.ApiKeys</MudText>
-    <MudSpacer />
-    <MudButton Href="swagger/" Target="_blank" StartIcon="@Icons.Material.Filled.Description">@PanelText.ApiDocs</MudButton>
-    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="AddAsync">
-        @PanelText.IssueKey
-    </MudButton>
-</MudStack>
+<PageHead Title="@PanelText.ApiKeys" Count="_keys?.Count" UpdatedAt="_loadedAt" OnRefresh="LoadAsync">
+    <Summary>
+        <span>@PanelText.KeysSummary</span>
+    </Summary>
+    <Actions>
+        <a class="link" href="swagger/" target="_blank">@PanelText.ApiDocs</a>
+        @if (_keys is { Count: > 0 })
+        {
+            <button type="button" class="btn-k pigment" @onclick="AddAsync">@PanelText.IssueKey</button>
+        }
+    </Actions>
+</PageHead>
 
 @if (_keys is null)
 {
-    <MudProgressLinear Indeterminate="true" />
+    <div class="placeholder" aria-hidden="true"><i></i><i></i><i></i></div>
 }
 else if (_keys.Count == 0)
 {
-    <MudAlert Severity="Severity.Info">
-        @PanelText.KeysEmpty
-    </MudAlert>
+    <div class="empty">
+        <h2>@PanelText.KeysEmpty</h2>
+        <button type="button" class="btn-k pigment" @onclick="AddAsync">@PanelText.IssueKey</button>
+    </div>
 }
 else
 {
-    <MudTable Items="_keys" Dense="true" Hover="true" Elevation="1">
+    <MudTable Items="_keys" Elevation="0" Class="tbl">
         <HeaderContent>
             <MudTh>@PanelText.Title</MudTh>
             <MudTh>@PanelText.Key</MudTh>
             <MudTh>@PanelText.IssuedColumn</MudTh>
-            <MudTh></MudTh>
+            <MudTh><span class="sr">@PanelText.Actions</span></MudTh>
         </HeaderContent>
         <RowTemplate>
             <MudTd>@context.Name</MudTd>
-            <MudTd>@(context.SecretPrefix)…</MudTd>
-            <MudTd>@Words.Day(context.CreatedAt)</MudTd>
-            <MudTd Style="text-align: right">
-                <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" aria-label="@PanelText.Revoke" title="@PanelText.Revoke"
-                               OnClick="@(() => RemoveAsync(context))" />
+            <MudTd DataLabel="@PanelText.Key"><code>@(context.SecretPrefix)…</code></MudTd>
+            <MudTd DataLabel="@PanelText.IssuedColumn">@Words.Day(context.CreatedAt)</MudTd>
+            <MudTd Class="acts">
+                <MudMenu Label="⋯" AriaLabel="@string.Format(PanelText.MoreActions, context.Name)" Class="more"
+                         AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
+                    <MudMenuItem Class="danger" OnClick="() => RemoveAsync(context)">@PanelText.Revoke</MudMenuItem>
+                </MudMenu>
             </MudTd>
         </RowTemplate>
     </MudTable>
 }
 
 @code {
-    private static readonly DialogOptions FormOptions = new() { MaxWidth = MaxWidth.Small, FullWidth = true, BackdropClick = false };
-
     private List<ApiKey>? _keys;
+    private DateTimeOffset? _loadedAt;
 
     protected override Task OnInitializedAsync() => LoadAsync();
 
-    private async Task LoadAsync() =>
+    private async Task LoadAsync()
+    {
         _keys = await Backend.ReadAsync(services => services.GetRequiredService<ApiKeyService>().ListAsync());
+        _loadedAt = Clock.GetUtcNow();
+    }
 
     private async Task AddAsync()
     {
-        var dialog = await Dialogs.ShowAsync<ApiKeyDialog>(PanelText.NewApiKey, FormOptions);
-        if (await dialog.Result is { Canceled: false })
-            await LoadAsync();
+        var dialog = await Dialogs.ShowAsync<ApiKeyDialog>(PanelText.NewApiKey, Sheet.Form);
+        await dialog.Result;
+        await LoadAsync();
     }
 
     private async Task RemoveAsync(ApiKey key)
     {
-        var confirmed = await Dialogs.ShowMessageBoxAsync(
-            string.Format(PanelText.RevokeQuestion, key.Name),
-            PanelText.RevokeWarning,
-            yesText: PanelText.Revoke,
-            cancelText: PanelText.Cancel);
-        if (confirmed != true)
+        if (!await ConfirmDialog.AskAsync(Dialogs, string.Format(PanelText.RevokeQuestion, key.Name), PanelText.RevokeWarning, PanelText.Revoke, danger: true))
             return;
 
         try

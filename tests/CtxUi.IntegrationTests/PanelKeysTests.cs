@@ -25,7 +25,7 @@ public class PanelKeysTests
 
         var page = await OpenKeysAsync(session);
 
-        await Expect(page).ToHaveTitleAsync("Ключи API");
+        await Expect(page).ToHaveTitleAsync("Ключи API · ctx-ui");
         await Expect(page.GetByText("Ключей пока нет")).ToBeVisibleAsync();
         await Expect(page.GetByRole(AriaRole.Link, new() { Name = "Документация API" }))
             .ToHaveAttributeAsync("href", "swagger/");
@@ -41,7 +41,7 @@ public class PanelKeysTests
         await page.GetByRole(AriaRole.Button, new() { Name = "Выпустить ключ" }).ClickAsync();
         await Dialog(page).GetByLabel("Название").FillAsync("bot");
         await Dialog(page).GetByRole(AriaRole.Button, new() { Name = "Выпустить" }).ClickAsync();
-        var key = await Dialog(page).GetByRole(AriaRole.Textbox, new() { Name = "Ключ", Exact = true }).InputValueAsync();
+        var key = (await Dialog(page).GetByLabel("Ключ", new() { Exact = true }).TextContentAsync())!;
         await Dialog(page).GetByRole(AriaRole.Button, new() { Name = "Закрыть" }).ClickAsync();
         using var api = ApiClient.WithKey(gateway, key);
         using var response = await api.GetAsync("api/v1/inbounds");
@@ -76,7 +76,7 @@ public class PanelKeysTests
         await using var session = await PanelSession.SignInAsync(gateway);
         var page = await OpenKeysAsync(session);
 
-        await page.GetByRole(AriaRole.Row).Filter(new() { HasText = "bot" }).GetByRole(AriaRole.Button, new() { Name = "Отозвать" }).ClickAsync();
+        await RowMenu.ChooseAsync(page.GetByRole(AriaRole.Row).Filter(new() { HasText = "bot" }), "Отозвать");
         await page.GetByRole(AriaRole.Dialog).GetByRole(AriaRole.Button, new() { Name = "Отозвать" }).ClickAsync();
         await Expect(page.GetByText("Ключей пока нет")).ToBeVisibleAsync();
         using var response = await api.GetAsync("api/v1/inbounds");

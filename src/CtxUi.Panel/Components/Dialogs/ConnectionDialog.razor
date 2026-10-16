@@ -1,58 +1,56 @@
 @using Microsoft.Extensions.Options
-@using Microsoft.JSInterop
 @inject PanelBackend Backend
 @inject IOptions<PanelOptions> Options
-@inject IJSRuntime Js
 @inject ISnackbar Snackbar
 
-<MudDialog>
-    <DialogContent>
-        <MudStack Spacing="3">
-            @if (_client is null)
-            {
-                <MudProgressLinear Indeterminate="true" />
-            }
-            else if (_token is null)
-            {
-                <MudAlert Severity="Severity.Warning" role="alert">
-                    @PanelText.TokenLost
-                </MudAlert>
-            }
-            else
-            {
-                <MudTextField T="string" Value="_token" Label="@PanelText.Token" ReadOnly="true" Variant="Variant.Outlined" Margin="Margin.Dense"
-                              Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.ContentCopy"
-                              AdornmentAriaLabel="@PanelText.CopyToken" OnAdornmentClick="@(() => CopyAsync(_token))" />
+<Sheet>
+    <ChildContent>
+        @if (_client is null)
+        {
+            <div class="placeholder" aria-hidden="true"><i></i><i></i><i></i></div>
+        }
+        else if (_token is null)
+        {
+            <div class="kf pigment" role="alert">
+                <p class="kf-lost">@PanelText.TokenLost</p>
+                <button type="button" class="kf-white" @onclick="() => MudDialog.Close(DialogResult.Ok(Reissue))">@PanelText.ReissueYes</button>
+            </div>
+        }
+        else
+        {
+            <KeyField Label="@PanelText.Token" Value="@_token" CopyLabel="@PanelText.CopyToken" Born="Fresh" />
+            <div class="slugs">
                 @foreach (var slug in ConnectionText.Slugs(_client))
                 {
-                    var address = ConnectionText.Address(PublicUrl, slug);
-                    var withToken = ConnectionText.AddressWithToken(PublicUrl, _token, slug);
-                    <MudTextField T="string" Value="address" Label="@string.Format(PanelText.AddressOf, slug)" ReadOnly="true" Variant="Variant.Outlined"
-                                  Margin="Margin.Dense" HelperText="@PanelText.TokenHeaderHelp"
-                                  Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.ContentCopy"
-                                  AdornmentAriaLabel="@string.Format(PanelText.CopyAddressOf, slug)" OnAdornmentClick="@(() => CopyAsync(address))" />
-                    <MudTextField T="string" Value="withToken" Label="@string.Format(PanelText.AddressWithTokenOf, slug)" ReadOnly="true"
-                                  Variant="Variant.Outlined" Margin="Margin.Dense"
-                                  HelperText="@PanelText.AddressWithTokenHelp"
-                                  Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.ContentCopy"
-                                  AdornmentAriaLabel="@string.Format(PanelText.CopyAddressWithTokenOf, slug)"
-                                  OnAdornmentClick="@(() => CopyAsync(withToken))" />
+                    var heading = $"slug-{slug}-{_id}";
+                    <section class="slug" aria-labelledby="@heading">
+                        <h3 id="@heading">@slug</h3>
+                        <CopyLine Label="@PanelText.WithHeader" Value="@ConnectionText.Address(PublicUrl, slug)"
+                                  CopyLabel="@string.Format(PanelText.CopyAddressOf, slug)" />
+                        <CopyLine Label="@PanelText.WithTokenInPath" Value="@ConnectionText.AddressWithToken(PublicUrl, _token, slug)"
+                                  CopyLabel="@string.Format(PanelText.CopyAddressWithTokenOf, slug)" />
+                    </section>
                 }
-                <MudTextField T="string" Value="_message" Label="@PanelText.MessageForClient" ReadOnly="true" Lines="8"
-                              Variant="Variant.Outlined" />
-            }
-        </MudStack>
-    </DialogContent>
-    <DialogActions>
+                <p class="hint">@PanelText.AddressWithTokenHelp</p>
+            </div>
+            <section class="message">
+                <span class="lbl" id="@($"message-{_id}")">@PanelText.MessageForClient</span>
+                <pre class="msg" aria-labelledby="@($"message-{_id}")">@_message</pre>
+            </section>
+        }
+    </ChildContent>
+    <Actions>
         @if (_token is not null)
         {
-            <MudButton StartIcon="@Icons.Material.Filled.ContentCopy" OnClick="@(() => CopyAsync(_message))">@PanelText.CopyMessage</MudButton>
+            <CopyButton Value="@_message" Label="@PanelText.CopyMessage" Text="@PanelText.CopyMessage" Class="btn-k pigment" />
         }
-        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="@(() => MudDialog.Close())">@PanelText.Close</MudButton>
-    </DialogActions>
-</MudDialog>
+    </Actions>
+</Sheet>
 
 @code {
+    public const string Reissue = "reissue";
+
+    private readonly string _id = Guid.NewGuid().ToString("N")[..8];
     private Client? _client;
     private string? _token;
     private string _message = "";
@@ -62,6 +60,9 @@
 
     [Parameter]
     public string Name { get; set; } = "";
+
+    [Parameter]
+    public bool Fresh { get; set; }
 
     private string PublicUrl => Options.Value.PublicUrl;
 
@@ -84,18 +85,5 @@
 
         if (_token is not null)
             _message = ConnectionText.Message(PublicUrl, _client, _token);
-    }
-
-    private async Task CopyAsync(string text)
-    {
-        try
-        {
-            await Js.InvokeVoidAsync("navigator.clipboard.writeText", text);
-            Snackbar.Add(PanelText.Copied, Severity.Success);
-        }
-        catch (JSException)
-        {
-            Snackbar.Add(PanelText.CopyNeedsHttps, Severity.Warning);
-        }
     }
 }

@@ -1,0 +1,23 @@
+<figure class="fig @(Alarm ? "alarm" : "")" aria-labelledby="@_id-value @_id-note">
+    <b id="@_id-value">@Words.Number(Value)</b>
+    <figcaption id="@_id-note">
+        <span>@First</span>
+        <span>@Second</span>
+    </figcaption>
+</figure>
+
+@code {
+    private readonly string _id = "figure-" + Guid.NewGuid().ToString("N")[..8];
+
+    [Parameter, EditorRequired]
+    public long Value { get; set; }
+
+    [Parameter, EditorRequired]
+    public string First { get; set; } = "";
+
+    [Parameter, EditorRequired]
+    public string Second { get; set; } = "";
+
+    [Parameter]
+    public bool Alarm { get; set; }
+}

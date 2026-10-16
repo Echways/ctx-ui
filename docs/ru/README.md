@@ -224,24 +224,6 @@ UTF-8 с процентным кодированием. Такие же заго
 
 - [Установка](install.md)
 - [Настройки](configuration.md)
-- [Устройство](internals.md)
-- [Выпуск релиза](releasing.md)
-
-## Разработка
-
-.NET 10 SDK.
-
-```bash
-cd src/CtxUi.Server
-dotnet run                    # http://127.0.0.1:8080, данные в ./data
-dotnet run -- inbound list    # CLI
-dotnet test
-```
-
-Интеграционные тесты поднимают шлюз и поддельный upstream на свободных
-портах. Тесты панели идут в headless Chromium через Playwright; первый
-запуск скачивает его в `~/.cache/ms-playwright`. Проверки установки:
-[releasing.md](releasing.md).
 
 ## Лицензия
 

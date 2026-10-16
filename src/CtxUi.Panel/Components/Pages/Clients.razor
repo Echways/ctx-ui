@@ -4,81 +4,98 @@
 @inject ISnackbar Snackbar
 @inject TimeProvider Clock
 
-<PageTitle>@PanelText.Clients</PageTitle>
-
-<MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-4">
-    <MudText Typo="Typo.h5">@PanelText.Clients</MudText>
-    <MudSpacer />
-    <MudTextField @bind-Value="_search" Label="@PanelText.SearchByName" Immediate="true" Clearable="true" Margin="Margin.Dense"
-                  Variant="Variant.Outlined" Style="max-width: 280px" />
-    <MudIconButton Icon="@Icons.Material.Filled.Refresh" aria-label="@PanelText.Refresh" title="@PanelText.Refresh" OnClick="LoadAsync" />
-    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PersonAdd" OnClick="AddAsync">
-        @PanelText.AddClient
-    </MudButton>
-</MudStack>
+<PageHead Title="@PanelText.Clients" Count="_clients?.Count" UpdatedAt="_clients is null ? null : _loadedAt" OnRefresh="LoadAsync">
+    <Summary>
+        @if (_clients is { Count: > 0 })
+        {
+            <span>@Words.Count(PanelText.ClientsSummary, _clients.Count(client => ClientState.Of(client, _loadedAt) == ClientStatus.Active))</span>
+        }
+    </Summary>
+    <Actions>
+        @if (_clients is { Count: > 0 })
+        {
+            <input class="line search" type="search" placeholder="@PanelText.SearchByName" aria-label="@PanelText.SearchByName" autocomplete="off"
+                   @bind="_search" @bind:event="oninput" />
+            <button type="button" class="btn-k pigment" @onclick="AddAsync">@PanelText.AddClient</button>
+        }
+    </Actions>
+</PageHead>
 
 @if (_clients is null)
 {
-    <MudProgressLinear Indeterminate="true" />
+    <div class="placeholder" aria-hidden="true"><i></i><i></i><i></i></div>
 }
 else if (_clients.Count == 0)
 {
-    <MudAlert Severity="Severity.Info">
-        @PanelText.ClientsEmpty
-    </MudAlert>
+    <div class="empty">
+        <h2>@PanelText.ClientsEmpty</h2>
+        <button type="button" class="btn-k pigment" @onclick="AddAsync">@PanelText.AddClient</button>
+    </div>
 }
 else if (Shown.Count == 0)
 {
-    <MudAlert Severity="Severity.Info">@string.Format(PanelText.ClientsNotFound, _search)</MudAlert>
+    <div class="empty">
+        <p>@string.Format(PanelText.ClientsNotFound, _search?.Trim())</p>
+        <button type="button" class="link" @onclick="() => _search = null">@PanelText.ClearSearch</button>
+    </div>
 }
 else
 {
-    <MudTable Items="Shown" Dense="true" Hover="true" Elevation="1">
+    <MudTable Items="Shown" Elevation="0" Class="tbl" RowClassFunc="RowClass" OnRowClick="@((TableRowClickEventArgs<Client> row) => EditAsync(row.Item!))">
         <HeaderContent>
             <MudTh>@PanelText.Name</MudTh>
             <MudTh>@PanelText.State</MudTh>
             <MudTh>@PanelText.ExpiryColumn</MudTh>
             <MudTh>@PanelText.LastSeenColumn</MudTh>
-            <MudTh>@PanelText.CallsColumn</MudTh>
+            <MudTh Class="num">@PanelText.CallsColumn</MudTh>
             <MudTh>@PanelText.Inbounds</MudTh>
-            <MudTh>@PanelText.AccessColumn</MudTh>
-            <MudTh></MudTh>
+            <MudTh><span class="sr">@PanelText.AccessColumn</span></MudTh>
+            <MudTh><span class="sr">@PanelText.Actions</span></MudTh>
         </HeaderContent>
         <RowTemplate>
-            <MudTd>@context.Name</MudTd>
-            <MudTd>
-                <MudChip T="string" Size="Size.Small" Color="Tint(ClientState.Of(context, _loadedAt))">
-                    @ClientState.Text(ClientState.Of(context, _loadedAt))
-                </MudChip>
+            <MudTd Class="name">@context.Name</MudTd>
+            <MudTd DataLabel="@PanelText.State"><Status Value="ClientState.Of(context, _loadedAt)" /></MudTd>
+            <MudTd DataLabel="@PanelText.ExpiryColumn">
+                @(context.ExpiresAt is { } expiresAt ? string.Format(PanelText.ExpiresOn, Words.Day(expiresAt)) : PanelText.NoExpiry)
             </MudTd>
-            <MudTd>@(context.ExpiresAt is { } expiresAt ? string.Format(PanelText.ExpiresOn, Words.Day(expiresAt)) : PanelText.NoExpiry)</MudTd>
-            <MudTd>@(context.LastUsedAt is { } usedAt ? Words.Minute(usedAt) : PanelText.NeverSeen)</MudTd>
-            <MudTd>@QuotaPeriod.UsedCalls(context, _loadedAt)/@(context.QuotaCalls?.ToString() ?? "∞")</MudTd>
-            <MudTd>@string.Join(", ", context.Inbounds.Select(link => link.Inbound!.Slug).Order())</MudTd>
-            <MudTd>
-                <MudSwitch T="bool" Value="context.Enabled" Color="Color.Primary"
-                           ValueChanged="@(enabled => SwitchAsync(context, enabled))" />
+            <MudTd DataLabel="@PanelText.LastSeenColumn">
+                @if (context.LastUsedAt is { } usedAt)
+                {
+                    @Words.Minute(usedAt)
+                }
+                else
+                {
+                    <span class="nothing">@PanelText.NeverSeen</span>
+                }
             </MudTd>
-            <MudTd Style="text-align: right; white-space: nowrap">
-                <MudIconButton Icon="@Icons.Material.Filled.Link" Size="Size.Small" aria-label="@PanelText.Connection" title="@PanelText.Connection"
-                               OnClick="@(() => ConnectAsync(context))" />
-                <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" aria-label="@PanelText.Edit" title="@PanelText.Edit"
-                               OnClick="@(() => EditAsync(context))" />
-                <MudIconButton Icon="@Icons.Material.Filled.RestartAlt" Size="Size.Small" aria-label="@PanelText.ResetQuota" title="@PanelText.ResetQuota"
-                               OnClick="@(() => ResetAsync(context))" />
-                <MudIconButton Icon="@Icons.Material.Filled.Key" Size="Size.Small" aria-label="@PanelText.NewToken" title="@PanelText.NewToken"
-                               OnClick="@(() => ReissueAsync(context))" />
-                <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" aria-label="@PanelText.Delete" title="@PanelText.Delete"
-                               OnClick="@(() => RemoveAsync(context))" />
+            <MudTd DataLabel="@PanelText.CallsColumn" Class="num">
+                <Meter Used="QuotaPeriod.UsedCalls(context, _loadedAt)" Limit="context.QuotaCalls" />
+            </MudTd>
+            <MudTd DataLabel="@PanelText.Inbounds"><code>@string.Join(", ", context.Inbounds.Select(link => link.Inbound!.Slug).Order())</code></MudTd>
+            <MudTd DataLabel="@PanelText.AccessColumn">
+                <span @onclick:stopPropagation="true">
+                    <MudSwitch T="bool" Value="context.Enabled" aria-label="@string.Format(PanelText.AccessOf, context.Name)"
+                               ValueChanged="@(enabled => SwitchAsync(context, enabled))" />
+                </span>
+            </MudTd>
+            <MudTd Class="acts">
+                <span class="acts-in" @onclick:stopPropagation="true">
+                    <button type="button" class="link" @onclick="() => ConnectAsync(context)">@PanelText.Connection</button>
+                    <MudMenu Label="⋯" AriaLabel="@string.Format(PanelText.MoreActions, context.Name)" Class="more"
+                             AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
+                        <MudMenuItem OnClick="() => EditAsync(context)">@PanelText.Edit</MudMenuItem>
+                        <MudMenuItem OnClick="() => ResetAsync(context)">@PanelText.ResetQuota</MudMenuItem>
+                        <MudMenuItem OnClick="() => ReissueAsync(context)">@PanelText.NewToken</MudMenuItem>
+                        <MudDivider />
+                        <MudMenuItem Class="danger" OnClick="() => RemoveAsync(context)">@PanelText.Delete</MudMenuItem>
+                    </MudMenu>
+                </span>
             </MudTd>
         </RowTemplate>
     </MudTable>
 }
 
 @code {
-    private static readonly DialogOptions ConnectionOptions = new() { MaxWidth = MaxWidth.Medium, FullWidth = true };
-    private static readonly DialogOptions FormOptions = new() { MaxWidth = MaxWidth.Small, FullWidth = true, BackdropClick = false };
-
     private List<Client>? _clients;
     private DateTimeOffset _loadedAt;
     private string? _search;
@@ -89,13 +106,8 @@ else
 
     protected override Task OnInitializedAsync() => LoadAsync();
 
-    private static Color Tint(ClientStatus status) => status switch
-    {
-        ClientStatus.Active => Color.Success,
-        ClientStatus.Exhausted => Color.Warning,
-        ClientStatus.Expired => Color.Error,
-        _ => Color.Default,
-    };
+    private string RowClass(Client client, int _) =>
+        ClientState.Of(client, _loadedAt) == ClientStatus.Disabled ? "click dim" : "click";
 
     private async Task LoadAsync()
     {
@@ -113,54 +125,52 @@ else
 
     private async Task AddAsync()
     {
-        var dialog = await Dialogs.ShowAsync<ClientDialog>(PanelText.NewClient, FormOptions);
+        var dialog = await Dialogs.ShowAsync<ClientDialog>(PanelText.NewClient, Sheet.Form);
         if (await dialog.Result is not { Canceled: false, Data: string name })
             return;
 
         await LoadAsync();
-        await ConnectAsync(name);
+        await ConnectAsync(name, fresh: true);
     }
 
     private async Task EditAsync(Client client)
     {
         var parameters = new DialogParameters<ClientDialog> { { dialog => dialog.Name, client.Name } };
-        var dialog = await Dialogs.ShowAsync<ClientDialog>(string.Format(PanelText.ClientTitle, client.Name), parameters, FormOptions);
+        var dialog = await Dialogs.ShowAsync<ClientDialog>(string.Format(PanelText.ClientTitle, client.Name), parameters, Sheet.Form);
         if (await dialog.Result is { Canceled: false })
             await LoadAsync();
     }
 
-    private Task ConnectAsync(Client client) => ConnectAsync(client.Name);
+    private Task ConnectAsync(Client client) => ConnectAsync(client.Name, fresh: false);
 
-    private Task ConnectAsync(string name) => Dialogs.ShowAsync<ConnectionDialog>(
-        string.Format(PanelText.ConnectionTitle, name),
-        new DialogParameters<ConnectionDialog> { { dialog => dialog.Name, name } },
-        ConnectionOptions);
+    private async Task ConnectAsync(string name, bool fresh)
+    {
+        var dialog = await Dialogs.ShowAsync<ConnectionDialog>(
+            string.Format(PanelText.ConnectionTitle, name),
+            new DialogParameters<ConnectionDialog> { { sheet => sheet.Name, name }, { sheet => sheet.Fresh, fresh } },
+            Sheet.View);
+        if (await dialog.Result is { Canceled: false, Data: ConnectionDialog.Reissue }
+            && _clients!.FirstOrDefault(known => known.Name == name) is { } client)
+            await ReissueAsync(client);
+    }
 
     private async Task ReissueAsync(Client client)
     {
-        var confirmed = await Dialogs.ShowMessageBoxAsync(
-            string.Format(PanelText.ReissueQuestion, client.Name),
-            PanelText.ReissueWarning,
-            yesText: PanelText.Issue,
-            cancelText: PanelText.Cancel);
-        if (confirmed != true)
+        if (!await ConfirmDialog.AskAsync(
+                Dialogs, string.Format(PanelText.ReissueQuestion, client.Name), PanelText.ReissueWarning, PanelText.ReissueYes, danger: false))
             return;
 
         await ApplyAsync(
             services => services.GetRequiredService<ClientService>().ReissueAsync(client.Name),
             string.Format(PanelText.TokenReissued, client.Name));
         if (_clients!.Any(known => known.Id == client.Id))
-            await ConnectAsync(client);
+            await ConnectAsync(client.Name, fresh: true);
     }
 
     private async Task RemoveAsync(Client client)
     {
-        var confirmed = await Dialogs.ShowMessageBoxAsync(
-            string.Format(PanelText.RemoveClientQuestion, client.Name),
-            PanelText.RemoveClientWarning,
-            yesText: PanelText.Delete,
-            cancelText: PanelText.Cancel);
-        if (confirmed == true)
+        if (await ConfirmDialog.AskAsync(
+                Dialogs, string.Format(PanelText.RemoveClientQuestion, client.Name), PanelText.RemoveClientWarning, PanelText.Delete, danger: true))
         {
             await ApplyAsync(
                 services => services.GetRequiredService<ClientService>().RemoveAsync(client.Name),

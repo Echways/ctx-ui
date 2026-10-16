@@ -38,7 +38,7 @@ public class PanelLanguageTests
         await page.GetByRole(AriaRole.Banner).GetByRole(AriaRole.Button, new() { Name = "English" }).ClickAsync();
 
         await Expect(page).ToHaveURLAsync(gateway.PanelUrl + "clients");
-        await Expect(page.GetByRole(AriaRole.Heading, new() { Name = "Clients" })).ToBeVisibleAsync();
+        await Expect(page.GetByRole(AriaRole.Heading, new() { Name = "Clients", Level = 1 })).ToBeVisibleAsync();
         await Expect(page.Locator("html")).ToHaveAttributeAsync("lang", "en");
 
         await page.GetByRole(AriaRole.Banner).GetByRole(AriaRole.Button, new() { Name = "Русский" }).ClickAsync();
@@ -53,10 +53,11 @@ public class PanelLanguageTests
         await using var session = await PanelSession.SignInAsync(gateway);
         var page = session.Page;
         await page.GetByRole(AriaRole.Banner).GetByRole(AriaRole.Button, new() { Name = "English" }).ClickAsync();
+        await Expect(page.Locator("html")).ToHaveAttributeAsync("lang", "en");
         await page.GetByRole(AriaRole.Navigation).GetByRole(AriaRole.Link, new() { Name = "Inbounds" }).ClickAsync();
 
         await page.GetByRole(AriaRole.Button, new() { Name = "Add inbound" }).ClickAsync();
-        await page.GetByRole(AriaRole.Dialog).GetByRole(AriaRole.Button, new() { Name = "Save" }).ClickAsync();
+        await page.GetByRole(AriaRole.Dialog).GetByRole(AriaRole.Button, new() { Name = "Add inbound" }).ClickAsync();
 
         await Expect(page.GetByRole(AriaRole.Dialog).GetByRole(AriaRole.Alert)).ToContainTextAsync("is not allowed");
     }

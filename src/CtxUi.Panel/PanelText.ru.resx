@@ -18,9 +18,6 @@
   <data name="LanguageSwitchCulture" xml:space="preserve">
     <value>en</value>
   </data>
-  <data name="Menu" xml:space="preserve">
-    <value>Меню</value>
-  </data>
   <data name="SignOut" xml:space="preserve">
     <value>Выйти</value>
   </data>
@@ -28,7 +25,7 @@
     <value>Обзор</value>
   </data>
   <data name="Inbounds" xml:space="preserve">
-    <value>Inbounds</value>
+    <value>Inbound'ы</value>
   </data>
   <data name="Inbound" xml:space="preserve">
     <value>Inbound</value>
@@ -63,14 +60,11 @@
   <data name="Close" xml:space="preserve">
     <value>Закрыть</value>
   </data>
-  <data name="Issue" xml:space="preserve">
-    <value>Выпустить</value>
-  </data>
   <data name="Copied" xml:space="preserve">
     <value>Скопировано</value>
   </data>
   <data name="CopyNeedsHttps" xml:space="preserve">
-    <value>Браузер разрешает копировать только на странице, открытой по HTTPS. Выделите текст и скопируйте его сами.</value>
+    <value>Браузер копирует только на странице, открытой по HTTPS: выделите текст и скопируйте его сами</value>
   </data>
   <data name="Name" xml:space="preserve">
     <value>Имя</value>
@@ -85,13 +79,10 @@
     <value>Состояние</value>
   </data>
   <data name="ClientCount" xml:space="preserve">
-    <value>Клиентов</value>
+    <value>Клиенты</value>
   </data>
   <data name="Enabled" xml:space="preserve">
     <value>Включён</value>
-  </data>
-  <data name="StateOn" xml:space="preserve">
-    <value>включён</value>
   </data>
   <data name="StateOff" xml:space="preserve">
     <value>выключен</value>
@@ -106,16 +97,16 @@
     <value>Добавить клиента</value>
   </data>
   <data name="ClientsEmpty" xml:space="preserve">
-    <value>Клиентов пока нет. Клиент — это тот, кому выдан токен: у него свой срок, свои лимиты и свой набор inbound'ов.</value>
+    <value>Клиентов пока нет: выдайте первый токен</value>
   </data>
   <data name="ClientsNotFound" xml:space="preserve">
-    <value>Никто не найден: в именах клиентов нет «{0}».</value>
+    <value>Никого с именем «{0}»</value>
   </data>
   <data name="ExpiryColumn" xml:space="preserve">
     <value>Срок, UTC</value>
   </data>
   <data name="LastSeenColumn" xml:space="preserve">
-    <value>Обращался, UTC</value>
+    <value>Последний вызов, UTC</value>
   </data>
   <data name="CallsColumn" xml:space="preserve">
     <value>Вызовы</value>
@@ -181,7 +172,7 @@
     <value>Добавить inbound</value>
   </data>
   <data name="InboundsEmpty" xml:space="preserve">
-    <value>Inbound'ов пока нет. Inbound — это адрес /mcp/&lt;slug&gt; на шлюзе, за которым стоит ваш MCP-сервер.</value>
+    <value>Inbound'ов пока нет: поставьте за шлюз первый MCP-сервер</value>
   </data>
   <data name="McpServer" xml:space="preserve">
     <value>MCP-сервер</value>
@@ -211,7 +202,7 @@
     <value>Все клиенты</value>
   </data>
   <data name="JournalEmpty" xml:space="preserve">
-    <value>Журнал пуст: вызовов через шлюз ещё не было или они старше срока хранения.</value>
+    <value>Журнал пуст: вызовов ещё не было или они старше срока хранения</value>
   </data>
   <data name="TimeColumn" xml:space="preserve">
     <value>Время, UTC</value>
@@ -223,10 +214,10 @@
     <value>Исход</value>
   </data>
   <data name="DurationColumn" xml:space="preserve">
-    <value>Длительность, мс</value>
+    <value>Длительность</value>
   </data>
   <data name="JournalLimit" xml:space="preserve">
-    <value>Показаны последние {0} вызовов.</value>
+    <value>Показаны не больше {number} последних {n, plural, one {вызова} other {вызовов}}</value>
   </data>
   <data name="ApiDocs" xml:space="preserve">
     <value>Документация API</value>
@@ -235,13 +226,13 @@
     <value>Выпустить ключ</value>
   </data>
   <data name="KeysEmpty" xml:space="preserve">
-    <value>Ключей пока нет. Ключ нужен программам, которые управляют шлюзом через REST API: боту, скрипту выдачи доступа.</value>
+    <value>Ключей пока нет: ключ нужен скрипту, который управляет шлюзом через REST API</value>
   </data>
   <data name="Key" xml:space="preserve">
     <value>Ключ</value>
   </data>
   <data name="IssuedColumn" xml:space="preserve">
-    <value>Выпущен (UTC)</value>
+    <value>Выпущен, UTC</value>
   </data>
   <data name="Revoke" xml:space="preserve">
     <value>Отозвать</value>
@@ -288,68 +279,29 @@
   <data name="NotFoundHeading" xml:space="preserve">
     <value>Такой страницы нет</value>
   </data>
-  <data name="NotFoundText" xml:space="preserve">
-    <value>Адрес изменился или набран с ошибкой. Разделы панели перечислены в меню слева.</value>
-  </data>
-  <data name="ActiveOfAll" xml:space="preserve">
-    <value>{0} из {1}</value>
-  </data>
-  <data name="ActiveOfAllNote" xml:space="preserve">
-    <value>активных из всех</value>
-  </data>
-  <data name="SeenToday" xml:space="preserve">
-    <value>Обращались за сутки</value>
-  </data>
-  <data name="SeenTodayNote" xml:space="preserve">
-    <value>клиентов</value>
-  </data>
-  <data name="CallsToday" xml:space="preserve">
-    <value>Вызовы за сутки</value>
-  </data>
-  <data name="CallsTodayNote" xml:space="preserve">
-    <value>из них инструментов: {0}</value>
-  </data>
-  <data name="FailuresToday" xml:space="preserve">
-    <value>Сбои upstream за сутки</value>
-  </data>
   <data name="NoCalls" xml:space="preserve">
     <value>вызовов не было</value>
   </data>
   <data name="FailureShare" xml:space="preserve">
     <value>{0} % вызовов</value>
   </data>
-  <data name="FirstAccessLead" xml:space="preserve">
-    <value>Чтобы выдать первый доступ,</value>
-  </data>
-  <data name="FirstAccessInbound" xml:space="preserve">
-    <value>добавьте inbound</value>
-  </data>
-  <data name="FirstAccessThen" xml:space="preserve">
-    <value>а затем</value>
-  </data>
-  <data name="FirstAccessClient" xml:space="preserve">
-    <value>клиента</value>
-  </data>
   <data name="CallsInDayColumn" xml:space="preserve">
-    <value>Вызовов за сутки</value>
+    <value>Вызовы за сутки</value>
   </data>
   <data name="UpstreamFailuresColumn" xml:space="preserve">
-    <value>Сбоев upstream</value>
-  </data>
-  <data name="ByDay" xml:space="preserve">
-    <value>По дням, UTC</value>
+    <value>Сбои upstream</value>
   </data>
   <data name="DayColumn" xml:space="preserve">
     <value>День</value>
   </data>
   <data name="CallCountColumn" xml:space="preserve">
-    <value>Вызовов</value>
+    <value>Вызовы</value>
   </data>
   <data name="ToolsColumn" xml:space="preserve">
-    <value>Инструментов</value>
+    <value>К инструментам</value>
   </data>
   <data name="RefusalsColumn" xml:space="preserve">
-    <value>Отказов шлюза</value>
+    <value>Отказы шлюза</value>
   </data>
   <data name="AverageColumn" xml:space="preserve">
     <value>В среднем, мс</value>
@@ -358,7 +310,7 @@
     <value>кому выдан ключ: латинские буквы, цифры, точка, дефис и подчёркивание</value>
   </data>
   <data name="KeyShownOnce" xml:space="preserve">
-    <value>Ключ показан один раз. Сохраните его сейчас: потом его не увидеть даже в панели.</value>
+    <value>Ключ показан один раз: сохраните его сейчас, потом его не увидеть даже в панели</value>
   </data>
   <data name="KeyHelp" xml:space="preserve">
     <value>передаётся заголовком Authorization: Bearer &lt;ключ&gt;</value>
@@ -367,7 +319,7 @@
     <value>Скопировать ключ</value>
   </data>
   <data name="AddInboundFirst" xml:space="preserve">
-    <value>Сначала добавьте inbound: клиенту нужно выдать доступ хотя бы к одному.</value>
+    <value>Сначала добавьте inbound: клиенту нужен доступ хотя бы к одному</value>
   </data>
   <data name="ClientNameHelp" xml:space="preserve">
     <value>как клиент будет называться в списке и в журнале</value>
@@ -409,10 +361,10 @@
     <value>Метаданные</value>
   </data>
   <data name="MetadataHelp" xml:space="preserve">
-    <value>по одной паре в строке: ключ=значение. Уходят upstream заголовками X-Mcp-Meta-*</value>
+    <value>по одной паре в строке, ключ=значение; уходят upstream заголовками X-Mcp-Meta-*</value>
   </data>
   <data name="TokenLost" xml:space="preserve">
-    <value>Токен показать нельзя: его сохранённая копия не расшифрована, потерян каталог keys. Прежний токен продолжает работать у того, кому он выдан. Чтобы увидеть токен, выпустите новый.</value>
+    <value>Токен показать нельзя: его сохранённая копия не читается, потерян каталог keys. Выпустите новый, и прежний перестанет работать</value>
   </data>
   <data name="Token" xml:space="preserve">
     <value>Токен</value>
@@ -420,17 +372,8 @@
   <data name="CopyToken" xml:space="preserve">
     <value>Скопировать токен</value>
   </data>
-  <data name="AddressOf" xml:space="preserve">
-    <value>Адрес {0}</value>
-  </data>
-  <data name="TokenHeaderHelp" xml:space="preserve">
-    <value>токен передаётся заголовком Authorization: Bearer &lt;токен&gt;</value>
-  </data>
   <data name="CopyAddressOf" xml:space="preserve">
     <value>Скопировать адрес {0}</value>
-  </data>
-  <data name="AddressWithTokenOf" xml:space="preserve">
-    <value>Адрес {0} с токеном</value>
   </data>
   <data name="AddressWithTokenHelp" xml:space="preserve">
     <value>для клиентов, которые не умеют задавать заголовки: claude.ai, ChatGPT</value>
@@ -463,7 +406,7 @@
     <value>Заголовки для upstream</value>
   </data>
   <data name="UpstreamHeadersHelp" xml:space="preserve">
-    <value>по одному в строке: Имя=значение. Хранятся зашифрованными и после сохранения не показываются</value>
+    <value>по одному в строке, Имя=значение; хранятся зашифрованными и после сохранения не показываются</value>
   </data>
   <data name="ForwardIdentity" xml:space="preserve">
     <value>Передавать upstream личность клиента</value>
@@ -475,13 +418,13 @@
     <value>Предел тела запроса, КБ</value>
   </data>
   <data name="HeadersLost" xml:space="preserve">
-    <value>Заголовки для upstream не расшифрованы: потерян каталог keys. Задайте их заново.</value>
+    <value>Заголовки для upstream не расшифровать, потерян каталог keys: задайте их заново</value>
   </data>
   <data name="HeadersNone" xml:space="preserve">
-    <value>Заголовков для upstream нет.</value>
+    <value>Заголовков для upstream нет</value>
   </data>
   <data name="HeadersSet" xml:space="preserve">
-    <value>Заданы заголовки: {0}. Значения не показываются.</value>
+    <value>Заданы заголовки: {0} — значения не показываются</value>
   </data>
   <data name="MessageIntro" xml:space="preserve">
     <value>Доступ к MCP-серверам для «{0}».</value>
@@ -515,5 +458,122 @@
   </data>
   <data name="MessageWarning" xml:space="preserve">
     <value>Токен и адрес с токеном равносильны паролю: не передавайте их дальше.</value>
+  </data>
+  <data name="Sections" xml:space="preserve">
+    <value>Разделы</value>
+  </data>
+  <data name="UpdatedAt" xml:space="preserve">
+    <value>обновлено {0} UTC</value>
+  </data>
+  <data name="PageTitle" xml:space="preserve">
+    <value>{0} · ctx-ui</value>
+  </data>
+  <data name="BackToOverview" xml:space="preserve">
+    <value>Вернуться к обзору</value>
+  </data>
+  <data name="HorizonLabel" xml:space="preserve">
+    <value>Вызовы за последние сутки по 15 минут: всего {0}, сбоев {1}. Стрелки влево и вправо переходят между отрезками.</value>
+  </data>
+  <data name="HorizonHint" xml:space="preserve">
+    <value>Последние сутки, по 15 минут на штрих</value>
+  </data>
+  <data name="HorizonQuarter" xml:space="preserve">
+    <value>{0}–{1} UTC</value>
+  </data>
+  <data name="QuarterCalls" xml:space="preserve">
+    <value>{n, plural, =0 {ни одного вызова} one {{number} вызов} few {{number} вызова} many {{number} вызовов} other {{number} вызова}}</value>
+  </data>
+  <data name="QuarterFailures" xml:space="preserve">
+    <value>{n, plural, one {{number} сбой} few {{number} сбоя} many {{number} сбоев} other {{number} сбоя}}</value>
+  </data>
+  <data name="Now" xml:space="preserve">
+    <value>сейчас</value>
+  </data>
+  <data name="FigureCalls" xml:space="preserve">
+    <value>{n, plural, one {вызов} few {вызова} many {вызовов} other {вызова}} за сутки</value>
+  </data>
+  <data name="FigureTools" xml:space="preserve">
+    <value>{0} из них к инструментам</value>
+  </data>
+  <data name="FigureActive" xml:space="preserve">
+    <value>{n, plural, one {активен} other {активны}} сейчас</value>
+  </data>
+  <data name="FigureOfClients" xml:space="preserve">
+    <value>из {number} {n, plural, one {клиента} other {клиентов}}</value>
+  </data>
+  <data name="FigureSeen" xml:space="preserve">
+    <value>{n, plural, one {клиент заходил} few {клиента заходили} many {клиентов заходили} other {клиента заходили}}</value>
+  </data>
+  <data name="FigureInDay" xml:space="preserve">
+    <value>за сутки</value>
+  </data>
+  <data name="FigureFailures" xml:space="preserve">
+    <value>{n, plural, one {сбой} few {сбоя} many {сбоев} other {сбоя}} upstream</value>
+  </data>
+  <data name="Silence" xml:space="preserve">
+    <value>Шлюз ещё ничего не раздаёт</value>
+  </data>
+  <data name="LastDays" xml:space="preserve">
+    <value>Последние 7 дней</value>
+  </data>
+  <data name="DaysInDetail" xml:space="preserve">
+    <value>Подробно по дням</value>
+  </data>
+  <data name="Today" xml:space="preserve">
+    <value>сегодня</value>
+  </data>
+  <data name="ClearSearch" xml:space="preserve">
+    <value>Сбросить поиск</value>
+  </data>
+  <data name="MoreActions" xml:space="preserve">
+    <value>Ещё действия: {0}</value>
+  </data>
+  <data name="AccessOf" xml:space="preserve">
+    <value>Доступ: {0}</value>
+  </data>
+  <data name="ClientsSummary" xml:space="preserve">
+    <value>{number} {n, plural, one {активен} other {активны}}</value>
+  </data>
+  <data name="InboundsSummary" xml:space="preserve">
+    <value>{number} {n, plural, one {включён} other {включены}}</value>
+  </data>
+  <data name="JournalSummary" xml:space="preserve">
+    <value>{n, plural, one {последний {number} вызов} few {последние {number} вызова} many {последние {number} вызовов} other {последние {number} вызова}}</value>
+  </data>
+  <data name="KeysSummary" xml:space="preserve">
+    <value>для REST API и скриптов</value>
+  </data>
+  <data name="Milliseconds" xml:space="preserve">
+    <value>{0} мс</value>
+  </data>
+  <data name="Actions" xml:space="preserve">
+    <value>Действия</value>
+  </data>
+  <data name="GroupWho" xml:space="preserve">
+    <value>Кто</value>
+  </data>
+  <data name="GroupWhere" xml:space="preserve">
+    <value>Куда</value>
+  </data>
+  <data name="GroupHowLong" xml:space="preserve">
+    <value>Как долго</value>
+  </data>
+  <data name="GroupHowMuch" xml:space="preserve">
+    <value>Сколько</value>
+  </data>
+  <data name="GroupLimits" xml:space="preserve">
+    <value>Пределы</value>
+  </data>
+  <data name="ReissueYes" xml:space="preserve">
+    <value>Выпустить новый токен</value>
+  </data>
+  <data name="WithHeader" xml:space="preserve">
+    <value>С заголовком</value>
+  </data>
+  <data name="WithTokenInPath" xml:space="preserve">
+    <value>С токеном в пути</value>
+  </data>
+  <data name="Copy" xml:space="preserve">
+    <value>Копировать</value>
   </data>
 </root>

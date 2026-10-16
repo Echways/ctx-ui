@@ -5,4 +5,6 @@ public sealed class PanelOptions
     public string PublicUrl { get; set; } = "http://localhost:8080";
 
     public TimeSpan SessionCheckInterval { get; set; } = TimeSpan.FromMinutes(1);
+
+    public TimeSpan AutoRefreshInterval { get; set; } = TimeSpan.FromSeconds(30);
 }

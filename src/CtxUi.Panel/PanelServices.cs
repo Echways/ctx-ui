@@ -50,7 +50,15 @@ public static class PanelServices
         services.AddCascadingAuthenticationState();
         services.AddRazorComponents().AddInteractiveServerComponents();
         services.AddScoped<AuthenticationStateProvider, AdminSessionState>();
-        services.AddMudServices();
+        services.AddMudServices(mud =>
+        {
+            mud.SnackbarConfiguration.PositionClass = MudBlazor.Defaults.Classes.Position.BottomLeft;
+            mud.SnackbarConfiguration.HideIcon = true;
+            mud.SnackbarConfiguration.ShowCloseIcon = false;
+            mud.SnackbarConfiguration.ShowTransitionDuration = 160;
+            mud.SnackbarConfiguration.HideTransitionDuration = 160;
+        });
+        services.AddScoped<Clipboard>();
         services.Configure<RequestLocalizationOptions>(options =>
         {
             options.SetDefaultCulture(PanelLanguage.Default)

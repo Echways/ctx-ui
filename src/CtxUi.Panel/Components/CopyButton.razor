@@ -1,0 +1,44 @@
+@inject Clipboard Clipboard
+@implements IDisposable
+
+<button type="button" class="@Class" aria-label="@Label" @onclick="CopyAsync">@(_copied ? PanelText.Copied : Text)</button>
+
+@code {
+    private readonly CancellationTokenSource _gone = new();
+    private bool _copied;
+
+    [Parameter, EditorRequired]
+    public string Value { get; set; } = "";
+
+    [Parameter, EditorRequired]
+    public string Label { get; set; } = "";
+
+    [Parameter]
+    public string Text { get; set; } = PanelText.Copy;
+
+    [Parameter]
+    public string Class { get; set; } = "link";
+
+    public void Dispose()
+    {
+        _gone.Cancel();
+        _gone.Dispose();
+    }
+
+    private async Task CopyAsync()
+    {
+        if (!await Clipboard.CopyAsync(Value))
+            return;
+
+        _copied = true;
+        StateHasChanged();
+        try
+        {
+            await Task.Delay(Clipboard.Acknowledged, _gone.Token);
+            _copied = false;
+        }
+        catch (OperationCanceledException)
+        {
+        }
+    }
+}

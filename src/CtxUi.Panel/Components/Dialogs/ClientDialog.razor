@@ -1,48 +1,61 @@
 @inject PanelBackend Backend
 
-<MudDialog>
-    <DialogContent>
-        <MudStack Spacing="3">
-            @if (_error is not null)
-            {
-                <MudAlert Severity="Severity.Error" role="alert">@_error</MudAlert>
-            }
-            @if (_inbounds is { Count: 0 })
-            {
-                <MudAlert Severity="Severity.Info">@PanelText.AddInboundFirst</MudAlert>
-            }
-            <MudTextField @bind-Value="_name" Label="@PanelText.Name" Immediate="true" Disabled="Name is not null"
+<Sheet>
+    <ChildContent>
+        @if (_error is not null)
+        {
+            <p class="form-error" role="alert">@_error</p>
+        }
+        @if (_inbounds is { Count: 0 })
+        {
+            <p class="hint">@PanelText.AddInboundFirst</p>
+        }
+        <section class="group">
+            <h3>@PanelText.GroupWho</h3>
+            <MudTextField @bind-Value="_name" Label="@PanelText.Name" Immediate="true" Disabled="Name is not null" AutoFocus="Name is null"
                           HelperText="@PanelText.ClientNameHelp" />
-            <div>
-                <MudText Typo="Typo.caption">@PanelText.InboundAccess</MudText>
+            <MudTextField @bind-Value="_metadata" Label="@PanelText.Metadata" Immediate="true" Lines="2" Sizing="InputSizing.Auto"
+                          HelperText="@PanelText.MetadataHelp" />
+        </section>
+        <section class="group">
+            <h3>@PanelText.GroupWhere</h3>
+            <div class="checks" role="group" aria-label="@PanelText.InboundAccess">
                 @foreach (var inbound in _inbounds ?? [])
                 {
-                    <MudCheckBox T="bool" Value="_chosen.Contains(inbound.Slug)" Dense="true"
-                                 ValueChanged="@(chosen => Choose(inbound.Slug, chosen))"
-                                 Label="@(inbound.Enabled ? inbound.Slug : string.Format(PanelText.InboundOff, inbound.Slug))" />
+                    <MudCheckBox T="bool" Value="_chosen.Contains(inbound.Slug)" Dense="true" Class="@(inbound.Enabled ? "check" : "check off")"
+                                 ValueChanged="@(chosen => Choose(inbound.Slug, chosen))">
+                        <code>@inbound.Slug</code>
+                        <span class="note">@(inbound.Enabled ? inbound.Name : string.Format(PanelText.InboundOff, inbound.Name))</span>
+                    </MudCheckBox>
                 }
             </div>
+        </section>
+        <section class="group">
+            <h3>@PanelText.GroupHowLong</h3>
             <MudTextField T="DateTime?" @bind-Value="_expires" Label="@PanelText.Expiry" InputType="InputType.Date" Format="yyyy-MM-dd"
                           Immediate="true" HelperText="@PanelText.ExpiryHelp" />
-            <MudNumericField T="int?" @bind-Value="_rate" Label="@PanelText.RatePerMinute" Immediate="true" HideSpinButtons="true"
-                             HelperText="@PanelText.NoLimitHelp" />
-            <MudNumericField T="int?" @bind-Value="_concurrency" Label="@PanelText.Concurrency" Immediate="true"
-                             HideSpinButtons="true" HelperText="@PanelText.NoLimitHelp" />
-            <MudNumericField T="int?" @bind-Value="_quota" Label="@PanelText.Quota" Immediate="true"
-                             HideSpinButtons="true" HelperText="@PanelText.QuotaHelp" />
-            <MudNumericField T="int?" @bind-Value="_resetDays" Label="@PanelText.ResetDays" Immediate="true"
-                             HideSpinButtons="true" HelperText="@PanelText.ResetDaysHelp" />
-            <MudTextField @bind-Value="_metadata" Label="@PanelText.Metadata" Immediate="true" Lines="2"
-                          HelperText="@PanelText.MetadataHelp" />
-        </MudStack>
-    </DialogContent>
-    <DialogActions>
-        <MudButton OnClick="@(() => MudDialog.Cancel())">@PanelText.Cancel</MudButton>
-        <MudButton Color="Color.Primary" Variant="Variant.Filled" Disabled="_inbounds is not { Count: > 0 }" OnClick="SaveAsync">
-            @PanelText.Save
-        </MudButton>
-    </DialogActions>
-</MudDialog>
+        </section>
+        <section class="group">
+            <h3>@PanelText.GroupHowMuch</h3>
+            <div class="pair">
+                <MudNumericField T="int?" @bind-Value="_rate" Label="@PanelText.RatePerMinute" Immediate="true" HideSpinButtons="true"
+                                 HelperText="@PanelText.NoLimitHelp" />
+                <MudNumericField T="int?" @bind-Value="_concurrency" Label="@PanelText.Concurrency" Immediate="true"
+                                 HideSpinButtons="true" HelperText="@PanelText.NoLimitHelp" />
+                <MudNumericField T="int?" @bind-Value="_quota" Label="@PanelText.Quota" Immediate="true"
+                                 HideSpinButtons="true" HelperText="@PanelText.QuotaHelp" />
+                <MudNumericField T="int?" @bind-Value="_resetDays" Label="@PanelText.ResetDays" Immediate="true"
+                                 HideSpinButtons="true" HelperText="@PanelText.ResetDaysHelp" />
+            </div>
+        </section>
+    </ChildContent>
+    <Actions>
+        <button type="button" class="link" @onclick="() => MudDialog.Cancel()">@PanelText.Cancel</button>
+        <button type="button" class="btn-k pigment" disabled="@(_inbounds is not { Count: > 0 })" @onclick="SaveAsync">
+            @(Name is null ? PanelText.AddClient : PanelText.Save)
+        </button>
+    </Actions>
+</Sheet>
 
 @code {
     private readonly HashSet<string> _chosen = new(StringComparer.Ordinal);

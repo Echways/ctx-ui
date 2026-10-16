@@ -48,7 +48,7 @@ public class PanelJournalTests
 
         var page = await OpenJournalAsync(session);
 
-        await Expect(page).ToHaveTitleAsync("Журнал");
+        await Expect(page).ToHaveTitleAsync("Журнал · ctx-ui");
         await Expect(page.GetByText("Журнал пуст")).ToBeVisibleAsync();
     }
 
@@ -74,18 +74,19 @@ public class PanelJournalTests
 
         var page = await OpenJournalAsync(session);
 
-        await Expect(Rows(page)).ToHaveCountAsync(5);
-        await Expect(Rows(page).Nth(1).GetByRole(AriaRole.Cell).Nth(1)).ToHaveTextAsync("Иванов");
-        await Expect(Rows(page).Nth(1).GetByRole(AriaRole.Cell).Nth(2)).ToHaveTextAsync("echo");
-        await Expect(Rows(page).Nth(1).GetByRole(AriaRole.Cell).Nth(3)).ToHaveTextAsync("tools/call echo");
-        await Expect(Rows(page).Nth(1).GetByRole(AriaRole.Cell).Nth(4)).ToHaveTextAsync("квота исчерпана");
-        await Expect(Rows(page).Nth(2).GetByRole(AriaRole.Cell).Nth(4)).ToHaveTextAsync("выполнен");
-        await Expect(Rows(page).Nth(3).GetByRole(AriaRole.Cell).Nth(2)).ToHaveTextAsync("broken");
-        await Expect(Rows(page).Nth(3).GetByRole(AriaRole.Cell).Nth(3)).ToHaveTextAsync("tools/call search");
-        await Expect(Rows(page).Nth(3).GetByRole(AriaRole.Cell).Nth(4)).ToHaveTextAsync("сбой upstream");
-        await Expect(Rows(page).Nth(4).GetByRole(AriaRole.Cell).Nth(3)).ToHaveTextAsync("tools/list");
-        await Expect(Rows(page).Nth(4).GetByRole(AriaRole.Cell).First).ToHaveTextAsync(
-            new System.Text.RegularExpressions.Regex(@"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$"));
+        await Expect(Rows(page)).ToHaveCountAsync(6);
+        await Expect(Rows(page).Nth(1)).ToHaveTextAsync(DateTimeOffset.UtcNow.ToString("d MMMM", System.Globalization.CultureInfo.GetCultureInfo("ru")));
+        await Expect(Rows(page).Nth(2).GetByRole(AriaRole.Cell).Nth(1)).ToHaveTextAsync("Иванов");
+        await Expect(Rows(page).Nth(2).GetByRole(AriaRole.Cell).Nth(2)).ToHaveTextAsync("echo");
+        await Expect(Rows(page).Nth(2).GetByRole(AriaRole.Cell).Nth(3)).ToHaveTextAsync("tools/call echo");
+        await Expect(Rows(page).Nth(2).GetByRole(AriaRole.Cell).Nth(4)).ToHaveTextAsync("квота исчерпана");
+        await Expect(Rows(page).Nth(3).GetByRole(AriaRole.Cell).Nth(4)).ToHaveTextAsync("выполнен");
+        await Expect(Rows(page).Nth(4).GetByRole(AriaRole.Cell).Nth(2)).ToHaveTextAsync("broken");
+        await Expect(Rows(page).Nth(4).GetByRole(AriaRole.Cell).Nth(3)).ToHaveTextAsync("tools/call search");
+        await Expect(Rows(page).Nth(4).GetByRole(AriaRole.Cell).Nth(4)).ToHaveTextAsync("сбой upstream");
+        await Expect(Rows(page).Nth(5).GetByRole(AriaRole.Cell).Nth(3)).ToHaveTextAsync("tools/list");
+        await Expect(Rows(page).Nth(5).GetByRole(AriaRole.Cell).First).ToHaveTextAsync(
+            new System.Text.RegularExpressions.Regex(@"^\d{2}:\d{2}:\d{2}$"));
     }
 
     [Fact]
@@ -102,14 +103,14 @@ public class PanelJournalTests
         await JournalHasAsync(gateway, 3);
         await using var session = await PanelSession.SignInAsync(gateway);
         var page = await OpenJournalAsync(session);
-        await Expect(Rows(page)).ToHaveCountAsync(4);
+        await Expect(Rows(page)).ToHaveCountAsync(5);
 
         await ChooseClientAsync(page, "Петров");
-        await Expect(Rows(page)).ToHaveCountAsync(3);
+        await Expect(Rows(page)).ToHaveCountAsync(4);
         await Expect(Rows(page).Filter(new() { HasText = "Иванов" })).ToHaveCountAsync(0);
 
         await ChooseClientAsync(page, "Все клиенты");
-        await Expect(Rows(page)).ToHaveCountAsync(4);
+        await Expect(Rows(page)).ToHaveCountAsync(5);
     }
 
     [Fact]
@@ -126,8 +127,8 @@ public class PanelJournalTests
 
         var page = await OpenJournalAsync(session);
 
-        await Expect(Rows(page).Nth(1).GetByRole(AriaRole.Cell).Nth(1)).ToHaveTextAsync("удалён");
-        await Expect(Rows(page).Nth(1).GetByRole(AriaRole.Cell).Nth(2)).ToHaveTextAsync("echo");
+        await Expect(Rows(page).Nth(2).GetByRole(AriaRole.Cell).Nth(1)).ToHaveTextAsync("удалён");
+        await Expect(Rows(page).Nth(2).GetByRole(AriaRole.Cell).Nth(2)).ToHaveTextAsync("echo");
     }
 
     [Fact]
@@ -144,9 +145,26 @@ public class PanelJournalTests
 
         var page = await OpenJournalAsync(session);
 
-        await Expect(Rows(page).Nth(1).GetByRole(AriaRole.Cell).Nth(3)).ToHaveTextAsync("tools/call " + hostile);
+        await Expect(Rows(page).Nth(2).GetByRole(AriaRole.Cell).Nth(3)).ToHaveTextAsync("tools/call " + hostile);
         await Expect(page.Locator("td img")).ToHaveCountAsync(0);
-        await Expect(page).ToHaveTitleAsync("Журнал");
+        await Expect(page).ToHaveTitleAsync("Журнал · ctx-ui");
+    }
+
+    [Fact]
+    public async Task Open_journal_rereads_itself()
+    {
+        await using var upstream = await FakeUpstream.StartAsync();
+        await using var gateway = await GatewayHost.StartAsync(
+            builder => builder.Configuration["CtxUi:AutoRefreshInterval"] = "00:00:00.300");
+        await gateway.AddInboundAsync("echo", upstream.McpUrl);
+        var issued = await gateway.AddClientAsync("Иванов", ["echo"]);
+        await using var session = await PanelSession.SignInAsync(gateway);
+        var page = await OpenJournalAsync(session);
+        await Expect(page.GetByText("Журнал пуст")).ToBeVisibleAsync();
+
+        await CallAsync(gateway, "echo", issued.Token, ToolsList);
+
+        await Expect(Rows(page)).ToHaveCountAsync(3);
     }
 
     [Fact]
@@ -164,6 +182,6 @@ public class PanelJournalTests
 
         await page.GetByRole(AriaRole.Button, new() { Name = "Обновить" }).ClickAsync();
 
-        await Expect(Rows(page)).ToHaveCountAsync(2);
+        await Expect(Rows(page)).ToHaveCountAsync(3);
     }
 }

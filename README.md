@@ -17,7 +17,9 @@ Binary + systemd, Linux x86_64/aarch64:
 curl -fsSL https://github.com/Echways/ctx-ui/releases/latest/download/install.sh | sudo bash
 ```
 
-Docker + Caddy, upgrade, removal, backup: [docs/install.md](docs/install.md).
+Update to the latest release: `sudo ctx-ui update`.
+
+Docker + Caddy, removal, backup: [docs/install.md](docs/install.md).
 The service does not terminate TLS; put Caddy or nginx in front.
 
 ## Quick start

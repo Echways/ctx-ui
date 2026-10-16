@@ -28,7 +28,7 @@ usage() {
   --public-url  внешний адрес шлюза, с него начинаются адреса для клиентов
   --listen      адрес, на котором слушает сервис
   --version     версия релиза без буквы v
-  --archive     готовый архив вместо скачивания
+  --archive     готовый архив вместо скачивания, ставится даже поверх той же версии
   --uninstall   удалить программу, сервис и команду ctx-ui
   --purge       вместе с --uninstall удалить настройки, данные и пользователя
 
@@ -216,6 +216,10 @@ main() {
         if [ -z "$version" ]; then
             fail "не указана версия: добавьте --version или возьмите install.sh со страницы релиза"
         fi
+        if [ -f "$home/VERSION" ] && [ "$(cat "$home/VERSION")" = "$version" ] && systemctl is-active --quiet ctx-ui; then
+            echo "ctx-ui $version уже установлен и запущен, обновлять нечего."
+            return 0
+        fi
         archive="$(download "$version" "$arch")"
     elif [ ! -f "$archive" ]; then
         fail "файл $archive не найден"
@@ -274,6 +278,7 @@ main() {
   Настройки:      $env_file, после правки: systemctl restart ctx-ui
   Данные:         $data_dir
   Журнал:         journalctl -u ctx-ui -f
+  Обновление:     ctx-ui update
 
 TLS сервис не поднимает: перед ним ставится Caddy или nginx.
 

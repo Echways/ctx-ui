@@ -72,6 +72,10 @@ mkdir "$dist/next"
 tar -xzf "$dist/$first" -C "$dist/next"
 echo 0.0.2 > "$dist/next/ctx-ui/VERSION"
 tar -C "$dist/next" -czf "$dist/$second" ctx-ui
+mkdir "$dist/v0.0.2"
+cp "$dist/$second" "$dist/v0.0.2/"
+sed 's/^default_version=.*/default_version="0.0.2"/' "$root/deploy/linux/install.sh" > "$dist/v0.0.2/install.sh"
+(cd "$dist/v0.0.2" && sha256sum "$second" install.sh > SHA256SUMS)
 cp "$root/deploy/linux/install.sh" "$dist/install-unstamped.sh"
 mkdir "$dist/tampered"
 cp "$dist/SHA256SUMS" "$dist/$first" "$dist/tampered/"
@@ -146,16 +150,31 @@ check "swagger ui is in the archive" equals 200 "$(panel_status "${path}swagger/
 check "api asks for a key" equals 401 "$(panel_status "${path}api/v1/inbounds")"
 check "panel does not exist without the secret path" equals 404 "$(panel_status /login)"
 
-echo "== upgrade"
-output="$(in_box bash /dist/install.sh --archive "/dist/$second" --public-url https://other.example.com 2>&1)" || true
-check "installer reports the upgrade" contains "ctx-ui обновлён с 0.0.1 до 0.0.2" "$output"
-check "installer says settings were kept" contains "новые значения не применены" "$output"
+echo "== update"
+check "version command" equals 0.0.1 "$(in_box ctx-ui version)"
+pid="$(in_box systemctl show -p MainPID --value ctx-ui)"
+output="$(in_box sh -c 'cd / && CTX_UI_DOWNLOAD_URL=file:///dist ctx-ui update' 2>&1)" || true
+check "update to the installed version says so" contains "ctx-ui 0.0.1 уже установлен" "$output"
+check "update to the installed version keeps the service" equals "$pid" "$(in_box systemctl show -p MainPID --value ctx-ui)"
+output="$(in_box runuser -u ctx-ui -- ctx-ui update 2>&1)" && code=0 || code=$?
+check "update without root is refused" equals 1 "$code"
+output="$(in_box sh -c 'cd / && CTX_UI_DOWNLOAD_URL=file:///dist/missing ctx-ui update' 2>&1)" && code=0 || code=$?
+check "update without a reachable release fails" equals "1 active" "$code $(in_box systemctl is-active ctx-ui)"
+output="$(in_box sh -c 'cd / && CTX_UI_DOWNLOAD_URL=file:///dist/v0.0.2 ctx-ui update 0.0.2' 2>&1)" || true
+check "update reports the upgrade" contains "ctx-ui обновлён с 0.0.1 до 0.0.2" "$output"
 check "settings are untouched" contains "CtxUi__PublicUrl=https://mcp.example.com" "$(in_box cat /etc/ctx-ui/ctx-ui.env)"
-check "new version is in place" equals 0.0.2 "$(in_box cat /opt/ctx-ui/VERSION)"
+check "new version is in place" equals 0.0.2 "$(in_box ctx-ui version)"
+check "no installer is left behind" equals "" "$(in_box find /tmp -maxdepth 1 -name 'tmp.*' -type f)"
 check "service is active after upgrade" equals active "$(in_box systemctl is-active ctx-ui)"
 check "client survives the upgrade" status_becomes 502 -H "Authorization: Bearer $token"
 check "panel address survives the upgrade" contains "$panel" "$(in_box sh -c 'cd / && ctx-ui admin path' 2>&1)"
 check "login form is served after the upgrade" equals 200 "$(panel_status "${path}login")"
+
+echo "== reinstall"
+output="$(in_box bash /dist/install.sh --archive "/dist/$second" --public-url https://other.example.com 2>&1)" || true
+check "archive is installed over the same version" contains "ctx-ui 0.0.2 установлен и запущен." "$output"
+check "installer says settings were kept" contains "новые значения не применены" "$output"
+check "settings stay untouched" contains "CtxUi__PublicUrl=https://mcp.example.com" "$(in_box cat /etc/ctx-ui/ctx-ui.env)"
 
 output="$(in_box bash /dist/install.sh --archive /dist/SHA256SUMS 2>&1)" && code=0 || code=$?
 check "refused archive leaves the service running" equals "1 active" "$code $(in_box systemctl is-active ctx-ui)"

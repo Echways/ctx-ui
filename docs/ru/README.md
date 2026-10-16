@@ -17,7 +17,9 @@ Inbound — адрес (`/mcp/<slug>`), за которым стоит удал�
 curl -fsSL https://github.com/Echways/ctx-ui/releases/latest/download/install.sh | sudo bash
 ```
 
-Docker + Caddy, обновление, удаление, резервная копия: [install.md](install.md).
+Обновление до последнего релиза: `sudo ctx-ui update`.
+
+Docker + Caddy, удаление, резервная копия: [install.md](install.md).
 TLS сервис не терминирует; перед ним ставится Caddy или nginx.
 
 ## Быстрый старт

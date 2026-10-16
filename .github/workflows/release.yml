@@ -7,31 +7,41 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
-  test:
+  version:
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.version.outputs.version }}
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
       - id: version
         env:
           TAG: ${{ github.ref_name }}
+          MAIN: origin/${{ github.event.repository.default_branch }}
         run: |
           version="${TAG#v}"
           if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
             echo "::error::tag $TAG is not a version like v1.2.3 or v1.2.3-rc.1"
             exit 1
           fi
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" "$MAIN"; then
+            echo "::error::tag $TAG points at a commit that is not on ${MAIN#origin/}"
+            exit 1
+          fi
           echo "version=$version" >> "$GITHUB_OUTPUT"
-      - uses: actions/setup-dotnet@v6
-        with:
-          dotnet-version: 10.0.x
-      - run: npx --yes playwright@1.63.0 install-deps chromium
-      - run: dotnet test -c Release
+
+  checks:
+    needs: version
+    uses: ./.github/workflows/ci.yml
 
   assets:
-    needs: test
+    needs: [version, checks]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -39,7 +49,7 @@ jobs:
         with:
           dotnet-version: 10.0.x
       - env:
-          VERSION: ${{ needs.test.outputs.version }}
+          VERSION: ${{ needs.version.outputs.version }}
         run: deploy/package.sh "$VERSION" dist
       - uses: actions/upload-artifact@v7
         with:
@@ -48,7 +58,7 @@ jobs:
           if-no-files-found: error
 
   image:
-    needs: test
+    needs: [version, checks]
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -68,18 +78,23 @@ jobs:
           tags: |
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
+          labels: |
+            org.opencontainers.image.title=ctx-ui
+            org.opencontainers.image.description=Gateway and web panel for sharing access to MCP servers
       - uses: docker/build-push-action@v7
         with:
           context: .
           file: deploy/docker/Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
-          build-args: VERSION=${{ needs.test.outputs.version }}
+          build-args: VERSION=${{ needs.version.outputs.version }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
   release:
-    needs: [test, assets, image]
+    needs: [version, assets, image]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -91,10 +106,31 @@ jobs:
       - env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ github.ref_name }}
-          VERSION: ${{ needs.test.outputs.version }}
+          VERSION: ${{ needs.version.outputs.version }}
         run: |
           flags=()
           if [[ "$VERSION" == *-* ]]; then
             flags+=(--prerelease)
           fi
-          gh release create "$TAG" dist/* --repo "$GITHUB_REPOSITORY" --title "ctx-ui $VERSION" --generate-notes --verify-tag "${flags[@]}"
+          cat > notes.md <<EOF
+          ## Install
+
+          Binary and systemd, Linux x86_64/aarch64:
+
+          \`\`\`bash
+          curl -fsSL https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG/install.sh | sudo bash
+          \`\`\`
+
+          Docker: \`ghcr.io/echways/ctx-ui:$VERSION\`, compose bundle \`ctx-ui-$VERSION-docker.tar.gz\`.
+
+          ## Update
+
+          \`\`\`bash
+          sudo ctx-ui update $VERSION
+          \`\`\`
+
+          Docker: set \`CTX_UI_VERSION=$VERSION\` in \`.env\`, then \`docker compose up -d\`.
+
+          EOF
+          gh release create "$TAG" dist/* --repo "$GITHUB_REPOSITORY" --title "ctx-ui $VERSION" \
+            --notes-file notes.md --generate-notes --verify-tag "${flags[@]}"

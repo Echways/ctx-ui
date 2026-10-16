@@ -116,12 +116,16 @@ sudo ctx-ui admin path               # адрес панели
 
 ### Обновление
 
-Повторный запуск установщика. Настройки и данные сохраняются, вопросов нет.
-
 ```bash
-curl -fsSL https://github.com/Echways/ctx-ui/releases/latest/download/install.sh | sudo bash
-curl -fsSL https://github.com/Echways/ctx-ui/releases/download/v0.1.0/install.sh | sudo bash   # конкретная версия
+sudo ctx-ui update           # последний релиз
+sudo ctx-ui update 0.2.0     # конкретная версия
+ctx-ui version               # установленная версия
 ```
+
+`update` скачивает установщик релиза и запускает его: архив сверяется с
+`SHA256SUMS`, настройки и данные сохраняются, сервис перезапускается. Если
+эта версия уже работает, ничего не меняется. Повторный запуск команды
+установки делает то же самое.
 
 ### Удаление
 
@@ -164,15 +168,13 @@ docker compose exec ctx-ui ctx-ui client add "Иванов" --inbound learn
 
 ### Обновление
 
-Новая версия в `CTX_UI_VERSION` в `.env`:
+В каталоге `ctx-ui`:
 
 ```bash
-docker compose pull
-docker compose up -d
+sed -i 's/^CTX_UI_VERSION=.*/CTX_UI_VERSION=0.2.0/' .env && docker compose up -d
 ```
 
-`denied` при pull: пакет на ghcr.io ещё приватный, см.
-[releasing.md](releasing.md#после-первого-релиза).
+Compose скачает новый образ и пересоздаст контейнер; данные остаются в томе.
 
 ## Резервная копия
 

@@ -116,12 +116,16 @@ sudo ctx-ui admin path               # panel address
 
 ### Upgrade
 
-Rerun the installer. Settings and data are kept, no questions asked.
-
 ```bash
-curl -fsSL https://github.com/Echways/ctx-ui/releases/latest/download/install.sh | sudo bash
-curl -fsSL https://github.com/Echways/ctx-ui/releases/download/v0.1.0/install.sh | sudo bash   # specific version
+sudo ctx-ui update           # latest release
+sudo ctx-ui update 0.2.0     # specific version
+ctx-ui version               # installed version
 ```
+
+`update` downloads the release installer and runs it: the archive is checked
+against `SHA256SUMS`, settings and data are kept, the service restarts. If
+that version is already running, nothing changes. Rerunning the install
+command does the same.
 
 ### Removal
 
@@ -165,15 +169,14 @@ volume.
 
 ### Upgrade
 
-Set the new `CTX_UI_VERSION` in `.env`:
+In the `ctx-ui` directory:
 
 ```bash
-docker compose pull
-docker compose up -d
+sed -i 's/^CTX_UI_VERSION=.*/CTX_UI_VERSION=0.2.0/' .env && docker compose up -d
 ```
 
-`denied` on pull: the ghcr.io package is still private, see
-[releasing.md](releasing.md#after-the-first-release).
+Compose pulls the new image and recreates the container; data stays in the
+volume.
 
 ## Backup
 

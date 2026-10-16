@@ -226,23 +226,6 @@ these names are stripped.
 
 - [Installation](docs/install.md)
 - [Configuration](docs/configuration.md)
-- [Internals](docs/internals.md)
-- [Releasing](docs/releasing.md)
-
-## Development
-
-.NET 10 SDK.
-
-```bash
-cd src/CtxUi.Server
-dotnet run                    # http://127.0.0.1:8080, data in ./data
-dotnet run -- inbound list    # CLI
-dotnet test
-```
-
-Integration tests run the gateway and a fake upstream on free ports. Panel
-tests use headless Chromium via Playwright; the first run downloads it to
-`~/.cache/ms-playwright`. Install checks: [docs/releasing.md](docs/releasing.md).
 
 ## License
 

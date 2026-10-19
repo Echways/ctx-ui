@@ -1,36 +1,123 @@
-name: ci
+name: CI
 
 on:
   push:
-    branches: ["**"]
+    branches: [main]
+    paths-ignore: ["**.md", "docs/**", "LICENSE"]
   pull_request:
+    paths-ignore: ["**.md", "docs/**", "LICENSE"]
   workflow_call:
 
 permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
+  lint:
+    name: Lint
+    runs-on: ubuntu-26.04
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-dotnet@v6
-        with:
-          dotnet-version: 10.0.x
-      - run: npx --yes playwright@1.63.0 install-deps chromium
-      - run: dotnet test -c Release
+      - name: Check out
+        uses: actions/checkout@v7
 
-  deploy:
-    runs-on: ubuntu-latest
+      - name: Set up .NET
+        uses: ./.github/actions/dotnet
+
+      - name: Check C# formatting
+        run: dotnet format CtxUi.slnx --verify-no-changes
+
+      - name: Check shell scripts
+        run: shellcheck deploy/package.sh deploy/linux/*.sh deploy/tests/*.sh
+
+  unit:
+    name: Unit tests
+    runs-on: ubuntu-26.04
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-dotnet@v6
+      - name: Check out
+        uses: actions/checkout@v7
+
+      - name: Set up .NET
+        uses: ./.github/actions/dotnet
+
+      - name: Test core
+        run: dotnet test --project tests/CtxUi.Core.Tests -c Release --results-directory "$GITHUB_WORKSPACE/TestResults" --report-xunit-junit
+
+      - name: Test gateway
+        if: ${{ !cancelled() }}
+        run: dotnet test --project tests/CtxUi.Gateway.Tests -c Release --results-directory "$GITHUB_WORKSPACE/TestResults" --report-xunit-junit
+
+      - name: Publish test report
+        if: ${{ !cancelled() }}
+        uses: mikepenz/action-junit-report@v6
         with:
-          dotnet-version: 10.0.x
-      - run: shellcheck deploy/package.sh deploy/linux/install.sh deploy/linux/ctx-ui.sh deploy/tests/linux.sh deploy/tests/docker.sh
-      - run: deploy/tests/docker.sh
-      - run: deploy/tests/linux.sh
+          report_paths: TestResults/*.junit.xml
+          check_name: Unit tests
+          annotate_only: true
+          require_tests: true
+          include_time_in_summary: true
+
+  panel:
+    name: Panel tests
+    runs-on: ubuntu-26.04
+    timeout-minutes: 20
+    steps:
+      - name: Check out
+        uses: actions/checkout@v7
+
+      - name: Set up .NET
+        uses: ./.github/actions/dotnet
+
+      - name: Build
+        run: dotnet build tests/CtxUi.IntegrationTests -c Release
+
+      - name: Restore Chromium cache
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('Directory.Packages.props') }}
+
+      - name: Install Chromium
+        run: pwsh tests/CtxUi.IntegrationTests/bin/Release/net10.0/playwright.ps1 install --with-deps chromium
+
+      - name: Test panel and gateway end to end
+        run: dotnet test --project tests/CtxUi.IntegrationTests -c Release --no-build --results-directory "$GITHUB_WORKSPACE/TestResults" --report-xunit-junit
+
+      - name: Publish test report
+        if: ${{ !cancelled() }}
+        uses: mikepenz/action-junit-report@v6
+        with:
+          report_paths: TestResults/*.junit.xml
+          check_name: Panel tests
+          annotate_only: true
+          require_tests: true
+          include_time_in_summary: true
+
+  docker:
+    name: "Install: Docker"
+    runs-on: ubuntu-26.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out
+        uses: actions/checkout@v7
+
+      - name: Run compose stack checks
+        run: deploy/tests/docker.sh
+
+  systemd:
+    name: "Install: systemd"
+    runs-on: ubuntu-26.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out
+        uses: actions/checkout@v7
+
+      - name: Set up .NET
+        uses: ./.github/actions/dotnet
+
+      - name: Run installer checks
+        run: deploy/tests/linux.sh

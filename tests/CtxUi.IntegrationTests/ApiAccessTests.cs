@@ -151,5 +151,6 @@ public class ApiAccessTests
         Assert.Contains("/api/v1/usage/log", paths);
         Assert.All(paths, path => Assert.StartsWith("/api/v1/", path));
         Assert.DoesNotContain(paths, path => path.Contains("rest", StringComparison.Ordinal));
+        Assert.Equal("Issue a client", document.GetProperty("paths").GetProperty("/api/v1/clients").GetProperty("post").GetProperty("summary").GetString());
     }
 }

@@ -46,20 +46,20 @@ public static class ClientEndpoints
     public static void MapClients(this RouteGroupBuilder api)
     {
         var clients = api.MapGroup("/clients").WithTags("clients");
-        clients.MapGet("/", ListAsync).WithSummary("Все клиенты; ?name= находит одного по имени без учёта регистра");
-        clients.MapGet("/{id:guid}", GetAsync).WithSummary("Один клиент");
-        clients.MapGet("/{id:guid}/connection", ConnectionAsync).WithSummary("Токен, адреса и сообщение для клиента");
-        clients.MapPost("/", AddAsync).WithSummary("Выпустить клиента").WithDescription(
-            "expires: дата ГГГГ-ММ-ДД (UTC), с начала которой доступ закрыт. В limits пустое поле снимает ограничение.");
-        clients.MapPatch("/{id:guid}", ChangeAsync).WithSummary("Изменить срок, inbound'ы, лимиты или метаданные").WithDescription(
-            "Неуказанное поле не меняется. expires: ГГГГ-ММ-ДД или never. inbounds, limits и metadata заменяются целиком.");
+        clients.MapGet("/", ListAsync).WithSummary("All clients; ?name= finds one by name, case-insensitive");
+        clients.MapGet("/{id:guid}", GetAsync).WithSummary("One client");
+        clients.MapGet("/{id:guid}/connection", ConnectionAsync).WithSummary("Token, addresses and a message for the client");
+        clients.MapPost("/", AddAsync).WithSummary("Issue a client").WithDescription(
+            "expires: date YYYY-MM-DD (UTC) from which access is closed. An empty field in limits removes that limit.");
+        clients.MapPatch("/{id:guid}", ChangeAsync).WithSummary("Change the expiry, inbounds, limits or metadata").WithDescription(
+            "A field left out is not changed. expires: YYYY-MM-DD or never. inbounds, limits and metadata are replaced as a whole.");
         clients.MapPost("/{id:guid}/enable", (Guid id, ClientService service, CancellationToken ct) => SwitchAsync(service, id, true, ct))
-            .WithSummary("Вернуть доступ");
+            .WithSummary("Restore access");
         clients.MapPost("/{id:guid}/disable", (Guid id, ClientService service, CancellationToken ct) => SwitchAsync(service, id, false, ct))
-            .WithSummary("Закрыть доступ, не удаляя клиента");
-        clients.MapPost("/{id:guid}/reset-quota", ResetQuotaAsync).WithSummary("Обнулить счётчик квоты и начать период заново");
-        clients.MapPost("/{id:guid}/reissue", ReissueAsync).WithSummary("Выпустить новый токен; старый перестаёт работать");
-        clients.MapDelete("/{id:guid}", RemoveAsync).WithSummary("Удалить клиента");
+            .WithSummary("Close access without removing the client");
+        clients.MapPost("/{id:guid}/reset-quota", ResetQuotaAsync).WithSummary("Reset the quota counter and start a new period");
+        clients.MapPost("/{id:guid}/reissue", ReissueAsync).WithSummary("Issue a new token; the old one stops working");
+        clients.MapDelete("/{id:guid}", RemoveAsync).WithSummary("Remove the client");
     }
 
     private static async Task<Ok<List<ClientView>>> ListAsync(string? name, ClientService clients, TimeProvider clock, CancellationToken ct)

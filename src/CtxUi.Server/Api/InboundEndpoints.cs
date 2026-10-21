@@ -39,16 +39,16 @@ public static class InboundEndpoints
     public static void MapInbounds(this RouteGroupBuilder api)
     {
         var inbounds = api.MapGroup("/inbounds").WithTags("inbounds");
-        inbounds.MapGet("/", ListAsync).WithSummary("Все inbound'ы");
-        inbounds.MapGet("/{slug}", GetAsync).WithSummary("Один inbound");
-        inbounds.MapPut("/{slug}", PutAsync).WithSummary("Создать или заменить inbound").WithDescription(
-            "Неуказанные таймаут и предел тела получают значения по умолчанию. upstreamHeaders только записываются: " +
-            "без поля заголовки остаются прежними, {} удаляет все.");
+        inbounds.MapGet("/", ListAsync).WithSummary("All inbounds");
+        inbounds.MapGet("/{slug}", GetAsync).WithSummary("One inbound");
+        inbounds.MapPut("/{slug}", PutAsync).WithSummary("Create or replace an inbound").WithDescription(
+            "A timeout or body limit left out gets its default. upstreamHeaders are write-only: " +
+            "without the field the headers stay as they are, {} removes them all.");
         inbounds.MapPost("/{slug}/enable", (string slug, InboundService service, CancellationToken ct) => SwitchAsync(service, slug, true, ct))
-            .WithSummary("Включить inbound");
+            .WithSummary("Enable the inbound");
         inbounds.MapPost("/{slug}/disable", (string slug, InboundService service, CancellationToken ct) => SwitchAsync(service, slug, false, ct))
-            .WithSummary("Выключить inbound, не удаляя");
-        inbounds.MapDelete("/{slug}", RemoveAsync).WithSummary("Удалить inbound и доступ к нему у всех клиентов");
+            .WithSummary("Disable the inbound without removing it");
+        inbounds.MapDelete("/{slug}", RemoveAsync).WithSummary("Remove the inbound and every client's access to it");
     }
 
     private static async Task<Ok<List<InboundView>>> ListAsync(InboundService inbounds, CancellationToken ct)

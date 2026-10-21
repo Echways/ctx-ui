@@ -5,7 +5,10 @@ namespace CtxUi.IntegrationTests;
 
 internal static class CliRunner
 {
-    public static async Task<(int Code, string Output, string Error)> RunAsync(string dataDir, params string[] args)
+    public static Task<(int Code, string Output, string Error)> RunAsync(string dataDir, params string[] args) =>
+        RunInLanguageAsync("ru", dataDir, args);
+
+    public static async Task<(int Code, string Output, string Error)> RunInLanguageAsync(string language, string dataDir, params string[] args)
     {
         var output = new StringWriter();
         var error = new StringWriter();
@@ -13,6 +16,7 @@ internal static class CliRunner
         {
             builder.Configuration["CtxUi:DataDir"] = dataDir;
             builder.Configuration["CtxUi:PublicUrl"] = "https://mcp.example.org/";
+            builder.Configuration["CtxUi:Language"] = language;
         });
         return (code, output.ToString(), error.ToString());
     }

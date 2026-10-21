@@ -17,8 +17,6 @@ namespace CtxUi.Server;
 
 public static class Cli
 {
-    private const string Language = "ru";
-
     public static bool Handles(string[] args) => args.Length > 0 && args[0] is "inbound" or "client" or "usage" or "admin" or "apikey" or "backup";
 
     public static async Task<int> RunAsync(
@@ -27,7 +25,6 @@ public static class Cli
         TextWriter error,
         Action<HostApplicationBuilder>? configure = null)
     {
-        CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo(Language);
         var builder = Host.CreateApplicationBuilder();
         configure?.Invoke(builder);
         builder.Logging.ClearProviders()
@@ -36,6 +33,15 @@ public static class Cli
             .SetMinimumLevel(LogLevel.Warning);
         builder.Services.AddCtxUi(builder.Configuration);
         using var host = builder.Build();
+        try
+        {
+            CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo(host.Services.GetRequiredService<IOptions<CtxUiOptions>>().Value.Language);
+        }
+        catch (OptionsValidationException exception)
+        {
+            error.WriteLine(exception.Message);
+            return 1;
+        }
 
         var root = new RootCommand("ctx-ui: inbound'ы, клиенты, учёт вызовов, вход в панель и ключи API")
         {

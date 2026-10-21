@@ -15,17 +15,8 @@ public sealed partial class CliTests : IDisposable
 
     private Task<(int Code, string Output, string Error)> RunAsync(params string[] args) => RunInAsync(_dataDir, args);
 
-    private static async Task<(int Code, string Output, string Error)> RunInAsync(string dataDir, params string[] args)
-    {
-        var output = new StringWriter();
-        var error = new StringWriter();
-        var code = await Cli.RunAsync(args, output, error, builder =>
-        {
-            builder.Configuration["CtxUi:DataDir"] = dataDir;
-            builder.Configuration["CtxUi:PublicUrl"] = "https://mcp.example.org/";
-        });
-        return (code, output.ToString(), error.ToString());
-    }
+    private static Task<(int Code, string Output, string Error)> RunInAsync(string dataDir, params string[] args) =>
+        CliRunner.RunAsync(dataDir, args);
 
     private async Task<string> IssueAsync(string name, params string[] extra)
     {
@@ -45,6 +36,15 @@ public sealed partial class CliTests : IDisposable
         catch (IOException)
         {
         }
+    }
+
+    [Fact]
+    public async Task Cli_speaks_english_by_default()
+    {
+        var shown = await CliRunner.RunInLanguageAsync("en", _dataDir, "client", "show", "nobody");
+
+        Assert.Equal(1, shown.Code);
+        Assert.Equal("Error: client “nobody” not found", shown.Error.Trim());
     }
 
     [Fact]

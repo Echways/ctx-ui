@@ -1,4 +1,5 @@
 using System.Net;
+using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Time.Testing;
@@ -37,6 +38,17 @@ public class AccessTests
         using var response = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/echo", AccessToken.Generate()));
 
         await AssertRejectedAsync(response, HttpStatusCode.Unauthorized, "token_unknown");
+    }
+
+    [Fact]
+    public async Task Gateway_answers_in_english_by_default()
+    {
+        await using var gateway = await GatewayHost.StartAsync(builder => builder.Configuration["CtxUi:Language"] = "en");
+
+        using var response = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/echo", AccessToken.Generate()));
+
+        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.Equal("token not found", body.RootElement.GetProperty("message").GetString());
     }
 
     [Fact]

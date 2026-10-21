@@ -128,6 +128,7 @@ public sealed class GatewayHost : IAsyncDisposable
             builder.Configuration["CtxUi:DataDir"] = DataDir;
             builder.Configuration["CtxUi:RefreshInterval"] = "00:00:00.050";
             builder.Configuration["CtxUi:FlushInterval"] = "00:00:00.050";
+            builder.Configuration["CtxUi:Language"] = "ru";
             _configure?.Invoke(builder);
         });
         await ServerApp.InitializeAsync(app);

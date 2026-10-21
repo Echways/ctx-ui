@@ -2,6 +2,7 @@ using System.Collections;
 using System.Globalization;
 using System.Net;
 using System.Resources;
+using Microsoft.Extensions.Options;
 using Microsoft.Playwright;
 using CtxUi.Core;
 using CtxUi.Panel;
@@ -14,7 +15,7 @@ public class PanelLanguageTests
     [Fact]
     public async Task Panel_speaks_english_until_russian_is_chosen()
     {
-        await using var gateway = await GatewayHost.StartAsync();
+        await using var gateway = await GatewayHost.StartAsync(builder => builder.Configuration["CtxUi:Language"] = "en");
         await using var session = await PanelSession.OpenAsync(gateway, language: null);
         var page = session.Page;
         await Expect(page.Locator("html")).ToHaveAttributeAsync("lang", "en");
@@ -25,6 +26,27 @@ public class PanelLanguageTests
         await Expect(page.Locator("html")).ToHaveAttributeAsync("lang", "ru");
         await session.FillLoginAsync("root", session.Password);
         await Expect(page.GetByRole(AriaRole.Heading, new() { Name = "Обзор" })).ToBeVisibleAsync();
+    }
+
+    [Fact]
+    public async Task Configured_language_is_what_the_panel_speaks_before_a_choice()
+    {
+        await using var gateway = await GatewayHost.StartAsync(builder => builder.Configuration["CtxUi:Language"] = "ru");
+        await using var session = await PanelSession.OpenAsync(gateway, language: null);
+
+        await Expect(session.Page.Locator("html")).ToHaveAttributeAsync("lang", "ru");
+        await Expect(session.Page.GetByRole(AriaRole.Button, new() { Name = "Войти" })).ToBeVisibleAsync();
+    }
+
+    [Theory]
+    [InlineData("RU")]
+    [InlineData("de")]
+    public async Task Unsupported_language_stops_the_start(string language)
+    {
+        var error = await Assert.ThrowsAsync<OptionsValidationException>(
+            () => GatewayHost.StartAsync(builder => builder.Configuration["CtxUi:Language"] = language));
+
+        Assert.Contains("en, ru", error.Message);
     }
 
     [Fact]

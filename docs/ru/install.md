@@ -56,6 +56,11 @@ curl -fsSL https://github.com/Echways/ctx-ui/releases/latest/download/install.sh
 Сервис работает от системного пользователя `ctx-ui`. CLI запускается через
 `sudo`; обёртка сама читает `ctx-ui.env` и переключается на `ctx-ui`.
 
+Шлюз, CLI и API по умолчанию отвечают на английском. Для русского добавьте
+в `/etc/ctx-ui/ctx-ui.env` строку `CtxUi__Language=ru` и выполните
+`sudo systemctl restart ctx-ui`; подробнее — в
+[configuration.md](configuration.md#язык).
+
 ### TLS
 
 Сервис говорит по чистому HTTP. Перед ним ставится обратный прокси.
@@ -154,7 +159,11 @@ cp .env.example .env
 ```
 CTX_UI_VERSION=0.1.0
 CTX_UI_DOMAIN=mcp.example.com
+CTX_UI_LANGUAGE=ru
 ```
+
+`CTX_UI_LANGUAGE=ru` переводит шлюз, CLI и API на русский; без этой строки
+они отвечают на английском.
 
 ```bash
 docker compose up -d

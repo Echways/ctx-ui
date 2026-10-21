@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using MudBlazor.Services;
 using CtxUi.Core;
 using CtxUi.Core.Admins;
@@ -61,11 +62,12 @@ public static partial class PanelServices
             mud.SnackbarConfiguration.HideTransitionDuration = 160;
         });
         services.AddScoped<Clipboard>();
-        services.Configure<RequestLocalizationOptions>(options =>
+        services.AddOptions<RequestLocalizationOptions>().Configure<IOptions<PanelOptions>>((options, panel) =>
         {
-            options.SetDefaultCulture(PanelLanguage.Default)
-                .AddSupportedCultures(PanelLanguage.Cultures)
-                .AddSupportedUICultures(PanelLanguage.Cultures);
+            var supported = Languages.Supported.ToArray();
+            options.SetDefaultCulture(panel.Value.Language)
+                .AddSupportedCultures(supported)
+                .AddSupportedUICultures(supported);
             options.RequestCultureProviders = [new CookieRequestCultureProvider()];
         });
         return services;

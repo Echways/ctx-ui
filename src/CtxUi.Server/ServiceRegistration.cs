@@ -14,7 +14,12 @@ public static class ServiceRegistration
     public static IServiceCollection AddCtxUi(this IServiceCollection services, IConfiguration configuration)
     {
         var section = configuration.GetSection(CtxUiOptions.Section);
-        services.Configure<CtxUiOptions>(section);
+        services.AddOptions<CtxUiOptions>()
+            .Bind(section)
+            .Validate(
+                options => Languages.IsSupported(options.Language),
+                $"{CtxUiOptions.Section}:Language must be one of: {string.Join(", ", Languages.Supported)}")
+            .ValidateOnStart();
         var options = section.Get<CtxUiOptions>() ?? new CtxUiOptions();
 
         var dataDir = Path.GetFullPath(options.DataDir);

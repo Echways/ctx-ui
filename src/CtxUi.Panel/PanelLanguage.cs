@@ -1,15 +1,12 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Localization;
+using CtxUi.Core;
 
 namespace CtxUi.Panel;
 
 internal static class PanelLanguage
 {
-    public const string Default = "en";
-
-    public static readonly string[] Cultures = [Default, "ru"];
-
     private static readonly TimeSpan Remembered = TimeSpan.FromDays(365);
 
     public static string SwitchPath(NavigationManager navigation) =>
@@ -17,7 +14,7 @@ internal static class PanelLanguage
 
     public static IResult Choose(HttpContext context, string culture, string? back)
     {
-        if (!Cultures.Contains(culture, StringComparer.Ordinal))
+        if (!Languages.IsSupported(culture))
             return Results.NotFound();
 
         var home = context.Request.PathBase + "/";

@@ -1,0 +1,24 @@
+using System.Collections;
+using System.Globalization;
+using System.Resources;
+using CtxUi.Server;
+
+namespace CtxUi.IntegrationTests;
+
+public class ServerTextTests
+{
+    [Fact]
+    public void Every_text_has_a_russian_translation()
+    {
+        var manager = new ResourceManager("CtxUi.Server.ServerText", typeof(Cli).Assembly);
+
+        Assert.Equal(Keys(manager, CultureInfo.InvariantCulture), Keys(manager, CultureInfo.GetCultureInfo("ru")));
+    }
+
+    private static List<string> Keys(ResourceManager manager, CultureInfo culture) =>
+        manager.GetResourceSet(culture, createIfNotExists: true, tryParents: false)!
+            .Cast<DictionaryEntry>()
+            .Select(entry => (string)entry.Key)
+            .Order(StringComparer.Ordinal)
+            .ToList();
+}

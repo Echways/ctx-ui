@@ -20,4 +20,9 @@
     <RuntimeHostConfigurationOption Include="System.Globalization.AppLocalIcu" Value="$(IcuVersion)" />
   </ItemGroup>
 
+  <ItemGroup>
+    <EmbeddedResource Update="ServerText.resx" StronglyTypedLanguage="CSharp" StronglyTypedClassName="ServerText"
+                      StronglyTypedNamespace="CtxUi.Server" StronglyTypedFileName="$(IntermediateOutputPath)ServerText.Designer.cs" />
+  </ItemGroup>
+
 </Project>

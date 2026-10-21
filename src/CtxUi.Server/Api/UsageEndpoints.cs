@@ -70,5 +70,5 @@ public static class UsageEndpoints
     }
 
     private static int InRange(string name, int value, int max) =>
-        value >= 1 && value <= max ? value : throw new DomainException($"{name}: нужно число от 1 до {max}");
+        value >= 1 && value <= max ? value : throw new DomainException(string.Format(ServerText.NumberInRange, name, max));
 }

@@ -1,0 +1,351 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="AddressWithHeader" xml:space="preserve">
+    <value>  with header Authorization: Bearer &lt;token&gt;   {0}</value>
+  </data>
+  <data name="AddressWithToken" xml:space="preserve">
+    <value>  address with the token inside               {0}</value>
+  </data>
+  <data name="AdminAddCommand" xml:space="preserve">
+    <value>add an administrator and show their password</value>
+  </data>
+  <data name="AdminAdded" xml:space="preserve">
+    <value>Administrator “{0}” added</value>
+  </data>
+  <data name="AdminCommand" xml:space="preserve">
+    <value>who signs in to the panel and at which address it opens</value>
+  </data>
+  <data name="AdminLine" xml:space="preserve">
+    <value>{0,-24} added {1}  {2}</value>
+  </data>
+  <data name="AdminListCommand" xml:space="preserve">
+    <value>list administrators</value>
+  </data>
+  <data name="AdminLocked" xml:space="preserve">
+    <value>sign-in locked until {0} (UTC)</value>
+  </data>
+  <data name="AdminLoginArgument" xml:space="preserve">
+    <value>login: Latin letters, digits, dot, hyphen, underscore</value>
+  </data>
+  <data name="AdminNewOption" xml:space="preserve">
+    <value>replace the panel address with a new random one</value>
+  </data>
+  <data name="AdminPasswordCommand" xml:space="preserve">
+    <value>issue a new password, end previous sessions and lift the lockout</value>
+  </data>
+  <data name="AdminPasswordReset" xml:space="preserve">
+    <value>Password of administrator “{0}” replaced, previous sessions ended</value>
+  </data>
+  <data name="AdminPathCommand" xml:space="preserve">
+    <value>show the panel address; --new replaces it</value>
+  </data>
+  <data name="AdminRemoveCommand" xml:space="preserve">
+    <value>remove an administrator</value>
+  </data>
+  <data name="AdminRemoved" xml:space="preserve">
+    <value>Administrator “{0}” removed</value>
+  </data>
+  <data name="ApiKeyAddCommand" xml:space="preserve">
+    <value>issue a key and show it</value>
+  </data>
+  <data name="ApiKeyApi" xml:space="preserve">
+    <value>API:      {0}</value>
+  </data>
+  <data name="ApiKeyCommand" xml:space="preserve">
+    <value>REST API keys; the API and Swagger UI live under the panel address</value>
+  </data>
+  <data name="ApiKeyIssued" xml:space="preserve">
+    <value>Key “{0}” issued</value>
+  </data>
+  <data name="ApiKeyLine" xml:space="preserve">
+    <value>{0,-24} {1}…  issued {2}</value>
+  </data>
+  <data name="ApiKeyListCommand" xml:space="preserve">
+    <value>list keys</value>
+  </data>
+  <data name="ApiKeyNameArgument" xml:space="preserve">
+    <value>name: Latin letters, digits, dot, hyphen, underscore</value>
+  </data>
+  <data name="ApiKeyRemoveCommand" xml:space="preserve">
+    <value>revoke a key; requests with it get 401 right away</value>
+  </data>
+  <data name="ApiKeyRevoked" xml:space="preserve">
+    <value>Key “{0}” revoked</value>
+  </data>
+  <data name="ApiKeySecret" xml:space="preserve">
+    <value>Key:      {0}</value>
+  </data>
+  <data name="ApiKeyShownOnce" xml:space="preserve">
+    <value>The key is shown once. A lost key cannot be recovered: remove it and issue a new one.</value>
+  </data>
+  <data name="ApiKeySwagger" xml:space="preserve">
+    <value>Swagger:  {0}</value>
+  </data>
+  <data name="BackupCommand" xml:space="preserve">
+    <value>consistent copy of the database and keys; the service can keep running</value>
+  </data>
+  <data name="BackupDirectoryArgument" xml:space="preserve">
+    <value>new or empty directory for the copy</value>
+  </data>
+  <data name="BackupTargetNotEmpty" xml:space="preserve">
+    <value>directory {0} is not empty, a new or empty one is needed</value>
+  </data>
+  <data name="BackupWritten" xml:space="preserve">
+    <value>Copy written to {0}</value>
+  </data>
+  <data name="ClientAddCommand" xml:space="preserve">
+    <value>issue a client and show the token</value>
+  </data>
+  <data name="ClientChanged" xml:space="preserve">
+    <value>Client “{0}” changed</value>
+  </data>
+  <data name="ClientCommand" xml:space="preserve">
+    <value>who has access, until when and with which limits</value>
+  </data>
+  <data name="ClientConcurrencyOption" xml:space="preserve">
+    <value>concurrent requests; none removes the limit</value>
+  </data>
+  <data name="ClientDisableCommand" xml:space="preserve">
+    <value>close access without removing the client</value>
+  </data>
+  <data name="ClientDisabled" xml:space="preserve">
+    <value>Client “{0}” disabled</value>
+  </data>
+  <data name="ClientEnableCommand" xml:space="preserve">
+    <value>restore access</value>
+  </data>
+  <data name="ClientEnabled" xml:space="preserve">
+    <value>Client “{0}” enabled</value>
+  </data>
+  <data name="ClientExpiresOption" xml:space="preserve">
+    <value>date YYYY-MM-DD (UTC) from which access is closed; never removes the expiry</value>
+  </data>
+  <data name="ClientInboundOption" xml:space="preserve">
+    <value>inbound slug, can be repeated</value>
+  </data>
+  <data name="ClientListCommand" xml:space="preserve">
+    <value>list clients</value>
+  </data>
+  <data name="ClientMetaOption" xml:space="preserve">
+    <value>metadata key=value for the upstream, can be repeated</value>
+  </data>
+  <data name="ClientNameArgument" xml:space="preserve">
+    <value>client name; quote it if it has spaces</value>
+  </data>
+  <data name="ClientQuotaOption" xml:space="preserve">
+    <value>tools/call calls per period; none removes the quota</value>
+  </data>
+  <data name="ClientRateOption" xml:space="preserve">
+    <value>requests per minute; none removes the limit</value>
+  </data>
+  <data name="ClientReissueCommand" xml:space="preserve">
+    <value>issue a new token; the old one stops working</value>
+  </data>
+  <data name="ClientRemoveCommand" xml:space="preserve">
+    <value>remove a client</value>
+  </data>
+  <data name="ClientRemoved" xml:space="preserve">
+    <value>Client “{0}” removed</value>
+  </data>
+  <data name="ClientResetCommand" xml:space="preserve">
+    <value>reset the quota counter and start a new period</value>
+  </data>
+  <data name="ClientResetDaysOption" xml:space="preserve">
+    <value>days until the quota resets; none cancels resets</value>
+  </data>
+  <data name="ClientSetCommand" xml:space="preserve">
+    <value>change the expiry, limits or inbounds</value>
+  </data>
+  <data name="ClientShowCommand" xml:space="preserve">
+    <value>show the token and connection addresses</value>
+  </data>
+  <data name="ConnectionClient" xml:space="preserve">
+    <value>Client:   {0}</value>
+  </data>
+  <data name="ConnectionExpiry" xml:space="preserve">
+    <value>Expires:  {0}</value>
+  </data>
+  <data name="ConnectionInbound" xml:space="preserve">
+    <value>Inbound “{0}”:</value>
+  </data>
+  <data name="ConnectionLimits" xml:space="preserve">
+    <value>Limits:   {0}</value>
+  </data>
+  <data name="ConnectionQuota" xml:space="preserve">
+    <value>Quota:    {0}</value>
+  </data>
+  <data name="ConnectionToken" xml:space="preserve">
+    <value>Token:    {0}</value>
+  </data>
+  <data name="EntranceLogin" xml:space="preserve">
+    <value>Login:     {0}</value>
+  </data>
+  <data name="EntrancePanel" xml:space="preserve">
+    <value>Panel:     {0}</value>
+  </data>
+  <data name="EntrancePassword" xml:space="preserve">
+    <value>Password:  {0}</value>
+  </data>
+  <data name="Error" xml:space="preserve">
+    <value>Error: {0}</value>
+  </data>
+  <data name="ExpiresOn" xml:space="preserve">
+    <value>until {0} (UTC)</value>
+  </data>
+  <data name="ExpiryInvalid" xml:space="preserve">
+    <value>date “{0}” not understood: use YYYY-MM-DD, for example 2027-07-01, or {1}</value>
+  </data>
+  <data name="InboundAddCommand" xml:space="preserve">
+    <value>add an inbound for a remote MCP server</value>
+  </data>
+  <data name="InboundAdded" xml:space="preserve">
+    <value>Inbound “{0}” added: {1}</value>
+  </data>
+  <data name="InboundCommand" xml:space="preserve">
+    <value>what is served at /mcp/&lt;slug&gt;</value>
+  </data>
+  <data name="InboundDisableCommand" xml:space="preserve">
+    <value>disable an inbound without removing it</value>
+  </data>
+  <data name="InboundDisabled" xml:space="preserve">
+    <value>Inbound “{0}” disabled</value>
+  </data>
+  <data name="InboundEnableCommand" xml:space="preserve">
+    <value>enable an inbound</value>
+  </data>
+  <data name="InboundEnabled" xml:space="preserve">
+    <value>Inbound “{0}” enabled</value>
+  </data>
+  <data name="InboundHeaderOption" xml:space="preserve">
+    <value>header for the upstream: Name=value, can be repeated</value>
+  </data>
+  <data name="InboundIdentityOption" xml:space="preserve">
+    <value>send X-Mcp-Client-* and X-Mcp-Meta-* headers to the upstream</value>
+  </data>
+  <data name="InboundListCommand" xml:space="preserve">
+    <value>list inbounds</value>
+  </data>
+  <data name="InboundNameOption" xml:space="preserve">
+    <value>name shown in lists, the slug by default</value>
+  </data>
+  <data name="InboundOff" xml:space="preserve">
+    <value>disabled</value>
+  </data>
+  <data name="InboundOn" xml:space="preserve">
+    <value>enabled</value>
+  </data>
+  <data name="InboundRemoveCommand" xml:space="preserve">
+    <value>remove an inbound and every client's access to it</value>
+  </data>
+  <data name="InboundRemoved" xml:space="preserve">
+    <value>Inbound “{0}” removed</value>
+  </data>
+  <data name="InboundSlugArgument" xml:space="preserve">
+    <value>part of the address: /mcp/&lt;slug&gt;</value>
+  </data>
+  <data name="InboundUrlOption" xml:space="preserve">
+    <value>MCP server address, streamable HTTP</value>
+  </data>
+  <data name="JournalEmpty" xml:space="preserve">
+    <value>The journal is empty</value>
+  </data>
+  <data name="LimitConcurrency" xml:space="preserve">
+    <value>concurrent: {0}</value>
+  </data>
+  <data name="LimitInvalid" xml:space="preserve">
+    <value>{0}: “{1}” does not fit, use a whole number or {2} to remove the limit</value>
+  </data>
+  <data name="LimitRate" xml:space="preserve">
+    <value>requests per minute: {0}</value>
+  </data>
+  <data name="NeverUsed" xml:space="preserve">
+    <value>never used</value>
+  </data>
+  <data name="NoAdmins" xml:space="preserve">
+    <value>No admins, nobody can sign in to the panel. Add one: ctx-ui admin add &lt;login&gt;</value>
+  </data>
+  <data name="NoApiKeys" xml:space="preserve">
+    <value>No keys. Issue one: ctx-ui apikey add &lt;name&gt;</value>
+  </data>
+  <data name="NoCalls" xml:space="preserve">
+    <value>No calls in this period</value>
+  </data>
+  <data name="NoExpiry" xml:space="preserve">
+    <value>no expiry</value>
+  </data>
+  <data name="NoLimits" xml:space="preserve">
+    <value>none</value>
+  </data>
+  <data name="NumberInRange" xml:space="preserve">
+    <value>{0}: a number from 1 to {1} is needed</value>
+  </data>
+  <data name="PanelPathRenewed" xml:space="preserve">
+    <value>The new address works after the service restarts; until then the old one stays</value>
+  </data>
+  <data name="PasswordShownOnce" xml:space="preserve">
+    <value>The password is shown once. If it is lost, issue a new one: ctx-ui admin password &lt;login&gt;</value>
+  </data>
+  <data name="QuotaNotSet" xml:space="preserve">
+    <value>none, calls this period: {0}</value>
+  </data>
+  <data name="QuotaReset" xml:space="preserve">
+    <value>Quota counter of client “{0}” reset, a new period has started</value>
+  </data>
+  <data name="QuotaResets" xml:space="preserve">
+    <value>{0}, resets {1} (UTC)</value>
+  </data>
+  <data name="QuotaUsedOf" xml:space="preserve">
+    <value>{0} of {1} calls</value>
+  </data>
+  <data name="Removed" xml:space="preserve">
+    <value>removed</value>
+  </data>
+  <data name="RootDescription" xml:space="preserve">
+    <value>ctx-ui: inbounds, clients, call accounting, panel sign-in and API keys</value>
+  </data>
+  <data name="TokenLost" xml:space="preserve">
+    <value>Token:    cannot be shown: the stored copy cannot be decrypted, the keys directory is lost.</value>
+  </data>
+  <data name="TokenLostApi" xml:space="preserve">
+    <value>The token cannot be shown: the stored copy cannot be decrypted, the keys directory is lost. Issue a new one: POST …/reissue</value>
+  </data>
+  <data name="TokenLostHint" xml:space="preserve">
+    <value>          Issue a new one: ctx-ui client reissue "{0}"</value>
+  </data>
+  <data name="UsageClientOption" xml:space="preserve">
+    <value>only this client</value>
+  </data>
+  <data name="UsageCommand" xml:space="preserve">
+    <value>what was called and how much; times in UTC</value>
+  </data>
+  <data name="UsageDay" xml:space="preserve">
+    <value>{0}  calls {1}, tools/call {2}, upstream failures {3}, gateway refusals {4}, average {5} ms</value>
+  </data>
+  <data name="UsageDaysCommand" xml:space="preserve">
+    <value>daily totals</value>
+  </data>
+  <data name="UsageDaysOption" xml:space="preserve">
+    <value>how many recent days, 7 by default</value>
+  </data>
+  <data name="UsageLimitOption" xml:space="preserve">
+    <value>how many recent lines, 50 by default</value>
+  </data>
+  <data name="UsageLine" xml:space="preserve">
+    <value>{0}  {1,-24} {2,-16} {3,-17} {4,6} ms  {5}</value>
+  </data>
+  <data name="UsageLogCommand" xml:space="preserve">
+    <value>recent calls, newest first</value>
+  </data>
+</root>

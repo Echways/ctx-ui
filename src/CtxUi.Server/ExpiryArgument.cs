@@ -14,7 +14,7 @@ public static class ExpiryArgument
 
         if (!DateTimeOffset.TryParseExact(
                 text, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var date))
-            throw new DomainException($"дата «{text}» не разобрана: нужен вид ГГГГ-ММ-ДД, например 2027-07-01, или {Never}");
+            throw new DomainException(string.Format(ServerText.ExpiryInvalid, text, Never));
 
         return date;
     }

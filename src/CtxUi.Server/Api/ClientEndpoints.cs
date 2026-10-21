@@ -82,7 +82,7 @@ public static class ClientEndpoints
         {
             return TypedResults.Problem(
                 statusCode: StatusCodes.Status409Conflict,
-                detail: "Токен показать нельзя: сохранённая копия не расшифрована, потерян каталог keys. Выпустите новый: POST …/reissue");
+                detail: ServerText.TokenLostApi);
         }
 
         return TypedResults.Ok(Connection(options.Value.PublicUrl, client, token));

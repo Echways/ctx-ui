@@ -1,0 +1,351 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="AddressWithHeader" xml:space="preserve">
+    <value>  с заголовком Authorization: Bearer &lt;токен&gt;   {0}</value>
+  </data>
+  <data name="AddressWithToken" xml:space="preserve">
+    <value>  адрес с токеном внутри                      {0}</value>
+  </data>
+  <data name="AdminAddCommand" xml:space="preserve">
+    <value>добавить администратора и показать его пароль</value>
+  </data>
+  <data name="AdminAdded" xml:space="preserve">
+    <value>Администратор «{0}» добавлен</value>
+  </data>
+  <data name="AdminCommand" xml:space="preserve">
+    <value>кто входит в панель и по какому адресу она открывается</value>
+  </data>
+  <data name="AdminLine" xml:space="preserve">
+    <value>{0,-24} добавлен {1}  {2}</value>
+  </data>
+  <data name="AdminListCommand" xml:space="preserve">
+    <value>показать администраторов</value>
+  </data>
+  <data name="AdminLocked" xml:space="preserve">
+    <value>вход закрыт до {0} (UTC)</value>
+  </data>
+  <data name="AdminLoginArgument" xml:space="preserve">
+    <value>логин: латинские буквы, цифры, точка, дефис, подчёркивание</value>
+  </data>
+  <data name="AdminNewOption" xml:space="preserve">
+    <value>заменить адрес панели новым случайным</value>
+  </data>
+  <data name="AdminPasswordCommand" xml:space="preserve">
+    <value>выдать новый пароль, закрыть прежние сеансы и снять блокировку</value>
+  </data>
+  <data name="AdminPasswordReset" xml:space="preserve">
+    <value>Пароль администратора «{0}» заменён, прежние сеансы закрыты</value>
+  </data>
+  <data name="AdminPathCommand" xml:space="preserve">
+    <value>показать адрес панели; --new заменяет его</value>
+  </data>
+  <data name="AdminRemoveCommand" xml:space="preserve">
+    <value>удалить администратора</value>
+  </data>
+  <data name="AdminRemoved" xml:space="preserve">
+    <value>Администратор «{0}» удалён</value>
+  </data>
+  <data name="ApiKeyAddCommand" xml:space="preserve">
+    <value>выпустить ключ и показать его</value>
+  </data>
+  <data name="ApiKeyApi" xml:space="preserve">
+    <value>API:      {0}</value>
+  </data>
+  <data name="ApiKeyCommand" xml:space="preserve">
+    <value>ключи для REST API; API и Swagger UI живут под адресом панели</value>
+  </data>
+  <data name="ApiKeyIssued" xml:space="preserve">
+    <value>Ключ «{0}» выпущен</value>
+  </data>
+  <data name="ApiKeyLine" xml:space="preserve">
+    <value>{0,-24} {1}…  выпущен {2}</value>
+  </data>
+  <data name="ApiKeyListCommand" xml:space="preserve">
+    <value>показать ключи</value>
+  </data>
+  <data name="ApiKeyNameArgument" xml:space="preserve">
+    <value>название: латинские буквы, цифры, точка, дефис, подчёркивание</value>
+  </data>
+  <data name="ApiKeyRemoveCommand" xml:space="preserve">
+    <value>отозвать ключ; запросы с ним сразу получают 401</value>
+  </data>
+  <data name="ApiKeyRevoked" xml:space="preserve">
+    <value>Ключ «{0}» отозван</value>
+  </data>
+  <data name="ApiKeySecret" xml:space="preserve">
+    <value>Ключ:     {0}</value>
+  </data>
+  <data name="ApiKeyShownOnce" xml:space="preserve">
+    <value>Ключ показан один раз. Потерянный ключ не восстановить: удалите его и выпустите новый.</value>
+  </data>
+  <data name="ApiKeySwagger" xml:space="preserve">
+    <value>Swagger:  {0}</value>
+  </data>
+  <data name="BackupCommand" xml:space="preserve">
+    <value>согласованная копия базы и ключей, сервис можно не останавливать</value>
+  </data>
+  <data name="BackupDirectoryArgument" xml:space="preserve">
+    <value>новый или пустой каталог для копии</value>
+  </data>
+  <data name="BackupTargetNotEmpty" xml:space="preserve">
+    <value>каталог {0} не пуст, нужен новый или пустой</value>
+  </data>
+  <data name="BackupWritten" xml:space="preserve">
+    <value>Копия записана в {0}</value>
+  </data>
+  <data name="ClientAddCommand" xml:space="preserve">
+    <value>выпустить клиента и показать токен</value>
+  </data>
+  <data name="ClientChanged" xml:space="preserve">
+    <value>Клиент «{0}» изменён</value>
+  </data>
+  <data name="ClientCommand" xml:space="preserve">
+    <value>кому, на какой срок и с какими лимитами выдан доступ</value>
+  </data>
+  <data name="ClientConcurrencyOption" xml:space="preserve">
+    <value>одновременных запросов; none снимает ограничение</value>
+  </data>
+  <data name="ClientDisableCommand" xml:space="preserve">
+    <value>закрыть доступ, не удаляя клиента</value>
+  </data>
+  <data name="ClientDisabled" xml:space="preserve">
+    <value>Клиент «{0}» отключён</value>
+  </data>
+  <data name="ClientEnableCommand" xml:space="preserve">
+    <value>вернуть доступ</value>
+  </data>
+  <data name="ClientEnabled" xml:space="preserve">
+    <value>Клиент «{0}» включён</value>
+  </data>
+  <data name="ClientExpiresOption" xml:space="preserve">
+    <value>дата ГГГГ-ММ-ДД (UTC), с начала которой доступ закрыт; never снимает срок</value>
+  </data>
+  <data name="ClientInboundOption" xml:space="preserve">
+    <value>slug inbound'а, можно повторять</value>
+  </data>
+  <data name="ClientListCommand" xml:space="preserve">
+    <value>показать клиентов</value>
+  </data>
+  <data name="ClientMetaOption" xml:space="preserve">
+    <value>метаданные ключ=значение для upstream, можно повторять</value>
+  </data>
+  <data name="ClientNameArgument" xml:space="preserve">
+    <value>имя клиента; с пробелами берётся в кавычки</value>
+  </data>
+  <data name="ClientQuotaOption" xml:space="preserve">
+    <value>вызовов tools/call за период; none снимает квоту</value>
+  </data>
+  <data name="ClientRateOption" xml:space="preserve">
+    <value>запросов в минуту; none снимает ограничение</value>
+  </data>
+  <data name="ClientReissueCommand" xml:space="preserve">
+    <value>выпустить новый токен, старый перестаёт работать</value>
+  </data>
+  <data name="ClientRemoveCommand" xml:space="preserve">
+    <value>удалить клиента</value>
+  </data>
+  <data name="ClientRemoved" xml:space="preserve">
+    <value>Клиент «{0}» удалён</value>
+  </data>
+  <data name="ClientResetCommand" xml:space="preserve">
+    <value>обнулить счётчик квоты и начать период заново</value>
+  </data>
+  <data name="ClientResetDaysOption" xml:space="preserve">
+    <value>через сколько дней квота обновляется; none отменяет сброс</value>
+  </data>
+  <data name="ClientSetCommand" xml:space="preserve">
+    <value>изменить срок, лимиты или набор inbound'ов</value>
+  </data>
+  <data name="ClientShowCommand" xml:space="preserve">
+    <value>показать токен и адреса подключения</value>
+  </data>
+  <data name="ConnectionClient" xml:space="preserve">
+    <value>Клиент:  {0}</value>
+  </data>
+  <data name="ConnectionExpiry" xml:space="preserve">
+    <value>Срок:    {0}</value>
+  </data>
+  <data name="ConnectionInbound" xml:space="preserve">
+    <value>Inbound «{0}»:</value>
+  </data>
+  <data name="ConnectionLimits" xml:space="preserve">
+    <value>Лимиты:  {0}</value>
+  </data>
+  <data name="ConnectionQuota" xml:space="preserve">
+    <value>Квота:   {0}</value>
+  </data>
+  <data name="ConnectionToken" xml:space="preserve">
+    <value>Токен:   {0}</value>
+  </data>
+  <data name="EntranceLogin" xml:space="preserve">
+    <value>Логин:   {0}</value>
+  </data>
+  <data name="EntrancePanel" xml:space="preserve">
+    <value>Панель:  {0}</value>
+  </data>
+  <data name="EntrancePassword" xml:space="preserve">
+    <value>Пароль:  {0}</value>
+  </data>
+  <data name="Error" xml:space="preserve">
+    <value>Ошибка: {0}</value>
+  </data>
+  <data name="ExpiresOn" xml:space="preserve">
+    <value>до {0} (UTC)</value>
+  </data>
+  <data name="ExpiryInvalid" xml:space="preserve">
+    <value>дата «{0}» не разобрана: нужен вид ГГГГ-ММ-ДД, например 2027-07-01, или {1}</value>
+  </data>
+  <data name="InboundAddCommand" xml:space="preserve">
+    <value>добавить inbound на удалённый MCP-сервер</value>
+  </data>
+  <data name="InboundAdded" xml:space="preserve">
+    <value>Inbound «{0}» добавлен: {1}</value>
+  </data>
+  <data name="InboundCommand" xml:space="preserve">
+    <value>что отдаётся по адресу /mcp/&lt;slug&gt;</value>
+  </data>
+  <data name="InboundDisableCommand" xml:space="preserve">
+    <value>выключить inbound, не удаляя</value>
+  </data>
+  <data name="InboundDisabled" xml:space="preserve">
+    <value>Inbound «{0}» выключен</value>
+  </data>
+  <data name="InboundEnableCommand" xml:space="preserve">
+    <value>включить inbound</value>
+  </data>
+  <data name="InboundEnabled" xml:space="preserve">
+    <value>Inbound «{0}» включён</value>
+  </data>
+  <data name="InboundHeaderOption" xml:space="preserve">
+    <value>заголовок для upstream: Имя=значение, можно повторять</value>
+  </data>
+  <data name="InboundIdentityOption" xml:space="preserve">
+    <value>передавать upstream заголовки X-Mcp-Client-* и X-Mcp-Meta-*</value>
+  </data>
+  <data name="InboundListCommand" xml:space="preserve">
+    <value>показать inbound'ы</value>
+  </data>
+  <data name="InboundNameOption" xml:space="preserve">
+    <value>название для списка, по умолчанию slug</value>
+  </data>
+  <data name="InboundOff" xml:space="preserve">
+    <value>выключен</value>
+  </data>
+  <data name="InboundOn" xml:space="preserve">
+    <value>включён</value>
+  </data>
+  <data name="InboundRemoveCommand" xml:space="preserve">
+    <value>удалить inbound и доступ к нему у всех клиентов</value>
+  </data>
+  <data name="InboundRemoved" xml:space="preserve">
+    <value>Inbound «{0}» удалён</value>
+  </data>
+  <data name="InboundSlugArgument" xml:space="preserve">
+    <value>часть адреса: /mcp/&lt;slug&gt;</value>
+  </data>
+  <data name="InboundUrlOption" xml:space="preserve">
+    <value>адрес MCP-сервера, streamable HTTP</value>
+  </data>
+  <data name="JournalEmpty" xml:space="preserve">
+    <value>Журнал пуст</value>
+  </data>
+  <data name="LimitConcurrency" xml:space="preserve">
+    <value>одновременно: {0}</value>
+  </data>
+  <data name="LimitInvalid" xml:space="preserve">
+    <value>{0}: «{1}» не подходит, нужно целое число или {2}, чтобы снять ограничение</value>
+  </data>
+  <data name="LimitRate" xml:space="preserve">
+    <value>запросов в минуту: {0}</value>
+  </data>
+  <data name="NeverUsed" xml:space="preserve">
+    <value>не обращался</value>
+  </data>
+  <data name="NoAdmins" xml:space="preserve">
+    <value>No admins, nobody can sign in to the panel. Add one: ctx-ui admin add &lt;login&gt;</value>
+  </data>
+  <data name="NoApiKeys" xml:space="preserve">
+    <value>Ключей нет. Выпустите: ctx-ui apikey add &lt;название&gt;</value>
+  </data>
+  <data name="NoCalls" xml:space="preserve">
+    <value>За это время обращений не было</value>
+  </data>
+  <data name="NoExpiry" xml:space="preserve">
+    <value>бессрочно</value>
+  </data>
+  <data name="NoLimits" xml:space="preserve">
+    <value>нет</value>
+  </data>
+  <data name="NumberInRange" xml:space="preserve">
+    <value>{0}: нужно число от 1 до {1}</value>
+  </data>
+  <data name="PanelPathRenewed" xml:space="preserve">
+    <value>Новый адрес начнёт работать после перезапуска сервиса, до тех пор действует прежний</value>
+  </data>
+  <data name="PasswordShownOnce" xml:space="preserve">
+    <value>Пароль показан один раз. Если он потерян, выпустите новый: ctx-ui admin password &lt;логин&gt;</value>
+  </data>
+  <data name="QuotaNotSet" xml:space="preserve">
+    <value>нет, вызовов за период: {0}</value>
+  </data>
+  <data name="QuotaReset" xml:space="preserve">
+    <value>Счётчик квоты клиента «{0}» обнулён, период начат заново</value>
+  </data>
+  <data name="QuotaResets" xml:space="preserve">
+    <value>{0}, обновится {1} (UTC)</value>
+  </data>
+  <data name="QuotaUsedOf" xml:space="preserve">
+    <value>{0} из {1} вызовов</value>
+  </data>
+  <data name="Removed" xml:space="preserve">
+    <value>удалён</value>
+  </data>
+  <data name="RootDescription" xml:space="preserve">
+    <value>ctx-ui: inbound'ы, клиенты, учёт вызовов, вход в панель и ключи API</value>
+  </data>
+  <data name="TokenLost" xml:space="preserve">
+    <value>Токен:   показать нельзя: сохранённая копия не расшифрована, потерян каталог keys.</value>
+  </data>
+  <data name="TokenLostApi" xml:space="preserve">
+    <value>Токен показать нельзя: сохранённая копия не расшифрована, потерян каталог keys. Выпустите новый: POST …/reissue</value>
+  </data>
+  <data name="TokenLostHint" xml:space="preserve">
+    <value>         Выпустите новый: ctx-ui client reissue "{0}"</value>
+  </data>
+  <data name="UsageClientOption" xml:space="preserve">
+    <value>только этот клиент</value>
+  </data>
+  <data name="UsageCommand" xml:space="preserve">
+    <value>сколько и чего вызывали; время в UTC</value>
+  </data>
+  <data name="UsageDay" xml:space="preserve">
+    <value>{0}  вызовов {1}, из них tools/call {2}, сбоев upstream {3}, отказов шлюза {4}, в среднем {5} мс</value>
+  </data>
+  <data name="UsageDaysCommand" xml:space="preserve">
+    <value>итоги по дням</value>
+  </data>
+  <data name="UsageDaysOption" xml:space="preserve">
+    <value>за сколько последних дней, по умолчанию 7</value>
+  </data>
+  <data name="UsageLimitOption" xml:space="preserve">
+    <value>сколько последних строк, по умолчанию 50</value>
+  </data>
+  <data name="UsageLine" xml:space="preserve">
+    <value>{0}  {1,-24} {2,-16} {3,-17} {4,6} мс  {5}</value>
+  </data>
+  <data name="UsageLogCommand" xml:space="preserve">
+    <value>последние вызовы, новые сверху</value>
+  </data>
+</root>

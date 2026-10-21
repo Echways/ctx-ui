@@ -12,6 +12,12 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="AdminExists" xml:space="preserve">
+    <value>администратор «{0}» уже есть</value>
+  </data>
+  <data name="AdminNotFound" xml:space="preserve">
+    <value>администратор «{0}» не найден</value>
+  </data>
   <data name="AdminNameInvalid" xml:space="preserve">
     <value>логин «{0}» недопустим: от 1 до {1} символов, латинские буквы, цифры, точка, дефис и подчёркивание</value>
   </data>

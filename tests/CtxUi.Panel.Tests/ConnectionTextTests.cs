@@ -1,8 +1,7 @@
 using CtxUi.Core.Clients;
 using CtxUi.Core.Inbounds;
-using CtxUi.Panel;
 
-namespace CtxUi.IntegrationTests;
+namespace CtxUi.Panel.Tests;
 
 public class ConnectionTextTests
 {

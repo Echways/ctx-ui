@@ -51,6 +51,14 @@ jobs:
         if: ${{ !cancelled() }}
         run: dotnet test --project tests/CtxUi.Gateway.Tests -c Release --results-directory "$GITHUB_WORKSPACE/TestResults" --report-xunit-junit
 
+      - name: Test panel units
+        if: ${{ !cancelled() }}
+        run: dotnet test --project tests/CtxUi.Panel.Tests -c Release --results-directory "$GITHUB_WORKSPACE/TestResults" --report-xunit-junit
+
+      - name: Test server units
+        if: ${{ !cancelled() }}
+        run: dotnet test --project tests/CtxUi.Server.Tests -c Release --results-directory "$GITHUB_WORKSPACE/TestResults" --report-xunit-junit
+
       - name: Publish test report
         if: ${{ !cancelled() }}
         uses: mikepenz/action-junit-report@v6

@@ -11,10 +11,9 @@ public sealed partial class PanelClient : IDisposable
     public PanelClient(GatewayHost gateway, string? forwardedProto = null)
     {
         Root = "/" + gateway.PanelPath;
-        var cookies = new CookieContainer();
-        cookies.Add(new Uri(gateway.PanelUrl), new Cookie(
+        Cookies.Add(new Uri(gateway.PanelUrl), new Cookie(
             CookieRequestCultureProvider.DefaultCookieName, CookieRequestCultureProvider.MakeCookieValue(new RequestCulture("ru"))));
-        _http = new HttpClient(new HttpClientHandler { AllowAutoRedirect = false, CookieContainer = cookies })
+        _http = new HttpClient(new HttpClientHandler { AllowAutoRedirect = false, CookieContainer = Cookies })
         {
             BaseAddress = new Uri(gateway.BaseUrl),
         };
@@ -23,6 +22,8 @@ public sealed partial class PanelClient : IDisposable
     }
 
     public string Root { get; }
+
+    public CookieContainer Cookies { get; } = new();
 
     [GeneratedRegex("name=\"__RequestVerificationToken\" value=\"([^\"]+)\"")]
     private static partial Regex TokenField();

@@ -1,7 +1,6 @@
 using System.Net;
 using System.Text.RegularExpressions;
 using Microsoft.Data.Sqlite;
-using Microsoft.Extensions.Configuration;
 using CtxUi.Server;
 
 namespace CtxUi.IntegrationTests;

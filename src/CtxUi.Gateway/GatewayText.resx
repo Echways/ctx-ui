@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="BatchRefused" xml:space="preserve">
+    <value>Request not processed: it came in one batch with calls over the limit. {0}</value>
+  </data>
+  <data name="BodyTooLarge" xml:space="preserve">
+    <value>request body is larger than allowed: {0} bytes</value>
+  </data>
+  <data name="ClientDisabled" xml:space="preserve">
+    <value>access disabled</value>
+  </data>
+  <data name="ClientExpired" xml:space="preserve">
+    <value>access expired on {0}</value>
+  </data>
+  <data name="InboundNotFound" xml:space="preserve">
+    <value>inbound not found or not available to this client</value>
+  </data>
+  <data name="NotJsonRpc" xml:space="preserve">
+    <value>the gateway could not parse the request body: send one JSON-RPC message or a batch of up to {0} messages, without duplicate fields</value>
+  </data>
+  <data name="QuotaExhaustedForGood" xml:space="preserve">
+    <value>Call limit reached: {0}. No more calls are possible; contact whoever granted the access.</value>
+  </data>
+  <data name="QuotaExhaustedUntil" xml:space="preserve">
+    <value>Call limit reached: {0} per period. Resets on {1} at {2} UTC.</value>
+  </data>
+  <data name="RateLimited" xml:space="preserve">
+    <value>too many requests per minute, retry in {0} s</value>
+  </data>
+  <data name="ResetDayFormat" xml:space="preserve">
+    <value>MMMM d</value>
+  </data>
+  <data name="ResetDayYearFormat" xml:space="preserve">
+    <value>MMMM d, yyyy</value>
+  </data>
+  <data name="TokenMissing" xml:space="preserve">
+    <value>token required: header Authorization: Bearer &lt;token&gt; or address /k/&lt;token&gt;/mcp/&lt;inbound&gt;</value>
+  </data>
+  <data name="TokenUnknown" xml:space="preserve">
+    <value>token not found</value>
+  </data>
+  <data name="TooManyConcurrent" xml:space="preserve">
+    <value>too many concurrent requests, wait for the previous ones to finish</value>
+  </data>
+</root>

@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace CtxUi.Gateway.Tests;
 
 public class QuotaRefusalTests
@@ -23,6 +25,23 @@ public class QuotaRefusalTests
         Assert.Contains(
             "Обновится 31 октября в 22:30 UTC.",
             QuotaRefusal.Text(Refused(new DateTimeOffset(2026, 11, 1, 1, 30, 0, TimeSpan.FromHours(3))), Now));
+
+    [Fact]
+    public void Refusal_reads_in_english_when_the_culture_is_english()
+    {
+        var (culture, uiCulture) = (CultureInfo.CurrentCulture, CultureInfo.CurrentUICulture);
+        CultureInfo.CurrentCulture = CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo("en");
+        try
+        {
+            Assert.Equal(
+                "Call limit reached: 100 per period. Resets on October 19 at 10:00 UTC.",
+                QuotaRefusal.Text(Refused(new DateTimeOffset(2026, 10, 19, 10, 0, 0, TimeSpan.Zero)), Now));
+        }
+        finally
+        {
+            (CultureInfo.CurrentCulture, CultureInfo.CurrentUICulture) = (culture, uiCulture);
+        }
+    }
 
     [Fact]
     public void Quota_without_a_reset_says_whom_to_ask() =>

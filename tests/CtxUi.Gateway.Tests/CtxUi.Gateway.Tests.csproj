@@ -10,6 +10,7 @@
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <PackageReference Include="xunit.v3" />
     <Using Include="Xunit" />
+    <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
     <Compile Include="..\CtxUi.Core.Tests\Support\FakeVault.cs" Link="Support\FakeVault.cs" />
     <ProjectReference Include="..\..\src\CtxUi.Gateway\CtxUi.Gateway.csproj" />
   </ItemGroup>

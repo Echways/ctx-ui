@@ -23,21 +23,17 @@ internal static class Rejection
     {
         var (status, error, message) = decision.Status switch
         {
-            AccessStatus.TokenMissing => (
-                StatusCodes.Status401Unauthorized,
-                "token_missing",
-                "нужен токен: заголовок Authorization: Bearer <токен> или адрес /k/<токен>/mcp/<inbound>"),
-            AccessStatus.TokenUnknown => (StatusCodes.Status401Unauthorized, "token_unknown", "токен не найден"),
-            AccessStatus.ClientDisabled => (StatusCodes.Status401Unauthorized, "client_disabled", "доступ отключён"),
+            AccessStatus.TokenMissing => (StatusCodes.Status401Unauthorized, "token_missing", GatewayText.TokenMissing),
+            AccessStatus.TokenUnknown => (StatusCodes.Status401Unauthorized, "token_unknown", GatewayText.TokenUnknown),
+            AccessStatus.ClientDisabled => (StatusCodes.Status401Unauthorized, "client_disabled", GatewayText.ClientDisabled),
             AccessStatus.ClientExpired => (
                 StatusCodes.Status401Unauthorized,
                 "client_expired",
-                $"срок действия истёк {decision.Client!.ExpiresAt:yyyy-MM-dd}"),
-            AccessStatus.InboundNotFound => (
-                StatusCodes.Status404NotFound,
-                "inbound_not_found",
-                "inbound не найден или недоступен этому клиенту"),
-            _ => throw new InvalidOperationException($"для исхода {decision.Status} отказ не определён"),
+                string.Format(
+                    GatewayText.ClientExpired,
+                    decision.Client!.ExpiresAt!.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture))),
+            AccessStatus.InboundNotFound => (StatusCodes.Status404NotFound, "inbound_not_found", GatewayText.InboundNotFound),
+            _ => throw new InvalidOperationException($"no rejection is defined for {decision.Status}"),
         };
 
         context.Response.StatusCode = status;
@@ -51,19 +47,19 @@ internal static class Rejection
         context,
         retryAfterSeconds,
         "rate_limited",
-        $"слишком много запросов в минуту, повторите через {retryAfterSeconds} с");
+        string.Format(GatewayText.RateLimited, retryAfterSeconds));
 
     public static Task WriteBusyAsync(HttpContext context) => WriteLimitAsync(
         context,
         1,
         "too_many_concurrent",
-        "слишком много одновременных запросов, дождитесь ответа на предыдущие");
+        GatewayText.TooManyConcurrent);
 
     public static Task WriteBodyTooLargeAsync(HttpContext context, int limitBytes)
     {
         context.Response.StatusCode = StatusCodes.Status413PayloadTooLarge;
         return context.Response.WriteAsJsonAsync(
-            new Body("body_too_large", $"тело запроса больше допустимого: {limitBytes} байт"),
+            new Body("body_too_large", string.Format(GatewayText.BodyTooLarge, limitBytes)),
             Json);
     }
 
@@ -75,10 +71,7 @@ internal static class Rejection
             json.WriteStartObject();
             json.WriteString("jsonrpc", "2.0");
             json.WriteNull("id");
-            WriteError(
-                json,
-                InvalidRequest,
-                $"шлюз не разобрал тело запроса: нужно одно сообщение JSON-RPC или пакет до {RpcEnvelope.MaxBatch} сообщений, без повторяющихся полей");
+            WriteError(json, InvalidRequest, string.Format(GatewayText.NotJsonRpc, RpcEnvelope.MaxBatch));
             json.WriteEndObject();
         }
 
@@ -109,7 +102,7 @@ internal static class Rejection
                 if (call.IsToolCall)
                     WriteToolError(json, text);
                 else
-                    WriteError(json, ServerError, "Запрос не выполнен: он пришёл в одном пакете с вызовами сверх лимита. " + text);
+                    WriteError(json, ServerError, string.Format(GatewayText.BatchRefused, text));
 
                 json.WriteEndObject();
             }

@@ -6,4 +6,9 @@
     <ProjectReference Include="..\CtxUi.Core\CtxUi.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <EmbeddedResource Update="GatewayText.resx" StronglyTypedLanguage="CSharp" StronglyTypedClassName="GatewayText"
+                      StronglyTypedNamespace="CtxUi.Gateway" StronglyTypedFileName="$(IntermediateOutputPath)GatewayText.Designer.cs" />
+  </ItemGroup>
+
 </Project>

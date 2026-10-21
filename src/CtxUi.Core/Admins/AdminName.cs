@@ -19,4 +19,8 @@ public static partial class AdminName
     }
 
     public static string Key(string name) => name.ToUpperInvariant();
+
+    public static DomainException Exists(string name) => new(string.Format(CoreText.AdminExists, name));
+
+    public static DomainException NotFound(string name) => new(string.Format(CoreText.AdminNotFound, name));
 }

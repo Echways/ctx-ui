@@ -13,7 +13,7 @@ public static class LimitArgument
             return null;
 
         if (!int.TryParse(text, NumberStyles.None, CultureInfo.InvariantCulture, out var value))
-            throw new DomainException($"{option}: «{text}» не подходит, нужно целое число или {None}, чтобы снять ограничение");
+            throw new DomainException(string.Format(ServerText.LimitInvalid, option, text, None));
 
         return value;
     }

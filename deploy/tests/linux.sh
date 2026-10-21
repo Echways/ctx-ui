@@ -97,14 +97,14 @@ done
 echo "== refusals"
 output="$(in_box bash /dist/install-unstamped.sh 2>&1)" && code=0 || code=$?
 check "unstamped installer needs a version" equals 1 "$code"
-check "unstamped installer explains" contains "не указана версия" "$output"
+check "unstamped installer explains" contains "no version given" "$output"
 output="$(in_box bash /dist/install.sh --purge 2>&1)" && code=0 || code=$?
 check "purge alone is refused" equals 1 "$code"
 output="$(in_box bash /dist/install.sh --archive /dist/SHA256SUMS 2>&1)" && code=0 || code=$?
 check "foreign archive is refused" equals 1 "$code"
 output="$(in_box env CTX_UI_DOWNLOAD_URL=file:///dist/tampered bash /dist/install.sh 2>&1)" && code=0 || code=$?
 check "tampered download is refused" equals 1 "$code"
-check "tampered download explains" contains "контрольная сумма" "$output"
+check "tampered download explains" contains "checksum" "$output"
 output="$(in_box bash /dist/install.sh --archive "/dist/$first" --listen "http://127.0.0.1:8080; reboot" 2>&1)" && code=0 || code=$?
 check "address with shell syntax is refused" equals 1 "$code"
 check "refused address leaves no settings" equals "" "$(in_box sh -c 'ls /etc/ctx-ui/ctx-ui.env 2>/dev/null' || true)"
@@ -113,7 +113,7 @@ check "nothing is installed after refusals" equals "" "$(in_box sh -c 'ls -d /op
 echo "== install"
 output="$(in_box env CTX_UI_DOWNLOAD_URL=file:///dist bash /dist/install.sh \
     --public-url https://mcp.example.com/ --listen http://127.0.0.1:8080 2>&1)" || true
-check "installer reports the version" contains "ctx-ui 0.0.1 установлен и запущен." "$output"
+check "installer reports the version" contains "ctx-ui 0.0.1 is installed and running." "$output"
 check "service is active" equals active "$(in_box systemctl is-active ctx-ui)"
 check "service is enabled" equals enabled "$(in_box systemctl is-enabled ctx-ui)"
 check "service runs as ctx-ui" equals ctx-ui "$(in_box ps -o user= -C ctx-ui | sort -u)"
@@ -141,7 +141,7 @@ echo "== panel"
 output="$(in_box sh -c 'cd / && ctx-ui admin add root' 2>&1)" || true
 panel="$(echo "$output" | grep -o -E 'https://mcp\.example\.com/[a-z0-9]{16}/' | head -n 1 || true)"
 check "admin add prints the panel address" [ -n "$panel" ]
-check "admin add prints a password" contains "Пароль:  " "$output"
+check "admin add prints a password" contains "Password:  " "$output"
 path="${panel#https://mcp.example.com}"
 check "login form is served under the secret path" equals 200 "$(panel_status "${path}login")"
 check "panel styles are in the archive" equals 200 "$(panel_status "${path}_content/MudBlazor/MudBlazor.min.css")"
@@ -154,14 +154,14 @@ echo "== update"
 check "version command" equals 0.0.1 "$(in_box ctx-ui version)"
 pid="$(in_box systemctl show -p MainPID --value ctx-ui)"
 output="$(in_box sh -c 'cd / && CTX_UI_DOWNLOAD_URL=file:///dist ctx-ui update' 2>&1)" || true
-check "update to the installed version says so" contains "ctx-ui 0.0.1 уже установлен" "$output"
+check "update to the installed version says so" contains "ctx-ui 0.0.1 is already installed" "$output"
 check "update to the installed version keeps the service" equals "$pid" "$(in_box systemctl show -p MainPID --value ctx-ui)"
 output="$(in_box runuser -u ctx-ui -- ctx-ui update 2>&1)" && code=0 || code=$?
 check "update without root is refused" equals 1 "$code"
 output="$(in_box sh -c 'cd / && CTX_UI_DOWNLOAD_URL=file:///dist/missing ctx-ui update' 2>&1)" && code=0 || code=$?
 check "update without a reachable release fails" equals "1 active" "$code $(in_box systemctl is-active ctx-ui)"
 output="$(in_box sh -c 'cd / && CTX_UI_DOWNLOAD_URL=file:///dist/v0.0.2 ctx-ui update 0.0.2' 2>&1)" || true
-check "update reports the upgrade" contains "ctx-ui обновлён с 0.0.1 до 0.0.2" "$output"
+check "update reports the upgrade" contains "ctx-ui updated from 0.0.1 to 0.0.2" "$output"
 check "settings are untouched" contains "CtxUi__PublicUrl=https://mcp.example.com" "$(in_box cat /etc/ctx-ui/ctx-ui.env)"
 check "new version is in place" equals 0.0.2 "$(in_box ctx-ui version)"
 check "no installer is left behind" equals "" "$(in_box find /tmp -maxdepth 1 -name 'tmp.*' -type f)"
@@ -172,8 +172,8 @@ check "login form is served after the upgrade" equals 200 "$(panel_status "${pat
 
 echo "== reinstall"
 output="$(in_box bash /dist/install.sh --archive "/dist/$second" --public-url https://other.example.com 2>&1)" || true
-check "archive is installed over the same version" contains "ctx-ui 0.0.2 установлен и запущен." "$output"
-check "installer says settings were kept" contains "новые значения не применены" "$output"
+check "archive is installed over the same version" contains "ctx-ui 0.0.2 is installed and running." "$output"
+check "installer says settings were kept" contains "new values were not applied" "$output"
 check "settings stay untouched" contains "CtxUi__PublicUrl=https://mcp.example.com" "$(in_box cat /etc/ctx-ui/ctx-ui.env)"
 
 output="$(in_box bash /dist/install.sh --archive /dist/SHA256SUMS 2>&1)" && code=0 || code=$?

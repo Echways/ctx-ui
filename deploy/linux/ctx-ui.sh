@@ -16,7 +16,7 @@ update() {
     local base
 
     if [ "$(id -u)" -ne 0 ]; then
-        fail "нужны права root, запустите через sudo"
+        fail "root privileges required, run with sudo"
     fi
     case $# in
         0) base="https://github.com/$repo/releases/latest/download" ;;
@@ -24,13 +24,13 @@ update() {
             base="https://github.com/$repo/releases/download/v${1#v}"
             export CTX_UI_VERSION="${1#v}"
             ;;
-        *) fail "использование: ctx-ui update [версия]" ;;
+        *) fail "usage: ctx-ui update [version]" ;;
     esac
     base="${CTX_UI_DOWNLOAD_URL:-$base}"
 
     installer="$(mktemp)"
     trap 'rm -f "$installer"' EXIT
-    curl -fsSL -o "$installer" "$base/install.sh" || fail "не удалось скачать $base/install.sh"
+    curl -fsSL -o "$installer" "$base/install.sh" || fail "failed to download $base/install.sh"
     bash "$installer"
 }
 
@@ -47,7 +47,7 @@ case "${1:-}" in
 esac
 
 if [ "$(id -u)" -ne 0 ] && [ "$(id -un)" != "$user" ]; then
-    fail "нужны права root, запустите через sudo"
+    fail "root privileges required, run with sudo"
 fi
 
 while IFS='=' read -r key value; do

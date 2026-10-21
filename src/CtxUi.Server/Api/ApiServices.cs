@@ -10,8 +10,6 @@ public static class ApiServices
     public const string Prefix = "/api/v1";
     public const string SwaggerPath = "swagger";
 
-    private const string Language = "ru";
-
     private const string Policy = "api";
 
     public static IServiceCollection AddCtxUiApi(this IServiceCollection services)
@@ -30,8 +28,8 @@ public static class ApiServices
                 {
                     Title = "ctx-ui",
                     Version = Document,
-                    Description = "Inbound'ы, клиенты и учёт вызовов. Ключ выпускается командой ctx-ui apikey add <название> " +
-                        "или в панели и передаётся заголовком Authorization: Bearer <ключ>.",
+                    Description = "Inbounds, clients and call accounting. Issue a key with ctx-ui apikey add <name> " +
+                        "or in the panel and send it as Authorization: Bearer <key>.",
                 };
                 document.Components ??= new OpenApiComponents();
                 document.Components.SecuritySchemes ??= new Dictionary<string, IOpenApiSecurityScheme>();
@@ -39,7 +37,7 @@ public static class ApiServices
                 {
                     Type = SecuritySchemeType.Http,
                     Scheme = "bearer",
-                    Description = "ключ API вида ctxk_…",
+                    Description = "API key of the form ctxk_…",
                 };
                 document.Security = [new OpenApiSecurityRequirement { [new OpenApiSecuritySchemeReference(ApiKeyAuthentication.SchemeName, document)] = [] }];
                 return Task.CompletedTask;
@@ -52,7 +50,7 @@ public static class ApiServices
     {
         app.UseWhen(
             context => context.Request.Path.StartsWithSegments("/api"),
-            api => api.UseRequestLocalization(Language).UseStatusCodePages());
+            api => api.UseStatusCodePages());
         return app.UseSwaggerUI(options =>
         {
             options.RoutePrefix = SwaggerPath;

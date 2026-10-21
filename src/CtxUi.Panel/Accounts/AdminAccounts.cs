@@ -20,7 +20,7 @@ public sealed class AdminAccounts(CtxUiDbContext db, IPasswordHasher<Admin> hash
         var parsed = AdminName.Parse(name);
         var key = AdminName.Key(parsed);
         if (await db.Admins.AnyAsync(known => known.NameKey == key, ct))
-            throw new DomainException($"администратор «{parsed}» уже есть");
+            throw AdminName.Exists(parsed);
 
         var admin = new Admin { Id = Guid.NewGuid(), Name = parsed, NameKey = key, CreatedAt = clock.GetUtcNow() };
         var password = Renew(admin);
@@ -52,7 +52,7 @@ public sealed class AdminAccounts(CtxUiDbContext db, IPasswordHasher<Admin> hash
     {
         var key = AdminName.Key(name.Trim());
         return await db.Admins.SingleOrDefaultAsync(admin => admin.NameKey == key, ct)
-            ?? throw new DomainException($"администратор «{name.Trim()}» не найден");
+            ?? throw AdminName.NotFound(name.Trim());
     }
 
     private string Renew(Admin admin)

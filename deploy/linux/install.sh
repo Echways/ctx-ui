@@ -20,20 +20,20 @@ fail() {
 
 usage() {
     cat <<'EOF'
-Установка ctx-ui.
+Installs ctx-ui.
 
-  install.sh [--public-url <адрес>] [--listen <адрес>] [--version <версия>] [--archive <файл>]
+  install.sh [--public-url <address>] [--listen <address>] [--version <version>] [--archive <file>]
   install.sh --uninstall [--purge]
 
-  --public-url  внешний адрес шлюза, с него начинаются адреса для клиентов
-  --listen      адрес, на котором слушает сервис
-  --version     версия релиза без буквы v
-  --archive     готовый архив вместо скачивания, ставится даже поверх той же версии
-  --uninstall   удалить программу, сервис и команду ctx-ui
-  --purge       вместе с --uninstall удалить настройки, данные и пользователя
+  --public-url  external gateway address, the start of every client address
+  --listen      address the service listens on
+  --version     release version without the leading v
+  --archive     local archive instead of a download, installed even over the same version
+  --uninstall   remove the program, the service and the ctx-ui command
+  --purge       with --uninstall, also remove settings, data and the user
 
-Те же значения читаются из CTX_UI_PUBLIC_URL, CTX_UI_LISTEN и CTX_UI_VERSION.
-CTX_UI_DOWNLOAD_URL задаёт адрес, где лежат архив и SHA256SUMS, вместо страницы релиза.
+The same values are read from CTX_UI_PUBLIC_URL, CTX_UI_LISTEN and CTX_UI_VERSION.
+CTX_UI_DOWNLOAD_URL sets where the archive and SHA256SUMS are, instead of the release page.
 EOF
 }
 
@@ -56,7 +56,7 @@ detect_arch() {
     case "$(uname -m)" in
         x86_64 | amd64) echo x64 ;;
         aarch64 | arm64) echo arm64 ;;
-        *) fail "архитектура $(uname -m) не поддерживается, есть сборки под x86_64 и aarch64" ;;
+        *) fail "architecture $(uname -m) is not supported, builds exist for x86_64 and aarch64" ;;
     esac
 }
 
@@ -73,11 +73,11 @@ download() {
     local name="ctx-ui-$version-linux-$arch.tar.gz"
     local base="${CTX_UI_DOWNLOAD_URL:-https://github.com/$repo/releases/download/v$version}"
 
-    echo "Скачиваю $name" >&2
-    curl -fsSL -o "$work/$name" "$base/$name" || fail "не удалось скачать $base/$name"
-    curl -fsSL -o "$work/SHA256SUMS" "$base/SHA256SUMS" || fail "не удалось скачать $base/SHA256SUMS"
+    echo "Downloading $name" >&2
+    curl -fsSL -o "$work/$name" "$base/$name" || fail "failed to download $base/$name"
+    curl -fsSL -o "$work/SHA256SUMS" "$base/SHA256SUMS" || fail "failed to download $base/SHA256SUMS"
     if ! (cd "$work" && grep -F "  $name" SHA256SUMS | sha256sum -c --status -); then
-        fail "контрольная сумма $name не совпала, установка прервана"
+        fail "checksum of $name does not match, installation aborted"
     fi
     echo "$work/$name"
 }
@@ -86,19 +86,19 @@ configure() {
     local public_url="$1" listen="$2"
 
     if [ -z "$public_url" ]; then
-        public_url="$(ask "Внешний адрес, по которому клиенты видят шлюз" "http://localhost:8080")"
+        public_url="$(ask "External address clients use to reach the gateway" "http://localhost:8080")"
     fi
     if [ -z "$listen" ]; then
-        listen="$(ask "Адрес, на котором слушает сервис" "http://127.0.0.1:8080")"
+        listen="$(ask "Address the service listens on" "http://127.0.0.1:8080")"
     fi
     public_url="${public_url%/}"
     listen="${listen%/}"
 
     if ! [[ "$public_url" =~ $url_pattern ]]; then
-        fail "внешний адрес должен выглядеть как https://mcp.example.com, получено: $public_url"
+        fail "external address must look like https://mcp.example.com, got: $public_url"
     fi
     if ! [[ "$listen" =~ $url_pattern ]]; then
-        fail "адрес прослушивания должен выглядеть как http://127.0.0.1:8080, получено: $listen"
+        fail "listen address must look like http://127.0.0.1:8080, got: $listen"
     fi
 
     install -d -m 750 -o root -g "$user" "$config_dir"
@@ -143,9 +143,9 @@ remove() {
         if id -u "$user" > /dev/null 2>&1; then
             userdel "$user"
         fi
-        echo "ctx-ui удалён вместе с настройками и данными."
+        echo "ctx-ui removed together with settings and data."
     else
-        echo "ctx-ui удалён. Настройки в $config_dir и данные в $data_dir оставлены."
+        echo "ctx-ui removed. Settings in $config_dir and data in $data_dir were kept."
     fi
 }
 
@@ -159,7 +159,7 @@ main() {
         case "$1" in
             --public-url | --listen | --version | --archive)
                 if [ $# -lt 2 ]; then
-                    fail "после $1 нужно значение"
+                    fail "$1 needs a value"
                 fi
                 case "$1" in
                     --public-url) public_url="$2" ;;
@@ -182,16 +182,16 @@ main() {
                 return 0
                 ;;
             *)
-                fail "неизвестный параметр $1, список параметров: --help"
+                fail "unknown option $1, see --help for the list"
                 ;;
         esac
     done
 
     if [ "$(id -u)" -ne 0 ]; then
-        fail "нужны права root, запустите через sudo"
+        fail "root privileges required, run with sudo"
     fi
     if ! command -v systemctl > /dev/null 2>&1 || [ ! -d /run/systemd/system ]; then
-        fail "нужен systemd; без него ставьте через Docker, см. docs/install.md"
+        fail "systemd is required; without it install with Docker, see docs/install.md"
     fi
 
     if [ "$uninstall" -eq 1 ]; then
@@ -199,12 +199,12 @@ main() {
         return 0
     fi
     if [ "$purge" -eq 1 ]; then
-        fail "--purge работает только вместе с --uninstall"
+        fail "--purge works only together with --uninstall"
     fi
 
     for tool in curl tar sha256sum runuser useradd; do
         if ! command -v "$tool" > /dev/null 2>&1; then
-            fail "не найдена команда $tool"
+            fail "command not found: $tool"
         fi
     done
 
@@ -214,22 +214,22 @@ main() {
 
     if [ -z "$archive" ]; then
         if [ -z "$version" ]; then
-            fail "не указана версия: добавьте --version или возьмите install.sh со страницы релиза"
+            fail "no version given: add --version or take install.sh from the release page"
         fi
         if [ -f "$home/VERSION" ] && [ "$(cat "$home/VERSION")" = "$version" ] && systemctl is-active --quiet ctx-ui; then
-            echo "ctx-ui $version уже установлен и запущен, обновлять нечего."
+            echo "ctx-ui $version is already installed and running, nothing to update."
             return 0
         fi
         archive="$(download "$version" "$arch")"
     elif [ ! -f "$archive" ]; then
-        fail "файл $archive не найден"
+        fail "file $archive not found"
     fi
 
     if ! tar --no-same-owner -xzf "$archive" -C "$work" 2> /dev/null; then
-        fail "архив $archive не распаковывается"
+        fail "archive $archive cannot be unpacked"
     fi
     if [ ! -f "$work/ctx-ui/ctx-ui" ] || [ ! -f "$work/ctx-ui/VERSION" ]; then
-        fail "архив $archive не похож на релиз ctx-ui"
+        fail "archive $archive does not look like a ctx-ui release"
     fi
     version="$(cat "$work/ctx-ui/VERSION")"
 
@@ -244,7 +244,7 @@ main() {
 
     if [ -f "$env_file" ]; then
         if [ -n "$public_url$listen" ]; then
-            echo "Настройки уже есть в $env_file, новые значения не применены." >&2
+            echo "Settings already exist in $env_file, new values were not applied." >&2
         fi
     else
         configure "$public_url" "$listen"
@@ -263,30 +263,30 @@ main() {
 
     if ! wait_ready "$(probe_url)"; then
         journalctl -u ctx-ui -n 30 --no-pager >&2 || true
-        fail "сервис не ответил на $(probe_url) за 30 секунд, журнал выше"
+        fail "the service did not answer at $(probe_url) within 30 seconds, see the log above"
     fi
 
     if [ -n "$previous" ] && [ "$previous" != "$version" ]; then
-        echo "ctx-ui обновлён с $previous до $version и запущен."
+        echo "ctx-ui updated from $previous to $version and running."
     else
-        echo "ctx-ui $version установлен и запущен."
+        echo "ctx-ui $version is installed and running."
     fi
     cat <<EOF
 
-  Слушает:        $(setting Urls)
-  Внешний адрес:  $(setting CtxUi__PublicUrl)
-  Настройки:      $env_file, после правки: systemctl restart ctx-ui
-  Данные:         $data_dir
-  Журнал:         journalctl -u ctx-ui -f
-  Обновление:     ctx-ui update
+  Listens on:        $(setting Urls)
+  External address:  $(setting CtxUi__PublicUrl)
+  Settings:          $env_file, after editing: systemctl restart ctx-ui
+  Data:              $data_dir
+  Log:               journalctl -u ctx-ui -f
+  Upgrade:           ctx-ui update
 
-TLS сервис не поднимает: перед ним ставится Caddy или nginx.
+The service does not terminate TLS: put Caddy or nginx in front of it.
 
-Дальше:
+Next:
   ctx-ui admin add admin
-      печатает адрес панели и пароль; inbound'ы и клиентов можно заводить в ней
+      prints the panel address and a password; inbounds and clients can be added there
   ctx-ui inbound add learn --url https://learn.microsoft.com/api/mcp
-  ctx-ui client add "Иванов" --inbound learn
+  ctx-ui client add "Ivanov" --inbound learn
 EOF
 }
 

@@ -6,6 +6,7 @@ services:
     restart: unless-stopped
     environment:
       CtxUi__PublicUrl: https://${CTX_UI_DOMAIN:?}
+      CtxUi__Language: ${CTX_UI_LANGUAGE:-en}
     volumes:
       - ctx-ui-data:/data
     cap_drop:

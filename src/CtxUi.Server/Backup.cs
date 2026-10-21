@@ -9,7 +9,7 @@ public static class Backup
     public static async Task WriteAsync(CtxUiDbContext db, string dataDir, string target, CancellationToken ct)
     {
         if (File.Exists(target) || (Directory.Exists(target) && Directory.EnumerateFileSystemEntries(target).Any()))
-            throw new DomainException($"каталог {target} не пуст, нужен новый или пустой");
+            throw new DomainException(string.Format(ServerText.BackupTargetNotEmpty, target));
 
         ServiceRegistration.CreatePrivateDirectory(target);
         var database = Path.Combine(target, CoreServices.DatabaseFile);

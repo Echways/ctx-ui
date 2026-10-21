@@ -22,10 +22,10 @@ public static class UsageEndpoints
 {
     public static void MapUsage(this RouteGroupBuilder api)
     {
-        api.MapGet("/overview", OverviewAsync).WithTags("usage").WithSummary("То же, что страница «Обзор»: сутки и последние 7 дней");
+        api.MapGet("/overview", OverviewAsync).WithTags("usage").WithSummary("Same as the Overview page: the last day and the last 7 days");
         var usage = api.MapGroup("/usage").WithTags("usage");
-        usage.MapGet("/days", DaysAsync).WithSummary("Итоги по дням, UTC; days от 1 до 3650, по умолчанию 7");
-        usage.MapGet("/log", LogAsync).WithSummary("Последние вызовы, новые сверху; limit от 1 до 1000, по умолчанию 50");
+        usage.MapGet("/days", DaysAsync).WithSummary("Daily totals, UTC; days from 1 to 3650, 7 by default");
+        usage.MapGet("/log", LogAsync).WithSummary("Recent calls, newest first; limit from 1 to 1000, 50 by default");
     }
 
     private static async Task<Ok<Overview>> OverviewAsync(OverviewService overview, CancellationToken ct) =>
@@ -70,5 +70,5 @@ public static class UsageEndpoints
     }
 
     private static int InRange(string name, int value, int max) =>
-        value >= 1 && value <= max ? value : throw new DomainException($"{name}: нужно число от 1 до {max}");
+        value >= 1 && value <= max ? value : throw new DomainException(string.Format(ServerText.NumberInRange, name, max));
 }

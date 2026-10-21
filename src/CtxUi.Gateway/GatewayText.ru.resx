@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="BatchRefused" xml:space="preserve">
+    <value>Запрос не выполнен: он пришёл в одном пакете с вызовами сверх лимита. {0}</value>
+  </data>
+  <data name="BodyTooLarge" xml:space="preserve">
+    <value>тело запроса больше допустимого: {0} байт</value>
+  </data>
+  <data name="ClientDisabled" xml:space="preserve">
+    <value>доступ отключён</value>
+  </data>
+  <data name="ClientExpired" xml:space="preserve">
+    <value>срок действия истёк {0}</value>
+  </data>
+  <data name="InboundNotFound" xml:space="preserve">
+    <value>inbound не найден или недоступен этому клиенту</value>
+  </data>
+  <data name="NotJsonRpc" xml:space="preserve">
+    <value>шлюз не разобрал тело запроса: нужно одно сообщение JSON-RPC или пакет до {0} сообщений, без повторяющихся полей</value>
+  </data>
+  <data name="QuotaExhaustedForGood" xml:space="preserve">
+    <value>Лимит вызовов исчерпан: {0}. Новых вызовов не будет, обратитесь к тому, кто выдал доступ.</value>
+  </data>
+  <data name="QuotaExhaustedUntil" xml:space="preserve">
+    <value>Лимит вызовов исчерпан: {0} за период. Обновится {1} в {2} UTC.</value>
+  </data>
+  <data name="RateLimited" xml:space="preserve">
+    <value>слишком много запросов в минуту, повторите через {0} с</value>
+  </data>
+  <data name="ResetDayFormat" xml:space="preserve">
+    <value>d MMMM</value>
+  </data>
+  <data name="ResetDayYearFormat" xml:space="preserve">
+    <value>d MMMM yyyy 'года'</value>
+  </data>
+  <data name="TokenMissing" xml:space="preserve">
+    <value>нужен токен: заголовок Authorization: Bearer &lt;токен&gt; или адрес /k/&lt;токен&gt;/mcp/&lt;inbound&gt;</value>
+  </data>
+  <data name="TokenUnknown" xml:space="preserve">
+    <value>токен не найден</value>
+  </data>
+  <data name="TooManyConcurrent" xml:space="preserve">
+    <value>слишком много одновременных запросов, дождитесь ответа на предыдущие</value>
+  </data>
+</root>

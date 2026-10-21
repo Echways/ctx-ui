@@ -1,5 +1,8 @@
+using System.Net;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.Playwright;
+using CtxUi.Core;
+using Cookie = Microsoft.Playwright.Cookie;
 
 namespace CtxUi.IntegrationTests;
 
@@ -25,6 +28,51 @@ public sealed class PanelSession : IAsyncDisposable
     public static async Task<PanelSession> OpenAsync(GatewayHost gateway, string admin = "root", string? language = "ru")
     {
         var issued = await gateway.AddAdminAsync(admin);
+        var context = await NewContextAsync(gateway, language);
+        var page = await context.NewPageAsync();
+        await page.GotoAsync("");
+        return new PanelSession(context, page, issued.Password);
+    }
+
+    public static async Task<PanelSession> SignInAsync(GatewayHost gateway, string admin = "root")
+    {
+        var issued = await gateway.AddAdminAsync(admin);
+        using var panel = new PanelClient(gateway);
+        using (var signedIn = await panel.SignInAsync(admin, issued.Password))
+        {
+            if (signedIn.StatusCode != HttpStatusCode.Redirect)
+                throw new InvalidOperationException($"sign-in answered {signedIn.StatusCode} instead of a redirect");
+        }
+
+        var context = await NewContextAsync(gateway, "ru");
+        var session = panel.Cookies.GetCookies(new Uri(gateway.PanelUrl))
+            .Where(cookie => cookie.Name.StartsWith(OwnCookies.Session, StringComparison.Ordinal));
+        await context.AddCookiesAsync(session.Select(cookie => new Cookie
+        {
+            Name = cookie.Name,
+            Value = cookie.Value,
+            Domain = cookie.Domain,
+            Path = cookie.Path,
+            HttpOnly = cookie.HttpOnly,
+            Secure = cookie.Secure,
+        }));
+        var page = await context.NewPageAsync();
+        await page.GotoAsync("");
+        await Assertions.Expect(page.GetByRole(AriaRole.Navigation)).ToBeVisibleAsync();
+        return new PanelSession(context, page, issued.Password);
+    }
+
+    public async Task FillLoginAsync(string name, string password)
+    {
+        await Page.GetByLabel("Логин").FillAsync(name);
+        await Page.GetByLabel("Пароль").FillAsync(password);
+        await Page.GetByRole(AriaRole.Button, new() { Name = "Войти" }).ClickAsync();
+    }
+
+    public ValueTask DisposeAsync() => _context.DisposeAsync();
+
+    private static async Task<IBrowserContext> NewContextAsync(GatewayHost gateway, string? language)
+    {
         var browser = await Browser.Value;
         var context = await browser.NewContextAsync(new BrowserNewContextOptions
         {
@@ -43,27 +91,8 @@ public sealed class PanelSession : IAsyncDisposable
             }]);
         }
 
-        var page = await context.NewPageAsync();
-        await page.GotoAsync("");
-        return new PanelSession(context, page, issued.Password);
+        return context;
     }
-
-    public static async Task<PanelSession> SignInAsync(GatewayHost gateway, string admin = "root")
-    {
-        var session = await OpenAsync(gateway, admin);
-        await session.FillLoginAsync(admin, session.Password);
-        await Assertions.Expect(session.Page.GetByRole(AriaRole.Navigation)).ToBeVisibleAsync();
-        return session;
-    }
-
-    public async Task FillLoginAsync(string name, string password)
-    {
-        await Page.GetByLabel("Логин").FillAsync(name);
-        await Page.GetByLabel("Пароль").FillAsync(password);
-        await Page.GetByRole(AriaRole.Button, new() { Name = "Войти" }).ClickAsync();
-    }
-
-    public ValueTask DisposeAsync() => _context.DisposeAsync();
 
     private static async Task<IBrowser> LaunchAsync()
     {

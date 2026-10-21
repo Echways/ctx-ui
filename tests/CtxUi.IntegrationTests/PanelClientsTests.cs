@@ -1,35 +1,15 @@
-using System.Net;
-using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Playwright;
 using CtxUi.Core.Clients;
 using CtxUi.Core.Data;
+using static CtxUi.IntegrationTests.ClientPages;
 using static Microsoft.Playwright.Assertions;
 
 namespace CtxUi.IntegrationTests;
 
 public class PanelClientsTests
 {
-    private const string ToolCall = """{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"echo","arguments":{}}}""";
-
-    private static Task<GatewayHost> StartWithoutPollingAsync() =>
-        GatewayHost.StartAsync(builder => builder.Configuration["CtxUi:RefreshInterval"] = "01:00:00");
-
-    private static async Task<IPage> OpenClientsAsync(PanelSession session)
-    {
-        await session.Page.GetByRole(AriaRole.Navigation).GetByRole(AriaRole.Link, new() { Name = "Клиенты" }).ClickAsync();
-        await Expect(session.Page.GetByRole(AriaRole.Heading, new() { Name = "Клиенты" })).ToBeVisibleAsync();
-        return session.Page;
-    }
-
-    private static ILocator Row(IPage page, string name) => page.GetByRole(AriaRole.Row).Filter(new() { HasText = name });
-
-    private static ILocator Dialog(IPage page) => page.GetByRole(AriaRole.Dialog);
-
-    private static async Task<bool> IsQuotaRefusalAsync(HttpResponseMessage response) =>
-        (await response.Content.ReadAsStringAsync()).Contains("Лимит вызовов исчерпан");
-
     [Fact]
     public async Task Empty_list_says_how_access_is_given()
     {
@@ -113,140 +93,5 @@ public class PanelClientsTests
         await page.GetByRole(AriaRole.Button, new() { Name = "Сбросить поиск" }).ClickAsync();
         await Expect(page.GetByRole(AriaRole.Row)).ToHaveCountAsync(4);
         await Expect(page.GetByLabel("Поиск по имени")).ToHaveValueAsync("");
-    }
-
-    [Fact]
-    public async Task Switch_closes_and_returns_access_at_once()
-    {
-        await using var upstream = await FakeUpstream.StartAsync();
-        await using var gateway = await StartWithoutPollingAsync();
-        await gateway.AddInboundAsync("echo", upstream.McpUrl);
-        var issued = await gateway.AddClientAsync("Иванов", ["echo"]);
-        await using var session = await PanelSession.SignInAsync(gateway);
-        var page = await OpenClientsAsync(session);
-
-        await Row(page, "Иванов").GetByRole(AriaRole.Switch).UncheckAsync();
-        await Expect(page.GetByText("Клиент «Иванов» отключён")).ToBeVisibleAsync();
-        await Expect(Row(page, "Иванов")).ToContainTextAsync("отключён");
-        using var closed = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/echo", issued.Token));
-
-        await Row(page, "Иванов").GetByRole(AriaRole.Switch).CheckAsync();
-        await Expect(page.GetByText("Клиент «Иванов» включён")).ToBeVisibleAsync();
-        using var open = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/echo", issued.Token));
-
-        Assert.Equal(HttpStatusCode.Unauthorized, closed.StatusCode);
-        Assert.Equal(HttpStatusCode.OK, open.StatusCode);
-    }
-
-    [Fact]
-    public async Task Notice_of_a_change_appears_at_the_bottom_left_without_an_icon()
-    {
-        await using var gateway = await StartWithoutPollingAsync();
-        await gateway.AddInboundAsync("echo", "https://echo.example.org/mcp");
-        await gateway.AddClientAsync("Иванов", ["echo"]);
-        await using var session = await PanelSession.SignInAsync(gateway);
-        var page = await OpenClientsAsync(session);
-
-        await Row(page, "Иванов").GetByRole(AriaRole.Switch).UncheckAsync();
-
-        var notice = page.GetByText("Клиент «Иванов» отключён");
-        await Expect(notice).ToBeVisibleAsync();
-        var box = (await notice.BoundingBoxAsync())!;
-        Assert.True(box.X < 120, $"notice starts at x={box.X}");
-        Assert.True(box.Y > page.ViewportSize!.Height / 2, $"notice starts at y={box.Y}");
-        await Expect(page.Locator(".mud-snackbar svg")).ToHaveCountAsync(0);
-    }
-
-    [Fact]
-    public async Task Quota_reset_gives_the_calls_back_at_once()
-    {
-        await using var upstream = await FakeUpstream.StartAsync();
-        await using var gateway = await StartWithoutPollingAsync();
-        await gateway.AddInboundAsync("echo", upstream.McpUrl);
-        var issued = await gateway.AddClientAsync("Иванов", ["echo"], limits: new ClientLimits(QuotaCalls: 1));
-        using var spent = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/echo", issued.Token, ToolCall));
-        using var refused = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/echo", issued.Token, ToolCall));
-        await using var session = await PanelSession.SignInAsync(gateway);
-        var page = await OpenClientsAsync(session);
-
-        await RowMenu.ChooseAsync(Row(page, "Иванов"), "Сбросить квоту");
-        await Expect(page.GetByText("Счётчик квоты клиента «Иванов» обнулён")).ToBeVisibleAsync();
-        await Expect(Row(page, "Иванов")).ToContainTextAsync("0 / 1");
-        using var served = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/echo", issued.Token, ToolCall));
-
-        Assert.True(await IsQuotaRefusalAsync(refused));
-        Assert.False(await IsQuotaRefusalAsync(served));
-        Assert.Equal(2, upstream.Requests.Count);
-    }
-
-    [Fact]
-    public async Task Client_is_removed_only_after_the_admin_confirms()
-    {
-        await using var upstream = await FakeUpstream.StartAsync();
-        await using var gateway = await StartWithoutPollingAsync();
-        await gateway.AddInboundAsync("echo", upstream.McpUrl);
-        var issued = await gateway.AddClientAsync("Иванов", ["echo"]);
-        await gateway.AddClientAsync("Петров", ["echo"]);
-        await using var session = await PanelSession.SignInAsync(gateway);
-        var page = await OpenClientsAsync(session);
-
-        await RowMenu.ChooseAsync(Row(page, "Иванов"), "Удалить");
-        await Expect(Dialog(page)).ToContainTextAsync("Удалить клиента «Иванов»?");
-        await Dialog(page).GetByRole(AriaRole.Button, new() { Name = "Отмена" }).ClickAsync();
-        using var kept = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/echo", issued.Token));
-
-        await RowMenu.ChooseAsync(Row(page, "Иванов"), "Удалить");
-        await Dialog(page).GetByRole(AriaRole.Button, new() { Name = "Удалить" }).ClickAsync();
-        await Expect(Row(page, "Иванов")).ToHaveCountAsync(0);
-        using var gone = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/echo", issued.Token));
-
-        Assert.Equal(HttpStatusCode.OK, kept.StatusCode);
-        Assert.Equal(HttpStatusCode.Unauthorized, gone.StatusCode);
-        await Expect(Row(page, "Петров")).ToBeVisibleAsync();
-    }
-
-    [Fact]
-    public async Task Clicking_a_row_opens_the_client_for_editing()
-    {
-        await using var gateway = await GatewayHost.StartAsync();
-        await gateway.AddInboundAsync("echo", "https://echo.example.org/mcp");
-        await gateway.AddClientAsync("Иванов", ["echo"]);
-        await using var session = await PanelSession.SignInAsync(gateway);
-        var page = await OpenClientsAsync(session);
-
-        await Row(page, "Иванов").GetByRole(AriaRole.Cell).First.ClickAsync();
-
-        await Expect(Dialog(page)).ToContainTextAsync("Клиент «Иванов»");
-    }
-
-    [Fact]
-    public async Task Refresh_button_shows_what_changed_outside_the_panel()
-    {
-        await using var gateway = await GatewayHost.StartAsync();
-        await gateway.AddInboundAsync("echo", "https://echo.example.org/mcp");
-        await gateway.AddClientAsync("Иванов", ["echo"]);
-        await using var session = await PanelSession.SignInAsync(gateway);
-        var page = await OpenClientsAsync(session);
-        await CliRunner.RunAsync(gateway.DataDir, "client", "add", "Петров", "--inbound", "echo", "--quota", "7");
-
-        await page.GetByRole(AriaRole.Button, new() { Name = "Обновить" }).ClickAsync();
-
-        await Expect(Row(page, "Петров")).ToContainTextAsync("0 / 7");
-    }
-
-    [Fact]
-    public async Task Client_removed_from_the_command_line_meanwhile_is_reported_not_crashed_on()
-    {
-        await using var gateway = await GatewayHost.StartAsync();
-        await gateway.AddInboundAsync("echo", "https://echo.example.org/mcp");
-        await gateway.AddClientAsync("Иванов", ["echo"]);
-        await using var session = await PanelSession.SignInAsync(gateway);
-        var page = await OpenClientsAsync(session);
-        await CliRunner.RunAsync(gateway.DataDir, "client", "remove", "Иванов");
-
-        await RowMenu.ChooseAsync(Row(page, "Иванов"), "Сбросить квоту");
-
-        await Expect(page.GetByText("Клиент «Иванов» не найден")).ToBeVisibleAsync();
-        await Expect(page.GetByText("Клиентов пока нет")).ToBeVisibleAsync();
     }
 }

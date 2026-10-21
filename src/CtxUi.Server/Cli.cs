@@ -374,7 +374,7 @@ public static class Cli
                 try
                 {
                     await using var scope = host.Services.CreateAsyncScope();
-                    await scope.ServiceProvider.GetRequiredService<CtxUiDbContext>().Database.MigrateAsync(ct);
+                    await scope.ServiceProvider.GetRequiredService<CtxUiDbContext>().PrepareAsync(ct);
                     await run(parse, scope.ServiceProvider, ct);
                     return 0;
                 }

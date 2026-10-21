@@ -92,6 +92,37 @@ public class ForwardingTests
     }
 
     [Fact]
+    public async Task Panel_cookies_never_reach_the_upstream_and_the_rest_do()
+    {
+        await using var upstream = await FakeUpstream.StartAsync();
+        await using var gateway = await GatewayHost.StartAsync();
+        await gateway.AddInboundAsync("echo", upstream.McpUrl);
+        var issued = await gateway.AddClientAsync("Иванов", ["echo"]);
+
+        using var request = GatewayHost.Post("/mcp/echo", issued.Token);
+        request.Headers.TryAddWithoutValidation(
+            "Cookie", "ctx-ui=s; ctx-uiC1=p; .AspNetCore.Culture=c=ru|uic=ru; lb=7; .AspNetCore.Antiforgery.a=x; theme=dark");
+        using var response = await gateway.Http.SendAsync(request);
+
+        Assert.Equal("lb=7; theme=dark", Assert.Single(upstream.Requests).Headers["Cookie"]);
+    }
+
+    [Fact]
+    public async Task Request_with_only_panel_cookies_reaches_the_upstream_without_a_cookie_header()
+    {
+        await using var upstream = await FakeUpstream.StartAsync();
+        await using var gateway = await GatewayHost.StartAsync();
+        await gateway.AddInboundAsync("echo", upstream.McpUrl);
+        var issued = await gateway.AddClientAsync("Иванов", ["echo"]);
+
+        using var request = GatewayHost.Post("/mcp/echo", issued.Token);
+        request.Headers.TryAddWithoutValidation("Cookie", "ctx-ui=s; .AspNetCore.Culture=c=ru|uic=ru");
+        using var response = await gateway.Http.SendAsync(request);
+
+        Assert.False(Assert.Single(upstream.Requests).Headers.ContainsKey("Cookie"));
+    }
+
+    [Fact]
     public async Task Upstream_address_is_used_as_configured_and_the_client_query_is_dropped()
     {
         await using var upstream = await FakeUpstream.StartAsync();

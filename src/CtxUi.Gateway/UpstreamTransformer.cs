@@ -1,4 +1,7 @@
+using System.Net.Http.Headers;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Net.Http.Headers;
+using CtxUi.Core;
 using CtxUi.Core.Inbounds;
 using CtxUi.Core.Routing;
 using Yarp.ReverseProxy.Forwarder;
@@ -19,6 +22,7 @@ internal sealed class UpstreamTransformer(InboundRoute route, ClientAccess clien
         proxyRequest.Headers.Host = null;
 
         proxyRequest.Headers.Authorization = null;
+        DropOwnCookies(proxyRequest.Headers);
         foreach (var name in proxyRequest.Headers.Select(header => header.Key).Where(UpstreamHeaders.IsIdentity).ToList())
             proxyRequest.Headers.Remove(name);
 
@@ -35,5 +39,19 @@ internal sealed class UpstreamTransformer(InboundRoute route, ClientAccess clien
         proxyRequest.Headers.TryAddWithoutValidation(UpstreamHeaders.ClientPrefix + "Name", Uri.EscapeDataString(client.Name));
         foreach (var (key, value) in client.Metadata)
             proxyRequest.Headers.TryAddWithoutValidation(UpstreamHeaders.MetaPrefix + key, Uri.EscapeDataString(value));
+    }
+
+    private static void DropOwnCookies(HttpRequestHeaders headers)
+    {
+        if (!headers.TryGetValues(HeaderNames.Cookie, out var values))
+            return;
+
+        headers.Remove(HeaderNames.Cookie);
+        if (!CookieHeaderValue.TryParseList(values.ToList(), out var cookies))
+            return;
+
+        var kept = cookies.Where(cookie => !OwnCookies.Contains(cookie.Name.ToString())).ToList();
+        if (kept.Count > 0)
+            headers.TryAddWithoutValidation(HeaderNames.Cookie, string.Join("; ", kept));
     }
 }

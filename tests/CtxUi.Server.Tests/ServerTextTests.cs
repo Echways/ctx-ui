@@ -1,9 +1,8 @@
 using System.Collections;
 using System.Globalization;
 using System.Resources;
-using CtxUi.Server;
 
-namespace CtxUi.IntegrationTests;
+namespace CtxUi.Server.Tests;
 
 public class ServerTextTests
 {

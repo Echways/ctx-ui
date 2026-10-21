@@ -9,5 +9,7 @@
     <Project Path="tests/CtxUi.Core.Tests/CtxUi.Core.Tests.csproj" />
     <Project Path="tests/CtxUi.Gateway.Tests/CtxUi.Gateway.Tests.csproj" />
     <Project Path="tests/CtxUi.IntegrationTests/CtxUi.IntegrationTests.csproj" />
+    <Project Path="tests/CtxUi.Panel.Tests/CtxUi.Panel.Tests.csproj" />
+    <Project Path="tests/CtxUi.Server.Tests/CtxUi.Server.Tests.csproj" />
   </Folder>
 </Solution>

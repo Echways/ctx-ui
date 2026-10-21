@@ -1,7 +1,6 @@
 using CtxUi.Core;
-using CtxUi.Server;
 
-namespace CtxUi.IntegrationTests;
+namespace CtxUi.Server.Tests;
 
 public class ExpiryArgumentTests
 {

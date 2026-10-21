@@ -45,19 +45,19 @@ jobs:
         uses: ./.github/actions/dotnet
 
       - name: Test core
-        run: dotnet test --project tests/CtxUi.Core.Tests -c Release --results-directory "$GITHUB_WORKSPACE/TestResults" --report-xunit-junit
+        run: dotnet test --project tests/CtxUi.Core.Tests -c Release --results-directory "$GITHUB_WORKSPACE/TestResults" --report-xunit-junit --coverage --coverage-output-format cobertura
 
       - name: Test gateway
         if: ${{ !cancelled() }}
-        run: dotnet test --project tests/CtxUi.Gateway.Tests -c Release --results-directory "$GITHUB_WORKSPACE/TestResults" --report-xunit-junit
+        run: dotnet test --project tests/CtxUi.Gateway.Tests -c Release --results-directory "$GITHUB_WORKSPACE/TestResults" --report-xunit-junit --coverage --coverage-output-format cobertura
 
       - name: Test panel units
         if: ${{ !cancelled() }}
-        run: dotnet test --project tests/CtxUi.Panel.Tests -c Release --results-directory "$GITHUB_WORKSPACE/TestResults" --report-xunit-junit
+        run: dotnet test --project tests/CtxUi.Panel.Tests -c Release --results-directory "$GITHUB_WORKSPACE/TestResults" --report-xunit-junit --coverage --coverage-output-format cobertura
 
       - name: Test server units
         if: ${{ !cancelled() }}
-        run: dotnet test --project tests/CtxUi.Server.Tests -c Release --results-directory "$GITHUB_WORKSPACE/TestResults" --report-xunit-junit
+        run: dotnet test --project tests/CtxUi.Server.Tests -c Release --results-directory "$GITHUB_WORKSPACE/TestResults" --report-xunit-junit --coverage --coverage-output-format cobertura
 
       - name: Publish test report
         if: ${{ !cancelled() }}
@@ -68,6 +68,13 @@ jobs:
           annotate_only: true
           require_tests: true
           include_time_in_summary: true
+
+      - name: Summarize coverage
+        if: ${{ !cancelled() }}
+        run: |
+          dotnet tool restore
+          dotnet reportgenerator -reports:"TestResults/**/*.cobertura.xml" -targetdir:coverage -reporttypes:MarkdownSummaryGithub
+          cat coverage/SummaryGithub.md >> "$GITHUB_STEP_SUMMARY"
 
   panel:
     name: Panel tests
@@ -93,7 +100,7 @@ jobs:
         run: pwsh tests/CtxUi.IntegrationTests/bin/Release/net10.0/playwright.ps1 install --with-deps chromium
 
       - name: Test panel and gateway end to end
-        run: dotnet test --project tests/CtxUi.IntegrationTests -c Release --no-build --results-directory "$GITHUB_WORKSPACE/TestResults" --report-xunit-junit
+        run: dotnet test --project tests/CtxUi.IntegrationTests -c Release --no-build --results-directory "$GITHUB_WORKSPACE/TestResults" --report-xunit-junit --coverage --coverage-output-format cobertura
 
       - name: Publish test report
         if: ${{ !cancelled() }}
@@ -104,6 +111,13 @@ jobs:
           annotate_only: true
           require_tests: true
           include_time_in_summary: true
+
+      - name: Summarize coverage
+        if: ${{ !cancelled() }}
+        run: |
+          dotnet tool restore
+          dotnet reportgenerator -reports:"TestResults/**/*.cobertura.xml" -targetdir:coverage -reporttypes:MarkdownSummaryGithub
+          cat coverage/SummaryGithub.md >> "$GITHUB_STEP_SUMMARY"
 
   docker:
     name: "Install: Docker"

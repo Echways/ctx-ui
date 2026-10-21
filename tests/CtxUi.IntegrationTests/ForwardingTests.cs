@@ -108,6 +108,21 @@ public class ForwardingTests
     }
 
     [Fact]
+    public async Task Upstream_cookies_reach_it_exactly_as_the_client_sent_them()
+    {
+        await using var upstream = await FakeUpstream.StartAsync();
+        await using var gateway = await GatewayHost.StartAsync();
+        await gateway.AddInboundAsync("echo", upstream.McpUrl);
+        var issued = await gateway.AddClientAsync("Иванов", ["echo"]);
+
+        using var request = GatewayHost.Post("/mcp/echo", issued.Token);
+        request.Headers.TryAddWithoutValidation("Cookie", "note=a b; ctx-ui=s; prefs={\"x\":1,\"y\":2}; lb=7");
+        using var response = await gateway.Http.SendAsync(request);
+
+        Assert.Equal("note=a b; prefs={\"x\":1,\"y\":2}; lb=7", Assert.Single(upstream.Requests).Headers["Cookie"]);
+    }
+
+    [Fact]
     public async Task Request_with_only_panel_cookies_reaches_the_upstream_without_a_cookie_header()
     {
         await using var upstream = await FakeUpstream.StartAsync();

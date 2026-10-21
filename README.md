@@ -34,7 +34,9 @@ sudo ctx-ui client add "Ivanov 4419" --inbound learn --expires 2027-07-01
 address. `client add` prints the token and the connection addresses. In
 Docker prefix commands with `docker compose exec ctx-ui`.
 
-Program output is in Russian.
+Program output, gateway errors and the API are in English. Set
+`CtxUi__Language=ru` for Russian; see
+[configuration.md](docs/configuration.md#language).
 
 ## Connecting a client
 
@@ -53,8 +55,9 @@ A path with a token is a credential: treat it as a password.
 ## Panel
 
 Served only under a random 16-character path; any other path gets 404.
-English by default; the button in the top bar (and the link under the sign-in
-form) switches to Russian and back, the choice is kept in a cookie for a year.
+It speaks the `CtxUi__Language` language until an administrator picks one; the
+button in the top bar (and the link under the sign-in form) switches between
+English and Russian, the choice is kept in a cookie for a year.
 
 | Section | Contents |
 | --- | --- |

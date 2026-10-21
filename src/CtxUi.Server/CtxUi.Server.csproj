@@ -9,6 +9,7 @@
   <ItemGroup>
     <PackageReference Include="System.CommandLine" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+    <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" />
     <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" />
     <ProjectReference Include="..\CtxUi.Core\CtxUi.Core.csproj" />
     <ProjectReference Include="..\CtxUi.Gateway\CtxUi.Gateway.csproj" />

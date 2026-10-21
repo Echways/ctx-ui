@@ -22,4 +22,5 @@ ENV PATH=/app:$PATH \
 VOLUME /data
 EXPOSE 8080
 USER $APP_UID
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --start-interval=2s CMD ["ctx-ui", "health"]
 ENTRYPOINT ["ctx-ui"]

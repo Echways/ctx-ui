@@ -47,10 +47,10 @@ internal sealed class UpstreamTransformer(InboundRoute route, ClientAccess clien
             return;
 
         headers.Remove(HeaderNames.Cookie);
-        if (!CookieHeaderValue.TryParseList(values.ToList(), out var cookies))
-            return;
-
-        var kept = cookies.Where(cookie => !OwnCookies.Contains(cookie.Name.ToString())).ToList();
+        var kept = values
+            .SelectMany(value => value.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            .Where(pair => !OwnCookies.Contains(pair.Split('=', 2)[0].Trim()))
+            .ToList();
         if (kept.Count > 0)
             headers.TryAddWithoutValidation(HeaderNames.Cookie, string.Join("; ", kept));
     }

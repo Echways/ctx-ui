@@ -7,6 +7,8 @@ namespace CtxUi.Server;
 
 public static class ServiceRegistration
 {
+    public const string KeysDirectory = "keys";
+
     private const UnixFileMode OwnerOnly = UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute;
 
     public static IServiceCollection AddCtxUi(this IServiceCollection services, IConfiguration configuration)
@@ -16,7 +18,7 @@ public static class ServiceRegistration
         var options = section.Get<CtxUiOptions>() ?? new CtxUiOptions();
 
         var dataDir = Path.GetFullPath(options.DataDir);
-        var keysDir = Path.Combine(dataDir, "keys");
+        var keysDir = Path.Combine(dataDir, KeysDirectory);
         CreatePrivateDirectory(dataDir);
         CreatePrivateDirectory(keysDir);
 
@@ -35,7 +37,7 @@ public static class ServiceRegistration
         .AddFilter("Microsoft.EntityFrameworkCore", LogLevel.Warning)
         .AddFilter("Yarp", LogLevel.Warning);
 
-    private static void CreatePrivateDirectory(string path)
+    internal static void CreatePrivateDirectory(string path)
     {
         if (OperatingSystem.IsWindows())
         {

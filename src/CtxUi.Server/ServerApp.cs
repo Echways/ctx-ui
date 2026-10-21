@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.HttpOverrides;
-using Microsoft.EntityFrameworkCore;
 using CtxUi.Core.Data;
 using CtxUi.Gateway;
 using CtxUi.Panel;
@@ -49,7 +48,7 @@ public static class ServerApp
     public static async Task InitializeAsync(WebApplication app, CancellationToken ct = default)
     {
         await using (var scope = app.Services.CreateAsyncScope())
-            await scope.ServiceProvider.GetRequiredService<CtxUiDbContext>().Database.MigrateAsync(ct);
+            await scope.ServiceProvider.GetRequiredService<CtxUiDbContext>().PrepareAsync(ct);
 
         await app.Services.LoadCtxUiGatewayAsync(ct);
         await app.Services.LoadCtxUiPanelAsync(ct);

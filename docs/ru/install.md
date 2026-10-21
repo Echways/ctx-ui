@@ -183,7 +183,54 @@ Compose скачает новый образ и пересоздаст конт�
 | бинарник | `/var/lib/ctx-ui/` | `/etc/ctx-ui/ctx-ui.env` |
 | Docker | том `ctx-ui-data` | `.env` |
 
-`keys/` копируется вместе с базой; что теряется без него — в
-[configuration.md](configuration.md#каталог-данных). Сервис перед
-копированием остановить: SQLite держит несколько файлов, копия на ходу
-может выйти несогласованной.
+`ctx-ui backup <каталог>` записывает согласованную копию базы и каталога
+`keys/`, сервис при этом продолжает работать. Каталог должен не существовать
+или быть пустым. Копировать файл базы работающего сервиса нельзя: SQLite
+держит свежие изменения в `ctx-ui.db-wal`, и простая копия может выйти
+несогласованной. Без `keys/` сохранённые токены и заголовки upstream не
+расшифровать; подробнее — в [configuration.md](configuration.md#каталог-данных).
+
+Бинарник (команда работает от пользователя `ctx-ui`, поэтому ей нужен
+каталог, куда этот пользователь может писать):
+
+```bash
+backup=/var/backups/ctx-ui-$(date +%F)
+sudo install -d -o ctx-ui -g ctx-ui -m 700 "$backup"
+sudo ctx-ui backup "$backup"
+```
+
+Docker, в каталоге `ctx-ui`:
+
+```bash
+backup=backup-$(date +%F)
+docker compose exec ctx-ui ctx-ui backup /data/$backup
+docker compose cp ctx-ui:/data/$backup ./$backup
+docker compose exec ctx-ui rm -r /data/$backup
+```
+
+Файл настроек (`ctx-ui.env` или `.env`) хранится рядом с копией.
+
+### Восстановление
+
+Остановить сервис, заменить всё содержимое каталога данных копией, вернуть
+владельца, запустить сервис. Старые `ctx-ui.db-wal` и `ctx-ui.db-shm`
+удаляются вместе с остальным.
+
+Бинарник:
+
+```bash
+sudo systemctl stop ctx-ui
+sudo find /var/lib/ctx-ui -mindepth 1 -delete
+sudo cp -r /var/backups/ctx-ui-2026-10-21/. /var/lib/ctx-ui/
+sudo chown -R ctx-ui:ctx-ui /var/lib/ctx-ui
+sudo systemctl start ctx-ui
+```
+
+Docker, в каталоге `ctx-ui`:
+
+```bash
+docker compose stop ctx-ui
+docker run --rm -v ctx-ui_ctx-ui-data:/data -v "$PWD/backup-2026-10-21:/restore:ro" alpine \
+    sh -c 'find /data -mindepth 1 -delete && cp -r /restore/. /data/ && chown -R 1654:1654 /data'
+docker compose start ctx-ui
+```

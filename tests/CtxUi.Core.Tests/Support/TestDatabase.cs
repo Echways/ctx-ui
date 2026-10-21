@@ -17,7 +17,7 @@ public sealed class TestDatabase : IAsyncDisposable
         var database = new TestDatabase();
         await database._connection.OpenAsync();
         await using var db = database.NewContext();
-        await db.Database.MigrateAsync();
+        await db.PrepareAsync();
         return database;
     }
 

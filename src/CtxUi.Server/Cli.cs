@@ -117,6 +117,9 @@ public static class Cli
                 return limits == current ? null : limits;
             }
 
+            async Task<Guid> ClientIdAsync(ParseResult parse, IServiceProvider services, CancellationToken ct) =>
+                (await services.GetRequiredService<ClientService>().GetAsync(parse.GetValue(name)!, ct)).Id;
+
             return new Command("client", "кому, на какой срок и с какими лимитами выдан доступ")
             {
                 Leaf(
@@ -133,7 +136,7 @@ public static class Cli
                             PairLines.Parse(parse.GetValue(meta)),
                             Limits(parse, ClientLimits.None),
                             ct);
-                        WriteConnection(services, await clients.GetAsync(issued.Client.Name, ct), issued.Token);
+                        WriteConnection(services, await clients.GetAsync(issued.Client.Id, ct), issued.Token);
                     }),
                 Leaf("list", "показать клиентов", [], async (_, services, ct) =>
                 {
@@ -153,7 +156,7 @@ public static class Cli
                 {
                     var clients = services.GetRequiredService<ClientService>();
                     var client = await clients.GetAsync(parse.GetValue(name)!, ct);
-                    WriteConnection(services, client, await clients.RevealAsync(client.Name, ct));
+                    WriteConnection(services, client, clients.Reveal(client));
                 }),
                 Leaf(
                     "set",
@@ -162,6 +165,7 @@ public static class Cli
                     async (parse, services, ct) =>
                     {
                         var clients = services.GetRequiredService<ClientService>();
+                        var client = await clients.GetAsync(parse.GetValue(name)!, ct);
                         var slugs = parse.GetValue(inbound);
                         var date = parse.GetValue(expires);
                         var update = new ClientUpdate
@@ -169,35 +173,35 @@ public static class Cli
                             ChangeExpiry = date is not null,
                             ExpiresAt = Expiry(date),
                             InboundSlugs = slugs is { Length: > 0 } ? slugs : null,
-                            Limits = Limits(parse, ClientLimits.Of(await clients.GetAsync(parse.GetValue(name)!, ct))),
+                            Limits = Limits(parse, ClientLimits.Of(client)),
                         };
-                        await clients.UpdateAsync(parse.GetValue(name)!, update, ct);
+                        await clients.UpdateAsync(client.Id, update, ct);
                         output.WriteLine($"Клиент «{parse.GetValue(name)}» изменён");
                     }),
                 Leaf("reset", "обнулить счётчик квоты и начать период заново", [name], async (parse, services, ct) =>
                 {
-                    await services.GetRequiredService<ClientService>().ResetQuotaAsync(parse.GetValue(name)!, ct);
+                    await services.GetRequiredService<ClientService>().ResetQuotaAsync(await ClientIdAsync(parse, services, ct), ct);
                     output.WriteLine($"Счётчик квоты клиента «{parse.GetValue(name)}» обнулён, период начат заново");
                 }),
                 Leaf("reissue", "выпустить новый токен, старый перестаёт работать", [name], async (parse, services, ct) =>
                 {
                     var clients = services.GetRequiredService<ClientService>();
-                    var token = await clients.ReissueAsync(parse.GetValue(name)!, ct);
-                    WriteConnection(services, await clients.GetAsync(parse.GetValue(name)!, ct), token);
+                    var client = await clients.GetAsync(parse.GetValue(name)!, ct);
+                    WriteConnection(services, client, await clients.ReissueAsync(client.Id, ct));
                 }),
                 Leaf("enable", "вернуть доступ", [name], async (parse, services, ct) =>
                 {
-                    await services.GetRequiredService<ClientService>().SetEnabledAsync(parse.GetValue(name)!, true, ct);
+                    await services.GetRequiredService<ClientService>().SetEnabledAsync(await ClientIdAsync(parse, services, ct), true, ct);
                     output.WriteLine($"Клиент «{parse.GetValue(name)}» включён");
                 }),
                 Leaf("disable", "закрыть доступ, не удаляя клиента", [name], async (parse, services, ct) =>
                 {
-                    await services.GetRequiredService<ClientService>().SetEnabledAsync(parse.GetValue(name)!, false, ct);
+                    await services.GetRequiredService<ClientService>().SetEnabledAsync(await ClientIdAsync(parse, services, ct), false, ct);
                     output.WriteLine($"Клиент «{parse.GetValue(name)}» отключён");
                 }),
                 Leaf("remove", "удалить клиента", [name], async (parse, services, ct) =>
                 {
-                    await services.GetRequiredService<ClientService>().RemoveAsync(parse.GetValue(name)!, ct);
+                    await services.GetRequiredService<ClientService>().RemoveAsync(await ClientIdAsync(parse, services, ct), ct);
                     output.WriteLine($"Клиент «{parse.GetValue(name)}» удалён");
                 }),
             };
@@ -238,10 +242,8 @@ public static class Cli
                     var count = InRange("--limit", parse.GetValue(limit), UsageStore.MaxLines);
                     var lines = await services.GetRequiredService<UsageStore>()
                         .RecentAsync(await ClientIdAsync(parse, services, ct), count, ct);
-                    var clients = (await services.GetRequiredService<ClientService>().ListAsync(ct))
-                        .ToDictionary(known => known.Id, known => known.Name);
-                    var inbounds = (await services.GetRequiredService<InboundService>().ListAsync(ct))
-                        .ToDictionary(known => known.Id, known => known.Slug);
+                    var clients = await services.GetRequiredService<ClientService>().NamesAsync(ct);
+                    var inbounds = await services.GetRequiredService<InboundService>().SlugsAsync(ct);
                     foreach (var line in lines)
                     {
                         var what = line.Tool is null ? line.Method : $"{line.Method} {line.Tool}";

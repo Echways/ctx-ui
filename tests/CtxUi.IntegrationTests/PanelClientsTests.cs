@@ -52,12 +52,12 @@ public class PanelClientsTests
         await gateway.AddInboundAsync("docs", upstream.McpUrl);
         await gateway.AddClientAsync(
             "Активный", ["echo", "docs"], new DateTimeOffset(2099, 1, 1, 0, 0, 0, TimeSpan.Zero), limits: new ClientLimits(QuotaCalls: 100));
-        await gateway.AddClientAsync("Отключённый", ["echo"]);
+        var disabled = await gateway.AddClientAsync("Отключённый", ["echo"]);
         await gateway.AddClientAsync("Истёкший", ["echo"]);
         var spender = await gateway.AddClientAsync("Исчерпавший", ["echo"], limits: new ClientLimits(QuotaCalls: 1));
         await gateway.ArrangeAsync(async services =>
         {
-            await services.GetRequiredService<ClientService>().SetEnabledAsync("Отключённый", false);
+            await services.GetRequiredService<ClientService>().SetEnabledAsync(disabled.Client.Id, false);
             var db = services.GetRequiredService<CtxUiDbContext>();
             (await db.Clients.SingleAsync(client => client.Name == "Истёкший")).ExpiresAt = new DateTimeOffset(2020, 2, 3, 0, 0, 0, TimeSpan.Zero);
             return await db.SaveChangesAsync();

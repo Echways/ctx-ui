@@ -83,7 +83,8 @@ public sealed class GatewayHost : IAsyncDisposable
 
     public Task SetLimitsAsync(string name, ClientLimits limits) => ArrangeAsync(async services =>
     {
-        await services.GetRequiredService<ClientService>().UpdateAsync(name, new ClientUpdate { Limits = limits });
+        var clients = services.GetRequiredService<ClientService>();
+        await clients.UpdateAsync((await clients.GetAsync(name)).Id, new ClientUpdate { Limits = limits });
         return true;
     });
 

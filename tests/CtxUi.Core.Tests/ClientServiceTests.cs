@@ -120,7 +120,7 @@ public class ClientServiceTests
         await using var database = await DatabaseWithInboundsAsync("echo");
         var issued = await Clients(database).AddAsync("Иванов", ["echo"]);
 
-        var replacement = await Clients(database).ReissueAsync("Иванов");
+        var replacement = await Clients(database).ReissueAsync(issued.Client.Id);
 
         Assert.NotEqual(issued.Token, replacement);
         var client = Assert.Single(await Clients(database).ListAsync());
@@ -130,34 +130,74 @@ public class ClientServiceTests
     }
 
     [Fact]
-    public async Task Reveal_returns_the_current_token()
+    public async Task Reveal_opens_the_stored_token()
     {
         await using var database = await DatabaseWithInboundsAsync("echo");
         var issued = await Clients(database).AddAsync("Иванов", ["echo"]);
 
-        Assert.Equal(issued.Token, await Clients(database).RevealAsync("Иванов"));
+        Assert.Equal(issued.Token, Clients(database).Reveal(await Clients(database).GetAsync("Иванов")));
     }
 
     [Fact]
-    public async Task Reveal_returns_null_when_the_sealed_copy_cannot_be_opened()
+    public async Task Reveal_with_lost_keys_gives_null()
     {
         await using var database = await DatabaseWithInboundsAsync("echo");
         await Clients(database).AddAsync("Иванов", ["echo"]);
         _vault.Broken = true;
 
-        Assert.Null(await Clients(database).RevealAsync("Иванов"));
+        Assert.Null(Clients(database).Reveal(await Clients(database).GetAsync("Иванов")));
+    }
+
+    [Theory]
+    [InlineData("update")]
+    [InlineData("reset-quota")]
+    [InlineData("enable")]
+    [InlineData("remove")]
+    [InlineData("reissue")]
+    public async Task Unknown_id_is_reported_as_not_found(string change)
+    {
+        await using var database = await DatabaseWithInboundsAsync("echo");
+        await Clients(database).AddAsync("Иванов", ["echo"]);
+        var clients = Clients(database);
+        var unknown = Guid.NewGuid();
+
+        Func<Task> act = change switch
+        {
+            "update" => () => clients.UpdateAsync(unknown, new ClientUpdate { Limits = ClientLimits.None }),
+            "reset-quota" => () => clients.ResetQuotaAsync(unknown),
+            "enable" => () => clients.SetEnabledAsync(unknown, false),
+            "remove" => () => clients.RemoveAsync(unknown),
+            _ => () => clients.ReissueAsync(unknown),
+        };
+
+        await Assert.ThrowsAsync<NotFoundException>(act);
+        Assert.True(Assert.Single(await Clients(database).ListAsync()).Enabled);
+    }
+
+    [Fact]
+    public async Task Names_map_every_client_id_to_its_name()
+    {
+        await using var database = await DatabaseWithInboundsAsync("echo");
+        var first = await Clients(database).AddAsync("Иванов", ["echo"]);
+        var second = await Clients(database).AddAsync("Петров", ["echo"]);
+
+        var names = await Clients(database).NamesAsync();
+
+        Assert.Equal(
+            new Dictionary<Guid, string> { [first.Client.Id] = "Иванов", [second.Client.Id] = "Петров" },
+            names);
     }
 
     [Fact]
     public async Task Client_can_be_disabled_and_removed()
     {
         await using var database = await DatabaseWithInboundsAsync("echo");
-        await Clients(database).AddAsync("Иванов", ["echo"]);
+        var issued = await Clients(database).AddAsync("Иванов", ["echo"]);
 
-        await Clients(database).SetEnabledAsync("Иванов", false);
+        await Clients(database).SetEnabledAsync(issued.Client.Id, false);
         Assert.False(Assert.Single(await Clients(database).ListAsync()).Enabled);
 
-        await Clients(database).RemoveAsync("Иванов");
+        await Clients(database).RemoveAsync(issued.Client.Id);
         Assert.Empty(await Clients(database).ListAsync());
     }
 
@@ -165,9 +205,9 @@ public class ClientServiceTests
     public async Task Update_replaces_the_inbound_set()
     {
         await using var database = await DatabaseWithInboundsAsync("echo", "docs", "files");
-        await Clients(database).AddAsync("Иванов", ["echo", "docs"]);
+        var issued = await Clients(database).AddAsync("Иванов", ["echo", "docs"]);
 
-        await Clients(database).UpdateAsync("Иванов", new ClientUpdate { InboundSlugs = ["docs", "files"] });
+        await Clients(database).UpdateAsync(issued.Client.Id, new ClientUpdate { InboundSlugs = ["docs", "files"] });
 
         var client = Assert.Single(await Clients(database).ListAsync());
         Assert.Equal(new[] { "docs", "files" }, client.Inbounds.Select(link => link.Inbound!.Slug).Order().ToArray());
@@ -178,16 +218,16 @@ public class ClientServiceTests
     {
         await using var database = await DatabaseWithInboundsAsync("echo");
         var expires = TestData.Now.AddDays(30);
-        await Clients(database).AddAsync("Иванов", ["echo"], expires);
+        var issued = await Clients(database).AddAsync("Иванов", ["echo"], expires);
 
-        await Clients(database).UpdateAsync("Иванов", new ClientUpdate { InboundSlugs = ["echo"] });
+        await Clients(database).UpdateAsync(issued.Client.Id, new ClientUpdate { InboundSlugs = ["echo"] });
         Assert.Equal(expires, Assert.Single(await Clients(database).ListAsync()).ExpiresAt);
 
-        await Clients(database).UpdateAsync("Иванов", new ClientUpdate { ChangeExpiry = true, ExpiresAt = null });
+        await Clients(database).UpdateAsync(issued.Client.Id, new ClientUpdate { ChangeExpiry = true, ExpiresAt = null });
         Assert.Null(Assert.Single(await Clients(database).ListAsync()).ExpiresAt);
 
         await Assert.ThrowsAsync<DomainException>(() => Clients(database).UpdateAsync(
-            "Иванов", new ClientUpdate { ChangeExpiry = true, ExpiresAt = TestData.Now.AddDays(-1) }));
+            issued.Client.Id, new ClientUpdate { ChangeExpiry = true, ExpiresAt = TestData.Now.AddDays(-1) }));
     }
 
     [Fact]

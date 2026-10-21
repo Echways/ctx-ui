@@ -360,7 +360,7 @@ public class QuotaTests
 
         await gateway.ChangeAsync(async services =>
         {
-            await services.GetRequiredService<ClientService>().ResetQuotaAsync("Иванов");
+            await services.GetRequiredService<ClientService>().ResetQuotaAsync(issued.Client.Id);
             return true;
         });
 

@@ -126,4 +126,16 @@ public class InboundServiceTests
         await using var db = database.NewContext();
         Assert.Equal(2, await db.RoutingStates.Select(s => s.Revision).SingleAsync());
     }
+
+    [Fact]
+    public async Task Slugs_map_every_inbound_id_to_its_slug()
+    {
+        await using var database = await TestDatabase.CreateAsync();
+        var echo = await Service(database).AddHttpAsync("echo", "Эхо", "https://mcp.example.org/mcp");
+        var learn = await Service(database).AddHttpAsync("learn", null, "https://learn.example.org/mcp");
+
+        var slugs = await Service(database).SlugsAsync();
+
+        Assert.Equal(new Dictionary<Guid, string> { [echo.Id] = "echo", [learn.Id] = "learn" }, slugs);
+    }
 }

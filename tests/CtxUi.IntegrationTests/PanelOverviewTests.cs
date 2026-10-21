@@ -55,11 +55,11 @@ public class PanelOverviewTests
         await gateway.AddInboundAsync("broken", upstream.BaseUrl + "/broken");
         await gateway.AddInboundAsync("idle", upstream.McpUrl);
         var issued = await gateway.AddClientAsync("Иванов", ["echo", "broken"]);
-        await gateway.AddClientAsync("Отключённый", ["echo"]);
+        var disabled = await gateway.AddClientAsync("Отключённый", ["echo"]);
         await gateway.ArrangeAsync(async services =>
         {
             await services.GetRequiredService<InboundService>().SetEnabledAsync("idle", false);
-            await services.GetRequiredService<ClientService>().SetEnabledAsync("Отключённый", false);
+            await services.GetRequiredService<ClientService>().SetEnabledAsync(disabled.Client.Id, false);
             return true;
         });
         using var first = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/echo", issued.Token, ToolCall));

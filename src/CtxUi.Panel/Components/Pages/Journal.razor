@@ -100,12 +100,9 @@ else
 
     private Task<(Dictionary<Guid, string>, Dictionary<Guid, string>, List<UsageEvent>)> ReadAsync() => Backend.ReadAsync(async services =>
     {
-        var clients = await services.GetRequiredService<ClientService>().ListAsync();
-        var inbounds = await services.GetRequiredService<InboundService>().ListAsync();
+        var clients = await services.GetRequiredService<ClientService>().NamesAsync();
+        var inbounds = await services.GetRequiredService<InboundService>().SlugsAsync();
         var lines = await services.GetRequiredService<UsageStore>().RecentAsync(_clientId, Shown);
-        return (
-            clients.ToDictionary(client => client.Id, client => client.Name),
-            inbounds.ToDictionary(inbound => inbound.Id, inbound => inbound.Slug),
-            lines);
+        return (clients, inbounds, lines);
     });
 }

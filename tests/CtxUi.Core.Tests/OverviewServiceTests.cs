@@ -51,8 +51,8 @@ public class OverviewServiceTests
         var active = await Clients(database).AddAsync("Активный", ["echo"]);
         var idle = await Clients(database).AddAsync("Давний", ["echo"]);
         await Clients(database).AddAsync("Срочный", ["echo"], TestData.Now.AddHours(1));
-        await Clients(database).AddAsync("Отключённый", ["echo"]);
-        await Clients(database).SetEnabledAsync("Отключённый", false);
+        var disabled = await Clients(database).AddAsync("Отключённый", ["echo"]);
+        await Clients(database).SetEnabledAsync(disabled.Client.Id, false);
         await Clients(database).MarkUsedAsync(
             [KeyValuePair.Create(active.Client.Id, TestData.Now.AddHours(-1)), KeyValuePair.Create(idle.Client.Id, TestData.Now.AddHours(-25))]);
         _clock.Advance(TimeSpan.FromHours(2));

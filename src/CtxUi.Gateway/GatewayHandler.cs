@@ -5,7 +5,7 @@ using CtxUi.Core.Usage;
 
 namespace CtxUi.Gateway;
 
-public sealed class GatewayHandler(
+public sealed partial class GatewayHandler(
     SnapshotStore store,
     HttpUpstream upstream,
     ClientTouch touch,
@@ -27,8 +27,8 @@ public sealed class GatewayHandler(
         else
             await Rejection.WriteAsync(context, decision);
 
-        logger.LogInformation(
-            "{Method} /mcp/{Slug} клиент={Client} исход={Outcome} статус={StatusCode}",
+        Served(
+            logger,
             context.Request.Method,
             decision.Route?.Slug ?? "?",
             decision.Client?.Name ?? "-",
@@ -113,4 +113,7 @@ public sealed class GatewayHandler(
             return reason;
         }
     }
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "{Method} /mcp/{Slug} client={Client} outcome={Outcome} status={StatusCode}")]
+    private static partial void Served(ILogger logger, string method, string slug, string client, object outcome, int statusCode);
 }

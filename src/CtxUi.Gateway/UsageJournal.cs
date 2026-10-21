@@ -5,7 +5,7 @@ using CtxUi.Core.Usage;
 
 namespace CtxUi.Gateway;
 
-public sealed class UsageJournal(IServiceScopeFactory scopes, ILogger<UsageJournal> logger) : IDisposable
+public sealed partial class UsageJournal(IServiceScopeFactory scopes, ILogger<UsageJournal> logger) : IDisposable
 {
     public const int Capacity = 10_000;
 
@@ -37,7 +37,7 @@ public sealed class UsageJournal(IServiceScopeFactory scopes, ILogger<UsageJourn
         {
             var dropped = Interlocked.Exchange(ref _dropped, 0);
             if (dropped > 0)
-                logger.LogWarning("журнал вызовов не успевает записываться, пропущено записей: {Dropped}", dropped);
+                FallingBehind(logger, dropped);
 
             bool full;
             do
@@ -72,7 +72,7 @@ public sealed class UsageJournal(IServiceScopeFactory scopes, ILogger<UsageJourn
         {
             if (++_failedAttempts == MaxAttempts)
             {
-                logger.LogError("usage journal batch failed {Attempts} times, records dropped: {Dropped}", MaxAttempts, _batch.Count);
+                BatchDropped(logger, MaxAttempts, _batch.Count);
                 _batch.Clear();
                 _failedAttempts = 0;
             }
@@ -83,4 +83,10 @@ public sealed class UsageJournal(IServiceScopeFactory scopes, ILogger<UsageJourn
         _batch.Clear();
         _failedAttempts = 0;
     }
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "usage journal is falling behind, records dropped: {Dropped}")]
+    private static partial void FallingBehind(ILogger logger, long dropped);
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "usage journal batch failed {Attempts} times, records dropped: {Dropped}")]
+    private static partial void BatchDropped(ILogger logger, int attempts, int dropped);
 }

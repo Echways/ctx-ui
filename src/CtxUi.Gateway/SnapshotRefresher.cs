@@ -4,7 +4,7 @@ using Microsoft.Extensions.Options;
 
 namespace CtxUi.Gateway;
 
-public sealed class SnapshotRefresher(SnapshotStore store, IOptions<GatewayOptions> options, ILogger<SnapshotRefresher> logger)
+public sealed partial class SnapshotRefresher(SnapshotStore store, IOptions<GatewayOptions> options, ILogger<SnapshotRefresher> logger)
     : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -18,8 +18,11 @@ public sealed class SnapshotRefresher(SnapshotStore store, IOptions<GatewayOptio
             }
             catch (Exception exception) when (exception is not OperationCanceledException)
             {
-                logger.LogError(exception, "не удалось обновить таблицу маршрутов, работает прежняя");
+                RefreshFailed(logger, exception);
             }
         }
     }
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "failed to refresh the routing table, the previous one stays in use")]
+    private static partial void RefreshFailed(ILogger logger, Exception exception);
 }

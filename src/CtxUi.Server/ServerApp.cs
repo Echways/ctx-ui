@@ -22,6 +22,7 @@ public static class ServerApp
         builder.Services.AddCtxUiGateway(builder.Configuration.GetSection(CtxUiOptions.Section));
         builder.Services.AddCtxUiPanel(builder.Configuration.GetSection(CtxUiOptions.Section));
         builder.Services.AddCtxUiApi();
+        builder.Services.AddHealthChecks().AddDbContextCheck<CtxUiDbContext>();
         builder.Services.Configure<ForwardedHeadersOptions>(options =>
         {
             options.ForwardedHeaders = ForwardedHeaders.XForwardedProto;
@@ -32,7 +33,7 @@ public static class ServerApp
         var app = builder.Build();
         app.UseForwardedHeaders();
         app.UseTokenPath();
-        app.UseCtxUiPanelGate(GatewayServices.Path);
+        app.UseCtxUiPanelGate(GatewayServices.Path, HealthProbe.Path);
         app.UseCtxUiPanelLanguage();
         app.UseCtxUiApiDocs();
         app.UseRouting();
@@ -42,6 +43,7 @@ public static class ServerApp
         app.MapCtxUiGateway();
         app.MapCtxUiApi();
         app.MapCtxUiPanel();
+        app.MapHealthChecks(HealthProbe.Path);
         return app;
     }
 

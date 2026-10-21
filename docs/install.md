@@ -185,7 +185,54 @@ volume.
 | binary | `/var/lib/ctx-ui/` | `/etc/ctx-ui/ctx-ui.env` |
 | Docker | volume `ctx-ui-data` | `.env` |
 
-Back up `keys/` together with the database; see
-[configuration.md](configuration.md#data-directory) for what is lost
-without it. Stop the service first: SQLite keeps several files, and a live
-copy may be inconsistent.
+`ctx-ui backup <directory>` writes a consistent copy of the database and the
+`keys/` directory while the service keeps running. The directory must be
+missing or empty. Never copy the database file of a running service: SQLite
+keeps recent changes in `ctx-ui.db-wal`, and a plain copy may be
+inconsistent. Without `keys/` the stored tokens and upstream headers cannot be
+decrypted; see [configuration.md](configuration.md#data-directory).
+
+Binary (the command runs as the `ctx-ui` user, so it needs a directory that
+user can write):
+
+```bash
+backup=/var/backups/ctx-ui-$(date +%F)
+sudo install -d -o ctx-ui -g ctx-ui -m 700 "$backup"
+sudo ctx-ui backup "$backup"
+```
+
+Docker, in the `ctx-ui` directory:
+
+```bash
+backup=backup-$(date +%F)
+docker compose exec ctx-ui ctx-ui backup /data/$backup
+docker compose cp ctx-ui:/data/$backup ./$backup
+docker compose exec ctx-ui rm -r /data/$backup
+```
+
+Keep the settings file (`ctx-ui.env` or `.env`) next to the copy.
+
+### Restore
+
+Stop the service, replace everything in the data directory with the copy,
+give it back to the service user, start the service. Remove the old
+`ctx-ui.db-wal` and `ctx-ui.db-shm` along with the rest.
+
+Binary:
+
+```bash
+sudo systemctl stop ctx-ui
+sudo find /var/lib/ctx-ui -mindepth 1 -delete
+sudo cp -r /var/backups/ctx-ui-2026-10-21/. /var/lib/ctx-ui/
+sudo chown -R ctx-ui:ctx-ui /var/lib/ctx-ui
+sudo systemctl start ctx-ui
+```
+
+Docker, in the `ctx-ui` directory:
+
+```bash
+docker compose stop ctx-ui
+docker run --rm -v ctx-ui_ctx-ui-data:/data -v "$PWD/backup-2026-10-21:/restore:ro" alpine \
+    sh -c 'find /data -mindepth 1 -delete && cp -r /restore/. /data/ && chown -R 1654:1654 /data'
+docker compose start ctx-ui
+```

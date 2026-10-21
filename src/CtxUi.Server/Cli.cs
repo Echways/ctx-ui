@@ -19,7 +19,7 @@ public static class Cli
 {
     private const string Language = "ru";
 
-    public static bool Handles(string[] args) => args.Length > 0 && args[0] is "inbound" or "client" or "usage" or "admin" or "apikey";
+    public static bool Handles(string[] args) => args.Length > 0 && args[0] is "inbound" or "client" or "usage" or "admin" or "apikey" or "backup";
 
     public static async Task<int> RunAsync(
         string[] args,
@@ -39,7 +39,7 @@ public static class Cli
 
         var root = new RootCommand("ctx-ui: inbound'ы, клиенты, учёт вызовов, вход в панель и ключи API")
         {
-            InboundCommand(), ClientCommand(), UsageCommand(), AdminCommand(), ApiKeyCommand(),
+            InboundCommand(), ClientCommand(), UsageCommand(), AdminCommand(), ApiKeyCommand(), BackupCommand(),
         };
         return await root.Parse(args).InvokeAsync(new InvocationConfiguration { Output = output, Error = error });
 
@@ -347,6 +347,23 @@ public static class Cli
                     output.WriteLine($"Ключ «{parse.GetValue(name)!.Trim()}» отозван");
                 }),
             };
+        }
+
+        Command BackupCommand()
+        {
+            var directory = new Argument<string>("directory") { Description = "новый или пустой каталог для копии" };
+
+            return Leaf(
+                "backup",
+                "согласованная копия базы и ключей, сервис можно не останавливать",
+                [directory],
+                async (parse, services, ct) =>
+                {
+                    var target = Path.GetFullPath(parse.GetValue(directory)!);
+                    var dataDir = Path.GetFullPath(services.GetRequiredService<IOptions<CtxUiOptions>>().Value.DataDir);
+                    await Backup.WriteAsync(services.GetRequiredService<CtxUiDbContext>(), dataDir, target, ct);
+                    output.WriteLine($"Копия записана в {target}");
+                });
         }
 
         Command Leaf(

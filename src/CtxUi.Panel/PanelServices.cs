@@ -17,7 +17,7 @@ using CtxUi.Panel.Components;
 
 namespace CtxUi.Panel;
 
-public static class PanelServices
+public static partial class PanelServices
 {
     public const int MaxFailedSignIns = 5;
 
@@ -29,6 +29,7 @@ public static class PanelServices
         var sessionCheck = section.Get<PanelOptions>()?.SessionCheckInterval ?? new PanelOptions().SessionCheckInterval;
         services.AddSingleton<PanelGate>();
         services.AddSingleton<PanelBackend>();
+        services.AddScoped<PanelActions>();
         services.AddIdentityCore<Admin>(options =>
             {
                 options.Lockout.MaxFailedAccessAttempts = MaxFailedSignIns;
@@ -93,8 +94,12 @@ public static class PanelServices
         services.GetRequiredService<PanelGate>().Open(path);
         if (!await scope.ServiceProvider.GetRequiredService<CtxUiDbContext>().Admins.AnyAsync(ct))
         {
-            services.GetRequiredService<ILoggerFactory>().CreateLogger("CtxUi.Panel").LogWarning(
-                "nobody can sign in to the panel: there are no admins. Add the first one with ctx-ui admin add <login>");
+            NoAdmins(services.GetRequiredService<ILoggerFactory>().CreateLogger("CtxUi.Panel"));
         }
     }
+
+    [LoggerMessage(
+        Level = LogLevel.Warning,
+        Message = "nobody can sign in to the panel: there are no admins. Add the first one with ctx-ui admin add <login>")]
+    private static partial void NoAdmins(ILogger logger);
 }

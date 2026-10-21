@@ -6,7 +6,7 @@ using CtxUi.Core.Usage;
 
 namespace CtxUi.Gateway;
 
-public sealed class UsageWriter(
+public sealed partial class UsageWriter(
     ClientTouch touch,
     UsageJournal journal,
     IServiceScopeFactory scopes,
@@ -41,7 +41,7 @@ public sealed class UsageWriter(
         }
         catch (Exception exception)
         {
-            logger.LogError(exception, "не удалось записать время обращения клиентов");
+            TouchFailed(logger, exception);
         }
 
         try
@@ -50,7 +50,7 @@ public sealed class UsageWriter(
         }
         catch (Exception exception)
         {
-            logger.LogError(exception, "не удалось записать журнал вызовов");
+            JournalFailed(logger, exception);
         }
 
         try
@@ -59,7 +59,7 @@ public sealed class UsageWriter(
         }
         catch (Exception exception)
         {
-            logger.LogError(exception, "не удалось удалить старые записи журнала вызовов");
+            PruneFailed(logger, exception);
         }
     }
 
@@ -74,6 +74,18 @@ public sealed class UsageWriter(
         var removed = await scope.ServiceProvider.GetRequiredService<UsageStore>()
             .PruneAsync(now.AddDays(-options.Value.UsageRetentionDays));
         if (removed > 0)
-            logger.LogInformation("из журнала вызовов удалено старых записей: {Removed}", removed);
+            Pruned(logger, removed);
     }
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "failed to save when clients were last seen")]
+    private static partial void TouchFailed(ILogger logger, Exception exception);
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "failed to write the usage journal")]
+    private static partial void JournalFailed(ILogger logger, Exception exception);
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "failed to prune old usage records")]
+    private static partial void PruneFailed(ILogger logger, Exception exception);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "old usage records pruned: {Removed}")]
+    private static partial void Pruned(ILogger logger, int removed);
 }

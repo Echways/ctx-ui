@@ -59,7 +59,7 @@
     private IMudDialogInstance MudDialog { get; set; } = default!;
 
     [Parameter]
-    public string Name { get; set; } = "";
+    public Guid Id { get; set; }
 
     [Parameter]
     public bool Fresh { get; set; }
@@ -73,7 +73,8 @@
             (_client, _token) = await Backend.ReadAsync(async services =>
             {
                 var clients = services.GetRequiredService<ClientService>();
-                return (await clients.GetAsync(Name), await clients.RevealAsync(Name));
+                var client = await clients.GetAsync(Id);
+                return (client, clients.Reveal(client));
             });
         }
         catch (DomainException exception)

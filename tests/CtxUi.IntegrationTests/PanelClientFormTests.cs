@@ -265,7 +265,7 @@ public class PanelClientFormTests
         await Expect(Dialog(page)).ToHaveCountAsync(0);
 
         await page.GetByRole(AriaRole.Button, new() { Name = "Добавить клиента" }).ClickAsync();
-        await Expect(Field(page, "Имя")).ToBeVisibleAsync();
+        await Field(page, "Имя").FocusAsync();
         await page.Keyboard.PressAsync("Escape");
         await Expect(Dialog(page)).ToHaveCountAsync(0);
     }

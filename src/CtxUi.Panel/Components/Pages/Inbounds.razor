@@ -1,7 +1,7 @@
 @page "/inbounds"
 @inject PanelBackend Backend
 @inject IDialogService Dialogs
-@inject ISnackbar Snackbar
+@inject PanelActions Actions
 @inject TimeProvider Clock
 @inject NavigationManager Navigation
 
@@ -111,9 +111,13 @@ else
             await LoadAsync();
     }
 
-    private Task SwitchAsync(Inbound inbound, bool enabled) => ApplyAsync(
-        services => services.GetRequiredService<InboundService>().SetEnabledAsync(inbound.Slug, enabled),
-        string.Format(enabled ? PanelText.InboundEnabled : PanelText.InboundDisabled, inbound.Slug));
+    private async Task SwitchAsync(Inbound inbound, bool enabled)
+    {
+        await Actions.ApplyAsync(
+            services => services.GetRequiredService<InboundService>().SetEnabledAsync(inbound.Slug, enabled),
+            string.Format(enabled ? PanelText.InboundEnabled : PanelText.InboundDisabled, inbound.Slug));
+        await LoadAsync();
+    }
 
     private async Task RemoveAsync(Row row)
     {
@@ -121,22 +125,11 @@ else
         if (await ConfirmDialog.AskAsync(
                 Dialogs, string.Format(PanelText.RemoveInboundQuestion, slug), string.Format(PanelText.RemoveInboundWarning, slug, row.Clients),
                 PanelText.Delete, danger: true))
-            await ApplyAsync(services => services.GetRequiredService<InboundService>().RemoveAsync(slug), string.Format(PanelText.InboundRemoved, slug));
-    }
-
-    private async Task ApplyAsync(Func<IServiceProvider, Task> change, string done)
-    {
-        try
         {
-            await Backend.ChangeAsync(change);
-            Snackbar.Add(done, Severity.Success);
+            await Actions.ApplyAsync(
+                services => services.GetRequiredService<InboundService>().RemoveAsync(slug), string.Format(PanelText.InboundRemoved, slug));
+            await LoadAsync();
         }
-        catch (DomainException exception)
-        {
-            Snackbar.Add(Words.Sentence(exception.Message), Severity.Error);
-        }
-
-        await LoadAsync();
     }
 
     private sealed record Row(Inbound Inbound, int Clients);

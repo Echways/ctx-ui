@@ -1,7 +1,7 @@
 @page "/clients"
 @inject PanelBackend Backend
 @inject IDialogService Dialogs
-@inject ISnackbar Snackbar
+@inject PanelActions Actions
 @inject TimeProvider Clock
 
 <PageHead Title="@PanelText.Clients" Count="_clients?.Count" UpdatedAt="_clients is null ? null : _loadedAt" OnRefresh="LoadAsync">
@@ -115,43 +115,49 @@ else
         _loadedAt = Clock.GetUtcNow();
     }
 
-    private Task SwitchAsync(Client client, bool enabled) => ApplyAsync(
-        services => services.GetRequiredService<ClientService>().SetEnabledAsync(client.Name, enabled),
-        string.Format(enabled ? PanelText.ClientEnabled : PanelText.ClientDisabled, client.Name));
+    private async Task SwitchAsync(Client client, bool enabled)
+    {
+        await Actions.ApplyAsync(
+            OnClient(client, clients => clients.SetEnabledAsync(client.Id, enabled)),
+            string.Format(enabled ? PanelText.ClientEnabled : PanelText.ClientDisabled, client.Name));
+        await LoadAsync();
+    }
 
-    private Task ResetAsync(Client client) => ApplyAsync(
-        services => services.GetRequiredService<ClientService>().ResetQuotaAsync(client.Name),
-        string.Format(PanelText.QuotaReset, client.Name));
+    private async Task ResetAsync(Client client)
+    {
+        await Actions.ApplyAsync(OnClient(client, clients => clients.ResetQuotaAsync(client.Id)), string.Format(PanelText.QuotaReset, client.Name));
+        await LoadAsync();
+    }
 
     private async Task AddAsync()
     {
         var dialog = await Dialogs.ShowAsync<ClientDialog>(PanelText.NewClient, Sheet.Form);
-        if (await dialog.Result is not { Canceled: false, Data: string name })
+        if (await dialog.Result is not { Canceled: false, Data: Client added })
             return;
 
         await LoadAsync();
-        await ConnectAsync(name, fresh: true);
+        await ConnectAsync(added, fresh: true);
     }
 
     private async Task EditAsync(Client client)
     {
-        var parameters = new DialogParameters<ClientDialog> { { dialog => dialog.Name, client.Name } };
+        var parameters = new DialogParameters<ClientDialog> { { dialog => dialog.Id, client.Id } };
         var dialog = await Dialogs.ShowAsync<ClientDialog>(string.Format(PanelText.ClientTitle, client.Name), parameters, Sheet.Form);
         if (await dialog.Result is { Canceled: false })
             await LoadAsync();
     }
 
-    private Task ConnectAsync(Client client) => ConnectAsync(client.Name, fresh: false);
+    private Task ConnectAsync(Client client) => ConnectAsync(client, fresh: false);
 
-    private async Task ConnectAsync(string name, bool fresh)
+    private async Task ConnectAsync(Client client, bool fresh)
     {
         var dialog = await Dialogs.ShowAsync<ConnectionDialog>(
-            string.Format(PanelText.ConnectionTitle, name),
-            new DialogParameters<ConnectionDialog> { { sheet => sheet.Name, name }, { sheet => sheet.Fresh, fresh } },
+            string.Format(PanelText.ConnectionTitle, client.Name),
+            new DialogParameters<ConnectionDialog> { { sheet => sheet.Id, client.Id }, { sheet => sheet.Fresh, fresh } },
             Sheet.View);
         if (await dialog.Result is { Canceled: false, Data: ConnectionDialog.Reissue }
-            && _clients!.FirstOrDefault(known => known.Name == name) is { } client)
-            await ReissueAsync(client);
+            && _clients!.FirstOrDefault(known => known.Id == client.Id) is { } current)
+            await ReissueAsync(current);
     }
 
     private async Task ReissueAsync(Client client)
@@ -160,11 +166,10 @@ else
                 Dialogs, string.Format(PanelText.ReissueQuestion, client.Name), PanelText.ReissueWarning, PanelText.ReissueYes, danger: false))
             return;
 
-        await ApplyAsync(
-            services => services.GetRequiredService<ClientService>().ReissueAsync(client.Name),
-            string.Format(PanelText.TokenReissued, client.Name));
+        await Actions.ApplyAsync(OnClient(client, clients => clients.ReissueAsync(client.Id)), string.Format(PanelText.TokenReissued, client.Name));
+        await LoadAsync();
         if (_clients!.Any(known => known.Id == client.Id))
-            await ConnectAsync(client.Name, fresh: true);
+            await ConnectAsync(client, fresh: true);
     }
 
     private async Task RemoveAsync(Client client)
@@ -172,24 +177,20 @@ else
         if (await ConfirmDialog.AskAsync(
                 Dialogs, string.Format(PanelText.RemoveClientQuestion, client.Name), PanelText.RemoveClientWarning, PanelText.Delete, danger: true))
         {
-            await ApplyAsync(
-                services => services.GetRequiredService<ClientService>().RemoveAsync(client.Name),
-                string.Format(PanelText.ClientRemoved, client.Name));
+            await Actions.ApplyAsync(OnClient(client, clients => clients.RemoveAsync(client.Id)), string.Format(PanelText.ClientRemoved, client.Name));
+            await LoadAsync();
         }
     }
 
-    private async Task ApplyAsync(Func<IServiceProvider, Task> change, string done)
+    private static Func<IServiceProvider, Task> OnClient(Client client, Func<ClientService, Task> change) => async services =>
     {
         try
         {
-            await Backend.ChangeAsync(change);
-            Snackbar.Add(done, Severity.Success);
+            await change(services.GetRequiredService<ClientService>());
         }
-        catch (DomainException exception)
+        catch (NotFoundException)
         {
-            Snackbar.Add(Words.Sentence(exception.Message), Severity.Error);
+            throw ClientService.NotFound(client.Name);
         }
-
-        await LoadAsync();
-    }
+    };
 }

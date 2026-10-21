@@ -33,8 +33,8 @@ public class LimitTests
         await AssertLimitedAsync(third, "rate_limited", "30");
         Assert.Contains("повторите через 30 с", await third.Content.ReadAsStringAsync());
         Assert.Equal(2, upstream.Requests.Count);
-        Assert.Contains(logs.Lines, line => line.Contains("клиент=Иванов исход=RateLimited статус=429"));
-        Assert.Contains(logs.Lines, line => line.Contains("клиент=Иванов исход=Ok статус=200"));
+        Assert.Contains(logs.Lines, line => line.Contains("client=Иванов outcome=RateLimited status=429"));
+        Assert.Contains(logs.Lines, line => line.Contains("client=Иванов outcome=Ok status=200"));
     }
 
     [Fact]

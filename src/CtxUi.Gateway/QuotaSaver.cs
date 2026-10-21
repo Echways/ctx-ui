@@ -6,7 +6,7 @@ using CtxUi.Core.Clients;
 
 namespace CtxUi.Gateway;
 
-public sealed class QuotaSaver(
+public sealed partial class QuotaSaver(
     QuotaLedger ledger,
     IServiceScopeFactory scopes,
     IOptions<GatewayOptions> options,
@@ -39,7 +39,10 @@ public sealed class QuotaSaver(
         }
         catch (Exception exception)
         {
-            logger.LogError(exception, "не удалось сохранить счётчики квот, следующая попытка через {Interval}", options.Value.FlushInterval);
+            SaveFailed(logger, exception, options.Value.FlushInterval);
         }
     }
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "failed to save quota counters, next attempt in {Interval}")]
+    private static partial void SaveFailed(ILogger logger, Exception exception, TimeSpan interval);
 }

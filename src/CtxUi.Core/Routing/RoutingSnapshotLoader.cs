@@ -8,7 +8,7 @@ using CtxUi.Core.Secrets;
 
 namespace CtxUi.Core.Routing;
 
-public sealed class RoutingSnapshotLoader(CtxUiDbContext db, ISecretVault vault, ILogger<RoutingSnapshotLoader> logger)
+public sealed partial class RoutingSnapshotLoader(CtxUiDbContext db, ISecretVault vault, ILogger<RoutingSnapshotLoader> logger)
 {
     public Task<long> CurrentRevisionAsync(CancellationToken ct = default) =>
         db.RoutingStates.AsNoTracking().Select(state => state.Revision).SingleAsync(ct);
@@ -26,9 +26,7 @@ public sealed class RoutingSnapshotLoader(CtxUiDbContext db, ISecretVault vault,
             var headers = UpstreamHeaders.Open(vault, inbound.UpstreamHeadersSealed);
             if (headers is null || inbound.Url is null)
             {
-                logger.LogWarning(
-                    "inbound {Slug} пропущен: нет адреса или не расшифрованы заголовки upstream, проверьте каталог keys",
-                    inbound.Slug);
+                InboundSkipped(logger, inbound.Slug);
                 continue;
             }
 
@@ -59,4 +57,9 @@ public sealed class RoutingSnapshotLoader(CtxUiDbContext db, ISecretVault vault,
                 PeriodStartedAt = client.PeriodStartedAt,
             })));
     }
+
+    [LoggerMessage(
+        Level = LogLevel.Warning,
+        Message = "inbound {Slug} skipped: no address or upstream headers cannot be decrypted, check the keys directory")]
+    private static partial void InboundSkipped(ILogger logger, string slug);
 }

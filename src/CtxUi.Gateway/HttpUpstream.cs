@@ -13,7 +13,7 @@ public enum ForwardOutcome
     UpstreamFailed,
 }
 
-public sealed class HttpUpstream(IHttpForwarder forwarder, ILogger<HttpUpstream> logger) : IDisposable
+public sealed partial class HttpUpstream(IHttpForwarder forwarder, ILogger<HttpUpstream> logger) : IDisposable
 {
     private readonly HttpMessageInvoker _client = new(new SocketsHttpHandler
     {
@@ -44,17 +44,19 @@ public sealed class HttpUpstream(IHttpForwarder forwarder, ILogger<HttpUpstream>
                 or ForwarderError.RequestBodyClient
                 or ForwarderError.ResponseBodyCanceled
                 or ForwarderError.ResponseBodyClient:
-                logger.LogInformation("inbound {Slug}: клиент оборвал запрос ({Error})", route.Slug, error);
+                ClientAborted(logger, route.Slug, error);
                 return ForwardOutcome.ClientAborted;
             default:
-                logger.LogWarning(
-                    "inbound {Slug}: upstream не ответил ({Error}): {Reason}",
-                    route.Slug,
-                    error,
-                    context.Features.Get<IForwarderErrorFeature>()?.Exception?.Message);
+                UpstreamFailed(logger, route.Slug, error, context.Features.Get<IForwarderErrorFeature>()?.Exception?.Message);
                 return ForwardOutcome.UpstreamFailed;
         }
     }
 
     public void Dispose() => _client.Dispose();
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "inbound {Slug}: the client aborted the request ({Error})")]
+    private static partial void ClientAborted(ILogger logger, string slug, ForwarderError error);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "inbound {Slug}: the upstream did not answer ({Error}): {Reason}")]
+    private static partial void UpstreamFailed(ILogger logger, string slug, ForwarderError error, string? reason);
 }

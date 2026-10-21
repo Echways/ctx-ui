@@ -45,8 +45,8 @@ public static class UsageEndpoints
     {
         var count = InRange("limit", limit ?? UsageStore.DefaultLines, UsageStore.MaxLines);
         await EnsureClientAsync(clients, clientId, ct);
-        var names = (await clients.ListAsync(ct)).ToDictionary(client => client.Id, client => client.Name);
-        var slugs = (await inbounds.ListAsync(ct)).ToDictionary(inbound => inbound.Id, inbound => inbound.Slug);
+        var names = await clients.NamesAsync(ct);
+        var slugs = await inbounds.SlugsAsync(ct);
         var lines = await usage.RecentAsync(clientId, count, ct);
         return TypedResults.Ok(lines
             .Select(line => new UsageLine(

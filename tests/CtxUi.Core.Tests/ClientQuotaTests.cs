@@ -54,12 +54,12 @@ public class ClientQuotaTests
     public async Task Limit_outside_the_range_is_rejected_at_issue_and_on_update()
     {
         await using var database = await DatabaseWithEchoAsync();
-        await Clients(database).AddAsync("Иванов", ["echo"], limits: Limits);
+        var issued = await Clients(database).AddAsync("Иванов", ["echo"], limits: Limits);
 
         await Assert.ThrowsAsync<DomainException>(() =>
             Clients(database).AddAsync("Петров", ["echo"], limits: new ClientLimits(QuotaCalls: 0)));
         await Assert.ThrowsAsync<DomainException>(() =>
-            Clients(database).UpdateAsync("Иванов", new ClientUpdate { Limits = new ClientLimits(RatePerMinute: -1) }));
+            Clients(database).UpdateAsync(issued.Client.Id, new ClientUpdate { Limits = new ClientLimits(RatePerMinute: -1) }));
 
         Assert.Single(await Clients(database).ListAsync());
         Assert.Equal(Limits, ClientLimits.Of(await Clients(database).GetAsync("Иванов")));
@@ -69,9 +69,9 @@ public class ClientQuotaTests
     public async Task Update_that_does_not_mention_limits_keeps_them()
     {
         await using var database = await DatabaseWithEchoAsync();
-        await Clients(database).AddAsync("Иванов", ["echo"], limits: Limits);
+        var issued = await Clients(database).AddAsync("Иванов", ["echo"], limits: Limits);
 
-        await Clients(database).UpdateAsync("Иванов", new ClientUpdate { ChangeExpiry = true, ExpiresAt = TestData.Now.AddDays(5) });
+        await Clients(database).UpdateAsync(issued.Client.Id, new ClientUpdate { ChangeExpiry = true, ExpiresAt = TestData.Now.AddDays(5) });
 
         Assert.Equal(Limits, ClientLimits.Of(await Clients(database).GetAsync("Иванов")));
     }
@@ -80,9 +80,9 @@ public class ClientQuotaTests
     public async Task Empty_limits_remove_every_restriction()
     {
         await using var database = await DatabaseWithEchoAsync();
-        await Clients(database).AddAsync("Иванов", ["echo"], limits: Limits);
+        var issued = await Clients(database).AddAsync("Иванов", ["echo"], limits: Limits);
 
-        await Clients(database).UpdateAsync("Иванов", new ClientUpdate { Limits = ClientLimits.None });
+        await Clients(database).UpdateAsync(issued.Client.Id, new ClientUpdate { Limits = ClientLimits.None });
 
         Assert.Equal(ClientLimits.None, ClientLimits.Of(await Clients(database).GetAsync("Иванов")));
     }
@@ -91,10 +91,10 @@ public class ClientQuotaTests
     public async Task Changing_the_quota_size_keeps_the_period()
     {
         await using var database = await DatabaseWithEchoAsync();
-        await Clients(database).AddAsync("Иванов", ["echo"], limits: Limits);
+        var issued = await Clients(database).AddAsync("Иванов", ["echo"], limits: Limits);
         _clock.Advance(TimeSpan.FromDays(3));
 
-        await Clients(database).UpdateAsync("Иванов", new ClientUpdate { Limits = Limits with { QuotaCalls = 500, RatePerMinute = null } });
+        await Clients(database).UpdateAsync(issued.Client.Id, new ClientUpdate { Limits = Limits with { QuotaCalls = 500, RatePerMinute = null } });
 
         var client = await Clients(database).GetAsync("Иванов");
         Assert.Equal(500, client.QuotaCalls);
@@ -106,10 +106,10 @@ public class ClientQuotaTests
     public async Task First_quota_of_a_client_starts_a_new_period()
     {
         await using var database = await DatabaseWithEchoAsync();
-        await Clients(database).AddAsync("Иванов", ["echo"]);
+        var issued = await Clients(database).AddAsync("Иванов", ["echo"]);
         _clock.Advance(TimeSpan.FromDays(60));
 
-        await Clients(database).UpdateAsync("Иванов", new ClientUpdate { Limits = new ClientLimits(QuotaCalls: 100) });
+        await Clients(database).UpdateAsync(issued.Client.Id, new ClientUpdate { Limits = new ClientLimits(QuotaCalls: 100) });
 
         Assert.Equal(TestData.Now.AddDays(60), (await Clients(database).GetAsync("Иванов")).PeriodStartedAt);
     }
@@ -118,10 +118,10 @@ public class ClientQuotaTests
     public async Task Changing_the_reset_interval_starts_a_new_period()
     {
         await using var database = await DatabaseWithEchoAsync();
-        await Clients(database).AddAsync("Иванов", ["echo"], limits: Limits);
+        var issued = await Clients(database).AddAsync("Иванов", ["echo"], limits: Limits);
         _clock.Advance(TimeSpan.FromDays(3));
 
-        await Clients(database).UpdateAsync("Иванов", new ClientUpdate { Limits = Limits with { ResetEveryDays = 7 } });
+        await Clients(database).UpdateAsync(issued.Client.Id, new ClientUpdate { Limits = Limits with { ResetEveryDays = 7 } });
 
         Assert.Equal(TestData.Now.AddDays(3), (await Clients(database).GetAsync("Иванов")).PeriodStartedAt);
     }
@@ -130,13 +130,13 @@ public class ClientQuotaTests
     public async Task Reset_starts_a_new_period_now()
     {
         await using var database = await DatabaseWithEchoAsync();
-        await Clients(database).AddAsync("Иванов", ["echo"], limits: Limits);
+        var issued = await Clients(database).AddAsync("Иванов", ["echo"], limits: Limits);
         _clock.Advance(TimeSpan.FromDays(3));
 
-        await Clients(database).ResetQuotaAsync("иванов");
+        await Clients(database).ResetQuotaAsync(issued.Client.Id);
 
         Assert.Equal(TestData.Now.AddDays(3), (await Clients(database).GetAsync("Иванов")).PeriodStartedAt);
-        await Assert.ThrowsAsync<NotFoundException>(() => Clients(database).ResetQuotaAsync("Сидоров"));
+        await Assert.ThrowsAsync<NotFoundException>(() => Clients(database).ResetQuotaAsync(Guid.NewGuid()));
     }
 
     [Fact]

@@ -92,7 +92,7 @@ public sealed class UsageJournalTests : IAsyncDisposable
         var day = Assert.Single(await ReadAsync(store => store.DailyAsync(null, new DateOnly(2026, 10, 12))));
         Assert.Equal(UsageJournal.Capacity, day.Refused);
         Assert.Equal(1, day.Calls);
-        Assert.Contains("пропущено записей: 5", Assert.Single(_logs.Lines));
+        Assert.Contains("records dropped: 5", Assert.Single(_logs.Lines));
     }
 
     [Fact]

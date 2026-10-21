@@ -12,7 +12,7 @@
         }
         <section class="group">
             <h3>@PanelText.GroupWho</h3>
-            <MudTextField @bind-Value="_name" Label="@PanelText.Name" Immediate="true" Disabled="Name is not null" AutoFocus="Name is null"
+            <MudTextField @bind-Value="_name" Label="@PanelText.Name" Immediate="true" Disabled="Id is not null" AutoFocus="Id is null"
                           HelperText="@PanelText.ClientNameHelp" />
             <MudTextField @bind-Value="_metadata" Label="@PanelText.Metadata" Immediate="true" Lines="2" Sizing="InputSizing.Auto"
                           HelperText="@PanelText.MetadataHelp" />
@@ -52,7 +52,7 @@
     <Actions>
         <button type="button" class="link" @onclick="() => MudDialog.Cancel()">@PanelText.Cancel</button>
         <button type="button" class="btn-k pigment" disabled="@(_inbounds is not { Count: > 0 })" @onclick="SaveAsync">
-            @(Name is null ? PanelText.AddClient : PanelText.Save)
+            @(Id is null ? PanelText.AddClient : PanelText.Save)
         </button>
     </Actions>
 </Sheet>
@@ -75,15 +75,15 @@
     private IMudDialogInstance MudDialog { get; set; } = default!;
 
     [Parameter]
-    public string? Name { get; set; }
+    public Guid? Id { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
         _inbounds = await Backend.ReadAsync(services => services.GetRequiredService<InboundService>().ListAsync());
-        if (Name is null)
+        if (Id is not { } id)
             return;
 
-        var client = await Backend.ReadAsync(services => services.GetRequiredService<ClientService>().GetAsync(Name));
+        var client = await Backend.ReadAsync(services => services.GetRequiredService<ClientService>().GetAsync(id));
         _name = client.Name;
         _chosen.UnionWith(client.Inbounds.Select(link => link.Inbound!.Slug));
         _expires = _storedExpires = client.ExpiresAt?.UtcDateTime.Date;
@@ -109,23 +109,23 @@
             var limits = new ClientLimits(_rate, _concurrency, _quota, _resetDays);
             var metadata = PairLines.ParseText(_metadata);
             DateTimeOffset? expires = _expires is { } day ? new DateTimeOffset(day.Date, TimeSpan.Zero) : null;
-            var name = await Backend.ChangeAsync(async services =>
+            if (Id is not { } id)
             {
-                var clients = services.GetRequiredService<ClientService>();
-                if (Name is null)
-                    return (await clients.AddAsync(_name, _chosen, expires, metadata, limits)).Client.Name;
+                var issued = await Backend.ChangeAsync(services =>
+                    services.GetRequiredService<ClientService>().AddAsync(_name, _chosen, expires, metadata, limits));
+                MudDialog.Close(DialogResult.Ok(issued.Client));
+                return;
+            }
 
-                await clients.UpdateAsync(Name, new ClientUpdate
-                {
-                    ChangeExpiry = _expires != _storedExpires,
-                    ExpiresAt = expires,
-                    InboundSlugs = _chosen,
-                    Limits = limits,
-                    Metadata = metadata,
-                });
-                return Name;
-            });
-            MudDialog.Close(DialogResult.Ok(name));
+            await Backend.ChangeAsync(services => services.GetRequiredService<ClientService>().UpdateAsync(id, new ClientUpdate
+            {
+                ChangeExpiry = _expires != _storedExpires,
+                ExpiresAt = expires,
+                InboundSlugs = _chosen,
+                Limits = limits,
+                Metadata = metadata,
+            }));
+            MudDialog.Close(DialogResult.Ok(id));
         }
         catch (DomainException exception)
         {

@@ -76,6 +76,11 @@ public sealed class InboundService(CtxUiDbContext db, ISecretVault vault, TimePr
     public IReadOnlyList<string>? HeaderNames(Inbound inbound) =>
         UpstreamHeaders.Open(vault, inbound.UpstreamHeadersSealed)?.Keys.Order(StringComparer.OrdinalIgnoreCase).ToList();
 
+    public Task<Dictionary<Guid, string>> SlugsAsync(CancellationToken ct = default) =>
+        db.Inbounds.AsNoTracking()
+            .Select(inbound => new { inbound.Id, inbound.Slug })
+            .ToDictionaryAsync(row => row.Id, row => row.Slug, ct);
+
     public Task<Dictionary<Guid, int>> ClientCountsAsync(CancellationToken ct = default) =>
         db.ClientInbounds.AsNoTracking()
             .GroupBy(link => link.InboundId)

@@ -98,7 +98,7 @@ public class AccessTests
         var issued = await gateway.AddClientAsync("Иванов", ["echo"]);
         await gateway.ArrangeAsync(async services =>
         {
-            await services.GetRequiredService<ClientService>().SetEnabledAsync("Иванов", false);
+            await services.GetRequiredService<ClientService>().SetEnabledAsync(issued.Client.Id, false);
             return true;
         });
 
@@ -171,7 +171,7 @@ public class AccessTests
 
         await gateway.ChangeAsync(async services =>
         {
-            await services.GetRequiredService<ClientService>().SetEnabledAsync("Иванов", false);
+            await services.GetRequiredService<ClientService>().SetEnabledAsync(issued.Client.Id, false);
             return true;
         });
 

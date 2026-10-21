@@ -25,7 +25,7 @@ public sealed class ApiKeyAuthentication(
 
         var key = await keys.FindAsync(header[Bearer.Length..].Trim(), Context.RequestAborted);
         if (key is null)
-            return AuthenticateResult.Fail("ключ API не подошёл");
+            return AuthenticateResult.Fail("API key did not match");
 
         var identity = new ClaimsIdentity([new Claim(ClaimTypes.Name, key.Name)], SchemeName);
         return AuthenticateResult.Success(new AuthenticationTicket(new ClaimsPrincipal(identity), SchemeName));

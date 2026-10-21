@@ -60,7 +60,7 @@ public class RoutingSnapshotLoaderTests
         await using var database = await TestDatabase.CreateAsync();
         await Inbounds(database).AddHttpAsync("echo", null, "https://mcp.example.org/mcp");
         var issued = await Clients(database).AddAsync("Иванов", ["echo"]);
-        await Clients(database).SetEnabledAsync("Иванов", false);
+        await Clients(database).SetEnabledAsync(issued.Client.Id, false);
 
         var snapshot = await Loader(database).LoadAsync();
 

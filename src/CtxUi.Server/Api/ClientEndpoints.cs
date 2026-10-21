@@ -65,8 +65,9 @@ public static class ClientEndpoints
     private static async Task<Ok<List<ClientView>>> ListAsync(string? name, ClientService clients, TimeProvider clock, CancellationToken ct)
     {
         var now = clock.GetUtcNow();
-        var all = await clients.ListAsync(ct);
-        var wanted = name is null ? all : all.Where(client => client.NameKey == ClientName.Key(name.Trim()));
+        var wanted = name is null
+            ? await clients.ListAsync(ct)
+            : await clients.FindAsync(name, ct) is { } found ? [found] : [];
         return TypedResults.Ok(wanted.Select(client => View(client, now)).ToList());
     }
 
@@ -77,7 +78,7 @@ public static class ClientEndpoints
         Guid id, ClientService clients, IOptions<CtxUiOptions> options, CancellationToken ct)
     {
         var client = await clients.GetAsync(id, ct);
-        if (await clients.RevealAsync(client.Name, ct) is not { } token)
+        if (clients.Reveal(client) is not { } token)
         {
             return TypedResults.Problem(
                 statusCode: StatusCodes.Status409Conflict,
@@ -106,9 +107,8 @@ public static class ClientEndpoints
     private static async Task<Ok<ClientView>> ChangeAsync(
         Guid id, ClientChange body, ClientService clients, TimeProvider clock, CancellationToken ct)
     {
-        var client = await clients.GetAsync(id, ct);
         await clients.UpdateAsync(
-            client.Name,
+            id,
             new ClientUpdate
             {
                 ChangeExpiry = body.Expires is not null,
@@ -123,26 +123,26 @@ public static class ClientEndpoints
 
     private static async Task<NoContent> SwitchAsync(ClientService clients, Guid id, bool enabled, CancellationToken ct)
     {
-        await clients.SetEnabledAsync((await clients.GetAsync(id, ct)).Name, enabled, ct);
+        await clients.SetEnabledAsync(id, enabled, ct);
         return TypedResults.NoContent();
     }
 
     private static async Task<NoContent> ResetQuotaAsync(Guid id, ClientService clients, CancellationToken ct)
     {
-        await clients.ResetQuotaAsync((await clients.GetAsync(id, ct)).Name, ct);
+        await clients.ResetQuotaAsync(id, ct);
         return TypedResults.NoContent();
     }
 
     private static async Task<Ok<ConnectionView>> ReissueAsync(
         Guid id, ClientService clients, IOptions<CtxUiOptions> options, CancellationToken ct)
     {
-        var token = await clients.ReissueAsync((await clients.GetAsync(id, ct)).Name, ct);
+        var token = await clients.ReissueAsync(id, ct);
         return TypedResults.Ok(Connection(options.Value.PublicUrl, await clients.GetAsync(id, ct), token));
     }
 
     private static async Task<NoContent> RemoveAsync(Guid id, ClientService clients, CancellationToken ct)
     {
-        await clients.RemoveAsync((await clients.GetAsync(id, ct)).Name, ct);
+        await clients.RemoveAsync(id, ct);
         return TypedResults.NoContent();
     }
 

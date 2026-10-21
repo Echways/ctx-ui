@@ -53,8 +53,8 @@ public class OverviewServiceTests
         await Clients(database).AddAsync("Срочный", ["echo"], TestData.Now.AddHours(1));
         await Clients(database).AddAsync("Отключённый", ["echo"]);
         await Clients(database).SetEnabledAsync("Отключённый", false);
-        await Clients(database).MarkUsedAsync(active.Client.Id, TestData.Now.AddHours(-1));
-        await Clients(database).MarkUsedAsync(idle.Client.Id, TestData.Now.AddHours(-25));
+        await Clients(database).MarkUsedAsync(
+            [KeyValuePair.Create(active.Client.Id, TestData.Now.AddHours(-1)), KeyValuePair.Create(idle.Client.Id, TestData.Now.AddHours(-25))]);
         _clock.Advance(TimeSpan.FromHours(2));
 
         var overview = await LoadAsync(database);

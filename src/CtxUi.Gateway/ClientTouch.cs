@@ -1,27 +1,30 @@
+using System.Collections.Concurrent;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using CtxUi.Core.Clients;
 
 namespace CtxUi.Gateway;
 
-public sealed class ClientTouch(IServiceScopeFactory scopes, TimeProvider clock, ILogger<ClientTouch> logger)
+public sealed class ClientTouch(IServiceScopeFactory scopes)
 {
     private readonly TouchThrottle _throttle = new(TimeSpan.FromMinutes(1));
+    private readonly ConcurrentDictionary<Guid, DateTimeOffset> _pending = new();
 
-    public async Task TouchAsync(Guid clientId)
+    public void Touch(Guid clientId, DateTimeOffset now)
     {
-        var now = clock.GetUtcNow();
-        if (!_throttle.ShouldTouch(clientId, now))
+        if (_throttle.ShouldTouch(clientId, now))
+            _pending.AddOrUpdate(clientId, now, (_, seen) => seen > now ? seen : now);
+    }
+
+    public async Task FlushAsync(CancellationToken ct = default)
+    {
+        var seen = _pending.ToArray();
+        if (seen.Length == 0)
             return;
 
-        try
-        {
-            await using var scope = scopes.CreateAsyncScope();
-            await scope.ServiceProvider.GetRequiredService<ClientService>().MarkUsedAsync(clientId, now);
-        }
-        catch (Exception exception)
-        {
-            logger.LogWarning(exception, "не удалось записать время обращения клиента {ClientId}", clientId);
-        }
+        await using (var scope = scopes.CreateAsyncScope())
+            await scope.ServiceProvider.GetRequiredService<ClientService>().MarkUsedAsync(seen, ct);
+
+        foreach (var pair in seen)
+            _pending.TryRemove(pair);
     }
 }

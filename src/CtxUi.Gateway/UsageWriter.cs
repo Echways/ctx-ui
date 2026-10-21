@@ -7,6 +7,7 @@ using CtxUi.Core.Usage;
 namespace CtxUi.Gateway;
 
 public sealed class UsageWriter(
+    ClientTouch touch,
     UsageJournal journal,
     IServiceScopeFactory scopes,
     IOptions<GatewayOptions> options,
@@ -36,22 +37,43 @@ public sealed class UsageWriter(
     {
         try
         {
+            await touch.FlushAsync();
+        }
+        catch (Exception exception)
+        {
+            logger.LogError(exception, "не удалось записать время обращения клиентов");
+        }
+
+        try
+        {
             await journal.FlushAsync();
-
-            var now = clock.GetUtcNow();
-            if (_prunedAt is { } prunedAt && now - prunedAt < PruneEvery)
-                return;
-
-            _prunedAt = now;
-            await using var scope = scopes.CreateAsyncScope();
-            var removed = await scope.ServiceProvider.GetRequiredService<UsageStore>()
-                .PruneAsync(now.AddDays(-options.Value.UsageRetentionDays));
-            if (removed > 0)
-                logger.LogInformation("из журнала вызовов удалено старых записей: {Removed}", removed);
         }
         catch (Exception exception)
         {
             logger.LogError(exception, "не удалось записать журнал вызовов");
         }
+
+        try
+        {
+            await PruneAsync();
+        }
+        catch (Exception exception)
+        {
+            logger.LogError(exception, "не удалось удалить старые записи журнала вызовов");
+        }
+    }
+
+    private async Task PruneAsync()
+    {
+        var now = clock.GetUtcNow();
+        if (_prunedAt is { } prunedAt && now - prunedAt < PruneEvery)
+            return;
+
+        _prunedAt = now;
+        await using var scope = scopes.CreateAsyncScope();
+        var removed = await scope.ServiceProvider.GetRequiredService<UsageStore>()
+            .PruneAsync(now.AddDays(-options.Value.UsageRetentionDays));
+        if (removed > 0)
+            logger.LogInformation("из журнала вызовов удалено старых записей: {Removed}", removed);
     }
 }

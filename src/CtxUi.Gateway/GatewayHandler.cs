@@ -47,7 +47,7 @@ public sealed class GatewayHandler(
 
     private async Task<UsageOutcome> ServeAsync(HttpContext context, InboundRoute route, ClientAccess client, DateTimeOffset now)
     {
-        await touch.TouchAsync(client.Id);
+        touch.Touch(client.Id, now);
 
         using var rate = limiter.AcquireRate(client);
         if (!rate.IsAcquired)

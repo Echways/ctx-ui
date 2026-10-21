@@ -23,12 +23,15 @@ public class UsageTests
         Assert.Null((await ReadClientAsync(gateway)).LastUsedAt);
 
         using var first = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/echo", issued.Token));
+        await gateway.FlushUsageAsync();
         var afterFirst = await ReadClientAsync(gateway);
         clock.Advance(TimeSpan.FromSeconds(30));
         using var second = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/echo", issued.Token));
+        await gateway.FlushUsageAsync();
         var afterSecond = await ReadClientAsync(gateway);
         clock.Advance(TimeSpan.FromSeconds(31));
         using var third = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/echo", issued.Token));
+        await gateway.FlushUsageAsync();
         var afterThird = await ReadClientAsync(gateway);
 
         Assert.Equal(HttpStatusCode.OK, third.StatusCode);
@@ -49,7 +52,29 @@ public class UsageTests
 
         using var response = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/nope", issued.Token));
 
+        await gateway.FlushUsageAsync();
+
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
         Assert.Null((await ReadClientAsync(gateway)).LastUsedAt);
+    }
+
+    [Fact]
+    public async Task Last_use_is_saved_when_the_service_stops()
+    {
+        var clock = new FakeTimeProvider(Start);
+        await using var upstream = await FakeUpstream.StartAsync();
+        await using var gateway = await GatewayHost.StartAsync(builder =>
+        {
+            builder.Services.AddSingleton<TimeProvider>(clock);
+            builder.Configuration["CtxUi:FlushInterval"] = "01:00:00";
+        });
+        await gateway.AddInboundAsync("echo", upstream.McpUrl);
+        var issued = await gateway.AddClientAsync("Иванов", ["echo"]);
+
+        using var response = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/echo", issued.Token));
+        await gateway.RestartAsync();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(Start, (await ReadClientAsync(gateway)).LastUsedAt);
     }
 }

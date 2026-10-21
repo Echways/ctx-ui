@@ -47,7 +47,7 @@ public sealed class GatewayHandler(
 
     private async Task<UsageOutcome> ServeAsync(HttpContext context, InboundRoute route, ClientAccess client, DateTimeOffset now)
     {
-        await touch.TouchAsync(client.Id);
+        touch.Touch(client.Id, now);
 
         using var rate = limiter.AcquireRate(client);
         if (!rate.IsAcquired)
@@ -95,7 +95,7 @@ public sealed class GatewayHandler(
         }
         else
         {
-            context.Request.Body = new MemoryStream(body.Bytes, writable: false);
+            context.Request.Body = new MemoryStream(body.Bytes.Array!, body.Bytes.Offset, body.Bytes.Count, writable: false);
             outcome = Outcome(await upstream.ForwardAsync(context, route, client), context.Response.StatusCode);
             if (charge is { } accepted && outcome is UsageOutcome.UpstreamRejected or UsageOutcome.UpstreamFailed)
                 ledger.Refund(client.Id, accepted);

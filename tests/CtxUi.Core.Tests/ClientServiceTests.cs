@@ -197,8 +197,8 @@ public class ClientServiceTests
         var issued = await Clients(database).AddAsync("Иванов", ["echo"]);
         var later = TestData.Now.AddHours(1);
 
-        await Clients(database).MarkUsedAsync(issued.Client.Id, TestData.Now);
-        await Clients(database).MarkUsedAsync(issued.Client.Id, later);
+        await Clients(database).MarkUsedAsync([KeyValuePair.Create(issued.Client.Id, TestData.Now)]);
+        await Clients(database).MarkUsedAsync([KeyValuePair.Create(issued.Client.Id, later)]);
 
         var client = Assert.Single(await Clients(database).ListAsync());
         Assert.Equal(TestData.Now, client.FirstUsedAt);
@@ -213,8 +213,25 @@ public class ClientServiceTests
         await using var db = database.NewContext();
         var before = await db.RoutingStates.Select(state => state.Revision).SingleAsync();
 
-        await Clients(database).MarkUsedAsync(issued.Client.Id, TestData.Now);
+        await Clients(database).MarkUsedAsync([KeyValuePair.Create(issued.Client.Id, TestData.Now)]);
 
         Assert.Equal(before, await db.RoutingStates.Select(state => state.Revision).SingleAsync());
+    }
+
+    [Fact]
+    public async Task Marking_use_of_several_clients_keeps_the_first_use()
+    {
+        await using var database = await DatabaseWithInboundsAsync("echo");
+        var first = await Clients(database).AddAsync("Иванов", ["echo"]);
+        var second = await Clients(database).AddAsync("Петров", ["echo"]);
+        var later = TestData.Now.AddHours(1);
+
+        await Clients(database).MarkUsedAsync([KeyValuePair.Create(first.Client.Id, TestData.Now)]);
+        await Clients(database).MarkUsedAsync(
+            [KeyValuePair.Create(first.Client.Id, later), KeyValuePair.Create(second.Client.Id, later)]);
+
+        var clients = (await Clients(database).ListAsync()).ToDictionary(client => client.Name);
+        Assert.Equal((TestData.Now, later), (clients["Иванов"].FirstUsedAt, clients["Иванов"].LastUsedAt));
+        Assert.Equal((later, later), (clients["Петров"].FirstUsedAt, clients["Петров"].LastUsedAt));
     }
 }

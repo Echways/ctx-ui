@@ -87,6 +87,12 @@ public sealed class GatewayHost : IAsyncDisposable
         return true;
     });
 
+    public async Task FlushUsageAsync()
+    {
+        await App.Services.GetRequiredService<ClientTouch>().FlushAsync();
+        await App.Services.GetRequiredService<UsageJournal>().FlushAsync();
+    }
+
     public static HttpRequestMessage Post(string path, string? bearer = null, string body = "{}")
     {
         var request = new HttpRequestMessage(HttpMethod.Post, path)

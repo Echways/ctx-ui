@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using CtxUi.Core.Data;
@@ -15,7 +16,8 @@ public sealed class UsageJournalTests : IAsyncDisposable
     private static readonly Guid Inbound = Guid.NewGuid();
 
     private readonly SqliteConnection _connection = new("DataSource=:memory:");
-    private readonly Warnings _warnings = new();
+    private readonly CapturedLogs _logs = new();
+    private readonly FlakyWrites _writes = new();
     private readonly ServiceProvider _services;
     private readonly UsageJournal _journal;
 
@@ -23,13 +25,13 @@ public sealed class UsageJournalTests : IAsyncDisposable
     {
         _connection.Open();
         _services = new ServiceCollection()
-            .AddDbContext<CtxUiDbContext>(options => options.UseSqlite(_connection))
+            .AddDbContext<CtxUiDbContext>(options => options.UseSqlite(_connection).AddInterceptors(_writes))
             .AddScoped<UsageStore>()
             .BuildServiceProvider();
         using (var scope = _services.CreateScope())
             scope.ServiceProvider.GetRequiredService<CtxUiDbContext>().Database.Migrate();
 
-        _journal = new UsageJournal(_services.GetRequiredService<IServiceScopeFactory>(), _warnings);
+        _journal = new UsageJournal(_services.GetRequiredService<IServiceScopeFactory>(), _logs);
     }
 
     private static UsageRecord Call(string tool) => new(Client, Inbound, Now, "tools/call", tool, 10, UsageOutcome.Ok);
@@ -74,7 +76,7 @@ public sealed class UsageJournalTests : IAsyncDisposable
         Assert.Equal(1_234, lines.Count);
         Assert.Equal("1233", lines[0].Tool);
         Assert.Equal("0", lines[^1].Tool);
-        Assert.Empty(_warnings.Lines);
+        Assert.Empty(_logs.Lines);
     }
 
     [Fact]
@@ -90,10 +92,54 @@ public sealed class UsageJournalTests : IAsyncDisposable
         var day = Assert.Single(await ReadAsync(store => store.DailyAsync(null, new DateOnly(2026, 10, 12))));
         Assert.Equal(UsageJournal.Capacity, day.Refused);
         Assert.Equal(1, day.Calls);
-        Assert.Contains("пропущено записей: 5", Assert.Single(_warnings.Lines));
+        Assert.Contains("пропущено записей: 5", Assert.Single(_logs.Lines));
     }
 
-    private sealed class Warnings : ILogger<UsageJournal>
+    [Fact]
+    public async Task Batch_that_failed_to_save_is_saved_by_the_next_flush()
+    {
+        _writes.FailuresLeft = 1;
+        _journal.Record(Call("a"));
+
+        await Assert.ThrowsAsync<DbUpdateException>(() => _journal.FlushAsync());
+        await _journal.FlushAsync();
+
+        Assert.Equal(["a"], (await ReadAsync(store => store.RecentAsync(null, 10))).Select(line => line.Tool));
+    }
+
+    [Fact]
+    public async Task Batch_that_keeps_failing_is_dropped_after_three_attempts_and_later_records_are_saved()
+    {
+        _writes.FailuresLeft = UsageJournal.MaxAttempts;
+        _journal.Record(Call("a"));
+
+        for (var attempt = 0; attempt < UsageJournal.MaxAttempts; attempt++)
+            await Assert.ThrowsAsync<DbUpdateException>(() => _journal.FlushAsync());
+        _journal.Record(Call("b"));
+        await _journal.FlushAsync();
+
+        Assert.Contains("records dropped: 1", Assert.Single(_logs.Lines));
+        Assert.Equal(["b"], (await ReadAsync(store => store.RecentAsync(null, 10))).Select(line => line.Tool));
+    }
+
+    private sealed class FlakyWrites : SaveChangesInterceptor
+    {
+        public int FailuresLeft { get; set; }
+
+        public override ValueTask<InterceptionResult<int>> SavingChangesAsync(
+            DbContextEventData eventData,
+            InterceptionResult<int> result,
+            CancellationToken cancellationToken = default)
+        {
+            if (FailuresLeft <= 0)
+                return base.SavingChangesAsync(eventData, result, cancellationToken);
+
+            FailuresLeft--;
+            throw new DbUpdateException("write failed");
+        }
+    }
+
+    private sealed class CapturedLogs : ILogger<UsageJournal>
     {
         public ConcurrentQueue<string> Lines { get; } = new();
 

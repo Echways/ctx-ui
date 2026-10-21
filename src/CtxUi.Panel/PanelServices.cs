@@ -8,6 +8,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MudBlazor.Services;
+using CtxUi.Core;
 using CtxUi.Core.Admins;
 using CtxUi.Core.Data;
 using CtxUi.Core.Settings;
@@ -38,7 +39,7 @@ public static class PanelServices
         services.AddAuthentication(IdentityConstants.ApplicationScheme).AddIdentityCookies();
         services.ConfigureApplicationCookie(options =>
         {
-            options.Cookie.Name = "ctx-ui";
+            options.Cookie.Name = OwnCookies.Session;
             options.LoginPath = "/login";
             options.LogoutPath = "/logout";
             options.AccessDeniedPath = "/login";

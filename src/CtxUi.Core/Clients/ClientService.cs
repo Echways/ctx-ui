@@ -156,15 +156,21 @@ public sealed class ClientService(CtxUiDbContext db, ISecretVault vault, TimePro
     public async Task<string?> RevealAsync(string name, CancellationToken ct = default) =>
         vault.Open((await GetAsync(name, ct)).TokenSealed);
 
-    public async Task MarkUsedAsync(Guid clientId, DateTimeOffset now, CancellationToken ct = default)
+    public async Task MarkUsedAsync(IReadOnlyCollection<KeyValuePair<Guid, DateTimeOffset>> seen, CancellationToken ct = default)
     {
-        await db.Clients
-            .Where(client => client.Id == clientId)
-            .ExecuteUpdateAsync(
-                setters => setters
-                    .SetProperty(client => client.LastUsedAt, now)
-                    .SetProperty(client => client.FirstUsedAt, client => client.FirstUsedAt ?? now),
-                ct);
+        await using var transaction = await db.Database.BeginTransactionAsync(ct);
+        foreach (var (clientId, at) in seen)
+        {
+            await db.Clients
+                .Where(client => client.Id == clientId)
+                .ExecuteUpdateAsync(
+                    setters => setters
+                        .SetProperty(client => client.LastUsedAt, at)
+                        .SetProperty(client => client.FirstUsedAt, client => client.FirstUsedAt ?? at),
+                    ct);
+        }
+
+        await transaction.CommitAsync(ct);
     }
 
     public async Task<List<StoredUsage>> LoadUsageAsync(CancellationToken ct = default)

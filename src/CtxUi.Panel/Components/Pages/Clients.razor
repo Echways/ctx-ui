@@ -1,7 +1,7 @@
 @page "/clients"
 @inject PanelBackend Backend
 @inject IDialogService Dialogs
-@inject ISnackbar Snackbar
+@inject PanelActions Actions
 @inject TimeProvider Clock
 
 <PageHead Title="@PanelText.Clients" Count="_clients?.Count" UpdatedAt="_clients is null ? null : _loadedAt" OnRefresh="LoadAsync">
@@ -115,13 +115,19 @@ else
         _loadedAt = Clock.GetUtcNow();
     }
 
-    private Task SwitchAsync(Client client, bool enabled) => ApplyAsync(
-        OnClient(client, clients => clients.SetEnabledAsync(client.Id, enabled)),
-        string.Format(enabled ? PanelText.ClientEnabled : PanelText.ClientDisabled, client.Name));
+    private async Task SwitchAsync(Client client, bool enabled)
+    {
+        await Actions.ApplyAsync(
+            OnClient(client, clients => clients.SetEnabledAsync(client.Id, enabled)),
+            string.Format(enabled ? PanelText.ClientEnabled : PanelText.ClientDisabled, client.Name));
+        await LoadAsync();
+    }
 
-    private Task ResetAsync(Client client) => ApplyAsync(
-        OnClient(client, clients => clients.ResetQuotaAsync(client.Id)),
-        string.Format(PanelText.QuotaReset, client.Name));
+    private async Task ResetAsync(Client client)
+    {
+        await Actions.ApplyAsync(OnClient(client, clients => clients.ResetQuotaAsync(client.Id)), string.Format(PanelText.QuotaReset, client.Name));
+        await LoadAsync();
+    }
 
     private async Task AddAsync()
     {
@@ -160,9 +166,8 @@ else
                 Dialogs, string.Format(PanelText.ReissueQuestion, client.Name), PanelText.ReissueWarning, PanelText.ReissueYes, danger: false))
             return;
 
-        await ApplyAsync(
-            OnClient(client, clients => clients.ReissueAsync(client.Id)),
-            string.Format(PanelText.TokenReissued, client.Name));
+        await Actions.ApplyAsync(OnClient(client, clients => clients.ReissueAsync(client.Id)), string.Format(PanelText.TokenReissued, client.Name));
+        await LoadAsync();
         if (_clients!.Any(known => known.Id == client.Id))
             await ConnectAsync(client, fresh: true);
     }
@@ -172,9 +177,8 @@ else
         if (await ConfirmDialog.AskAsync(
                 Dialogs, string.Format(PanelText.RemoveClientQuestion, client.Name), PanelText.RemoveClientWarning, PanelText.Delete, danger: true))
         {
-            await ApplyAsync(
-                OnClient(client, clients => clients.RemoveAsync(client.Id)),
-                string.Format(PanelText.ClientRemoved, client.Name));
+            await Actions.ApplyAsync(OnClient(client, clients => clients.RemoveAsync(client.Id)), string.Format(PanelText.ClientRemoved, client.Name));
+            await LoadAsync();
         }
     }
 
@@ -189,19 +193,4 @@ else
             throw ClientService.NotFound(client.Name);
         }
     };
-
-    private async Task ApplyAsync(Func<IServiceProvider, Task> change, string done)
-    {
-        try
-        {
-            await Backend.ChangeAsync(change);
-            Snackbar.Add(done, Severity.Success);
-        }
-        catch (DomainException exception)
-        {
-            Snackbar.Add(Words.Sentence(exception.Message), Severity.Error);
-        }
-
-        await LoadAsync();
-    }
 }

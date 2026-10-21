@@ -29,6 +29,7 @@ public static class PanelServices
         var sessionCheck = section.Get<PanelOptions>()?.SessionCheckInterval ?? new PanelOptions().SessionCheckInterval;
         services.AddSingleton<PanelGate>();
         services.AddSingleton<PanelBackend>();
+        services.AddScoped<PanelActions>();
         services.AddIdentityCore<Admin>(options =>
             {
                 options.Lockout.MaxFailedAccessAttempts = MaxFailedSignIns;

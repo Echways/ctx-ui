@@ -279,6 +279,7 @@ main() {
   Data:              $data_dir
   Log:               journalctl -u ctx-ui -f
   Upgrade:           ctx-ui update
+  Stop, start:       ctx-ui down, ctx-ui up
 
 The service does not terminate TLS: put Caddy or nginx in front of it.
 

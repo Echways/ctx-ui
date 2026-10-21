@@ -150,6 +150,20 @@ check "swagger ui is in the archive" equals 200 "$(panel_status "${path}swagger/
 check "api asks for a key" equals 401 "$(panel_status "${path}api/v1/inbounds")"
 check "panel does not exist without the secret path" equals 404 "$(panel_status /login)"
 
+echo "== down and up"
+output="$(in_box runuser -u ctx-ui -- ctx-ui down 2>&1)" && code=0 || code=$?
+check "down without root is refused" equals "1 active" "$code $(in_box systemctl is-active ctx-ui)"
+output="$(in_box ctx-ui down 2>&1)" || true
+check "down says how to start again" contains "sudo ctx-ui up" "$output"
+check "down stops the service" equals inactive "$(in_box systemctl is-active ctx-ui || true)"
+check "down keeps it off at boot" equals disabled "$(in_box systemctl is-enabled ctx-ui || true)"
+check "panel is unreachable after down" equals 000 "$(panel_status "${path}login" || true)"
+output="$(in_box ctx-ui up 2>&1)" || true
+check "up reports running" contains "ctx-ui is running." "$output"
+check "up starts the service" equals active "$(in_box systemctl is-active ctx-ui)"
+check "up brings back start at boot" equals enabled "$(in_box systemctl is-enabled ctx-ui)"
+check "client works after up" status_becomes 502 -H "Authorization: Bearer $token"
+
 echo "== update"
 check "version command" equals 0.0.1 "$(in_box ctx-ui version)"
 pid="$(in_box systemctl show -p MainPID --value ctx-ui)"

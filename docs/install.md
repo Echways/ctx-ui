@@ -114,6 +114,16 @@ sudo ctx-ui admin password admin     # new password
 sudo ctx-ui admin path               # panel address
 ```
 
+### Stop and start
+
+```bash
+sudo ctx-ui down     # stop the service and keep it off after reboot
+sudo ctx-ui up       # start it and turn start at boot back on
+```
+
+`down` stops the whole process: the panel, the API and the gateway. Settings
+and data stay; `update` starts the service again.
+
 ### Upgrade
 
 ```bash

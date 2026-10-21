@@ -12,12 +12,16 @@ fail() {
     exit 1
 }
 
-update() {
-    local base
-
+require_root() {
     if [ "$(id -u)" -ne 0 ]; then
         fail "root privileges required, run with sudo"
     fi
+}
+
+update() {
+    local base
+
+    require_root
     case $# in
         0) base="https://github.com/$repo/releases/latest/download" ;;
         1)
@@ -34,10 +38,34 @@ update() {
     bash "$installer"
 }
 
+down() {
+    require_root
+    [ $# -eq 0 ] || fail "usage: ctx-ui down"
+    systemctl disable --now --quiet ctx-ui
+    echo "ctx-ui is stopped and will not start at boot. Start it again with: sudo ctx-ui up"
+}
+
+up() {
+    require_root
+    [ $# -eq 0 ] || fail "usage: ctx-ui up"
+    systemctl enable --now --quiet ctx-ui
+    echo "ctx-ui is running."
+}
+
 case "${1:-}" in
     update)
         shift
         update "$@"
+        exit 0
+        ;;
+    down)
+        shift
+        down "$@"
+        exit 0
+        ;;
+    up)
+        shift
+        up "$@"
         exit 0
         ;;
     version)

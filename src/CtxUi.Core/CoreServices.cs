@@ -30,6 +30,7 @@ public static class CoreServices
         services.AddScoped<PanelSettings>();
         services.AddScoped<ApiKeyService>();
         services.AddScoped<SignInSettingsService>();
+        services.AddScoped<ClientLinkService>();
         return services;
     }
 }

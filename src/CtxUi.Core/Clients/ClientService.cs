@@ -2,10 +2,13 @@ using Microsoft.EntityFrameworkCore;
 using CtxUi.Core.Data;
 using CtxUi.Core.Inbounds;
 using CtxUi.Core.Secrets;
+using CtxUi.Core.SignIn;
 
 namespace CtxUi.Core.Clients;
 
 public sealed record IssuedClient(Client Client, string Token);
+
+public sealed record ReissuedToken(string Token, int DevicesRevoked);
 
 public sealed record StoredUsage(Guid ClientId, DateTimeOffset Since, long Calls);
 
@@ -20,6 +23,8 @@ public sealed record ClientUpdate
     public ClientLimits? Limits { get; init; }
 
     public IEnumerable<KeyValuePair<string, string>>? Metadata { get; init; }
+
+    public ClientAccessPolicy? Access { get; init; }
 }
 
 public sealed class ClientService(CtxUiDbContext db, ISecretVault vault, TimeProvider clock)
@@ -30,6 +35,7 @@ public sealed class ClientService(CtxUiDbContext db, ISecretVault vault, TimePro
         DateTimeOffset? expiresAt = null,
         IEnumerable<KeyValuePair<string, string>>? metadata = null,
         ClientLimits? limits = null,
+        ClientAccessPolicy? access = null,
         CancellationToken ct = default)
     {
         var parsedName = ClientName.Parse(name);
@@ -38,6 +44,7 @@ public sealed class ClientService(CtxUiDbContext db, ISecretVault vault, TimePro
         EnsureFuture(expiresAt, now);
         var parsedMetadata = ClientMetadata.Parse(metadata);
         var parsedLimits = (limits ?? ClientLimits.None).Validated();
+        var parsedAccess = (access ?? await DefaultAccessAsync(ct)).Validated();
         if (await db.Clients.AnyAsync(client => client.NameKey == key, ct))
             throw new DomainException(string.Format(CoreText.ClientExists, parsedName));
         var inbounds = await ResolveInboundsAsync(inboundSlugs, ct);
@@ -57,6 +64,8 @@ public sealed class ClientService(CtxUiDbContext db, ISecretVault vault, TimePro
             MaxConcurrency = parsedLimits.MaxConcurrency,
             QuotaCalls = parsedLimits.QuotaCalls,
             ResetEveryDays = parsedLimits.ResetEveryDays,
+            MaxDevices = parsedAccess.MaxDevices,
+            DirectKey = parsedAccess.DirectKey,
             PeriodStartedAt = now,
             Metadata = parsedMetadata,
             Inbounds = inbounds.Select(inbound => new ClientInbound { InboundId = inbound.Id }).ToList(),
@@ -128,6 +137,13 @@ public sealed class ClientService(CtxUiDbContext db, ISecretVault vault, TimePro
             client.ResetEveryDays = limits.ResetEveryDays;
         }
 
+        if (update.Access is { } access)
+        {
+            access.Validated();
+            client.MaxDevices = access.MaxDevices;
+            client.DirectKey = access.DirectKey;
+        }
+
         await db.SaveChangesAsync(ct);
     }
 
@@ -151,16 +167,26 @@ public sealed class ClientService(CtxUiDbContext db, ISecretVault vault, TimePro
         await db.SaveChangesAsync(ct);
     }
 
-    public async Task<string> ReissueAsync(Guid id, CancellationToken ct = default)
+    public async Task<ReissuedToken> ReissueAsync(Guid id, CancellationToken ct = default)
     {
         var client = await TrackAsync(id, ct);
         var token = AccessToken.Generate();
         client.TokenHash = AccessToken.Hash(token);
         client.TokenSealed = vault.Seal(token);
         client.TokenPrefix = AccessToken.DisplayPrefix(token);
+        var now = clock.GetUtcNow();
+        var keyDevices = await KeyDevices(id).ToListAsync(ct);
+        foreach (var device in keyDevices)
+        {
+            device.RevokedAt = now;
+            device.RevokedReason = DeviceRevocation.KeyReissued;
+        }
+
         await db.SaveChangesAsync(ct);
-        return token;
+        return new ReissuedToken(token, keyDevices.Count);
     }
+
+    public Task<int> CountKeyDevicesAsync(Guid id, CancellationToken ct = default) => KeyDevices(id).CountAsync(ct);
 
     public string? Reveal(Client client) => vault.Open(client.TokenSealed);
 
@@ -206,6 +232,15 @@ public sealed class ClientService(CtxUiDbContext db, ISecretVault vault, TimePro
         }
 
         await transaction.CommitAsync(ct);
+    }
+
+    private IQueryable<Device> KeyDevices(Guid clientId) =>
+        db.Devices.Where(device => device.ClientId == clientId && device.RevokedAt == null && device.SignedInWith == Device.ByKey);
+
+    private async Task<ClientAccessPolicy> DefaultAccessAsync(CancellationToken ct)
+    {
+        var settings = await db.SignInSettings.AsNoTracking().SingleAsync(ct);
+        return new ClientAccessPolicy(settings.DefaultMaxDevices, settings.DefaultDirectKey);
     }
 
     private static void EnsureFuture(DateTimeOffset? expiresAt, DateTimeOffset now)

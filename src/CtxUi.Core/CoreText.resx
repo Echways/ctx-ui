@@ -195,4 +195,7 @@
   <data name="ProviderYandex" xml:space="preserve">
     <value>Yandex</value>
   </data>
+  <data name="LinkNotFound" xml:space="preserve">
+    <value>the client has no linked {0} accounts</value>
+  </data>
 </root>

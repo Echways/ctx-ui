@@ -195,4 +195,7 @@
   <data name="ProviderYandex" xml:space="preserve">
     <value>Яндекс</value>
   </data>
+  <data name="LinkNotFound" xml:space="preserve">
+    <value>у клиента нет привязанных аккаунтов {0}</value>
+  </data>
 </root>

@@ -141,7 +141,7 @@ public static class Cli
                             Expiry(parse.GetValue(expires)),
                             PairLines.Parse(parse.GetValue(meta)),
                             Limits(parse, ClientLimits.None),
-                            ct);
+                            ct: ct);
                         WriteConnection(services, await clients.GetAsync(issued.Client.Id, ct), issued.Token);
                     }),
                 Leaf("list", ServerText.ClientListCommand, [], async (_, services, ct) =>
@@ -193,7 +193,7 @@ public static class Cli
                 {
                     var clients = services.GetRequiredService<ClientService>();
                     var client = await clients.GetAsync(parse.GetValue(name)!, ct);
-                    WriteConnection(services, client, await clients.ReissueAsync(client.Id, ct));
+                    WriteConnection(services, client, (await clients.ReissueAsync(client.Id, ct)).Token);
                 }),
                 Leaf("enable", ServerText.ClientEnableCommand, [name], async (parse, services, ct) =>
                 {

@@ -97,7 +97,7 @@ public static class ClientEndpoints
             body.Expires is null ? null : ExpiryArgument.Parse(body.Expires),
             body.Metadata,
             body.Limits,
-            ct);
+            ct: ct);
         var client = await clients.GetAsync(issued.Client.Id, ct);
         return TypedResults.Created(
             $"{http.Request.PathBase}{ApiServices.Prefix}/clients/{client.Id}",
@@ -136,8 +136,8 @@ public static class ClientEndpoints
     private static async Task<Ok<ConnectionView>> ReissueAsync(
         Guid id, ClientService clients, IOptions<CtxUiOptions> options, CancellationToken ct)
     {
-        var token = await clients.ReissueAsync(id, ct);
-        return TypedResults.Ok(Connection(options.Value.PublicUrl, await clients.GetAsync(id, ct), token));
+        var reissued = await clients.ReissueAsync(id, ct);
+        return TypedResults.Ok(Connection(options.Value.PublicUrl, await clients.GetAsync(id, ct), reissued.Token));
     }
 
     private static async Task<NoContent> RemoveAsync(Guid id, ClientService clients, CancellationToken ct)

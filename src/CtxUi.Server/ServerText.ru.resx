@@ -600,4 +600,7 @@
   <data name="NoDevice" xml:space="preserve">
     <value>-</value>
   </data>
+  <data name="DefaultDevicesInvalid" xml:space="preserve">
+    <value>defaultMaxDevices: ожидалось число или none, получено {0}</value>
+  </data>
 </root>

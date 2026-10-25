@@ -58,6 +58,16 @@ public sealed class DeviceService(CtxUiDbContext db, TimeProvider clock)
     public async Task<int> ActiveCountAsync(Guid clientId, CancellationToken ct = default) =>
         await ActiveOf(clientId, await IdleCutoffAsync(ct)).CountAsync(ct);
 
+    public async Task<Dictionary<Guid, int>> ActiveCountsAsync(CancellationToken ct = default)
+    {
+        var cutoff = await IdleCutoffAsync(ct);
+        return await db.Devices.AsNoTracking()
+            .Where(IsActive(cutoff))
+            .GroupBy(device => device.ClientId)
+            .Select(group => new { ClientId = group.Key, Count = group.Count() })
+            .ToDictionaryAsync(row => row.ClientId, row => row.Count, ct);
+    }
+
     public Task<string?> AppAuthorizationAsync(Guid deviceId, string appKey, CancellationToken ct = default) =>
         db.DeviceApps.AsNoTracking()
             .Where(app => app.DeviceId == deviceId && app.AppKey == appKey)

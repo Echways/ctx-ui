@@ -208,4 +208,118 @@ public class ApiClientsTests
         Assert.Equal(HttpStatusCode.NotFound, patch.StatusCode);
         Assert.Equal("Клиент не найден", (await ApiClient.ReadAsync(get)).GetProperty("detail").GetString());
     }
+
+    private static async Task<(string Id, Guid DeviceId)> WithDeviceAsync(GatewayHost gateway, ApiClient api, string signedInWith = CtxUi.Core.SignIn.Device.ByKey)
+    {
+        var issued = await IssueAsync(api, new { name = "Иванов", inbounds = new[] { "echo" } });
+        var id = Guid.Parse(Id(issued));
+        var device = await gateway.ChangeAsync(async services =>
+        {
+            var devices = services.GetRequiredService<CtxUi.Core.SignIn.DeviceService>();
+            var admitted = (await devices.AdmitAsync(
+                id, CtxUi.Core.SignIn.DeviceMarker.Generate(), new CtxUi.Core.SignIn.DeviceSeen("Chrome · Windows", "203.0.113.7", signedInWith))).Device!;
+            await devices.AddAppAsync(admitted.Id, "app-key", "Claude Code", "authorization-1");
+            return admitted;
+        });
+        return (id.ToString(), device.Id);
+    }
+
+    [Fact]
+    public async Task Client_view_has_device_fields()
+    {
+        await using var gateway = await StartWithEchoAsync();
+        using var api = await ApiClient.IssueAsync(gateway);
+        using var created = await api.PostAsync("api/v1/clients", new
+        {
+            name = "Иванов",
+            inbounds = new[] { "echo" },
+            access = new { maxDevices = 2, directKey = false },
+        });
+        var client = (await ApiClient.ReadAsync(created)).GetProperty("client");
+
+        using var changed = await api.PatchAsync($"api/v1/clients/{client.GetProperty("id").GetString()}", new { access = new { maxDevices = 5, directKey = true } });
+        var after = await ApiClient.ReadAsync(changed);
+
+        Assert.Equal(2, client.GetProperty("maxDevices").GetInt32());
+        Assert.False(client.GetProperty("directKey").GetBoolean());
+        Assert.Equal(0, client.GetProperty("activeDevices").GetInt32());
+        Assert.Equal(5, after.GetProperty("maxDevices").GetInt32());
+        Assert.True(after.GetProperty("directKey").GetBoolean());
+    }
+
+    [Fact]
+    public async Task Devices_list_and_delete()
+    {
+        await using var gateway = await StartWithEchoAsync();
+        using var api = await ApiClient.IssueAsync(gateway);
+        var (id, deviceId) = await WithDeviceAsync(gateway, api);
+
+        using var listed = await api.GetAsync($"api/v1/clients/{id}/devices");
+        var device = Assert.Single((await ApiClient.ReadAsync(listed)).EnumerateArray());
+        using var client = await api.GetAsync($"api/v1/clients/{id}");
+        using var deleted = await api.DeleteAsync($"api/v1/clients/{id}/devices/{deviceId}");
+        using var after = await api.GetAsync($"api/v1/clients/{id}/devices");
+        var revoked = Assert.Single((await ApiClient.ReadAsync(after)).EnumerateArray());
+
+        Assert.Equal("Chrome · Windows", device.GetProperty("name").GetString());
+        Assert.Equal("Claude Code", Assert.Single(device.GetProperty("apps").EnumerateArray()).GetString());
+        Assert.Equal("key", device.GetProperty("signedInWith").GetString());
+        Assert.Equal("203.0.113.7", device.GetProperty("signInIp").GetString());
+        Assert.Equal(1, (await ApiClient.ReadAsync(client)).GetProperty("activeDevices").GetInt32());
+        Assert.Equal(HttpStatusCode.NoContent, deleted.StatusCode);
+        Assert.Equal("Admin", revoked.GetProperty("reason").GetString());
+        using var all = await api.DeleteAsync($"api/v1/clients/{id}/devices");
+        Assert.Equal(HttpStatusCode.NoContent, all.StatusCode);
+    }
+
+    [Fact]
+    public async Task Invite_returns_a_url_and_expiry()
+    {
+        await using var gateway = await StartWithEchoAsync();
+        using var api = await ApiClient.IssueAsync(gateway);
+        var id = Id(await IssueAsync(api, new { name = "Иванов", inbounds = new[] { "echo" } }));
+
+        using var invite = await api.PostAsync($"api/v1/clients/{id}/invite");
+        var view = await ApiClient.ReadAsync(invite);
+
+        Assert.Equal(HttpStatusCode.OK, invite.StatusCode);
+        Assert.StartsWith("http://localhost:8080/connect/invite/", view.GetProperty("url").GetString());
+        Assert.InRange(view.GetProperty("expiresAt").GetDateTimeOffset(), DateTimeOffset.UtcNow.AddDays(6.9), DateTimeOffset.UtcNow.AddDays(7.1));
+    }
+
+    [Fact]
+    public async Task Links_list_and_delete()
+    {
+        await using var gateway = await StartWithEchoAsync();
+        using var api = await ApiClient.IssueAsync(gateway);
+        var id = Id(await IssueAsync(api, new { name = "Иванов", inbounds = new[] { "echo" } }));
+        await gateway.ChangeAsync(async services =>
+        {
+            var links = services.GetRequiredService<CtxUi.Core.SignIn.ClientLinkService>();
+            await links.LinkAsync(await links.InviteAsync(Guid.Parse(id)), new CtxUi.Core.SignIn.ExternalIdentity("github", "42", "ivanov@example.org"));
+            return true;
+        });
+
+        using var listed = await api.GetAsync($"api/v1/clients/{id}/links");
+        var link = Assert.Single((await ApiClient.ReadAsync(listed)).EnumerateArray());
+        using var removed = await api.DeleteAsync($"api/v1/clients/{id}/links/github");
+        using var again = await api.DeleteAsync($"api/v1/clients/{id}/links/github");
+
+        Assert.Equal("github", link.GetProperty("provider").GetString());
+        Assert.Equal("ivanov@example.org", link.GetProperty("display").GetString());
+        Assert.Equal(HttpStatusCode.NoContent, removed.StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, again.StatusCode);
+    }
+
+    [Fact]
+    public async Task Reissue_reports_revoked_devices()
+    {
+        await using var gateway = await StartWithEchoAsync();
+        using var api = await ApiClient.IssueAsync(gateway);
+        var (id, _) = await WithDeviceAsync(gateway, api);
+
+        using var reissued = await api.PostAsync($"api/v1/clients/{id}/reissue");
+
+        Assert.Equal(1, (await ApiClient.ReadAsync(reissued)).GetProperty("devicesRevoked").GetInt32());
+    }
 }

@@ -44,6 +44,22 @@ public class DeviceServiceTests
     }
 
     [Fact]
+    public async Task Active_counts_are_grouped_by_client_and_skip_revoked_devices()
+    {
+        await using var database = await ClientWithLimitAsync(null);
+        var other = (await Clients(database).AddAsync("Петров", ["echo"])).Client.Id;
+        await Devices(database).AdmitAsync(_clientId, DeviceMarker.Generate(), Seen);
+        var gone = (await Devices(database).AdmitAsync(_clientId, DeviceMarker.Generate(), Seen)).Device!;
+        await Devices(database).RevokeAsync(_clientId, gone.Id, DeviceRevocation.Admin);
+        await Devices(database).AdmitAsync(other, DeviceMarker.Generate(), Seen);
+
+        var counts = await Devices(database).ActiveCountsAsync();
+
+        Assert.Equal(1, counts[_clientId]);
+        Assert.Equal(1, counts[other]);
+    }
+
+    [Fact]
     public async Task Same_browser_is_one_device()
     {
         await using var database = await ClientWithLimitAsync(2);

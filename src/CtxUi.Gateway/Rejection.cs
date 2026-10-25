@@ -7,7 +7,7 @@ using CtxUi.Core.Routing;
 
 namespace CtxUi.Gateway;
 
-internal static class Rejection
+public static class Rejection
 {
     private const int InvalidRequest = -32600;
     private const int ServerError = -32000;
@@ -19,7 +19,7 @@ internal static class Rejection
 
     private static readonly JsonWriterOptions Writer = new() { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
 
-    public static Task WriteAsync(HttpContext context, AccessDecision decision)
+    public static Task WriteAsync(HttpContext context, AccessDecision decision, string? resourceMetadataUrl)
     {
         var (status, error, message) = decision.Status switch
         {
@@ -33,14 +33,28 @@ internal static class Rejection
                     GatewayText.ClientExpired,
                     decision.Client!.ExpiresAt!.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture))),
             AccessStatus.InboundNotFound => (StatusCodes.Status404NotFound, "inbound_not_found", GatewayText.InboundNotFound),
+            AccessStatus.DirectKeyOff => (StatusCodes.Status401Unauthorized, "direct_key_off", GatewayText.DirectKeyOff),
+            AccessStatus.TokenInvalid => (StatusCodes.Status401Unauthorized, "token_invalid", GatewayText.TokenInvalid),
+            AccessStatus.DeviceRevoked => (StatusCodes.Status401Unauthorized, "device_revoked", GatewayText.DeviceRevoked),
             _ => throw new InvalidOperationException($"no rejection is defined for {decision.Status}"),
         };
 
         context.Response.StatusCode = status;
         if (status == StatusCodes.Status401Unauthorized)
-            context.Response.Headers.WWWAuthenticate = "Bearer";
+            context.Response.Headers.WWWAuthenticate = Challenge(decision.Status, resourceMetadataUrl);
 
         return context.Response.WriteAsJsonAsync(new Body(error, message), Json);
+    }
+
+    private static string Challenge(AccessStatus status, string? resourceMetadataUrl)
+    {
+        if (resourceMetadataUrl is null)
+            return "Bearer";
+
+        var challenge = $"Bearer resource_metadata=\"{resourceMetadataUrl}\", scope=\"mcp\"";
+        return status is AccessStatus.TokenInvalid or AccessStatus.TokenUnknown or AccessStatus.DeviceRevoked
+            ? challenge + ", error=\"invalid_token\""
+            : challenge;
     }
 
     public static Task WriteRateLimitedAsync(HttpContext context, int retryAfterSeconds) => WriteLimitAsync(

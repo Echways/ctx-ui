@@ -164,9 +164,9 @@ public class ClientQuotaTests
     {
         await using var database = await DatabaseWithEchoAsync();
         var issued = await Clients(database).AddAsync("Иванов", ["echo"], limits: Limits);
-        var loader = new RoutingSnapshotLoader(database.NewContext(), _vault, NullLogger<RoutingSnapshotLoader>.Instance);
+        var loader = new RoutingSnapshotLoader(database.NewContext(), _vault, _clock, NullLogger<RoutingSnapshotLoader>.Instance);
 
-        var decision = (await loader.LoadAsync()).Authorize(issued.Token, "echo", TestData.Now);
+        var decision = (await loader.LoadAsync()).Authorize(Credential.FromKey(issued.Token), "echo", TestData.Now);
 
         Assert.Equal(Limits, decision.Client!.Limits);
         Assert.Equal(TestData.Now, decision.Client.PeriodStartedAt);

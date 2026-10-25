@@ -31,6 +31,48 @@ public class AccessTests
     }
 
     [Fact]
+    public async Task Responses_without_oauth_are_unchanged()
+    {
+        await using var gateway = await GatewayHost.StartAsync();
+
+        using var missing = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/echo"));
+        using var foreign = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/echo", "eyJ.not.a.key"));
+
+        Assert.Equal(HttpStatusCode.Unauthorized, missing.StatusCode);
+        Assert.Equal("Bearer", missing.Headers.WwwAuthenticate.ToString());
+        Assert.Equal(
+            """{"error":"token_missing","message":"нужен токен: заголовок Authorization: Bearer <токен> или адрес /k/<токен>/mcp/<inbound>"}""",
+            await missing.Content.ReadAsStringAsync());
+        Assert.Equal("Bearer", foreign.Headers.WwwAuthenticate.ToString());
+        Assert.Equal("""{"error":"token_unknown","message":"токен не найден"}""", await foreign.Content.ReadAsStringAsync());
+        Assert.Equal(HttpStatusCode.NotFound, (await gateway.Http.GetAsync("/.well-known/oauth-authorization-server")).StatusCode);
+    }
+
+    [Fact]
+    public async Task Client_with_direct_key_off_gets_direct_key_off()
+    {
+        await using var upstream = await FakeUpstream.StartAsync();
+        await using var gateway = await GatewayHost.StartAsync();
+        await gateway.AddInboundAsync("echo", upstream.McpUrl);
+        var issued = await gateway.AddClientAsync("Иванов", ["echo"]);
+        await gateway.ArrangeAsync(async services =>
+        {
+            await services.GetRequiredService<ClientService>().UpdateAsync(
+                issued.Client.Id, new ClientUpdate { Access = new ClientAccessPolicy(null, false) });
+            return true;
+        });
+
+        using var byHeader = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/echo", issued.Token));
+        using var byPath = await gateway.Http.SendAsync(GatewayHost.Post($"/k/{issued.Token}/mcp/echo"));
+
+        await AssertRejectedAsync(byHeader, HttpStatusCode.Unauthorized, "direct_key_off");
+        await AssertRejectedAsync(byPath, HttpStatusCode.Unauthorized, "direct_key_off");
+        Assert.Equal("Bearer", byHeader.Headers.WwwAuthenticate.ToString());
+        Assert.Contains("вход в браузере", await byHeader.Content.ReadAsStringAsync());
+        Assert.Empty(upstream.Requests);
+    }
+
+    [Fact]
     public async Task Unknown_token_gets_401()
     {
         await using var gateway = await GatewayHost.StartAsync();

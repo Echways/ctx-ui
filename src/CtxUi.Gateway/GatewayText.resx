@@ -54,4 +54,13 @@
   <data name="TooManyConcurrent" xml:space="preserve">
     <value>too many concurrent requests, wait for the previous ones to finish</value>
   </data>
+  <data name="DirectKeyOff" xml:space="preserve">
+    <value>this client connects through browser sign-in: add the address to an app that supports OAuth and sign in</value>
+  </data>
+  <data name="TokenInvalid" xml:space="preserve">
+    <value>the token is invalid or has expired, sign in again</value>
+  </data>
+  <data name="DeviceRevoked" xml:space="preserve">
+    <value>this device was disconnected, sign in again</value>
+  </data>
 </root>

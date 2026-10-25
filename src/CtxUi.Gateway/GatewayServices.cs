@@ -4,6 +4,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using CtxUi.Core.Clients;
 using CtxUi.Core.Routing;
+using CtxUi.Core.SignIn;
 
 namespace CtxUi.Gateway;
 
@@ -15,6 +16,9 @@ public static class GatewayServices
         services.AddHttpForwarder();
         services.AddSingleton<SnapshotStore>();
         services.AddSingleton<IRoutingRefresh>(provider => provider.GetRequiredService<SnapshotStore>());
+        services.AddSingleton<ISnapshotSource>(provider => provider.GetRequiredService<SnapshotStore>());
+        services.AddSingleton(provider => new CredentialReader(provider.GetService<IAccessTokenValidator>()));
+        services.AddSingleton<DeviceTouch>();
         services.AddHostedService<SnapshotRefresher>();
         services.AddSingleton<HttpUpstream>();
         services.AddSingleton<ClientTouch>();

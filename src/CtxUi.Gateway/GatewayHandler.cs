@@ -1,14 +1,19 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using CtxUi.Core.Routing;
+using CtxUi.Core.SignIn;
 using CtxUi.Core.Usage;
 
 namespace CtxUi.Gateway;
 
 public sealed partial class GatewayHandler(
     SnapshotStore store,
+    CredentialReader reader,
+    IOptions<GatewayOptions> options,
     HttpUpstream upstream,
     ClientTouch touch,
+    DeviceTouch deviceTouch,
     ClientLimiter limiter,
     QuotaLedger ledger,
     UsageJournal journal,
@@ -19,13 +24,17 @@ public sealed partial class GatewayHandler(
     {
         var slug = (string)context.Request.RouteValues["slug"]!;
         var now = clock.GetUtcNow();
-        var decision = store.Current.Authorize(ClientCredentials.Read(context), slug, now);
+        var snapshot = store.Current;
+        var publicUrl = options.Value.PublicUrl;
+        var active = snapshot.SignIn.IsActive(publicUrl);
+        var credential = await reader.ReadAsync(context, OAuthResource.For(publicUrl, slug), active, context.RequestAborted);
+        var decision = snapshot.Authorize(credential, slug, now);
 
         object outcome = decision.Status;
         if (decision.Status == AccessStatus.Allowed)
-            outcome = await ServeAsync(context, decision.Route!, decision.Client!, now);
+            outcome = await ServeAsync(context, decision, now);
         else
-            await Rejection.WriteAsync(context, decision);
+            await Rejection.WriteAsync(context, decision, active ? OAuthResource.MetadataUrl(publicUrl, slug) : null);
 
         Served(
             logger,
@@ -45,9 +54,12 @@ public sealed partial class GatewayHandler(
         _ => UsageOutcome.Ok,
     };
 
-    private async Task<UsageOutcome> ServeAsync(HttpContext context, InboundRoute route, ClientAccess client, DateTimeOffset now)
+    private async Task<UsageOutcome> ServeAsync(HttpContext context, AccessDecision decision, DateTimeOffset now)
     {
+        var (route, client, deviceId) = (decision.Route!, decision.Client!, decision.DeviceId);
         touch.Touch(client.Id, now);
+        if (deviceId is { } device)
+            deviceTouch.Touch(device, now);
 
         using var rate = limiter.AcquireRate(client);
         if (!rate.IsAcquired)
@@ -103,13 +115,13 @@ public sealed partial class GatewayHandler(
 
         var duration = (int)Math.Min(int.MaxValue, clock.GetElapsedTime(started).TotalMilliseconds);
         foreach (var call in envelope.Calls.Where(call => call.Method is not null))
-            journal.Record(new UsageRecord(client.Id, route.Id, now, call.Method, call.Tool, duration, outcome));
+            journal.Record(new UsageRecord(client.Id, route.Id, now, call.Method, call.Tool, duration, outcome, deviceId));
 
         return outcome;
 
         UsageOutcome Refused(UsageOutcome reason)
         {
-            journal.Record(new UsageRecord(client.Id, route.Id, now, null, null, 0, reason));
+            journal.Record(new UsageRecord(client.Id, route.Id, now, null, null, 0, reason, deviceId));
             return reason;
         }
     }

@@ -32,8 +32,8 @@ public class ClientMetadataUpdateTests
 
         var stored = (await Clients(database).GetAsync("Иванов")).Metadata;
         Assert.Equal("4420", Assert.Single(stored).Value);
-        var snapshot = await new RoutingSnapshotLoader(database.NewContext(), _vault, NullLogger<RoutingSnapshotLoader>.Instance).LoadAsync();
-        Assert.Equal("4420", Assert.Single(snapshot.Authorize(issued.Token, "echo", TestData.Now).Client!.Metadata).Value);
+        var snapshot = await new RoutingSnapshotLoader(database.NewContext(), _vault, _clock, NullLogger<RoutingSnapshotLoader>.Instance).LoadAsync();
+        Assert.Equal("4420", Assert.Single(snapshot.Authorize(Credential.FromKey(issued.Token), "echo", TestData.Now).Client!.Metadata).Value);
     }
 
     [Fact]

@@ -8,6 +8,7 @@ namespace CtxUi.Gateway;
 
 public sealed partial class UsageWriter(
     ClientTouch touch,
+    DeviceTouch deviceTouch,
     UsageJournal journal,
     IServiceScopeFactory scopes,
     IOptions<GatewayOptions> options,
@@ -38,6 +39,7 @@ public sealed partial class UsageWriter(
         try
         {
             await touch.FlushAsync();
+            await deviceTouch.FlushAsync();
         }
         catch (Exception exception)
         {
@@ -77,7 +79,7 @@ public sealed partial class UsageWriter(
             Pruned(logger, removed);
     }
 
-    [LoggerMessage(Level = LogLevel.Error, Message = "failed to save when clients were last seen")]
+    [LoggerMessage(Level = LogLevel.Error, Message = "failed to save when clients and devices were last seen")]
     private static partial void TouchFailed(ILogger logger, Exception exception);
 
     [LoggerMessage(Level = LogLevel.Error, Message = "failed to write the usage journal")]

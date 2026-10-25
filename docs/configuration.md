@@ -21,7 +21,7 @@ install method.
 | `CtxUi__Language` | `CtxUi:Language` | `en` | language of gateway errors, CLI, API and the panel until an administrator picks one: `en` or `ru` |
 | `CtxUi__RefreshInterval` | `CtxUi:RefreshInterval` | `00:00:01` | how often the server checks for CLI changes |
 | `CtxUi__FlushInterval` | `CtxUi:FlushInterval` | `00:00:05` | how often quota counters and the call log are written |
-| `CtxUi__UsageRetentionDays` | `CtxUi:UsageRetentionDays` | `30` | call log retention; daily totals are kept forever |
+| `CtxUi__UsageRetentionDays` | `CtxUi:UsageRetentionDays` | `30` | call log retention; daily totals are kept forever. The Metrics page offers only periods that fit in it: 90 days needs at least `90` |
 | `CtxUi__ConcurrencyWait` | `CtxUi:ConcurrencyWait` | `00:00:01` | how long a request over the concurrency limit waits for a slot before 429 |
 | `CtxUi__TrustedProxies` | `CtxUi:TrustedProxies` | empty | addresses and subnets (comma separated) of reverse proxies whose `X-Forwarded-For` is trusted; loopback is always trusted. Needed for the sign-in IP of devices |
 | `CtxUi__SessionCheckInterval` | `CtxUi:SessionCheckInterval` | `00:01:00` | how often an open panel rechecks the administrator's session |

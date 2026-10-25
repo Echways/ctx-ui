@@ -55,6 +55,20 @@ public class OAuthMetadataTests
     }
 
     [Fact]
+    public async Task Endpoints_follow_the_public_url_whatever_the_host_header_says()
+    {
+        await using var gateway = await OAuthHarness.StartAsync();
+        using var request = new HttpRequestMessage(HttpMethod.Get, "/.well-known/oauth-authorization-server");
+        request.Headers.Host = "other.example.org";
+
+        using var response = await gateway.Http.SendAsync(request);
+        var json = await response.Content.ReadFromJsonAsync<JsonElement>();
+
+        foreach (var name in new[] { "authorization_endpoint", "token_endpoint", "revocation_endpoint", "jwks_uri" })
+            Assert.StartsWith(gateway.Issuer + "/", json.GetProperty(name).GetString());
+    }
+
+    [Fact]
     public async Task Openid_configuration_serves_the_same_issuer()
     {
         await using var gateway = await OAuthHarness.StartAsync();

@@ -23,6 +23,7 @@
 | `CtxUi__FlushInterval` | `CtxUi:FlushInterval` | `00:00:05` | как часто пишутся счётчики квот и журнал вызовов |
 | `CtxUi__UsageRetentionDays` | `CtxUi:UsageRetentionDays` | `30` | срок хранения журнала; итоги по дням хранятся всегда |
 | `CtxUi__ConcurrencyWait` | `CtxUi:ConcurrencyWait` | `00:00:01` | сколько запрос сверх лимита одновременных ждёт слот до ответа 429 |
+| `CtxUi__TrustedProxies` | `CtxUi:TrustedProxies` | пусто | адреса и подсети (через запятую) обратных прокси, чьему `X-Forwarded-For` можно верить; loopback доверен всегда. Нужен для IP входа устройств |
 | `CtxUi__SessionCheckInterval` | `CtxUi:SessionCheckInterval` | `00:01:00` | как часто открытая панель перепроверяет сеанс администратора |
 
 Адрес прослушивания задаётся через `Urls`, не `ASPNETCORE_URLS`: второй
@@ -59,6 +60,9 @@ CtxUi__Language=ru
 | `CTX_UI_DOMAIN` | домен; из него `CtxUi__PublicUrl` и сайт Caddy |
 | `CTX_UI_LANGUAGE` | из него `CtxUi__Language`, по умолчанию `en` |
 
+Compose-файл задаёт `CtxUi__TrustedProxies` частными диапазонами Docker: порт
+сервиса наружу не публикуется, до него доходит только Caddy.
+
 Образ задаёт `Urls=http://0.0.0.0:8080` и `CtxUi__DataDir=/data`.
 
 ## Каталог данных
@@ -67,7 +71,9 @@ CtxUi__Language=ru
 | --- | --- |
 | `ctx-ui.db` | база SQLite |
 | `keys/` | ключи Data Protection |
+| `keys/oauth-*.key` | ключи подписи и шифрования токенов входа через браузер |
 
 Без `keys/`: токены работают, но показать их нельзя, только перевыпустить;
 inbound'ы с секретными заголовками выключены, пока заголовки не введут
-заново; сеансы панели сбрасываются.
+заново; сеансы панели сбрасываются. Без `keys/oauth-*.key` все устройства входят
+заново.

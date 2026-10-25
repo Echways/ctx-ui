@@ -19,6 +19,10 @@ public sealed class ServerMetadataHandler(string issuer) : IOpenIddictServerHand
     public ValueTask HandleAsync(HandleConfigurationRequestContext context)
     {
         context.Metadata[OpenIddictConstants.Metadata.Issuer] = issuer;
+        context.Metadata[OpenIddictConstants.Metadata.AuthorizationEndpoint] = issuer + "/connect/authorize";
+        context.Metadata[OpenIddictConstants.Metadata.TokenEndpoint] = issuer + "/connect/token";
+        context.Metadata[OpenIddictConstants.Metadata.RevocationEndpoint] = issuer + "/connect/revoke";
+        context.Metadata[OpenIddictConstants.Metadata.JwksUri] = issuer + "/.well-known/jwks";
         context.Metadata["registration_endpoint"] = issuer + RegistrationPath;
         context.Metadata["client_id_metadata_document_supported"] = true;
         context.Metadata[OpenIddictConstants.Metadata.AuthorizationResponseIssParameterSupported] = true;

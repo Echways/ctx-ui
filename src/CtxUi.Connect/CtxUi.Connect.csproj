@@ -17,4 +17,9 @@
     <ProjectReference Include="..\CtxUi.Core\CtxUi.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <EmbeddedResource Update="ConnectText.resx" StronglyTypedLanguage="CSharp" StronglyTypedClassName="ConnectText"
+                      StronglyTypedNamespace="CtxUi.Connect" StronglyTypedFileName="$(IntermediateOutputPath)ConnectText.Designer.cs" />
+  </ItemGroup>
+
 </Project>

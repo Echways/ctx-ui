@@ -76,8 +76,8 @@ public sealed class RegisteredApps(
 
         if (uris.Count == 0)
             return Refused("", [], "invalid_redirect_uri", "at least one redirect URI is required");
-        if (Text(request, "token_endpoint_auth_method") is not (null or ClientAuthenticationMethods.None))
-            return Refused("", uris, "invalid_client_metadata", "only public clients (token_endpoint_auth_method none) are accepted");
+        if (Text(request, "token_endpoint_auth_method") is not (null or ClientAuthenticationMethods.None or ClientAuthenticationMethods.ClientSecretPost or ClientAuthenticationMethods.ClientSecretBasic))
+            return Refused("", uris, "invalid_client_metadata", "only public clients are registered, the token endpoint authentication method is always none");
         if (!Subset(request, "grant_types", GrantTypes) || !Subset(request, "response_types", ResponseTypes))
             return Refused("", uris, "invalid_client_metadata", "only the authorization code flow with refresh tokens is supported");
 
@@ -99,6 +99,9 @@ public sealed class RegisteredApps(
         var uris = await apps.GetRedirectUrisAsync(app, ct);
         return AppIdentity.Of(IsDocumentClientId(clientId, out _) ? clientId : null, name, uris);
     }
+
+    public async Task<string?> ApplicationIdAsync(string clientId, CancellationToken ct) =>
+        await apps.FindByClientIdAsync(clientId, ct) is { } app ? await apps.GetIdAsync(app, ct) : null;
 
     public async Task<int> PruneAsync(DateTimeOffset before, CancellationToken ct)
     {

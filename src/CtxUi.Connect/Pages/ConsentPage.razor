@@ -1,0 +1,49 @@
+<ConnectPage Title="@ConnectText.PageConsent">
+    <p class="lead">@string.Format(ConnectText.ConsentLead, AppName, InboundName)</p>
+    <p>@ConnectText.ConsentReturn <span class="mono">@string.Join(", ", RedirectHosts)</span></p>
+    @if (LoopbackOnly)
+    {
+        <p class="warn">@ConnectText.ConsentLoopback</p>
+    }
+    <p class="quiet">@string.Format(ConnectText.SignedInAs, ClientName)</p>
+    <div class="actions">
+        <form method="post" action="@(ConnectServices.Prefix)/consent">
+            <AntiforgeryToken />
+            <input type="hidden" name="returnUrl" value="@ReturnUrl" />
+            <button class="primary" type="submit">@ConnectText.Allow</button>
+        </form>
+        <form method="post" action="@(ConnectServices.Prefix)/authorize">
+            @foreach (var (name, value) in Request)
+            {
+                <input type="hidden" name="@name" value="@value" />
+            }
+            <input type="hidden" name="@DenyParameter" value="1" />
+            <button class="plain" type="submit">@ConnectText.Cancel</button>
+        </form>
+    </div>
+</ConnectPage>
+
+@code {
+    public const string DenyParameter = "ctx_deny";
+
+    [Parameter]
+    public string AppName { get; set; } = "";
+
+    [Parameter]
+    public string InboundName { get; set; } = "";
+
+    [Parameter]
+    public IReadOnlyList<string> RedirectHosts { get; set; } = [];
+
+    [Parameter]
+    public bool LoopbackOnly { get; set; }
+
+    [Parameter]
+    public string ClientName { get; set; } = "";
+
+    [Parameter]
+    public string ReturnUrl { get; set; } = "";
+
+    [Parameter]
+    public IReadOnlyList<KeyValuePair<string, string>> Request { get; set; } = [];
+}

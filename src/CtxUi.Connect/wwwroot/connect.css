@@ -1,0 +1,259 @@
+@font-face {
+    font-family: "Onest";
+    src: url("../CtxUi.Panel/fonts/onest.woff2") format("woff2");
+    font-weight: 100 900;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "Martian Mono";
+    src: url("../CtxUi.Panel/fonts/martian-mono.woff2") format("woff2");
+    font-weight: 100 800;
+    font-stretch: 75% 112.5%;
+    font-style: normal;
+    font-display: swap;
+}
+
+:root {
+    --night: #080C1C;
+    --deep: #0F1530;
+    --rule: #1E2648;
+    --line: #5A628A;
+    --mist: #8A90AB;
+    --light: #EEEBE5;
+    --klein: #002FA7;
+    --glow: #4A6CFF;
+    --vermilion: #FF5A3C;
+    --ochre: #E3A63E;
+    --white: #FFFFFF;
+    --sans: "Onest", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "Martian Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+    --round: 12px;
+    --gutter: 16px;
+    color-scheme: dark;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--night);
+    color: var(--light);
+    font: 400 15px/24px var(--sans);
+    -webkit-font-smoothing: antialiased;
+}
+
+a {
+    color: var(--light);
+    text-decoration-color: var(--line);
+    text-underline-offset: 3px;
+}
+
+a:hover,
+a:focus-visible {
+    text-decoration-color: var(--light);
+}
+
+.sheet {
+    width: 100%;
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 48px var(--gutter) 64px;
+}
+
+.mast {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 20px;
+    margin-bottom: 36px;
+    border-bottom: 1px solid var(--rule);
+}
+
+.mark {
+    font: 500 13px/20px var(--mono);
+    letter-spacing: 0.04em;
+}
+
+.switch {
+    color: var(--mist);
+    font-size: 13px;
+}
+
+h1 {
+    margin: 0 0 12px;
+    font-weight: 500;
+    font-size: 28px;
+    line-height: 36px;
+    letter-spacing: -0.01em;
+}
+
+p {
+    margin: 0 0 16px;
+}
+
+.lead {
+    color: var(--light);
+}
+
+.quiet,
+.hint {
+    color: var(--mist);
+    font-size: 13px;
+    line-height: 20px;
+}
+
+.mono {
+    font: 400 13px/20px var(--mono);
+    word-break: break-all;
+}
+
+.alert,
+.warn {
+    padding: 12px 14px;
+    border-radius: var(--round);
+    border: 1px solid var(--rule);
+    background: var(--deep);
+}
+
+.alert {
+    border-color: var(--vermilion);
+}
+
+.warn {
+    border-color: var(--ochre);
+}
+
+.stack {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 24px;
+}
+
+.label {
+    font-size: 13px;
+    color: var(--mist);
+}
+
+.field {
+    width: 100%;
+    padding: 12px 14px;
+    border-radius: var(--round);
+    border: 1px solid var(--rule);
+    background: var(--deep);
+    color: var(--light);
+    font: 400 14px/20px var(--mono);
+}
+
+.field:focus {
+    outline: none;
+    border-color: var(--glow);
+}
+
+button {
+    font: 500 15px/24px var(--sans);
+    cursor: pointer;
+}
+
+.primary {
+    width: 100%;
+    padding: 12px 18px;
+    border: 0;
+    border-radius: var(--round);
+    background: var(--klein);
+    color: var(--white);
+}
+
+.primary:hover,
+.primary:focus-visible {
+    background: var(--glow);
+    outline: none;
+}
+
+.plain {
+    padding: 10px 16px;
+    border: 1px solid var(--rule);
+    border-radius: var(--round);
+    background: transparent;
+    color: var(--light);
+}
+
+.plain:hover,
+.plain:focus-visible {
+    border-color: var(--line);
+    outline: none;
+}
+
+.actions {
+    display: grid;
+    gap: 10px;
+    margin-top: 24px;
+}
+
+.actions .plain {
+    width: 100%;
+}
+
+.devices {
+    list-style: none;
+    margin: 24px 0;
+    padding: 0;
+    display: grid;
+    gap: 12px;
+}
+
+.device {
+    padding: 16px;
+    border: 1px solid var(--rule);
+    border-radius: var(--round);
+    background: var(--deep);
+}
+
+.device-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 4px;
+}
+
+.device-name {
+    font-weight: 500;
+}
+
+.badge {
+    padding: 2px 8px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    color: var(--mist);
+    font-size: 12px;
+    line-height: 18px;
+}
+
+.device-apps {
+    margin-bottom: 4px;
+}
+
+.device-meta {
+    color: var(--mist);
+    font-size: 13px;
+    line-height: 20px;
+    margin-bottom: 12px;
+}
+
+.device form:last-child,
+.device .device-meta:last-child {
+    margin-bottom: 0;
+}
+
+.foot {
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 1px solid var(--rule);
+    font-size: 13px;
+}

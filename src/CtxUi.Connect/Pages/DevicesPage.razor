@@ -1,0 +1,36 @@
+<ConnectPage Title="@ConnectText.MyDevices">
+    <p class="lead">@string.Format(ConnectText.SignedInAs, ClientName)</p>
+    <p class="quiet">@(SelfRevoke ? ConnectText.DevicesLead : ConnectText.DevicesManagedByAdmin)</p>
+    <ul class="devices">
+        @foreach (var device in Devices)
+        {
+            <DeviceCard Device="device" Current="device.Id == CurrentDeviceId">
+                @if (SelfRevoke)
+                {
+                    <form method="post" action="@(ConnectServices.Prefix)/devices/@device.Id/revoke">
+                        <AntiforgeryToken />
+                        <button class="plain" type="submit">@ConnectText.Disconnect</button>
+                    </form>
+                }
+            </DeviceCard>
+        }
+    </ul>
+    <form method="post" action="@(ConnectServices.Prefix)/signout">
+        <AntiforgeryToken />
+        <button class="plain" type="submit">@ConnectText.SignOut</button>
+    </form>
+</ConnectPage>
+
+@code {
+    [Parameter]
+    public IReadOnlyList<Device> Devices { get; set; } = [];
+
+    [Parameter]
+    public string ClientName { get; set; } = "";
+
+    [Parameter]
+    public Guid? CurrentDeviceId { get; set; }
+
+    [Parameter]
+    public bool SelfRevoke { get; set; }
+}

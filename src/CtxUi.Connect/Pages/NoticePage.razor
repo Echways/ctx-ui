@@ -1,0 +1,15 @@
+<ConnectPage Title="@(Title ?? ConnectText.PageNotice)">
+    <p class="lead" role="alert">@Text</p>
+    <p><a href="@(Http.Request.PathBase + ConnectServices.Prefix + "/signin")">@ConnectText.BackToSignIn</a></p>
+</ConnectPage>
+
+@code {
+    [CascadingParameter]
+    private HttpContext Http { get; set; } = default!;
+
+    [Parameter]
+    public string? Title { get; set; }
+
+    [Parameter, EditorRequired]
+    public string Text { get; set; } = "";
+}

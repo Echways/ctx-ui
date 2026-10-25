@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="LanguageSwitchCulture" xml:space="preserve">
+    <value>ru</value>
+  </data>
+  <data name="LanguageSwitchName" xml:space="preserve">
+    <value>Русский</value>
+  </data>
+  <data name="MyDevices" xml:space="preserve">
+    <value>My devices</value>
+  </data>
+  <data name="PageSignIn" xml:space="preserve">
+    <value>Sign in</value>
+  </data>
+  <data name="SignInLead" xml:space="preserve">
+    <value>Sign in to connect your app to the gateway.</value>
+  </data>
+  <data name="AccessKey" xml:space="preserve">
+    <value>Access key</value>
+  </data>
+  <data name="AccessKeyHint" xml:space="preserve">
+    <value>Starts with tnk_. The administrator gave it to you.</value>
+  </data>
+  <data name="SignInButton" xml:space="preserve">
+    <value>Sign in</value>
+  </data>
+  <data name="KeyUnknown" xml:space="preserve">
+    <value>This key is not known.</value>
+  </data>
+  <data name="ClientDisabled" xml:space="preserve">
+    <value>Access with this key is turned off. Contact the administrator.</value>
+  </data>
+  <data name="ClientExpired" xml:space="preserve">
+    <value>Access with this key has expired. Contact the administrator.</value>
+  </data>
+  <data name="PageConsent" xml:space="preserve">
+    <value>Allow access</value>
+  </data>
+  <data name="ConsentLead" xml:space="preserve">
+    <value>{0} wants to connect to {1} on your behalf.</value>
+  </data>
+  <data name="ConsentReturn" xml:space="preserve">
+    <value>After that you return to</value>
+  </data>
+  <data name="ConsentLoopback" xml:space="preserve">
+    <value>The app receives the answer only on this computer. Allow it only if you have just started it yourself.</value>
+  </data>
+  <data name="SignedInAs" xml:space="preserve">
+    <value>Signed in as {0}.</value>
+  </data>
+  <data name="Allow" xml:space="preserve">
+    <value>Allow</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="PageLimit" xml:space="preserve">
+    <value>Device limit reached</value>
+  </data>
+  <data name="LimitLead" xml:space="preserve">
+    <value>You can use up to {0} devices. Disconnect one of them to sign in here.</value>
+  </data>
+  <data name="LimitAskAdmin" xml:space="preserve">
+    <value>The device limit is reached, contact the administrator.</value>
+  </data>
+  <data name="Replace" xml:space="preserve">
+    <value>Disconnect and sign in here</value>
+  </data>
+  <data name="DeviceSince" xml:space="preserve">
+    <value>signed in {0}</value>
+  </data>
+  <data name="DeviceUsed" xml:space="preserve">
+    <value>last used {0}</value>
+  </data>
+  <data name="DeviceUnused" xml:space="preserve">
+    <value>not used yet</value>
+  </data>
+  <data name="DeviceIp" xml:space="preserve">
+    <value>IP {0}</value>
+  </data>
+  <data name="DeviceNoApps" xml:space="preserve">
+    <value>no apps yet</value>
+  </data>
+  <data name="ThisDevice" xml:space="preserve">
+    <value>This device</value>
+  </data>
+  <data name="SignedInWithKey" xml:space="preserve">
+    <value>by key</value>
+  </data>
+  <data name="SignedInWithProvider" xml:space="preserve">
+    <value>via {0}</value>
+  </data>
+  <data name="Disconnect" xml:space="preserve">
+    <value>Disconnect</value>
+  </data>
+  <data name="SignOut" xml:space="preserve">
+    <value>Sign out</value>
+  </data>
+  <data name="DevicesLead" xml:space="preserve">
+    <value>A disconnected device loses access in every app at once.</value>
+  </data>
+  <data name="DevicesManagedByAdmin" xml:space="preserve">
+    <value>Only the administrator can disconnect devices.</value>
+  </data>
+  <data name="PageDone" xml:space="preserve">
+    <value>Done</value>
+  </data>
+  <data name="DoneNext" xml:space="preserve">
+    <value>Now add the server address to your app (Claude, ChatGPT, Cursor and others) and connect: this browser confirms it in one click.</value>
+  </data>
+  <data name="PageNotice" xml:space="preserve">
+    <value>Could not sign in</value>
+  </data>
+  <data name="NoAccessToInbound" xml:space="preserve">
+    <value>{0} has no access to this server. Ask the administrator.</value>
+  </data>
+  <data name="TooManyAttempts" xml:space="preserve">
+    <value>Too many attempts. Wait a minute and try again.</value>
+  </data>
+  <data name="UnknownDevice" xml:space="preserve">
+    <value>Unknown device</value>
+  </data>
+  <data name="BackToSignIn" xml:space="preserve">
+    <value>Back to sign in</value>
+  </data>
+</root>

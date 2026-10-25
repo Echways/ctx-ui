@@ -1,0 +1,29 @@
+<ConnectPage Title="@ConnectText.PageSignIn" DevicesLink="true">
+    <p class="lead">@ConnectText.SignInLead</p>
+    @if (Error is not null)
+    {
+        <p class="alert" role="alert">@Error</p>
+    }
+    @if (KeySignIn)
+    {
+        <form class="stack" method="post" action="@(ConnectServices.Prefix)/signin">
+            <AntiforgeryToken />
+            <input type="hidden" name="returnUrl" value="@ReturnUrl" />
+            <label class="label" for="key">@ConnectText.AccessKey</label>
+            <input class="field" id="key" name="key" type="password" autocomplete="off" spellcheck="false" required />
+            <p class="hint">@ConnectText.AccessKeyHint</p>
+            <button class="primary" type="submit">@ConnectText.SignInButton</button>
+        </form>
+    }
+</ConnectPage>
+
+@code {
+    [Parameter]
+    public string ReturnUrl { get; set; } = "";
+
+    [Parameter]
+    public bool KeySignIn { get; set; }
+
+    [Parameter]
+    public string? Error { get; set; }
+}

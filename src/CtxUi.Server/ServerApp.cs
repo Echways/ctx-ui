@@ -44,6 +44,7 @@ public static class ServerApp
         app.UseCtxUiPanelLanguage();
         app.UseCtxUiApiDocs();
         app.UseRouting();
+        app.UseRateLimiter();
         app.UseAuthentication();
         app.UseAuthorization();
         app.UseAntiforgery();

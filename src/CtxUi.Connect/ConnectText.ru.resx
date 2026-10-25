@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="LanguageSwitchCulture" xml:space="preserve">
+    <value>en</value>
+  </data>
+  <data name="LanguageSwitchName" xml:space="preserve">
+    <value>English</value>
+  </data>
+  <data name="MyDevices" xml:space="preserve">
+    <value>Мои устройства</value>
+  </data>
+  <data name="PageSignIn" xml:space="preserve">
+    <value>Вход</value>
+  </data>
+  <data name="SignInLead" xml:space="preserve">
+    <value>Войдите, чтобы подключить приложение к шлюзу.</value>
+  </data>
+  <data name="AccessKey" xml:space="preserve">
+    <value>Ключ доступа</value>
+  </data>
+  <data name="AccessKeyHint" xml:space="preserve">
+    <value>Начинается с tnk_. Его выдаёт администратор.</value>
+  </data>
+  <data name="SignInButton" xml:space="preserve">
+    <value>Войти</value>
+  </data>
+  <data name="KeyUnknown" xml:space="preserve">
+    <value>Такой ключ не найден.</value>
+  </data>
+  <data name="ClientDisabled" xml:space="preserve">
+    <value>Доступ по этому ключу выключен. Обратитесь к администратору.</value>
+  </data>
+  <data name="ClientExpired" xml:space="preserve">
+    <value>Срок доступа по этому ключу истёк. Обратитесь к администратору.</value>
+  </data>
+  <data name="PageConsent" xml:space="preserve">
+    <value>Разрешить доступ</value>
+  </data>
+  <data name="ConsentLead" xml:space="preserve">
+    <value>{0} хочет подключиться к {1} от вашего имени.</value>
+  </data>
+  <data name="ConsentReturn" xml:space="preserve">
+    <value>После этого вы вернётесь на</value>
+  </data>
+  <data name="ConsentLoopback" xml:space="preserve">
+    <value>Приложение получает ответ только на этом компьютере. Разрешайте, только если вы сами его сейчас запустили.</value>
+  </data>
+  <data name="SignedInAs" xml:space="preserve">
+    <value>Вы вошли как {0}.</value>
+  </data>
+  <data name="Allow" xml:space="preserve">
+    <value>Разрешить</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>Отмена</value>
+  </data>
+  <data name="PageLimit" xml:space="preserve">
+    <value>Достигнут лимит устройств</value>
+  </data>
+  <data name="LimitLead" xml:space="preserve">
+    <value>Можно использовать не больше {0} устройств. Отключите одно из них, чтобы войти здесь.</value>
+  </data>
+  <data name="LimitAskAdmin" xml:space="preserve">
+    <value>Достигнут лимит устройств, обратитесь к администратору.</value>
+  </data>
+  <data name="Replace" xml:space="preserve">
+    <value>Отключить и войти здесь</value>
+  </data>
+  <data name="DeviceSince" xml:space="preserve">
+    <value>вход {0}</value>
+  </data>
+  <data name="DeviceUsed" xml:space="preserve">
+    <value>последний раз {0}</value>
+  </data>
+  <data name="DeviceUnused" xml:space="preserve">
+    <value>ещё не использовалось</value>
+  </data>
+  <data name="DeviceIp" xml:space="preserve">
+    <value>IP {0}</value>
+  </data>
+  <data name="DeviceNoApps" xml:space="preserve">
+    <value>приложений пока нет</value>
+  </data>
+  <data name="ThisDevice" xml:space="preserve">
+    <value>Это устройство</value>
+  </data>
+  <data name="SignedInWithKey" xml:space="preserve">
+    <value>по ключу</value>
+  </data>
+  <data name="SignedInWithProvider" xml:space="preserve">
+    <value>через {0}</value>
+  </data>
+  <data name="Disconnect" xml:space="preserve">
+    <value>Отключить</value>
+  </data>
+  <data name="SignOut" xml:space="preserve">
+    <value>Выйти</value>
+  </data>
+  <data name="DevicesLead" xml:space="preserve">
+    <value>Отключённое устройство сразу теряет доступ во всех приложениях.</value>
+  </data>
+  <data name="DevicesManagedByAdmin" xml:space="preserve">
+    <value>Отключать устройства может только администратор.</value>
+  </data>
+  <data name="PageDone" xml:space="preserve">
+    <value>Готово</value>
+  </data>
+  <data name="DoneNext" xml:space="preserve">
+    <value>Теперь добавьте адрес сервера в приложение (Claude, ChatGPT, Cursor и другие) и подключитесь: этот браузер подтвердит вход в один клик.</value>
+  </data>
+  <data name="PageNotice" xml:space="preserve">
+    <value>Войти не получилось</value>
+  </data>
+  <data name="NoAccessToInbound" xml:space="preserve">
+    <value>У клиента {0} нет доступа к этому серверу. Обратитесь к администратору.</value>
+  </data>
+  <data name="TooManyAttempts" xml:space="preserve">
+    <value>Слишком много попыток. Подождите минуту и попробуйте снова.</value>
+  </data>
+  <data name="UnknownDevice" xml:space="preserve">
+    <value>Неизвестное устройство</value>
+  </data>
+  <data name="BackToSignIn" xml:space="preserve">
+    <value>Вернуться ко входу</value>
+  </data>
+</root>

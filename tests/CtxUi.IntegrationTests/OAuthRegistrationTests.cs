@@ -166,7 +166,7 @@ public class OAuthRegistrationTests
     }
 
     [Theory]
-    [InlineData("""{"client_name":"Bad","redirect_uris":["http://localhost/cb"],"token_endpoint_auth_method":"client_secret_basic"}""", "invalid_client_metadata")]
+    [InlineData("""{"client_name":"Bad","redirect_uris":["http://localhost/cb"],"token_endpoint_auth_method":"private_key_jwt"}""", "invalid_client_metadata")]
     [InlineData("""{"client_name":"Bad","redirect_uris":["http://localhost/cb"],"grant_types":["client_credentials"]}""", "invalid_client_metadata")]
     [InlineData("""{"client_name":"Bad","redirect_uris":["http://localhost/cb"],"response_types":["token"]}""", "invalid_client_metadata")]
     [InlineData("""{"client_name":"Bad","redirect_uris":[]}""", "invalid_redirect_uri")]

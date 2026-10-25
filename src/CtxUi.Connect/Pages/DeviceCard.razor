@@ -1,0 +1,35 @@
+<li class="device">
+    <div class="device-head">
+        <span class="device-name">@Device.Name</span>
+        @if (Current)
+        {
+            <span class="badge">@ConnectText.ThisDevice</span>
+        }
+    </div>
+    <p class="device-apps">@(Device.Apps.Count == 0 ? ConnectText.DeviceNoApps : string.Join(", ", Device.Apps.Select(app => app.AppName)))</p>
+    <p class="device-meta">
+        @string.Format(ConnectText.DeviceSince, At(Device.CreatedAt)) · @SignedInWith(Device.SignedInWith) ·
+        @(Device.LastUsedAt is { } used ? string.Format(ConnectText.DeviceUsed, At(used)) : ConnectText.DeviceUnused) ·
+        <span class="mono">@string.Format(ConnectText.DeviceIp, Device.SignInIp)</span>
+    </p>
+    @ChildContent
+</li>
+
+@code {
+    [Parameter, EditorRequired]
+    public Device Device { get; set; } = default!;
+
+    [Parameter]
+    public bool Current { get; set; }
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    private static string At(DateTimeOffset moment) =>
+        moment.UtcDateTime.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture) + " UTC";
+
+    private static string SignedInWith(string method) =>
+        method == Device.ByKey
+            ? ConnectText.SignedInWithKey
+            : string.Format(ConnectText.SignedInWithProvider, ProviderCatalog.Find(method)?.Title ?? method);
+}

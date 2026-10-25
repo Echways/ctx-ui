@@ -22,7 +22,10 @@ public sealed class ServerMetadataHandler(string issuer) : IOpenIddictServerHand
         context.Metadata["registration_endpoint"] = issuer + RegistrationPath;
         context.Metadata["client_id_metadata_document_supported"] = true;
         context.Metadata[OpenIddictConstants.Metadata.AuthorizationResponseIssParameterSupported] = true;
+        context.TokenEndpointAuthenticationMethods.Clear();
         context.TokenEndpointAuthenticationMethods.Add(ClientAuthenticationMethods.None);
+        context.RevocationEndpointAuthenticationMethods.Clear();
+        context.RevocationEndpointAuthenticationMethods.Add(ClientAuthenticationMethods.None);
         return ValueTask.CompletedTask;
     }
 }

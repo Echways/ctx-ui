@@ -31,10 +31,11 @@ public sealed class ResourceHandlers(ISnapshotSource snapshot, IOptions<ConnectO
     public string? SlugOf(OpenIddictRequest request)
     {
         var resources = request.GetResources();
-        return resources.Length == 1
-               && OAuthResource.TrySlug(options.Value.PublicUrl, resources[0], out var slug)
-               && snapshot.Current.Route(slug) is not null
-            ? slug
-            : null;
+        return resources.Length == 1 && OAuthResource.TrySlug(options.Value.PublicUrl, resources[0], out var slug) ? slug : null;
     }
+
+    public string? ServedSlugOf(OpenIddictRequest request) =>
+        SlugOf(request) is { } slug && snapshot.Current.Route(slug) is not null ? slug : null;
+
+    public string Resource(string slug) => OAuthResource.For(options.Value.PublicUrl, slug);
 }

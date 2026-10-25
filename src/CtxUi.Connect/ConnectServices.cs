@@ -1,10 +1,15 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.DataProtection;
+using System.Text.Encodings.Web;
+using System.Text.Unicode;
+using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.WebEncoders;
 using Microsoft.IdentityModel.Tokens;
 using OpenIddict.Server;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -13,6 +18,8 @@ using CtxUi.Connect.Endpoints;
 using CtxUi.Connect.Metadata;
 using CtxUi.Connect.Registration;
 using CtxUi.Connect.Resources;
+using CtxUi.Connect.SignIn;
+using CtxUi.Connect.Tokens;
 using CtxUi.Core.Data;
 using CtxUi.Core.Routing;
 using CtxUi.Core.SignIn;
@@ -25,6 +32,8 @@ public static partial class ConnectServices
     public const string Prefix = "/connect";
     public const string WellKnown = "/.well-known";
     public const string McpScope = "mcp";
+    private const string FramingPolicy = "default-src 'self'; frame-ancestors 'none'";
+    public const int SignInAttempts = 10;
 
     public static readonly PathString[] OpenPaths = [Prefix, WellKnown, "/_content/CtxUi.Connect", "/_content/CtxUi.Panel/fonts"];
 
@@ -37,6 +46,19 @@ public static partial class ConnectServices
         services.TryAddSingleton<IMetadataAddressPolicy, PublicAddressPolicy>();
         services.AddSingleton<ClientMetadataFetcher>();
         services.AddScoped<RegisteredApps>();
+        services.Configure<WebEncoderOptions>(options => options.TextEncoderSettings = new TextEncoderSettings(UnicodeRanges.All));
+        services.AddScoped<TokenReuseHandler>();
+        services.AddSingleton<DeviceJanitor>();
+        services.AddHostedService(provider => provider.GetRequiredService<DeviceJanitor>());
+        services.AddAuthentication().AddConnectSession();
+        services.AddRateLimiter(limiter =>
+        {
+            limiter.OnRejected = (context, _) => new ValueTask(
+                ConnectResults.Notice(ConnectText.TooManyAttempts, StatusCodes.Status429TooManyRequests).ExecuteAsync(context.HttpContext));
+            limiter.AddPolicy(PageEndpoints.SignInPolicy, http => RateLimitPartition.GetFixedWindowLimiter(
+                http.Connection.RemoteIpAddress?.ToString() ?? "",
+                _ => new FixedWindowRateLimiterOptions { PermitLimit = SignInAttempts, Window = TimeSpan.FromMinutes(1) }));
+        });
         services.AddSingleton<ResourceHandlers>();
         services.AddHttpClient(ClientMetadataFetcher.HttpClientName, client => client.Timeout = ClientMetadataFetcher.Timeout)
             .ConfigurePrimaryHttpMessageHandler(provider => ClientMetadataFetcher.Handler(provider.GetRequiredService<IMetadataAddressPolicy>()));
@@ -65,9 +87,10 @@ public static partial class ConnectServices
                     .SetAuthorizationCodeLifetime(TimeSpan.FromMinutes(1))
                     .SetAccessTokenLifetime(TimeSpan.FromHours(1))
                     .AddEventHandler(ServerMetadataHandler.Descriptor(issuer))
+                    .AddEventHandler(IssuerResponseHandler.Descriptor(issuer))
                     .Configure(options => options.CodeChallengeMethods.Remove(CodeChallengeMethods.Plain));
 
-                foreach (var descriptor in ClientMetadataHandler.Descriptors.Append(ResourceHandlers.Descriptor))
+                foreach (var descriptor in ClientMetadataHandler.Descriptors.Append(ResourceHandlers.Descriptor).Append(TokenReuseHandler.Descriptor))
                     server.AddEventHandler(descriptor);
 
                 var aspNetCore = server.UseAspNetCore()
@@ -93,6 +116,17 @@ public static partial class ConnectServices
         return app.Use((context, next) =>
         {
             var path = context.Request.Path;
+            if (path.StartsWithSegments(Prefix))
+            {
+                context.Response.OnStarting(() =>
+                {
+                    context.Response.Headers.ContentSecurityPolicy = FramingPolicy;
+                    context.Response.Headers.XFrameOptions = "DENY";
+                    context.Response.Headers.CacheControl = "no-store";
+                    return Task.CompletedTask;
+                });
+            }
+
             if (gate.IsActive || !(path.StartsWithSegments(Prefix) || path.StartsWithSegments(WellKnown)))
                 return next(context);
 
@@ -106,6 +140,8 @@ public static partial class ConnectServices
         app.MapResourceMetadata();
         app.MapRegistration();
         app.MapAuthorize();
+        app.MapToken();
+        app.MapPages();
         return app;
     }
 

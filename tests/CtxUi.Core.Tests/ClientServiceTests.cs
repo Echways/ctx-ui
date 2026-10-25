@@ -120,7 +120,7 @@ public class ClientServiceTests
         await using var database = await DatabaseWithInboundsAsync("echo");
         var issued = await Clients(database).AddAsync("Иванов", ["echo"]);
 
-        var replacement = await Clients(database).ReissueAsync(issued.Client.Id);
+        var replacement = (await Clients(database).ReissueAsync(issued.Client.Id)).Token;
 
         Assert.NotEqual(issued.Token, replacement);
         var client = Assert.Single(await Clients(database).ListAsync());

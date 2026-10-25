@@ -82,4 +82,44 @@ public class ConnectionTextTests
 
         Assert.Contains("\nВызовов инструментов: 100 на всё время.\n", ConnectionText.Message("https://mcp.example.org", client, Token));
     }
+
+    [Fact]
+    public void Message_without_oauth_is_unchanged()
+    {
+        var client = Client("learn", "docs");
+
+        Assert.Equal(
+            ConnectionText.Message("https://mcp.example.org/", client, Token),
+            ConnectionText.Message("https://mcp.example.org/", client, Token, new ConnectionMode(false, true, true), "https://mcp.example.org/connect/invite/x"));
+    }
+
+    [Fact]
+    public void Message_with_oauth_and_no_direct_key_has_no_header_or_path_lines()
+    {
+        var message = ConnectionText.Message("https://mcp.example.org/", Client("learn"), Token, new ConnectionMode(true, true, false));
+
+        Assert.Contains("адрес: https://mcp.example.org/mcp/learn", message);
+        Assert.DoesNotContain("заголовок:", message);
+        Assert.DoesNotContain("/k/", message);
+        Assert.Contains($"ключом: {Token}", message);
+    }
+
+    [Fact]
+    public void Message_with_oauth_and_key_sign_in_off_hides_the_key()
+    {
+        var message = ConnectionText.Message("https://mcp.example.org/", Client("learn"), Token, new ConnectionMode(true, false, false));
+
+        Assert.DoesNotContain(Token, message);
+        Assert.Contains("войдите в браузере", message);
+    }
+
+    [Fact]
+    public void Message_includes_the_invite_link()
+    {
+        var message = ConnectionText.Message(
+            "https://mcp.example.org/", Client("learn"), Token, new ConnectionMode(true, true, true), "https://mcp.example.org/connect/invite/abc");
+
+        Assert.Contains("https://mcp.example.org/connect/invite/abc", message);
+        Assert.Contains("заголовок: Authorization: Bearer", message);
+    }
 }

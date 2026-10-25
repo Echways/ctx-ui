@@ -227,8 +227,8 @@ public class InboundEditTests
             UpstreamHeaders = [KeyValuePair.Create("X-Api-Key", "s3cret")],
         });
 
-        var snapshot = await new RoutingSnapshotLoader(database.NewContext(), _vault, NullLogger<RoutingSnapshotLoader>.Instance).LoadAsync();
-        var route = snapshot.Authorize(issued.Token, "echo", TestData.Now).Route!;
+        var snapshot = await new RoutingSnapshotLoader(database.NewContext(), _vault, _clock, NullLogger<RoutingSnapshotLoader>.Instance).LoadAsync();
+        var route = snapshot.Authorize(Credential.FromKey(issued.Token), "echo", TestData.Now).Route!;
         Assert.Equal(new Uri("https://other.example.org/mcp"), route.Url);
         Assert.Equal(TimeSpan.FromSeconds(30), route.RequestTimeout);
         Assert.Equal(2_048, route.MaxBodyBytes);

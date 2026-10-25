@@ -54,4 +54,13 @@
   <data name="TooManyConcurrent" xml:space="preserve">
     <value>слишком много одновременных запросов, дождитесь ответа на предыдущие</value>
   </data>
+  <data name="DirectKeyOff" xml:space="preserve">
+    <value>этот клиент подключается через вход в браузере: добавьте адрес в приложение с поддержкой OAuth и войдите</value>
+  </data>
+  <data name="TokenInvalid" xml:space="preserve">
+    <value>токен недействителен или истёк, войдите снова</value>
+  </data>
+  <data name="DeviceRevoked" xml:space="preserve">
+    <value>устройство отключено, войдите снова</value>
+  </data>
 </root>

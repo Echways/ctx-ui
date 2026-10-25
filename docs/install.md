@@ -84,6 +84,7 @@ server {
         proxy_pass http://127.0.0.1:8080;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection $connection_upgrade;
@@ -138,6 +139,20 @@ that version is already running, nothing changes. Rerunning the install
 command does the same.
 
 ### Removal
+
+```bash
+sudo ctx-ui uninstall              # everything: program, settings, data, user
+sudo ctx-ui uninstall --keep-data  # program only
+```
+
+`uninstall` stops the service and removes `/opt/ctx-ui`, the unit and the
+`ctx-ui` command, then `/etc/ctx-ui`, `/var/lib/ctx-ui` and the `ctx-ui` user.
+All inbounds, clients, administrators and encryption keys are lost; make a
+[backup](#backup) first if they may be needed. It asks to type `yes`; `--yes`
+skips the question, without a terminal it is required. With `--keep-data`
+settings, data and the user stay, and a later install picks them up.
+
+The installer does the same when the `ctx-ui` command is already gone:
 
 ```bash
 curl -fsSL https://github.com/Echways/ctx-ui/releases/latest/download/install.sh \

@@ -48,6 +48,13 @@
                                  HideSpinButtons="true" HelperText="@PanelText.ResetDaysHelp" />
             </div>
         </section>
+        <section class="group">
+            <h3>@PanelText.GroupDevices</h3>
+            <MudNumericField T="int?" @bind-Value="_maxDevices" Label="@PanelText.DeviceLimit" Immediate="true" HideSpinButtons="true"
+                             HelperText="@PanelText.NoLimitHelp" />
+            <MudCheckBox T="bool" @bind-Value="_directKey" Label="@PanelText.DirectKeyWorks" Dense="true" Class="check" />
+            <p class="hint">@PanelText.DirectKeyHelp</p>
+        </section>
     </ChildContent>
     <Actions>
         <button type="button" class="link" @onclick="() => MudDialog.Cancel()">@PanelText.Cancel</button>
@@ -70,6 +77,8 @@
     private int? _quota;
     private int? _resetDays;
     private string? _metadata;
+    private int? _maxDevices;
+    private bool _directKey = true;
 
     [CascadingParameter]
     private IMudDialogInstance MudDialog { get; set; } = default!;
@@ -81,7 +90,12 @@
     {
         _inbounds = await Backend.ReadAsync(services => services.GetRequiredService<InboundService>().ListAsync());
         if (Id is not { } id)
+        {
+            var defaults = await Backend.ReadAsync(services => services.GetRequiredService<SignInSettingsService>().GetAsync());
+            _maxDevices = defaults.DefaultMaxDevices;
+            _directKey = defaults.DefaultDirectKey;
             return;
+        }
 
         var client = await Backend.ReadAsync(services => services.GetRequiredService<ClientService>().GetAsync(id));
         _name = client.Name;
@@ -91,6 +105,8 @@
         _concurrency = client.MaxConcurrency;
         _quota = client.QuotaCalls;
         _resetDays = client.ResetEveryDays;
+        _maxDevices = client.MaxDevices;
+        _directKey = client.DirectKey;
         _metadata = string.Join('\n', client.Metadata.OrderBy(pair => pair.Key, StringComparer.Ordinal).Select(pair => $"{pair.Key}={pair.Value}"));
     }
 
@@ -112,7 +128,7 @@
             if (Id is not { } id)
             {
                 var issued = await Backend.ChangeAsync(services =>
-                    services.GetRequiredService<ClientService>().AddAsync(_name, _chosen, expires, metadata, limits));
+                    services.GetRequiredService<ClientService>().AddAsync(_name, _chosen, expires, metadata, limits, new ClientAccessPolicy(_maxDevices, _directKey)));
                 MudDialog.Close(DialogResult.Ok(issued.Client));
                 return;
             }
@@ -123,6 +139,7 @@
                 ExpiresAt = expires,
                 InboundSlugs = _chosen,
                 Limits = limits,
+                Access = new ClientAccessPolicy(_maxDevices, _directKey),
                 Metadata = metadata,
             }));
             MudDialog.Close(DialogResult.Ok(id));

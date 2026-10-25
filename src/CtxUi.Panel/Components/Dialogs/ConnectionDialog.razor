@@ -2,6 +2,7 @@
 @inject PanelBackend Backend
 @inject IOptions<PanelOptions> Options
 @inject ISnackbar Snackbar
+@inject TimeProvider Clock
 
 <Sheet>
     <ChildContent>
@@ -18,21 +19,50 @@
         }
         else
         {
-            <KeyField Label="@PanelText.Token" Value="@_token" CopyLabel="@PanelText.CopyToken" Born="Fresh" />
+            @if (_mode.ShowsToken)
+            {
+                <KeyField Label="@PanelText.Token" Value="@_token" CopyLabel="@PanelText.CopyToken" Born="Fresh" />
+            }
             <div class="slugs">
                 @foreach (var slug in ConnectionText.Slugs(_client))
                 {
                     var heading = $"slug-{slug}-{_id}";
                     <section class="slug" aria-labelledby="@heading">
                         <h3 id="@heading">@slug</h3>
-                        <CopyLine Label="@PanelText.WithHeader" Value="@ConnectionText.Address(PublicUrl, slug)"
-                                  CopyLabel="@string.Format(PanelText.CopyAddressOf, slug)" />
-                        <CopyLine Label="@PanelText.WithTokenInPath" Value="@ConnectionText.AddressWithToken(PublicUrl, _token, slug)"
-                                  CopyLabel="@string.Format(PanelText.CopyAddressWithTokenOf, slug)" />
+                        @if (_mode.OAuth)
+                        {
+                            <CopyLine Label="@PanelText.ForOAuthApps" Value="@ConnectionText.Address(PublicUrl, slug)"
+                                      CopyLabel="@string.Format(PanelText.CopyAddressOf, slug)" />
+                        }
+                        @if (!_mode.OAuth || _mode.DirectKey)
+                        {
+                            <CopyLine Label="@PanelText.WithHeader" Value="@ConnectionText.Address(PublicUrl, slug)"
+                                      CopyLabel="@string.Format(PanelText.CopyAddressOf, slug)" />
+                            <CopyLine Label="@PanelText.WithTokenInPath" Value="@ConnectionText.AddressWithToken(PublicUrl, _token, slug)"
+                                      CopyLabel="@string.Format(PanelText.CopyAddressWithTokenOf, slug)" />
+                        }
                     </section>
                 }
-                <p class="hint">@PanelText.AddressWithTokenHelp</p>
+                @if (!_mode.OAuth || _mode.DirectKey)
+                {
+                    <p class="hint">@PanelText.AddressWithTokenHelp</p>
+                }
             </div>
+            @if (_mode.OAuth && _providersOn)
+            {
+                <section class="invite">
+                    @if (_inviteUrl is null)
+                    {
+                        <button type="button" class="link" @onclick="InviteAsync">@PanelText.InviteLink</button>
+                        <p class="hint">@PanelText.InviteLinkHelp</p>
+                    }
+                    else
+                    {
+                        <CopyLine Label="@PanelText.InviteLink" Value="@_inviteUrl" CopyLabel="@PanelText.InviteCopy" />
+                        <p class="hint">@string.Format(PanelText.InviteValidUntil, Words.Day(_inviteUntil))</p>
+                    }
+                </section>
+            }
             <section class="message">
                 <span class="lbl" id="@($"message-{_id}")">@PanelText.MessageForClient</span>
                 <pre class="msg" aria-labelledby="@($"message-{_id}")">@_message</pre>
@@ -54,6 +84,10 @@
     private Client? _client;
     private string? _token;
     private string _message = "";
+    private ConnectionMode _mode = ConnectionMode.Off;
+    private bool _providersOn;
+    private string? _inviteUrl;
+    private DateTimeOffset _inviteUntil;
 
     [CascadingParameter]
     private IMudDialogInstance MudDialog { get; set; } = default!;
@@ -70,11 +104,15 @@
     {
         try
         {
-            (_client, _token) = await Backend.ReadAsync(async services =>
+            (_client, _token, _mode, _providersOn) = await Backend.ReadAsync(async services =>
             {
                 var clients = services.GetRequiredService<ClientService>();
                 var client = await clients.GetAsync(Id);
-                return (client, clients.Reveal(client));
+                var signIn = services.GetRequiredService<SignInSettingsService>();
+                var settings = await signIn.GetAsync();
+                var active = settings.Enabled && OAuthAvailability.IsAllowed(PublicUrl);
+                var providers = await signIn.ProvidersAsync();
+                return (client, clients.Reveal(client), new ConnectionMode(active, settings.KeySignIn, client.DirectKey), providers.Any(provider => provider.Enabled));
             });
         }
         catch (DomainException exception)
@@ -84,7 +122,20 @@
             return;
         }
 
+        Describe();
+    }
+
+    private void Describe()
+    {
         if (_token is not null)
-            _message = ConnectionText.Message(PublicUrl, _client, _token);
+            _message = ConnectionText.Message(PublicUrl, _client!, _token, _mode, _inviteUrl);
+    }
+
+    private async Task InviteAsync()
+    {
+        var code = await Backend.ChangeAsync(services => services.GetRequiredService<ClientLinkService>().InviteAsync(Id));
+        _inviteUrl = $"{OAuthResource.Issuer(PublicUrl)}/connect/invite/{code}";
+        _inviteUntil = Clock.GetUtcNow() + InviteCode.Lifetime;
+        Describe();
     }
 }

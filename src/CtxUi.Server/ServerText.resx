@@ -343,9 +343,294 @@
     <value>how many recent lines, 50 by default</value>
   </data>
   <data name="UsageLine" xml:space="preserve">
-    <value>{0}  {1,-24} {2,-16} {3,-17} {4,6} ms  {5}</value>
+    <value>{0}  {1,-24} {6,-24} {2,-16} {3,-17} {4,6} ms  {5}</value>
   </data>
   <data name="UsageLogCommand" xml:space="preserve">
     <value>recent calls, newest first</value>
+  </data>
+  <data name="OAuthCommand" xml:space="preserve">
+    <value>browser sign-in (OAuth) settings</value>
+  </data>
+  <data name="OAuthStatusCommand" xml:space="preserve">
+    <value>show the OAuth settings and providers</value>
+  </data>
+  <data name="OAuthOnCommand" xml:space="preserve">
+    <value>turn OAuth on</value>
+  </data>
+  <data name="OAuthOffCommand" xml:space="preserve">
+    <value>turn OAuth off</value>
+  </data>
+  <data name="OAuthKeyCommand" xml:space="preserve">
+    <value>sign in with a key</value>
+  </data>
+  <data name="OAuthKeyOnCommand" xml:space="preserve">
+    <value>allow signing in with a key</value>
+  </data>
+  <data name="OAuthKeyOffCommand" xml:space="preserve">
+    <value>forbid signing in with a key</value>
+  </data>
+  <data name="OAuthProviderCommand" xml:space="preserve">
+    <value>sign-in providers</value>
+  </data>
+  <data name="ProviderSetCommand" xml:space="preserve">
+    <value>add a provider or change its settings</value>
+  </data>
+  <data name="ProviderOnCommand" xml:space="preserve">
+    <value>enable a provider</value>
+  </data>
+  <data name="ProviderOffCommand" xml:space="preserve">
+    <value>disable a provider</value>
+  </data>
+  <data name="ProviderRemoveCommand" xml:space="preserve">
+    <value>remove a provider and the accounts linked through it</value>
+  </data>
+  <data name="ProviderListCommand" xml:space="preserve">
+    <value>list configured providers</value>
+  </data>
+  <data name="ProviderNameArgument" xml:space="preserve">
+    <value>provider: google, microsoft, github, gitlab, yandex, vkid, discord, telegram or oidc</value>
+  </data>
+  <data name="ProviderClientIdOption" xml:space="preserve">
+    <value>client ID issued by the provider</value>
+  </data>
+  <data name="ProviderSecretOption" xml:space="preserve">
+    <value>client secret (or the variable CTX_UI_PROVIDER_SECRET)</value>
+  </data>
+  <data name="ProviderSecretStdinOption" xml:space="preserve">
+    <value>read the client secret from the standard input</value>
+  </data>
+  <data name="ProviderIssuerOption" xml:space="preserve">
+    <value>issuer address for oidc (https://…)</value>
+  </data>
+  <data name="ProviderTitleOption" xml:space="preserve">
+    <value>button title for oidc</value>
+  </data>
+  <data name="ClientDevicesOption" xml:space="preserve">
+    <value>device limit: a number (and none in set)</value>
+  </data>
+  <data name="ClientDirectKeyOption" xml:space="preserve">
+    <value>a permanent key works: on or off</value>
+  </data>
+  <data name="ClientDevicesCommand" xml:space="preserve">
+    <value>list the devices of a client</value>
+  </data>
+  <data name="ClientDeviceOffCommand" xml:space="preserve">
+    <value>disconnect a device by id or prefix, or all of them</value>
+  </data>
+  <data name="ClientInviteCommand" xml:space="preserve">
+    <value>issue a link that binds an outside account to the client</value>
+  </data>
+  <data name="ClientLinksCommand" xml:space="preserve">
+    <value>list accounts linked to a client</value>
+  </data>
+  <data name="ClientUnlinkCommand" xml:space="preserve">
+    <value>unlink the accounts of a provider from a client</value>
+  </data>
+  <data name="DeviceIdArgument" xml:space="preserve">
+    <value>device id or its first characters</value>
+  </data>
+  <data name="DeviceAllOption" xml:space="preserve">
+    <value>disconnect all devices</value>
+  </data>
+  <data name="UnlinkProviderArgument" xml:space="preserve">
+    <value>provider whose accounts to unlink</value>
+  </data>
+  <data name="OAuthState" xml:space="preserve">
+    <value>OAuth: {0}</value>
+  </data>
+  <data name="StateOn" xml:space="preserve">
+    <value>on</value>
+  </data>
+  <data name="StateOff" xml:space="preserve">
+    <value>off</value>
+  </data>
+  <data name="OAuthKeySignIn" xml:space="preserve">
+    <value>Sign in with a key: {0}</value>
+  </data>
+  <data name="OAuthIdleDays" xml:space="preserve">
+    <value>Days without use before a device is disconnected: {0}</value>
+  </data>
+  <data name="OAuthDefaultDevices" xml:space="preserve">
+    <value>Device limit for new clients: {0}</value>
+  </data>
+  <data name="OAuthDefaultDirectKey" xml:space="preserve">
+    <value>Permanent key for new clients: {0}</value>
+  </data>
+  <data name="OAuthSelfRevoke" xml:space="preserve">
+    <value>A client can disconnect its devices: {0}</value>
+  </data>
+  <data name="OAuthProviders" xml:space="preserve">
+    <value>Providers:</value>
+  </data>
+  <data name="OAuthProviderLine" xml:space="preserve">
+    <value>  {0,-10} {1,-9} {2}</value>
+  </data>
+  <data name="OAuthNoProviders" xml:space="preserve">
+    <value>No providers.</value>
+  </data>
+  <data name="OAuthEnabledDone" xml:space="preserve">
+    <value>OAuth is on</value>
+  </data>
+  <data name="OAuthDisabledDone" xml:space="preserve">
+    <value>OAuth is off</value>
+  </data>
+  <data name="OAuthOffWarning" xml:space="preserve">
+    <value>Warning: clients without a permanent key: {0}. They lose access while OAuth is off.</value>
+  </data>
+  <data name="KeySignInOnDone" xml:space="preserve">
+    <value>Sign in with a key is on</value>
+  </data>
+  <data name="KeySignInOffDone" xml:space="preserve">
+    <value>Sign in with a key is off</value>
+  </data>
+  <data name="ProviderSaved" xml:space="preserve">
+    <value>Provider {0} saved. Return address: {1}</value>
+  </data>
+  <data name="ProviderEnabledDone" xml:space="preserve">
+    <value>Provider {0} is on</value>
+  </data>
+  <data name="ProviderDisabledDone" xml:space="preserve">
+    <value>Provider {0} is off</value>
+  </data>
+  <data name="ProviderRemovedDone" xml:space="preserve">
+    <value>Provider {0} removed</value>
+  </data>
+  <data name="ProviderListLine" xml:space="preserve">
+    <value>{0,-10} {1,-9} {2}  {3}</value>
+  </data>
+  <data name="NoProviderList" xml:space="preserve">
+    <value>No providers are set up.</value>
+  </data>
+  <data name="SecretEmpty" xml:space="preserve">
+    <value>the secret from the standard input is empty</value>
+  </data>
+  <data name="OnOffExpected" xml:space="preserve">
+    <value>{0}: expected on or off, got {1}</value>
+  </data>
+  <data name="DeviceLimitLine" xml:space="preserve">
+    <value>Device limit: {0}</value>
+  </data>
+  <data name="DeviceLimitNone" xml:space="preserve">
+    <value>no limit</value>
+  </data>
+  <data name="DirectKeyLine" xml:space="preserve">
+    <value>Permanent key: {0}</value>
+  </data>
+  <data name="DevicesActiveLine" xml:space="preserve">
+    <value>Devices: {0} active</value>
+  </data>
+  <data name="LinksLine" xml:space="preserve">
+    <value>Links: {0}</value>
+  </data>
+  <data name="Yes" xml:space="preserve">
+    <value>yes</value>
+  </data>
+  <data name="No" xml:space="preserve">
+    <value>no</value>
+  </data>
+  <data name="DeviceLine" xml:space="preserve">
+    <value>{0,-8}  {1,-27} {2,-16} {3,-15} {4,-11} {5}</value>
+  </data>
+  <data name="DeviceActive" xml:space="preserve">
+    <value>active</value>
+  </data>
+  <data name="DeviceReason_User" xml:space="preserve">
+    <value>disconnected by the client</value>
+  </data>
+  <data name="DeviceReason_Admin" xml:space="preserve">
+    <value>disconnected by an administrator</value>
+  </data>
+  <data name="DeviceReason_TokenReused" xml:space="preserve">
+    <value>disconnected: a used token was presented again</value>
+  </data>
+  <data name="DeviceReason_Idle" xml:space="preserve">
+    <value>disconnected: not used for too long</value>
+  </data>
+  <data name="DeviceReason_KeyReissued" xml:space="preserve">
+    <value>disconnected: the key was reissued</value>
+  </data>
+  <data name="NoDevices" xml:space="preserve">
+    <value>No devices.</value>
+  </data>
+  <data name="DeviceByKey" xml:space="preserve">
+    <value>key</value>
+  </data>
+  <data name="DeviceNeverUsed" xml:space="preserve">
+    <value>never</value>
+  </data>
+  <data name="DeviceOffDone" xml:space="preserve">
+    <value>Device {0} disconnected</value>
+  </data>
+  <data name="DevicesOffDone" xml:space="preserve">
+    <value>Devices disconnected: {0}</value>
+  </data>
+  <data name="DeviceOffTarget" xml:space="preserve">
+    <value>give a device id or --all</value>
+  </data>
+  <data name="DeviceNoMatch" xml:space="preserve">
+    <value>no device of the client starts with {0}</value>
+  </data>
+  <data name="DeviceAmbiguous" xml:space="preserve">
+    <value>several devices start with {0}, give more characters</value>
+  </data>
+  <data name="ReissueRevoked" xml:space="preserve">
+    <value>Devices signed in with the old key were disconnected: {0}</value>
+  </data>
+  <data name="InviteLine" xml:space="preserve">
+    <value>Invite link: {0}</value>
+  </data>
+  <data name="InviteUntil" xml:space="preserve">
+    <value>Valid until: {0} (UTC), works once</value>
+  </data>
+  <data name="NoLinks" xml:space="preserve">
+    <value>No links.</value>
+  </data>
+  <data name="LinkLine" xml:space="preserve">
+    <value>{0,-10} {1}  {2}</value>
+  </data>
+  <data name="LinkRemovedDone" xml:space="preserve">
+    <value>Accounts of {0} unlinked from {1}</value>
+  </data>
+  <data name="NoDevice" xml:space="preserve">
+    <value>-</value>
+  </data>
+  <data name="DefaultDevicesInvalid" xml:space="preserve">
+    <value>defaultMaxDevices: expected a number or none, got {0}</value>
+  </data>
+  <data name="OAuthDevicesOption" xml:space="preserve">
+    <value>device limit for new clients: a number or none</value>
+  </data>
+  <data name="OAuthDirectKeyOption" xml:space="preserve">
+    <value>a permanent key works for new clients: on or off</value>
+  </data>
+  <data name="OAuthIdleDaysOption" xml:space="preserve">
+    <value>days without use before a device is disconnected, from 1 to 365</value>
+  </data>
+  <data name="OAuthSelfRevokeOption" xml:space="preserve">
+    <value>a client can disconnect its own devices: on or off</value>
+  </data>
+  <data name="OAuthSetCommand" xml:space="preserve">
+    <value>change the device settings and the defaults for new clients</value>
+  </data>
+  <data name="OAuthSetNothing" xml:space="preserve">
+    <value>nothing to change: give --devices, --direct-key, --idle-days or --self-revoke</value>
+  </data>
+  <data name="OAuthSettingsSaved" xml:space="preserve">
+    <value>OAuth settings saved</value>
+  </data>
+  <data name="OAuthUnavailable" xml:space="preserve">
+    <value>Warning: OAuth cannot work, the public address {0} must start with https://. Set CtxUi__PublicUrl.</value>
+  </data>
+  <data name="OAuthDiscoveryLine" xml:space="preserve">
+    <value>Server metadata: {0}</value>
+  </data>
+  <data name="NumberExpected" xml:space="preserve">
+    <value>{0}: expected a number, got {1}</value>
+  </data>
+  <data name="DeviceHeader" xml:space="preserve">
+    <value>ID        DEVICE                      LAST USED        SIGN-IN IP      SIGNED IN   STATE</value>
+  </data>
+  <data name="DeviceApps" xml:space="preserve">
+    <value>          apps: {0}</value>
   </data>
 </root>

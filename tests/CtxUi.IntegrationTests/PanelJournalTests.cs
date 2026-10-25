@@ -76,4 +76,27 @@ public class PanelJournalTests
         await Expect(page.Locator("td img")).ToHaveCountAsync(0);
         await Expect(page).ToHaveTitleAsync("Журнал · ctx-ui");
     }
+
+    [Fact]
+    public async Task Journal_shows_the_device()
+    {
+        await using var upstream = await FakeUpstream.StartAsync();
+        await using var gateway = await OAuthHarness.StartAsync();
+        await gateway.AddInboundAsync("echo", upstream.McpUrl);
+        var issued = await gateway.AddClientAsync("Иванов", ["echo"]);
+        using var flow = await OAuthFlow.StartAsync(gateway, "echo");
+        flow.Browser.DefaultRequestHeaders.UserAgent.ParseAdd(
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36");
+        await flow.SignInWithKeyAsync(issued.Token);
+        await flow.ApproveAsync();
+        var tokens = await flow.ExchangeAsync();
+        using var viaDevice = await gateway.Http.SendAsync(OAuthFlow.Mcp("echo", tokens.Access, ToolCall("echo")));
+        using var viaKey = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/echo", issued.Token, ToolCall("echo")));
+        await using var session = await PanelSession.SignInAsync(gateway);
+
+        var page = await OpenJournalAsync(session);
+
+        await Expect(page.GetByRole(AriaRole.Row).Filter(new() { HasText = "Chrome · Windows" })).ToHaveCountAsync(1);
+        await Expect(page.GetByRole(AriaRole.Row).Filter(new() { HasText = "Иванов" })).ToHaveCountAsync(2);
+    }
 }

@@ -23,6 +23,8 @@ public sealed class PanelSession : IAsyncDisposable
 
     public IPage Page { get; }
 
+    public static Task<IBrowser> SharedBrowserAsync() => Browser.Value;
+
     public string Password { get; }
 
     public static async Task<PanelSession> OpenAsync(GatewayHost gateway, string admin = "root", string? language = "ru")

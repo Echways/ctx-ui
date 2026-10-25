@@ -13,18 +13,37 @@ public static class ConnectionText
     public static IReadOnlyList<string> Slugs(Client client) =>
         client.Inbounds.Select(link => link.Inbound!.Slug).Order(StringComparer.Ordinal).ToList();
 
-    public static string Message(string publicUrl, Client client, string token)
+    public static string Message(string publicUrl, Client client, string token, ConnectionMode? mode = null, string? inviteUrl = null)
     {
+        mode ??= ConnectionMode.Off;
         var text = new StringBuilder();
         text.Append($"{string.Format(PanelText.MessageIntro, client.Name)}\n\n");
-        text.Append($"{string.Format(PanelText.MessageToken, token)}\n\n");
+        if (mode.ShowsToken)
+            text.Append($"{string.Format(PanelText.MessageToken, token)}\n\n");
+
         foreach (var slug in Slugs(client))
         {
             text.Append($"{slug}\n");
             text.Append($"  {string.Format(PanelText.MessageAddress, Address(publicUrl, slug))}\n");
-            text.Append($"  {string.Format(PanelText.MessageHeader, token)}\n");
-            text.Append($"  {PanelText.MessageNoHeader}\n");
-            text.Append($"  {AddressWithToken(publicUrl, token, slug)}\n\n");
+            if (!mode.OAuth || mode.DirectKey)
+            {
+                text.Append($"  {string.Format(PanelText.MessageHeader, token)}\n");
+                text.Append($"  {PanelText.MessageNoHeader}\n");
+                text.Append($"  {AddressWithToken(publicUrl, token, slug)}\n");
+            }
+
+            text.Append('\n');
+        }
+
+        if (mode.OAuth)
+        {
+            text.Append($"{PanelText.MessageBrowserSignIn}\n");
+            if (mode.KeySignIn)
+                text.Append($"{string.Format(PanelText.MessageSignInKey, token)}\n");
+            if (inviteUrl is not null)
+                text.Append($"{string.Format(PanelText.MessageInvite, inviteUrl)}\n");
+
+            text.Append('\n');
         }
 
         var validity = client.ExpiresAt is { } expiresAt

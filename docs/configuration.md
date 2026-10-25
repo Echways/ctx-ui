@@ -23,6 +23,7 @@ install method.
 | `CtxUi__FlushInterval` | `CtxUi:FlushInterval` | `00:00:05` | how often quota counters and the call log are written |
 | `CtxUi__UsageRetentionDays` | `CtxUi:UsageRetentionDays` | `30` | call log retention; daily totals are kept forever |
 | `CtxUi__ConcurrencyWait` | `CtxUi:ConcurrencyWait` | `00:00:01` | how long a request over the concurrency limit waits for a slot before 429 |
+| `CtxUi__TrustedProxies` | `CtxUi:TrustedProxies` | empty | addresses and subnets (comma separated) of reverse proxies whose `X-Forwarded-For` is trusted; loopback is always trusted. Needed for the sign-in IP of devices |
 | `CtxUi__SessionCheckInterval` | `CtxUi:SessionCheckInterval` | `00:01:00` | how often an open panel rechecks the administrator's session |
 
 Use `Urls`, not `ASPNETCORE_URLS`: the latter is overridden by
@@ -59,6 +60,9 @@ For Docker, add `CTX_UI_LANGUAGE=ru` to `.env` and run `docker compose up -d`.
 | `CTX_UI_DOMAIN` | domain; sets `CtxUi__PublicUrl` and the Caddy site |
 | `CTX_UI_LANGUAGE` | sets `CtxUi__Language`, `en` by default |
 
+The compose file sets `CtxUi__TrustedProxies` to the private Docker ranges: the
+service port is not published, only Caddy reaches it.
+
 The image sets `Urls=http://0.0.0.0:8080` and `CtxUi__DataDir=/data`.
 
 ## Data directory
@@ -67,7 +71,9 @@ The image sets `Urls=http://0.0.0.0:8080` and `CtxUi__DataDir=/data`.
 | --- | --- |
 | `ctx-ui.db` | SQLite database |
 | `keys/` | Data Protection keys |
+| `keys/oauth-*.key` | token signing and encryption keys of browser sign-in |
 
 Losing `keys/`: tokens still work but cannot be shown, only reissued;
 inbounds with secret headers are disabled until the headers are re-entered;
-panel sessions are invalidated.
+panel sessions are invalidated. Without `keys/oauth-*.key` every device
+signs in again.

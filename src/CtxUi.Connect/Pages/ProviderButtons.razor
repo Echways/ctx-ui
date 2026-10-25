@@ -1,0 +1,30 @@
+@if (Providers.Count > 0)
+{
+    <ul class="providers">
+        @foreach (var provider in Providers)
+        {
+            <li>
+                <a class="@(Secondary ? "button ghost" : "button")" href="@ExternalEndpoints.ChallengeUrl(Http, provider.Name, ReturnUrl, Invite)">
+                    @string.Format(ConnectText.SignInWith, provider.Title)
+                </a>
+            </li>
+        }
+    </ul>
+}
+
+@code {
+    [CascadingParameter]
+    private HttpContext Http { get; set; } = default!;
+
+    [Parameter]
+    public IReadOnlyList<ProviderButton> Providers { get; set; } = [];
+
+    [Parameter]
+    public string? ReturnUrl { get; set; }
+
+    [Parameter]
+    public string? Invite { get; set; }
+
+    [Parameter]
+    public bool Secondary { get; set; }
+}

@@ -1,0 +1,36 @@
+<li class="@(Current ? "device current" : "device")">
+    <div class="device-head">
+        <span class="device-name">@Device.Name</span>
+        @if (Current)
+        {
+            <span class="badge">@ConnectText.ThisDevice</span>
+        }
+    </div>
+    <p class="device-apps">@(Device.Apps.Count == 0 ? ConnectText.DeviceNoApps : string.Join(", ", Device.Apps.Select(app => app.AppName)))</p>
+    <p class="device-meta">
+        @string.Format(ConnectText.DeviceSince, ConnectWords.Moment(Device.CreatedAt), SignedInWith(Device.SignedInWith))
+        <br />
+        @(Device.LastUsedAt is { } used ? string.Format(ConnectText.DeviceUsed, ConnectWords.Moment(used)) : ConnectText.DeviceUnused)
+        · <Phrase Pattern="@ConnectText.DeviceIp" Arguments="[Device.SignInIp]" ArgumentClass="mono" />
+    </p>
+    @if (ChildContent is not null)
+    {
+        <div class="device-actions">@ChildContent</div>
+    }
+</li>
+
+@code {
+    [Parameter, EditorRequired]
+    public Device Device { get; set; } = default!;
+
+    [Parameter]
+    public bool Current { get; set; }
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    private static string SignedInWith(string method) =>
+        method == Device.ByKey
+            ? ConnectText.SignedInWithKey
+            : string.Format(ConnectText.SignedInWithProvider, ProviderCatalog.Find(method)?.Title ?? method);
+}

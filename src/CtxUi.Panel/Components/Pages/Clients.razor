@@ -84,6 +84,7 @@ else
                     <MudMenu Label="⋯" AriaLabel="@string.Format(PanelText.MoreActions, context.Name)" Class="more"
                              AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
                         <MudMenuItem OnClick="() => EditAsync(context)">@PanelText.Edit</MudMenuItem>
+                        <MudMenuItem OnClick="() => DevicesAsync(context)">@PanelText.Devices</MudMenuItem>
                         <MudMenuItem OnClick="() => ResetAsync(context)">@PanelText.ResetQuota</MudMenuItem>
                         <MudMenuItem OnClick="() => ReissueAsync(context)">@PanelText.NewToken</MudMenuItem>
                         <MudDivider />
@@ -160,10 +161,18 @@ else
             await ReissueAsync(current);
     }
 
+    private async Task DevicesAsync(Client client)
+    {
+        var parameters = new DialogParameters<DevicesDialog> { { dialog => dialog.Id, client.Id } };
+        await Dialogs.ShowAsync<DevicesDialog>(string.Format(PanelText.DevicesTitle, client.Name), parameters, Sheet.View);
+    }
+
     private async Task ReissueAsync(Client client)
     {
+        var keyDevices = await Backend.ReadAsync(services => services.GetRequiredService<ClientService>().CountKeyDevicesAsync(client.Id));
+        var warning = keyDevices > 0 ? $"{PanelText.ReissueWarning} {Words.Count(PanelText.ReissueDevices, keyDevices)}" : PanelText.ReissueWarning;
         if (!await ConfirmDialog.AskAsync(
-                Dialogs, string.Format(PanelText.ReissueQuestion, client.Name), PanelText.ReissueWarning, PanelText.ReissueYes, danger: false))
+                Dialogs, string.Format(PanelText.ReissueQuestion, client.Name), warning, PanelText.ReissueYes, danger: false))
             return;
 
         await Actions.ApplyAsync(OnClient(client, clients => clients.ReissueAsync(client.Id)), string.Format(PanelText.TokenReissued, client.Name));

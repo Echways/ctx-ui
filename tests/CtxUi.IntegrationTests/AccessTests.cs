@@ -2,6 +2,7 @@ using System.Net;
 using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Time.Testing;
 using CtxUi.Core.Clients;
 using CtxUi.Core.Inbounds;
@@ -28,6 +29,57 @@ public class AccessTests
         await AssertRejectedAsync(response, HttpStatusCode.Unauthorized, "token_missing");
         Assert.Equal("Bearer", response.Headers.WwwAuthenticate.ToString());
         Assert.Contains("нужен токен", await response.Content.ReadAsStringAsync());
+    }
+
+    [Fact]
+    public async Task Responses_without_oauth_are_unchanged()
+    {
+        await using var gateway = await GatewayHost.StartAsync();
+
+        using var missing = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/echo"));
+        using var foreign = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/echo", "eyJ.not.a.key"));
+
+        Assert.Equal(HttpStatusCode.Unauthorized, missing.StatusCode);
+        Assert.Equal("Bearer", missing.Headers.WwwAuthenticate.ToString());
+        Assert.Equal(
+            """{"error":"token_missing","message":"нужен токен: заголовок Authorization: Bearer <токен> или адрес /k/<токен>/mcp/<inbound>"}""",
+            await missing.Content.ReadAsStringAsync());
+        Assert.Equal("Bearer", foreign.Headers.WwwAuthenticate.ToString());
+        Assert.Equal("""{"error":"token_unknown","message":"токен не найден"}""", await foreign.Content.ReadAsStringAsync());
+        Assert.Equal(HttpStatusCode.NotFound, (await gateway.Http.GetAsync("/.well-known/oauth-authorization-server")).StatusCode);
+    }
+
+    [Fact]
+    public async Task Client_with_direct_key_off_gets_direct_key_off()
+    {
+        await using var upstream = await FakeUpstream.StartAsync();
+        await using var gateway = await GatewayHost.StartAsync();
+        await gateway.AddInboundAsync("echo", upstream.McpUrl);
+        var issued = await gateway.AddClientAsync("Иванов", ["echo"]);
+        await gateway.ArrangeAsync(async services =>
+        {
+            await services.GetRequiredService<ClientService>().UpdateAsync(
+                issued.Client.Id, new ClientUpdate { Access = new ClientAccessPolicy(null, false) });
+            return true;
+        });
+
+        using var byHeader = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/echo", issued.Token));
+        using var byPath = await gateway.Http.SendAsync(GatewayHost.Post($"/k/{issued.Token}/mcp/echo"));
+
+        await AssertRejectedAsync(byHeader, HttpStatusCode.Unauthorized, "direct_key_off");
+        await AssertRejectedAsync(byPath, HttpStatusCode.Unauthorized, "direct_key_off");
+        Assert.Equal("Bearer", byHeader.Headers.WwwAuthenticate.ToString());
+        Assert.Contains("вход в браузере", await byHeader.Content.ReadAsStringAsync());
+        Assert.Empty(upstream.Requests);
+    }
+
+    [Fact]
+    public async Task Invalid_trusted_proxies_stop_the_start()
+    {
+        var error = await Assert.ThrowsAsync<OptionsValidationException>(
+            () => GatewayHost.StartAsync(builder => builder.Configuration["CtxUi:TrustedProxies"] = "10.0.0.0/33"));
+
+        Assert.Contains("TrustedProxies", error.Message);
     }
 
     [Fact]

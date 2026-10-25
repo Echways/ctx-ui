@@ -1,0 +1,44 @@
+<ConnectPage Title="@ConnectText.PageLimit">
+    @if (SelfRevoke)
+    {
+        <p class="lead">@ConnectWords.Count(ConnectText.LimitLead, Limit)</p>
+    }
+    else
+    {
+        <p class="lead">@ConnectText.LimitAskAdmin</p>
+    }
+    <ul class="devices">
+        @foreach (var device in Devices)
+        {
+            <DeviceCard Device="device">
+                @if (SelfRevoke)
+                {
+                    <form method="post" action="@(ConnectServices.Prefix)/limit/replace">
+                        <AntiforgeryToken />
+                        <input type="hidden" name="deviceId" value="@device.Id" />
+                        <input type="hidden" name="returnUrl" value="@ReturnUrl" />
+                        <button class="link" type="submit" aria-label="@string.Format(ConnectText.ReplaceOf, device.Name)">@ConnectText.Replace</button>
+                    </form>
+                }
+            </DeviceCard>
+        }
+    </ul>
+    <p class="aside"><a href="@(Http.Request.PathBase + AuthorizeEndpoint.DenyUrl(ReturnUrl))">@ConnectText.LimitCancel</a></p>
+</ConnectPage>
+
+@code {
+    [CascadingParameter]
+    private HttpContext Http { get; set; } = default!;
+
+    [Parameter]
+    public IReadOnlyList<Device> Devices { get; set; } = [];
+
+    [Parameter]
+    public int Limit { get; set; }
+
+    [Parameter]
+    public bool SelfRevoke { get; set; }
+
+    [Parameter]
+    public string ReturnUrl { get; set; } = "";
+}

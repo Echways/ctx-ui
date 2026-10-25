@@ -5,10 +5,15 @@ using CtxUi.Core.Clients;
 using CtxUi.Core.Data;
 using CtxUi.Core.Inbounds;
 using CtxUi.Core.Secrets;
+using CtxUi.Core.SignIn;
 
 namespace CtxUi.Core.Routing;
 
-public sealed partial class RoutingSnapshotLoader(CtxUiDbContext db, ISecretVault vault, ILogger<RoutingSnapshotLoader> logger)
+public sealed partial class RoutingSnapshotLoader(
+    CtxUiDbContext db,
+    ISecretVault vault,
+    TimeProvider clock,
+    ILogger<RoutingSnapshotLoader> logger)
 {
     public Task<long> CurrentRevisionAsync(CancellationToken ct = default) =>
         db.RoutingStates.AsNoTracking().Select(state => state.Revision).SingleAsync(ct);
@@ -42,6 +47,13 @@ public sealed partial class RoutingSnapshotLoader(CtxUiDbContext db, ISecretVaul
             });
         }
 
+        var settings = await db.SignInSettings.AsNoTracking().SingleAsync(ct);
+        var cutoff = clock.GetUtcNow().AddDays(-settings.IdleDays);
+        var devices = await db.Devices.AsNoTracking()
+            .Where(device => device.RevokedAt == null && (device.LastUsedAt ?? device.CreatedAt) >= cutoff)
+            .Select(device => KeyValuePair.Create(device.Id, device.ClientId))
+            .ToListAsync(ct);
+
         var clients = await db.Clients.AsNoTracking().Include(client => client.Inbounds).ToListAsync(ct);
         return new RoutingSnapshot(revision, routes, clients.Select(client => KeyValuePair.Create(
             client.TokenHash,
@@ -55,11 +67,38 @@ public sealed partial class RoutingSnapshotLoader(CtxUiDbContext db, ISecretVaul
             {
                 Limits = ClientLimits.Of(client),
                 PeriodStartedAt = client.PeriodStartedAt,
-            })));
+                DirectKey = client.DirectKey,
+                MaxDevices = client.MaxDevices,
+            })),
+            devices,
+            await SignInAsync(settings, ct));
+    }
+
+    private async Task<SignInConfig> SignInAsync(SignInSettings settings, CancellationToken ct)
+    {
+        var providers = new List<ProviderConfig>();
+        foreach (var provider in (await db.SignInProviders.AsNoTracking().Where(provider => provider.Enabled).ToListAsync(ct))
+                     .OrderBy(provider => ProviderCatalog.Order(provider.Name)))
+        {
+            if (vault.Open(provider.SecretSealed) is not { } secret)
+            {
+                ProviderSkipped(logger, provider.Name);
+                continue;
+            }
+
+            providers.Add(new ProviderConfig(provider.Name, provider.ClientId, secret, provider.Issuer, provider.Title));
+        }
+
+        return new SignInConfig(settings.Enabled, settings.KeySignIn, settings.SelfRevoke, settings.IdleDays, providers);
     }
 
     [LoggerMessage(
         Level = LogLevel.Warning,
         Message = "inbound {Slug} skipped: no address or upstream headers cannot be decrypted, check the keys directory")]
     private static partial void InboundSkipped(ILogger logger, string slug);
+
+    [LoggerMessage(
+        Level = LogLevel.Warning,
+        Message = "sign-in provider {Name} skipped: its secret cannot be decrypted, check the keys directory")]
+    private static partial void ProviderSkipped(ILogger logger, string name);
 }

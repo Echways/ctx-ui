@@ -89,6 +89,7 @@ server {
         proxy_pass http://127.0.0.1:8080;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection $connection_upgrade;
@@ -143,6 +144,21 @@ ctx-ui version               # установленная версия
 установки делает то же самое.
 
 ### Удаление
+
+```bash
+sudo ctx-ui uninstall              # всё: программа, настройки, данные, пользователь
+sudo ctx-ui uninstall --keep-data  # только программа
+```
+
+`uninstall` останавливает сервис и удаляет `/opt/ctx-ui`, unit и команду
+`ctx-ui`, затем `/etc/ctx-ui`, `/var/lib/ctx-ui` и пользователя `ctx-ui`.
+Все inbounds, клиенты, администраторы и ключи шифрования теряются; если они
+могут понадобиться, сначала сделайте [резервную копию](#резервная-копия).
+Команда просит ввести `yes`; `--yes` пропускает вопрос, без терминала он
+обязателен. С `--keep-data` настройки, данные и пользователь остаются, и
+следующая установка их подхватит.
+
+То же делает установщик, если команды `ctx-ui` уже нет:
 
 ```bash
 curl -fsSL https://github.com/Echways/ctx-ui/releases/latest/download/install.sh \

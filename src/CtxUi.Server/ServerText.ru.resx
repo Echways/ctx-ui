@@ -343,9 +343,294 @@
     <value>сколько последних строк, по умолчанию 50</value>
   </data>
   <data name="UsageLine" xml:space="preserve">
-    <value>{0}  {1,-24} {2,-16} {3,-17} {4,6} мс  {5}</value>
+    <value>{0}  {1,-24} {6,-24} {2,-16} {3,-17} {4,6} мс  {5}</value>
   </data>
   <data name="UsageLogCommand" xml:space="preserve">
     <value>последние вызовы, новые сверху</value>
+  </data>
+  <data name="OAuthCommand" xml:space="preserve">
+    <value>настройки входа через браузер (OAuth)</value>
+  </data>
+  <data name="OAuthStatusCommand" xml:space="preserve">
+    <value>показать настройки OAuth и провайдеров</value>
+  </data>
+  <data name="OAuthOnCommand" xml:space="preserve">
+    <value>включить OAuth</value>
+  </data>
+  <data name="OAuthOffCommand" xml:space="preserve">
+    <value>выключить OAuth</value>
+  </data>
+  <data name="OAuthKeyCommand" xml:space="preserve">
+    <value>вход по ключу</value>
+  </data>
+  <data name="OAuthKeyOnCommand" xml:space="preserve">
+    <value>разрешить вход по ключу</value>
+  </data>
+  <data name="OAuthKeyOffCommand" xml:space="preserve">
+    <value>запретить вход по ключу</value>
+  </data>
+  <data name="OAuthProviderCommand" xml:space="preserve">
+    <value>провайдеры входа</value>
+  </data>
+  <data name="ProviderSetCommand" xml:space="preserve">
+    <value>добавить провайдера или изменить его настройки</value>
+  </data>
+  <data name="ProviderOnCommand" xml:space="preserve">
+    <value>включить провайдера</value>
+  </data>
+  <data name="ProviderOffCommand" xml:space="preserve">
+    <value>выключить провайдера</value>
+  </data>
+  <data name="ProviderRemoveCommand" xml:space="preserve">
+    <value>удалить провайдера и привязанные через него аккаунты</value>
+  </data>
+  <data name="ProviderListCommand" xml:space="preserve">
+    <value>список настроенных провайдеров</value>
+  </data>
+  <data name="ProviderNameArgument" xml:space="preserve">
+    <value>провайдер: google, microsoft, github, gitlab, yandex, vkid, discord, telegram или oidc</value>
+  </data>
+  <data name="ProviderClientIdOption" xml:space="preserve">
+    <value>client ID, выданный провайдером</value>
+  </data>
+  <data name="ProviderSecretOption" xml:space="preserve">
+    <value>client secret (или переменная CTX_UI_PROVIDER_SECRET)</value>
+  </data>
+  <data name="ProviderSecretStdinOption" xml:space="preserve">
+    <value>прочитать client secret со стандартного ввода</value>
+  </data>
+  <data name="ProviderIssuerOption" xml:space="preserve">
+    <value>адрес issuer для oidc (https://…)</value>
+  </data>
+  <data name="ProviderTitleOption" xml:space="preserve">
+    <value>название кнопки для oidc</value>
+  </data>
+  <data name="ClientDevicesOption" xml:space="preserve">
+    <value>лимит устройств: число (и none в set)</value>
+  </data>
+  <data name="ClientDirectKeyOption" xml:space="preserve">
+    <value>работает ли постоянный ключ: on или off</value>
+  </data>
+  <data name="ClientDevicesCommand" xml:space="preserve">
+    <value>список устройств клиента</value>
+  </data>
+  <data name="ClientDeviceOffCommand" xml:space="preserve">
+    <value>отключить устройство по id или его началу, либо все</value>
+  </data>
+  <data name="ClientInviteCommand" xml:space="preserve">
+    <value>выпустить ссылку, по которой аккаунт привязывается к клиенту</value>
+  </data>
+  <data name="ClientLinksCommand" xml:space="preserve">
+    <value>список аккаунтов, привязанных к клиенту</value>
+  </data>
+  <data name="ClientUnlinkCommand" xml:space="preserve">
+    <value>отвязать от клиента аккаунты провайдера</value>
+  </data>
+  <data name="DeviceIdArgument" xml:space="preserve">
+    <value>id устройства или его первые символы</value>
+  </data>
+  <data name="DeviceAllOption" xml:space="preserve">
+    <value>отключить все устройства</value>
+  </data>
+  <data name="UnlinkProviderArgument" xml:space="preserve">
+    <value>провайдер, аккаунты которого отвязать</value>
+  </data>
+  <data name="OAuthState" xml:space="preserve">
+    <value>OAuth: {0}</value>
+  </data>
+  <data name="StateOn" xml:space="preserve">
+    <value>включён</value>
+  </data>
+  <data name="StateOff" xml:space="preserve">
+    <value>выключен</value>
+  </data>
+  <data name="OAuthKeySignIn" xml:space="preserve">
+    <value>Вход по ключу: {0}</value>
+  </data>
+  <data name="OAuthIdleDays" xml:space="preserve">
+    <value>Дней без использования до отключения устройства: {0}</value>
+  </data>
+  <data name="OAuthDefaultDevices" xml:space="preserve">
+    <value>Лимит устройств у новых клиентов: {0}</value>
+  </data>
+  <data name="OAuthDefaultDirectKey" xml:space="preserve">
+    <value>Постоянный ключ у новых клиентов: {0}</value>
+  </data>
+  <data name="OAuthSelfRevoke" xml:space="preserve">
+    <value>Клиент сам отключает устройства: {0}</value>
+  </data>
+  <data name="OAuthProviders" xml:space="preserve">
+    <value>Провайдеры:</value>
+  </data>
+  <data name="OAuthProviderLine" xml:space="preserve">
+    <value>  {0,-10} {1,-9} {2}</value>
+  </data>
+  <data name="OAuthNoProviders" xml:space="preserve">
+    <value>Провайдеров нет.</value>
+  </data>
+  <data name="OAuthEnabledDone" xml:space="preserve">
+    <value>OAuth включён</value>
+  </data>
+  <data name="OAuthDisabledDone" xml:space="preserve">
+    <value>OAuth выключен</value>
+  </data>
+  <data name="OAuthOffWarning" xml:space="preserve">
+    <value>Внимание: клиентов без постоянного ключа: {0}. Они потеряют доступ, пока OAuth выключен.</value>
+  </data>
+  <data name="KeySignInOnDone" xml:space="preserve">
+    <value>Вход по ключу включён</value>
+  </data>
+  <data name="KeySignInOffDone" xml:space="preserve">
+    <value>Вход по ключу выключен</value>
+  </data>
+  <data name="ProviderSaved" xml:space="preserve">
+    <value>Провайдер {0} сохранён. Адрес возврата: {1}</value>
+  </data>
+  <data name="ProviderEnabledDone" xml:space="preserve">
+    <value>Провайдер {0} включён</value>
+  </data>
+  <data name="ProviderDisabledDone" xml:space="preserve">
+    <value>Провайдер {0} выключен</value>
+  </data>
+  <data name="ProviderRemovedDone" xml:space="preserve">
+    <value>Провайдер {0} удалён</value>
+  </data>
+  <data name="ProviderListLine" xml:space="preserve">
+    <value>{0,-10} {1,-9} {2}  {3}</value>
+  </data>
+  <data name="NoProviderList" xml:space="preserve">
+    <value>Провайдеры не настроены.</value>
+  </data>
+  <data name="SecretEmpty" xml:space="preserve">
+    <value>со стандартного ввода пришёл пустой секрет</value>
+  </data>
+  <data name="OnOffExpected" xml:space="preserve">
+    <value>{0}: ожидалось on или off, получено {1}</value>
+  </data>
+  <data name="DeviceLimitLine" xml:space="preserve">
+    <value>Лимит устройств: {0}</value>
+  </data>
+  <data name="DeviceLimitNone" xml:space="preserve">
+    <value>без ограничения</value>
+  </data>
+  <data name="DirectKeyLine" xml:space="preserve">
+    <value>Постоянный ключ: {0}</value>
+  </data>
+  <data name="DevicesActiveLine" xml:space="preserve">
+    <value>Устройства: {0} активных</value>
+  </data>
+  <data name="LinksLine" xml:space="preserve">
+    <value>Привязки: {0}</value>
+  </data>
+  <data name="Yes" xml:space="preserve">
+    <value>да</value>
+  </data>
+  <data name="No" xml:space="preserve">
+    <value>нет</value>
+  </data>
+  <data name="DeviceLine" xml:space="preserve">
+    <value>{0,-8}  {1,-27} {2,-16} {3,-15} {4,-11} {5}</value>
+  </data>
+  <data name="DeviceActive" xml:space="preserve">
+    <value>активно</value>
+  </data>
+  <data name="DeviceReason_User" xml:space="preserve">
+    <value>отключено клиентом</value>
+  </data>
+  <data name="DeviceReason_Admin" xml:space="preserve">
+    <value>отключено администратором</value>
+  </data>
+  <data name="DeviceReason_TokenReused" xml:space="preserve">
+    <value>отключено: повторно предъявлен использованный токен</value>
+  </data>
+  <data name="DeviceReason_Idle" xml:space="preserve">
+    <value>отключено: слишком долго не использовалось</value>
+  </data>
+  <data name="DeviceReason_KeyReissued" xml:space="preserve">
+    <value>отключено: ключ перевыпущен</value>
+  </data>
+  <data name="NoDevices" xml:space="preserve">
+    <value>Устройств нет.</value>
+  </data>
+  <data name="DeviceByKey" xml:space="preserve">
+    <value>ключ</value>
+  </data>
+  <data name="DeviceNeverUsed" xml:space="preserve">
+    <value>никогда</value>
+  </data>
+  <data name="DeviceOffDone" xml:space="preserve">
+    <value>Устройство {0} отключено</value>
+  </data>
+  <data name="DevicesOffDone" xml:space="preserve">
+    <value>Отключено устройств: {0}</value>
+  </data>
+  <data name="DeviceOffTarget" xml:space="preserve">
+    <value>укажите id устройства или --all</value>
+  </data>
+  <data name="DeviceNoMatch" xml:space="preserve">
+    <value>у клиента нет устройства, id которого начинается с {0}</value>
+  </data>
+  <data name="DeviceAmbiguous" xml:space="preserve">
+    <value>id нескольких устройств начинается с {0}, укажите больше символов</value>
+  </data>
+  <data name="ReissueRevoked" xml:space="preserve">
+    <value>Отключено устройств, вошедших по старому ключу: {0}</value>
+  </data>
+  <data name="InviteLine" xml:space="preserve">
+    <value>Ссылка-приглашение: {0}</value>
+  </data>
+  <data name="InviteUntil" xml:space="preserve">
+    <value>Действует до: {0} (UTC), срабатывает один раз</value>
+  </data>
+  <data name="NoLinks" xml:space="preserve">
+    <value>Привязок нет.</value>
+  </data>
+  <data name="LinkLine" xml:space="preserve">
+    <value>{0,-10} {1}  {2}</value>
+  </data>
+  <data name="LinkRemovedDone" xml:space="preserve">
+    <value>Аккаунты {0} отвязаны от {1}</value>
+  </data>
+  <data name="NoDevice" xml:space="preserve">
+    <value>-</value>
+  </data>
+  <data name="DefaultDevicesInvalid" xml:space="preserve">
+    <value>defaultMaxDevices: ожидалось число или none, получено {0}</value>
+  </data>
+  <data name="OAuthDevicesOption" xml:space="preserve">
+    <value>лимит устройств для новых клиентов: число или none</value>
+  </data>
+  <data name="OAuthDirectKeyOption" xml:space="preserve">
+    <value>постоянный ключ у новых клиентов: on или off</value>
+  </data>
+  <data name="OAuthIdleDaysOption" xml:space="preserve">
+    <value>дней без использования до отключения устройства, от 1 до 365</value>
+  </data>
+  <data name="OAuthSelfRevokeOption" xml:space="preserve">
+    <value>клиент может сам отключать устройства: on или off</value>
+  </data>
+  <data name="OAuthSetCommand" xml:space="preserve">
+    <value>изменить настройки устройств и значения по умолчанию для новых клиентов</value>
+  </data>
+  <data name="OAuthSetNothing" xml:space="preserve">
+    <value>нечего менять: укажите --devices, --direct-key, --idle-days или --self-revoke</value>
+  </data>
+  <data name="OAuthSettingsSaved" xml:space="preserve">
+    <value>Настройки OAuth сохранены</value>
+  </data>
+  <data name="OAuthUnavailable" xml:space="preserve">
+    <value>Внимание: OAuth не может работать, публичный адрес {0} должен начинаться с https://. Задайте CtxUi__PublicUrl.</value>
+  </data>
+  <data name="OAuthDiscoveryLine" xml:space="preserve">
+    <value>Метаданные сервера: {0}</value>
+  </data>
+  <data name="NumberExpected" xml:space="preserve">
+    <value>{0}: ожидалось число, получено {1}</value>
+  </data>
+  <data name="DeviceHeader" xml:space="preserve">
+    <value>ID        УСТРОЙСТВО                  ПОСЛЕДНИЙ РАЗ    IP ПРИ ВХОДЕ    ВХОД        СОСТОЯНИЕ</value>
+  </data>
+  <data name="DeviceApps" xml:space="preserve">
+    <value>          приложения: {0}</value>
   </data>
 </root>

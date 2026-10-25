@@ -3,7 +3,7 @@ using CtxUi.Core.Routing;
 
 namespace CtxUi.Gateway;
 
-public sealed class SnapshotStore(IServiceScopeFactory scopes) : IRoutingRefresh, IDisposable
+public sealed class SnapshotStore(IServiceScopeFactory scopes) : IRoutingRefresh, ISnapshotSource, IDisposable
 {
     private readonly SemaphoreSlim _reloading = new(1, 1);
     private volatile RoutingSnapshot _current = RoutingSnapshot.Empty;

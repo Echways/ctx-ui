@@ -7,7 +7,8 @@ public sealed record UsageRecord(
     string? Method,
     string? Tool,
     int DurationMs,
-    UsageOutcome Outcome)
+    UsageOutcome Outcome,
+    Guid? DeviceId = null)
 {
     public const string ToolsCall = "tools/call";
 

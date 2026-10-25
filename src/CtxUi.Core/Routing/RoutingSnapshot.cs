@@ -1,6 +1,7 @@
 using System.Collections.Frozen;
 using CtxUi.Core.Clients;
 using CtxUi.Core.Inbounds;
+using CtxUi.Core.SignIn;
 
 namespace CtxUi.Core.Routing;
 
@@ -26,6 +27,10 @@ public sealed record ClientAccess(
     public ClientLimits Limits { get; init; } = ClientLimits.None;
 
     public DateTimeOffset PeriodStartedAt { get; init; }
+
+    public bool DirectKey { get; init; } = true;
+
+    public int? MaxDevices { get; init; }
 }
 
 public enum AccessStatus
@@ -36,35 +41,85 @@ public enum AccessStatus
     ClientDisabled,
     ClientExpired,
     InboundNotFound,
+    DirectKeyOff,
+    TokenInvalid,
+    DeviceRevoked,
 }
 
-public readonly record struct AccessDecision(AccessStatus Status, ClientAccess? Client = null, InboundRoute? Route = null);
+public readonly record struct AccessDecision(
+    AccessStatus Status,
+    ClientAccess? Client = null,
+    InboundRoute? Route = null,
+    Guid? DeviceId = null);
 
 public sealed class RoutingSnapshot
 {
     private readonly FrozenDictionary<string, InboundRoute> _routes;
     private readonly FrozenDictionary<string, ClientAccess> _clients;
+    private readonly FrozenDictionary<Guid, ClientAccess> _clientsById;
+    private readonly FrozenDictionary<Guid, Guid> _activeDevices;
 
     public RoutingSnapshot(
         long revision,
         IEnumerable<InboundRoute> routes,
-        IEnumerable<KeyValuePair<string, ClientAccess>> clientsByTokenHash)
+        IEnumerable<KeyValuePair<string, ClientAccess>> clientsByTokenHash,
+        IEnumerable<KeyValuePair<Guid, Guid>>? activeDevices = null,
+        SignInConfig? signIn = null)
     {
         Revision = revision;
         _routes = routes.ToFrozenDictionary(route => route.Slug, StringComparer.Ordinal);
         _clients = clientsByTokenHash.ToFrozenDictionary(StringComparer.Ordinal);
+        _clientsById = _clients.Values.ToFrozenDictionary(client => client.Id);
+        _activeDevices = (activeDevices ?? []).ToFrozenDictionary();
+        SignIn = signIn ?? SignInConfig.Off;
     }
 
     public static RoutingSnapshot Empty { get; } = new(-1, [], []);
 
     public long Revision { get; }
 
-    public AccessDecision Authorize(string? token, string slug, DateTimeOffset now)
+    public SignInConfig SignIn { get; }
+
+    public ClientAccess? ClientByToken(string? token) =>
+        AccessToken.IsWellFormed(token) && _clients.TryGetValue(AccessToken.Hash(token), out var client) ? client : null;
+
+    public ClientAccess? ClientById(Guid id) => _clientsById.GetValueOrDefault(id);
+
+    public InboundRoute? Route(string slug) => _routes.GetValueOrDefault(slug);
+
+    public bool IsDeviceActive(Guid deviceId, Guid clientId) =>
+        _activeDevices.TryGetValue(deviceId, out var owner) && owner == clientId;
+
+    public AccessDecision Authorize(Credential credential, string slug, DateTimeOffset now)
     {
-        if (string.IsNullOrEmpty(token))
-            return new AccessDecision(AccessStatus.TokenMissing);
-        if (!AccessToken.IsWellFormed(token) || !_clients.TryGetValue(AccessToken.Hash(token), out var client))
-            return new AccessDecision(AccessStatus.TokenUnknown);
+        switch (credential.Kind)
+        {
+            case CredentialKind.Key when string.IsNullOrEmpty(credential.Token):
+            case CredentialKind.Missing:
+                return new AccessDecision(AccessStatus.TokenMissing);
+            case CredentialKind.Key:
+                var keyed = ClientByToken(credential.Token);
+                if (keyed is null)
+                    return new AccessDecision(AccessStatus.TokenUnknown);
+                if (!keyed.DirectKey)
+                    return new AccessDecision(AccessStatus.DirectKeyOff, keyed);
+
+                return Admit(keyed, slug, now, null);
+            case CredentialKind.Grant when credential.Grant is { } grant:
+                var granted = ClientById(grant.ClientId);
+                if (granted is null)
+                    return new AccessDecision(AccessStatus.TokenInvalid);
+                if (!IsDeviceActive(grant.DeviceId, granted.Id))
+                    return new AccessDecision(AccessStatus.DeviceRevoked, granted);
+
+                return Admit(granted, slug, now, grant.DeviceId);
+            default:
+                return new AccessDecision(AccessStatus.TokenInvalid);
+        }
+    }
+
+    private AccessDecision Admit(ClientAccess client, string slug, DateTimeOffset now, Guid? deviceId)
+    {
         if (!client.Enabled)
             return new AccessDecision(AccessStatus.ClientDisabled, client);
         if (client.ExpiresAt is { } expiresAt && now >= expiresAt)
@@ -72,6 +127,6 @@ public sealed class RoutingSnapshot
         if (!_routes.TryGetValue(slug, out var route) || !client.InboundIds.Contains(route.Id))
             return new AccessDecision(AccessStatus.InboundNotFound, client);
 
-        return new AccessDecision(AccessStatus.Allowed, client, route);
+        return new AccessDecision(AccessStatus.Allowed, client, route, deviceId);
     }
 }

@@ -1,0 +1,99 @@
+@inject PanelActions Actions
+@inject IDialogService Dialogs
+
+<details class="provider" open="@(Stored is not null)">
+    <summary>
+        <span class="provider-name">@Name</span>
+        <span class="provider-state">@(Stored is null ? PanelText.ProviderNotConfigured : PanelText.ProviderConfigured)</span>
+    </summary>
+    <div class="provider-body" role="group" aria-label="@Name">
+        <ol class="steps">
+            @foreach (var step in Steps)
+            {
+                <li>@step</li>
+            }
+        </ol>
+        <CopyLine Label="@PanelText.ReturnAddress" Value="@CallbackUrl" CopyLabel="@string.Format(PanelText.CopyReturnAddress, Name)" />
+        @if (Info.ConsoleUrl.Length > 0)
+        {
+            <a class="link" href="@Info.ConsoleUrl" target="_blank" rel="noopener noreferrer">@string.Format(PanelText.OpenConsole, Info.Title)</a>
+        }
+        <MudTextField @bind-Value="_clientId" Label="@PanelText.ProviderClientId" Immediate="true" />
+        <MudTextField @bind-Value="_secret" Label="@PanelText.ProviderSecret" Immediate="true" InputType="InputType.Password"
+                      HelperText="@(Stored is null ? null : PanelText.SecretKept)" autocomplete="off" />
+        @if (Info.NeedsIssuer)
+        {
+            <MudTextField @bind-Value="_issuer" Label="@PanelText.ProviderIssuer" Immediate="true" />
+            <MudTextField @bind-Value="_title" Label="@PanelText.ProviderTitle" Immediate="true" />
+        }
+        <div class="provider-acts">
+            <button type="button" class="btn-k pigment" @onclick="SaveAsync">@PanelText.Save</button>
+            @if (Stored is not null)
+            {
+                <MudSwitch T="bool" Value="Stored.Enabled" Label="@PanelText.ProviderEnabled" ValueChanged="SwitchAsync" />
+                <button type="button" class="link danger" @onclick="RemoveAsync">@PanelText.Delete</button>
+            }
+        </div>
+    </div>
+</details>
+
+@code {
+    private string _clientId = "";
+    private string _secret = "";
+    private string _issuer = "";
+    private string _title = "";
+
+    [Parameter, EditorRequired]
+    public ProviderInfo Info { get; set; } = default!;
+
+    [Parameter]
+    public SignInProvider? Stored { get; set; }
+
+    [Parameter, EditorRequired]
+    public string PublicUrl { get; set; } = "";
+
+    [Parameter]
+    public EventCallback OnChanged { get; set; }
+
+    private string Name => Stored?.Title ?? Info.Title;
+
+    private string CallbackUrl => $"{PublicUrl.TrimEnd('/')}/connect/callback/{Info.Name}";
+
+    private IEnumerable<string> Steps =>
+        (PanelText.ResourceManager.GetString("ProviderSteps_" + Info.Name, PanelText.Culture) ?? "").Split('\n', StringSplitOptions.RemoveEmptyEntries);
+
+    protected override void OnParametersSet()
+    {
+        _clientId = Stored?.ClientId ?? "";
+        _issuer = Stored?.Issuer ?? "";
+        _title = Stored?.Title ?? "";
+        _secret = "";
+    }
+
+    private async Task SaveAsync()
+    {
+        var setup = new ProviderSetup(Info.Name, _clientId, string.IsNullOrWhiteSpace(_secret) ? null : _secret, _issuer, _title);
+        if (await Actions.ApplyAsync(services => services.GetRequiredService<SignInSettingsService>().SetProviderAsync(setup), string.Format(PanelText.ProviderSaved, Name)))
+            await OnChanged.InvokeAsync();
+    }
+
+    private async Task SwitchAsync(bool enabled)
+    {
+        await Actions.ApplyAsync(
+            services => services.GetRequiredService<SignInSettingsService>().SetProviderEnabledAsync(Info.Name, enabled),
+            string.Format(PanelText.ProviderEnabledDone, Name));
+        await OnChanged.InvokeAsync();
+    }
+
+    private async Task RemoveAsync()
+    {
+        if (!await ConfirmDialog.AskAsync(
+                Dialogs, string.Format(PanelText.ProviderRemoveQuestion, Name), PanelText.ProviderRemoveWarning, PanelText.Delete, danger: true))
+            return;
+
+        await Actions.ApplyAsync(
+            services => services.GetRequiredService<SignInSettingsService>().RemoveProviderAsync(Info.Name),
+            string.Format(PanelText.ProviderRemoved, Name));
+        await OnChanged.InvokeAsync();
+    }
+}

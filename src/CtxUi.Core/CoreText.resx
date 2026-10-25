@@ -165,4 +165,43 @@
   <data name="OutcomeNotJsonRpc" xml:space="preserve">
     <value>not JSON-RPC</value>
   </data>
+  <data name="OAuthNeedsHttps" xml:space="preserve">
+    <value>browser sign-in (OAuth) needs a public address that starts with https:// (http://localhost is allowed for development); set CtxUi__PublicUrl and restart the service</value>
+  </data>
+  <data name="LastSignInMethod" xml:space="preserve">
+    <value>while OAuth is on, at least one sign-in method must stay on: key sign-in or an enabled provider</value>
+  </data>
+  <data name="IdleDaysOutOfRange" xml:space="preserve">
+    <value>days without use before a device is disconnected: a whole number from 1 to {0} is allowed</value>
+  </data>
+  <data name="DeviceLimitOutOfRange" xml:space="preserve">
+    <value>device limit: a whole number from 1 to {0} is allowed, an empty value removes the limit</value>
+  </data>
+  <data name="ProviderUnknown" xml:space="preserve">
+    <value>unknown provider: {0}; available: {1}</value>
+  </data>
+  <data name="ProviderSecretRequired" xml:space="preserve">
+    <value>a client secret is required to set up a new provider</value>
+  </data>
+  <data name="ProviderClientIdRequired" xml:space="preserve">
+    <value>a client id is required</value>
+  </data>
+  <data name="OidcIssuerRequired" xml:space="preserve">
+    <value>OpenID Connect needs an issuer address that starts with https://</value>
+  </data>
+  <data name="ProviderNotConfigured" xml:space="preserve">
+    <value>provider {0} is not set up</value>
+  </data>
+  <data name="ProviderYandex" xml:space="preserve">
+    <value>Yandex</value>
+  </data>
+  <data name="LinkNotFound" xml:space="preserve">
+    <value>the client has no linked {0} accounts</value>
+  </data>
+  <data name="DeviceNotFound" xml:space="preserve">
+    <value>device not found</value>
+  </data>
+  <data name="LinkIdNotFound" xml:space="preserve">
+    <value>the client has no such linked account</value>
+  </data>
 </root>

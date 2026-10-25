@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using CtxUi.Core.Clients;
 using CtxUi.Core.Inbounds;
 using CtxUi.Core.Settings;
@@ -16,11 +17,13 @@ namespace CtxUi.IntegrationTests;
 public sealed class GatewayHost : IAsyncDisposable
 {
     private readonly Action<WebApplicationBuilder>? _configure;
+    private readonly int _port;
 
-    private GatewayHost(string dataDir, Action<WebApplicationBuilder>? configure)
+    private GatewayHost(string dataDir, Action<WebApplicationBuilder>? configure, int port)
     {
         DataDir = dataDir;
         _configure = configure;
+        _port = port;
     }
 
     public WebApplication App { get; private set; } = null!;
@@ -35,9 +38,11 @@ public sealed class GatewayHost : IAsyncDisposable
 
     public string PanelUrl => $"{BaseUrl}/{PanelPath}/";
 
-    public static async Task<GatewayHost> StartAsync(Action<WebApplicationBuilder>? configure = null)
+    public string Issuer => App.Services.GetRequiredService<IOptions<CtxUiOptions>>().Value.PublicUrl.TrimEnd('/');
+
+    public static async Task<GatewayHost> StartAsync(Action<WebApplicationBuilder>? configure = null, int port = 0)
     {
-        var host = new GatewayHost(Directory.CreateTempSubdirectory("ctx-ui-test-").FullName, configure);
+        var host = new GatewayHost(Directory.CreateTempSubdirectory("ctx-ui-test-").FullName, configure, port);
         await host.BootAsync();
         return host;
     }
@@ -56,6 +61,12 @@ public sealed class GatewayHost : IAsyncDisposable
         await App.Services.GetRequiredService<SnapshotStore>().ReloadAsync();
         return result;
     }
+
+    public Task ArrangeAsync(Func<IServiceProvider, Task> action) => ArrangeAsync(async services =>
+    {
+        await action(services);
+        return true;
+    });
 
     public async Task<T> ChangeAsync<T>(Func<IServiceProvider, Task<T>> action)
     {
@@ -124,7 +135,7 @@ public sealed class GatewayHost : IAsyncDisposable
     {
         var app = ServerApp.Build([], builder =>
         {
-            builder.WebHost.UseUrls("http://127.0.0.1:0");
+            builder.WebHost.UseUrls($"http://127.0.0.1:{_port}");
             builder.Configuration["CtxUi:DataDir"] = DataDir;
             builder.Configuration["CtxUi:RefreshInterval"] = "00:00:00.050";
             builder.Configuration["CtxUi:FlushInterval"] = "00:00:00.050";

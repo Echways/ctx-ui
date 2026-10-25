@@ -1,0 +1,67 @@
+<ConnectPage Title="@ConnectText.PageConsent">
+    <p class="lead"><Phrase Pattern="@ConnectText.ConsentLead" Arguments="[App.Name, InboundName]" /></p>
+    <dl class="facts">
+        <div>
+            <dt>@ConnectText.ConsentApp</dt>
+            <dd>
+                @App.Name
+                <span class="@(App.VerifiedBy is null ? "unverified" : "verified")">
+                    @(App.VerifiedBy is { } host ? string.Format(ConnectText.ConsentVerified, host) : ConnectText.ConsentUnverified)
+                </span>
+            </dd>
+        </div>
+        <div>
+            <dt>@ConnectText.ConsentReturn</dt>
+            <dd class="mono">@string.Join(", ", App.RedirectHosts)</dd>
+        </div>
+        <div>
+            <dt>@ConnectText.ConsentSignedIn</dt>
+            <dd>@ClientName</dd>
+        </div>
+    </dl>
+    @if (App.LoopbackOnly)
+    {
+        <p class="warn">@ConnectText.ConsentLoopback</p>
+    }
+    <p class="quiet">@ConnectText.ConsentGrants</p>
+    <div class="actions">
+        <form method="post" action="@(ConnectServices.Prefix)/consent">
+            <AntiforgeryToken />
+            <input type="hidden" name="returnUrl" value="@ReturnUrl" />
+            <button class="button" type="submit">@ConnectText.Allow</button>
+        </form>
+        <form method="post" action="@(ConnectServices.Prefix)/authorize">
+            @foreach (var (name, value) in Request)
+            {
+                <input type="hidden" name="@name" value="@value" />
+            }
+            <input type="hidden" name="@DenyParameter" value="1" />
+            <button class="link" type="submit">@ConnectText.Cancel</button>
+        </form>
+    </div>
+    <p class="aside"><a href="@SwitchUrl">@ConnectText.SwitchAccount</a></p>
+</ConnectPage>
+
+@code {
+    public const string DenyParameter = "ctx_deny";
+
+    [CascadingParameter]
+    private HttpContext Http { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public AppIdentity App { get; set; } = default!;
+
+    [Parameter]
+    public string InboundName { get; set; } = "";
+
+    [Parameter]
+    public string ClientName { get; set; } = "";
+
+    [Parameter]
+    public string ReturnUrl { get; set; } = "";
+
+    [Parameter]
+    public IReadOnlyList<KeyValuePair<string, string>> Request { get; set; } = [];
+
+    private string SwitchUrl => Http.Request.PathBase + ConnectResults.SignInPath + QueryString.Create("returnUrl", ReturnUrl);
+}

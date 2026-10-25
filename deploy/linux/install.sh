@@ -280,6 +280,7 @@ main() {
   Log:               journalctl -u ctx-ui -f
   Upgrade:           ctx-ui update
   Stop, start:       ctx-ui down, ctx-ui up
+  Remove:            ctx-ui uninstall
 
 The service does not terminate TLS: put Caddy or nginx in front of it.
 

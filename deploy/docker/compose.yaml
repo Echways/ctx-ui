@@ -7,6 +7,7 @@ services:
     environment:
       CtxUi__PublicUrl: https://${CTX_UI_DOMAIN:?}
       CtxUi__Language: ${CTX_UI_LANGUAGE:-en}
+      CtxUi__TrustedProxies: 10.0.0.0/8,172.16.0.0/12,192.168.0.0/16
     volumes:
       - ctx-ui-data:/data
     cap_drop:

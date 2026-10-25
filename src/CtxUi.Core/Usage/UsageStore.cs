@@ -26,6 +26,7 @@ public sealed class UsageStore(CtxUiDbContext db)
                 Tool = record.Tool,
                 DurationMs = record.DurationMs,
                 Outcome = record.Outcome,
+                DeviceId = record.DeviceId,
             });
         }
 

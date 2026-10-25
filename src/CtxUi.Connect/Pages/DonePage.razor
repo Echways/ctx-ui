@@ -1,0 +1,9 @@
+<ConnectPage Title="@ConnectText.PageDone" DevicesLink="true">
+    <p class="lead"><Phrase Pattern="@ConnectText.SignedInAs" Arguments="[ClientName]" /></p>
+    <p>@ConnectText.DoneNext</p>
+</ConnectPage>
+
+@code {
+    [Parameter, EditorRequired]
+    public string ClientName { get; set; } = "";
+}

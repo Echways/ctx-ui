@@ -18,7 +18,8 @@ curl -fsSL https://github.com/Echways/ctx-ui/releases/latest/download/install.sh
 ```
 
 Update to the latest release: `sudo ctx-ui update`. Stop the service:
-`sudo ctx-ui down`, start it again: `sudo ctx-ui up`.
+`sudo ctx-ui down`, start it again: `sudo ctx-ui up`. Remove everything,
+settings and data included: `sudo ctx-ui uninstall`.
 
 Docker + Caddy, removal, backup: [docs/install.md](docs/install.md).
 The service does not terminate TLS; put Caddy or nginx in front.
@@ -53,6 +54,23 @@ claude mcp add --transport http learn https://mcp.example.com/mcp/learn \
 
 A path with a token is a credential: treat it as a password.
 
+## Browser sign-in (OAuth)
+
+Apps such as Claude, ChatGPT and Cursor can connect with the server address
+alone and sign in in the browser, without copying a key. It is **off by
+default**: while off, nothing changes and `/.well-known/*` and `/connect/*`
+answer 404. Turn it on with `ctx-ui oauth on` or in the panel; it needs a
+public address with `https://`.
+
+| Way to sign in | What the person does |
+| --- | --- |
+| the client's key | pastes it on the sign-in page once |
+| Google, GitHub, GitLab, Microsoft, Yandex, VK ID, Discord, Telegram or any OpenID Connect provider | uses an account an administrator linked with a one-time invite link |
+
+Each browser is a device; a client can have a device limit, and
+administrators disconnect devices at any time. Details, providers and
+troubleshooting: [docs/oauth.md](docs/oauth.md).
+
 ## Panel
 
 Served only under a random 16-character path; any other path gets 404.
@@ -67,6 +85,7 @@ English and Russian, the choice is kept in a cookie for a year.
 | Clients | create, edit, enable/disable, search, connection window, new token, quota reset |
 | Log | recent calls, filter by client |
 | API keys | issue, revoke, link to Swagger UI |
+| OAuth | browser sign-in switch, providers, defaults for devices |
 
 Changes apply to the gateway immediately. The connection window shows the
 token, addresses and a ready-to-send message for the client.
@@ -120,6 +139,11 @@ Slug: 1–64 characters, `a-z 0-9 -`, no leading or trailing hyphen.
 | `client reset <name>` | zero the quota counter, restart the period |
 | `client reissue <name>` | new token; the old one stops working |
 | `client list` | name, state, expiry, last use, quota, inbounds |
+| `client devices <name>` | devices with apps, sign-in method, last use, IP and state |
+| `client device-off <name> <id>\|--all` | disconnect a device (id or its first characters) or all of them |
+| `client invite <name>` | one-time link that binds an outside account; valid 7 days |
+| `client links <name>` | accounts linked to the client |
+| `client unlink <name> <provider>` | remove the links of a provider |
 | `client enable\|disable <name>` | toggle without deleting |
 | `client remove <name>` | delete |
 
@@ -134,6 +158,8 @@ Options for `add` and `set`:
 | `--concurrency N` | simultaneous `POST` requests |
 | `--quota N` | `tools/call` per period |
 | `--reset-days N` | quota period length; without it the quota is one-off |
+| `--devices N` | device limit for browser sign-in; `none` in `set` removes it |
+| `--direct-key on\|off` | whether the key works in a header and an address, or only for signing in |
 
 In `set`, `none` removes a limit. Omitted options keep their values.
 
@@ -149,6 +175,23 @@ names with spaces.
 
 Both accept `--client <name>`. Times are UTC. Data reaches the database every
 `FlushInterval` (5 s), so it lags slightly.
+
+### oauth
+
+| Command | Effect |
+| --- | --- |
+| `oauth status` | state, server metadata address, defaults, providers with their return addresses; warns when the public address rules OAuth out |
+| `oauth on\|off` | turn browser sign-in on or off; `off` warns about clients without a direct key |
+| `oauth key on\|off` | allow or forbid signing in with a key |
+| `oauth set [--idle-days N] [--self-revoke on\|off] [--devices N\|none] [--direct-key on\|off]` | idle period of devices, self-service disconnecting, defaults for new clients |
+| `oauth provider set <name> --client-id <id>` | add or change a provider |
+| `oauth provider on\|off\|remove <name>` | enable, disable, remove |
+| `oauth provider list` | configured providers |
+
+`provider set` takes the secret from `--client-secret`, from the standard
+input with `--client-secret-stdin`, or from `CTX_UI_PROVIDER_SECRET`; for oidc
+add `--issuer <https://…>` and `--title <text>`. Names: `google`, `microsoft`,
+`github`, `gitlab`, `yandex`, `vkid`, `discord`, `telegram`, `oidc`.
 
 ### apikey
 
@@ -174,6 +217,9 @@ Lives under the panel's secret path, like the panel itself:
 | --- | --- |
 | `inbounds`, `inbounds/{slug}` | list, get, `PUT` creates or replaces, `enable`, `disable`, `DELETE` |
 | `clients`, `clients/{id}` | list (`?name=` finds one), get, `POST` issues, `PATCH` changes, `connection`, `enable`, `disable`, `reset-quota`, `reissue`, `DELETE` |
+| `clients/{id}/devices`, `…/devices/{deviceId}` | list devices, `DELETE` disconnects one or all |
+| `clients/{id}/invite`, `clients/{id}/links`, `…/links/{linkId}`, `…/links/{provider}` | `POST` issues an invite link, list links, `DELETE` unlinks one account or every account of a provider |
+| `oauth`, `oauth/providers/{name}` | settings (`PATCH`), providers (`PUT`, `enable`, `disable`, `DELETE`); secrets are never returned |
 | `usage/days`, `usage/log`, `overview` | daily totals, recent calls, the panel's overview |
 
 Errors are `application/problem+json`: 400 wrong input, 401 no or unknown
@@ -232,6 +278,7 @@ these names are stripped.
 
 - [Installation](docs/install.md)
 - [Configuration](docs/configuration.md)
+- [Browser sign-in (OAuth)](docs/oauth.md)
 
 ## License
 

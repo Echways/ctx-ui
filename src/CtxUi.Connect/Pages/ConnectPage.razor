@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="@CultureInfo.CurrentUICulture.TwoLetterISOLanguageName">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="referrer" content="no-referrer" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#002FA7" />
+    <title>@Title · ctx-ui</title>
+    <link rel="icon" href="@(Http.Request.PathBase + ConnectServices.Favicon)" type="image/svg+xml" />
+    <link rel="stylesheet" href="@(Http.Request.PathBase)/_content/CtxUi.Connect/connect.css" />
+</head>
+<body>
+    <main class="entrance pigment">
+        <div class="entrance-in">
+            <header class="entrance-top">
+                @if (Alert is not null)
+                {
+                    <p class="refusal" role="alert">@Alert</p>
+                }
+                <nav class="entrance-links">
+                    @if (DevicesLink)
+                    {
+                        <a href="@(Http.Request.PathBase + ConnectResults.DevicesPath)">@ConnectText.MyDevices</a>
+                    }
+                    <a href="@ConnectLanguage.SwitchPath(Http)" hreflang="@ConnectText.LanguageSwitchCulture" lang="@ConnectText.LanguageSwitchCulture">@ConnectText.LanguageSwitchName</a>
+                </nav>
+            </header>
+            <div class="page">
+                <h1>@Title</h1>
+                @ChildContent
+            </div>
+        </div>
+        <div class="monument" aria-hidden="true">ctx-ui</div>
+    </main>
+</body>
+</html>
+
+@code {
+    [CascadingParameter]
+    private HttpContext Http { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public string Title { get; set; } = "";
+
+    [Parameter]
+    public string? Alert { get; set; }
+
+    [Parameter]
+    public bool DevicesLink { get; set; }
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+}

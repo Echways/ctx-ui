@@ -142,6 +142,24 @@ check "api answers through caddy with the key" equals 200 \
 check "panel does not exist without the secret path" equals 404 \
     "$(curl -sk -o /dev/null -w '%{http_code}' https://localhost:18443/login)"
 
+echo "== oauth"
+output="$(compose exec -T ctx-ui ctx-ui oauth on 2>&1)" || true
+check "oauth on succeeds with the https domain" contains "OAuth" "$output"
+metadata_issuer() {
+    local actual=""
+    for _ in $(seq 1 30); do
+        actual="$(curl -sk https://localhost:18443/.well-known/oauth-authorization-server || true)"
+        if [[ "$actual" == *'"issuer": "https://localhost"'* ]]; then
+            return 0
+        fi
+        sleep 1
+    done
+    echo "      expected issuer https://localhost"
+    echo "      actual: $actual"
+    return 1
+}
+check "metadata through caddy names the domain as issuer" metadata_issuer
+
 echo "== restart"
 compose restart ctx-ui > /dev/null 2>&1
 check "client survives a restart" response_becomes "pong 200" -H "Authorization: Bearer $token"

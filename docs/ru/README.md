@@ -18,7 +18,8 @@ curl -fsSL https://github.com/Echways/ctx-ui/releases/latest/download/install.sh
 ```
 
 Обновление до последнего релиза: `sudo ctx-ui update`. Остановить сервис:
-`sudo ctx-ui down`, запустить снова: `sudo ctx-ui up`.
+`sudo ctx-ui down`, запустить снова: `sudo ctx-ui up`. Удалить всё, вместе с
+настройками и данными: `sudo ctx-ui uninstall`.
 
 Docker + Caddy, удаление, резервная копия: [install.md](install.md).
 TLS сервис не терминирует; перед ним ставится Caddy или nginx.

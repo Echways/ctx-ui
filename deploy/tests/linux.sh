@@ -202,6 +202,32 @@ in_box bash /dist/install.sh --uninstall --purge > /dev/null 2>&1 || true
 check "purge removes data and settings" equals "" "$(in_box sh -c 'ls -d /etc/ctx-ui /var/lib/ctx-ui 2>/dev/null' || true)"
 check "purge removes the user" equals "" "$(in_box sh -c 'getent passwd ctx-ui' || true)"
 
+echo "== ctx-ui uninstall"
+in_box bash /dist/install.sh --archive "/dist/$second" > /dev/null 2>&1 || true
+in_box sh -c 'cd / && ctx-ui admin add root' > /dev/null 2>&1 || true
+output="$(in_box ctx-ui uninstall 2>&1)" && code=0 || code=$?
+check "uninstall without a terminal is refused" equals "1 active" "$code $(in_box systemctl is-active ctx-ui)"
+check "refusal mentions --yes" contains "--yes" "$output"
+output="$(in_box runuser -u ctx-ui -- ctx-ui uninstall --yes 2>&1)" && code=0 || code=$?
+check "uninstall without root is refused" equals "1 active" "$code $(in_box systemctl is-active ctx-ui)"
+output="$(in_box ctx-ui uninstall --force 2>&1)" && code=0 || code=$?
+check "unknown uninstall option is refused" equals "1 active" "$code $(in_box systemctl is-active ctx-ui)"
+output="$(in_box ctx-ui uninstall --keep-data --yes 2>&1)" || true
+check "uninstall --keep-data says what was kept" contains "were kept" "$output"
+check "uninstall --keep-data removes the program" equals "" "$(in_box sh -c 'ls -d /opt/ctx-ui /usr/local/bin/ctx-ui /etc/systemd/system/ctx-ui.service 2>/dev/null' || true)"
+check "uninstall --keep-data keeps data and settings" equals "/etc/ctx-ui/ctx-ui.env /var/lib/ctx-ui/ctx-ui.db" \
+    "$(in_box sh -c 'ls /etc/ctx-ui/ctx-ui.env /var/lib/ctx-ui/ctx-ui.db' | tr '\n' ' ' | sed 's/ $//')"
+in_box bash /dist/install.sh --archive "/dist/$second" > /dev/null 2>&1 || true
+check "reinstall finds the kept administrator" contains "root" "$(in_box sh -c 'cd / && ctx-ui admin list' 2>&1)"
+output="$(in_box ctx-ui uninstall --yes 2>&1)" || true
+check "uninstall reports full removal" contains "removed together with settings and data" "$output"
+check "uninstall stops the service" equals "" "$(in_box sh -c 'pgrep -u ctx-ui' || true)"
+check "uninstall removes the unit" equals "" "$(in_box sh -c 'systemctl list-unit-files ctx-ui.service --no-legend' || true)"
+check "uninstall removes everything" equals "" \
+    "$(in_box sh -c 'ls -d /opt/ctx-ui /usr/local/bin/ctx-ui /etc/systemd/system/ctx-ui.service /etc/ctx-ui /var/lib/ctx-ui 2>/dev/null' || true)"
+check "uninstall removes the user" equals "" "$(in_box sh -c 'getent passwd ctx-ui' || true)"
+check "uninstall removes the group" equals "" "$(in_box sh -c 'getent group ctx-ui' || true)"
+
 if [ "$failures" -ne 0 ]; then
     echo "$failures check(s) failed"
     exit 1

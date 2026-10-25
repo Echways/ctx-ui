@@ -61,7 +61,7 @@ public sealed class SignInSettingsService(CtxUiDbContext db, ISecretVault vault)
             throw new DomainException(CoreText.ProviderClientIdRequired);
 
         var issuer = setup.Issuer?.Trim();
-        if (info.NeedsIssuer && !(Uri.TryCreate(issuer, UriKind.Absolute, out var url) && url.Scheme == Uri.UriSchemeHttps))
+        if (info.NeedsIssuer && !(Uri.TryCreate(issuer, UriKind.Absolute, out var url) && (url.Scheme == Uri.UriSchemeHttps || url.IsLoopback && url.Scheme == Uri.UriSchemeHttp)))
             throw new DomainException(CoreText.OidcIssuerRequired);
 
         var secret = string.IsNullOrWhiteSpace(setup.Secret) ? null : setup.Secret.Trim();

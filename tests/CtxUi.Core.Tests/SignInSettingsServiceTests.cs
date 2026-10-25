@@ -177,6 +177,16 @@ public class SignInSettingsServiceTests
     }
 
     [Fact]
+    public async Task Oidc_provider_accepts_a_loopback_http_issuer()
+    {
+        await using var database = await TestDatabase.CreateAsync();
+
+        await Settings(database).SetProviderAsync(new ProviderSetup("oidc", "client-id", "secret", "http://127.0.0.1:9000", "Local"));
+
+        Assert.Equal("http://127.0.0.1:9000", Assert.Single(await Settings(database).ProvidersAsync()).Issuer);
+    }
+
+    [Fact]
     public async Task Oidc_provider_keeps_its_issuer_and_title()
     {
         await using var database = await TestDatabase.CreateAsync();

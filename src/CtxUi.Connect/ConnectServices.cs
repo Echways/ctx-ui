@@ -15,6 +15,7 @@ using OpenIddict.Server;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using OpenIddict.EntityFrameworkCore.Models;
 using CtxUi.Connect.Endpoints;
+using CtxUi.Connect.External;
 using CtxUi.Connect.Metadata;
 using CtxUi.Connect.Registration;
 using CtxUi.Connect.Resources;
@@ -51,6 +52,7 @@ public static partial class ConnectServices
         services.AddSingleton<DeviceJanitor>();
         services.AddHostedService(provider => provider.GetRequiredService<DeviceJanitor>());
         services.AddAuthentication().AddConnectSession();
+        services.AddExternalProviders();
         services.AddRateLimiter(limiter =>
         {
             limiter.OnRejected = (context, _) => new ValueTask(
@@ -142,6 +144,7 @@ public static partial class ConnectServices
         app.MapAuthorize();
         app.MapToken();
         app.MapPages();
+        app.MapExternal();
         return app;
     }
 

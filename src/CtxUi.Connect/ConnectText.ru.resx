@@ -135,4 +135,25 @@
   <data name="BackToSignIn" xml:space="preserve">
     <value>Вернуться ко входу</value>
   </data>
+  <data name="PageInvite" xml:space="preserve">
+    <value>Привязка аккаунта</value>
+  </data>
+  <data name="InviteLead" xml:space="preserve">
+    <value>Привяжите аккаунт к клиенту «{0}». В следующий раз вы сможете входить через него.</value>
+  </data>
+  <data name="SignInWith" xml:space="preserve">
+    <value>Войти через {0}</value>
+  </data>
+  <data name="ExternalFailed" xml:space="preserve">
+    <value>Вход через провайдера не завершён. Попробуйте ещё раз.</value>
+  </data>
+  <data name="InviteInvalid" xml:space="preserve">
+    <value>Приглашение недействительно или истекло. Попросите новое.</value>
+  </data>
+  <data name="AccountLinkedElsewhere" xml:space="preserve">
+    <value>Этот аккаунт уже привязан к другому клиенту. Приглашение остаётся действующим.</value>
+  </data>
+  <data name="AccountNotLinked" xml:space="preserve">
+    <value>Этот аккаунт не привязан ни к одному клиенту. Попросите у администратора ссылку-приглашение.</value>
+  </data>
 </root>

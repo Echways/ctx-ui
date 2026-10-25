@@ -135,4 +135,25 @@
   <data name="BackToSignIn" xml:space="preserve">
     <value>Back to sign in</value>
   </data>
+  <data name="PageInvite" xml:space="preserve">
+    <value>Link an account</value>
+  </data>
+  <data name="InviteLead" xml:space="preserve">
+    <value>Link an account to the client “{0}”. Next time you can sign in with it.</value>
+  </data>
+  <data name="SignInWith" xml:space="preserve">
+    <value>Sign in with {0}</value>
+  </data>
+  <data name="ExternalFailed" xml:space="preserve">
+    <value>Sign-in through the provider did not complete. Try again.</value>
+  </data>
+  <data name="InviteInvalid" xml:space="preserve">
+    <value>The invitation is invalid or has expired. Ask for a new one.</value>
+  </data>
+  <data name="AccountLinkedElsewhere" xml:space="preserve">
+    <value>This account is already linked to another client. The invitation stays valid.</value>
+  </data>
+  <data name="AccountNotLinked" xml:space="preserve">
+    <value>This account is not linked to any client. Ask the administrator for an invitation link.</value>
+  </data>
 </root>

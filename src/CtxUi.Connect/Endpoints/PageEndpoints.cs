@@ -32,6 +32,7 @@ public static class PageEndpoints
         {
             ReturnUrl = ConnectLanguage.LocalPath(returnUrl, ConnectResults.DevicesPath),
             snapshot.Current.SignIn.KeySignIn,
+            Providers = ProviderButton.All(snapshot.Current.SignIn),
         });
 
     private static async Task<IResult> SignInWithKeyAsync(
@@ -50,7 +51,7 @@ public static class PageEndpoints
 
         var found = KeySignIn.Find(snapshot.Current, key, clock.GetUtcNow());
         if (found.ClientId is not { } clientId)
-            return ConnectResults.Page<SignInPage>(new { ReturnUrl = target, KeySignIn = true, Error = found.Refusal });
+            return ConnectResults.Page<SignInPage>(new { ReturnUrl = target, KeySignIn = true, Providers = ProviderButton.All(snapshot.Current.SignIn), Error = found.Refusal });
 
         await ConnectSession.SignInAsync(http, clientId, Device.ByKey);
         return ConnectResults.Back(http, target);

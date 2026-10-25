@@ -15,6 +15,7 @@
             <button class="primary" type="submit">@ConnectText.SignInButton</button>
         </form>
     }
+    <ProviderButtons Providers="Providers" ReturnUrl="@ReturnUrl" />
 </ConnectPage>
 
 @code {
@@ -23,6 +24,9 @@
 
     [Parameter]
     public bool KeySignIn { get; set; }
+
+    [Parameter]
+    public IReadOnlyList<ProviderButton> Providers { get; set; } = [];
 
     [Parameter]
     public string? Error { get; set; }

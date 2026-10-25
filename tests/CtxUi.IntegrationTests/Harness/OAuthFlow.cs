@@ -113,6 +113,15 @@ public sealed partial class OAuthFlow : IDisposable
         await SubmitAsync("/connect/signin", new Dictionary<string, string> { ["key"] = key });
     }
 
+    public Task NavigateAsync(string url) => FollowAsync(new HttpRequestMessage(HttpMethod.Get, url));
+
+    public string LinkTo(string pathPrefix)
+    {
+        var match = Regex.Match(Page, "href=\"(?<href>" + Regex.Escape(pathPrefix) + "[^\"]*)\"");
+        Assert.True(match.Success, $"no link to {pathPrefix} on the page:\n{Page}");
+        return WebUtility.HtmlDecode(match.Groups["href"].Value);
+    }
+
     public Task ApproveAsync() => Code is null ? SubmitAsync("/connect/consent") : Task.CompletedTask;
 
     public Task ReplaceAsync(Guid deviceId) =>

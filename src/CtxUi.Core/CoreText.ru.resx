@@ -165,4 +165,34 @@
   <data name="OutcomeNotJsonRpc" xml:space="preserve">
     <value>не JSON-RPC</value>
   </data>
+  <data name="OAuthNeedsHttps" xml:space="preserve">
+    <value>для входа через браузер (OAuth) публичный адрес должен начинаться с https:// (для разработки допустим http://localhost); задайте CtxUi__PublicUrl и перезапустите сервис</value>
+  </data>
+  <data name="LastSignInMethod" xml:space="preserve">
+    <value>пока OAuth включён, должен оставаться хотя бы один способ входа: вход по ключу или включённый провайдер</value>
+  </data>
+  <data name="IdleDaysOutOfRange" xml:space="preserve">
+    <value>дней без использования до отключения устройства: допускается целое число от 1 до {0}</value>
+  </data>
+  <data name="DeviceLimitOutOfRange" xml:space="preserve">
+    <value>лимит устройств: допускается целое число от 1 до {0}, пустое значение снимает лимит</value>
+  </data>
+  <data name="ProviderUnknown" xml:space="preserve">
+    <value>неизвестный провайдер: {0}; доступны: {1}</value>
+  </data>
+  <data name="ProviderSecretRequired" xml:space="preserve">
+    <value>для нового провайдера нужен client secret</value>
+  </data>
+  <data name="ProviderClientIdRequired" xml:space="preserve">
+    <value>нужен client id</value>
+  </data>
+  <data name="OidcIssuerRequired" xml:space="preserve">
+    <value>для OpenID Connect нужен адрес issuer, начинающийся с https://</value>
+  </data>
+  <data name="ProviderNotConfigured" xml:space="preserve">
+    <value>провайдер {0} не подключён</value>
+  </data>
+  <data name="ProviderYandex" xml:space="preserve">
+    <value>Яндекс</value>
+  </data>
 </root>

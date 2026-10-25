@@ -8,6 +8,7 @@ using CtxUi.Core.Data;
 using CtxUi.Core.Inbounds;
 using CtxUi.Core.Routing;
 using CtxUi.Core.Settings;
+using CtxUi.Core.SignIn;
 using CtxUi.Core.Usage;
 
 namespace CtxUi.Core;
@@ -28,6 +29,7 @@ public static class CoreServices
         services.AddScoped<OverviewService>();
         services.AddScoped<PanelSettings>();
         services.AddScoped<ApiKeyService>();
+        services.AddScoped<SignInSettingsService>();
         return services;
     }
 }

@@ -41,6 +41,8 @@ public class ApiUsageTests
         Assert.Equal("tools/call", line.GetProperty("method").GetString());
         Assert.Equal("echo", line.GetProperty("tool").GetString());
         Assert.Equal("Ok", line.GetProperty("outcome").GetString());
+        Assert.Equal(200, line.GetProperty("status").GetInt32());
+        Assert.True(line.GetProperty("requestBytes").GetInt32() > 0);
         Assert.Equal("2026-10-12", day.GetProperty("day").GetString());
         Assert.Equal(1, day.GetProperty("toolCalls").GetInt32());
         Assert.Equal(1, overview.GetProperty("toolCalls").GetInt32());
@@ -52,6 +54,7 @@ public class ApiUsageTests
     [InlineData("api/v1/usage/days?days=3651", "Days: нужно число от 1 до 3650")]
     [InlineData("api/v1/usage/log?limit=0", "Limit: нужно число от 1 до 1000")]
     [InlineData("api/v1/usage/log?limit=1001", "Limit: нужно число от 1 до 1000")]
+    [InlineData("api/v1/metrics?days=90", "Days: нужно одно из значений 1, 7, 30")]
     public async Task Out_of_range_window_is_refused(string path, string expected)
     {
         await using var gateway = await GatewayHost.StartAsync();
@@ -85,5 +88,30 @@ public class ApiUsageTests
         Assert.Equal(0, (await LogAsync(api)).GetArrayLength());
         Assert.Equal(0, (await ApiClient.ReadAsync(await api.GetAsync("api/v1/usage/days"))).GetArrayLength());
         Assert.Equal(0, (await ApiClient.ReadAsync(await api.GetAsync("api/v1/overview"))).GetProperty("clients").GetInt32());
+    }
+
+    [Fact]
+    public async Task Metrics_narrow_down_to_a_client_and_a_tool()
+    {
+        await using var upstream = await FakeUpstream.StartAsync();
+        await using var gateway = await StartAtAsync();
+        await gateway.AddInboundAsync("echo", upstream.McpUrl);
+        var issued = await gateway.AddClientAsync("Иванов", ["echo"]);
+        await gateway.AddClientAsync("Петров", ["echo"]);
+        using var api = await ApiClient.IssueAsync(gateway);
+        using var call = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/echo", issued.Token, ToolCall));
+        await Eventually.TrueAsync(async () => (await LogAsync(api)).GetArrayLength() == 1, "вызов попал в журнал");
+
+        var all = await ApiClient.ReadAsync(await api.GetAsync("api/v1/metrics"));
+        var narrowed = await ApiClient.ReadAsync(await api.GetAsync($"api/v1/metrics?days=1&clientId={issued.Client.Id}&tool=echo"));
+
+        Assert.Equal(7, all.GetProperty("period").GetProperty("days").GetInt32());
+        Assert.Equal(2, all.GetProperty("clientsWithAccess").GetInt32());
+        Assert.Equal("Иванов", all.GetProperty("clients")[0].GetProperty("name").GetString());
+        Assert.Equal("echo", all.GetProperty("tools")[0].GetProperty("tool").GetString());
+        Assert.Equal(1, narrowed.GetProperty("period").GetProperty("days").GetInt32());
+        Assert.Equal("Иванов", narrowed.GetProperty("subject").GetProperty("client").GetString());
+        Assert.Equal(1, narrowed.GetProperty("totals").GetProperty("toolCalls").GetInt32());
+        Assert.Equal(0, narrowed.GetProperty("clients").GetArrayLength());
     }
 }

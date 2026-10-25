@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Http.HttpResults;
 using CtxUi.Core;
 using CtxUi.Core.Clients;
 using CtxUi.Core.Inbounds;
+using CtxUi.Core.Metrics;
 using CtxUi.Core.Usage;
 
 namespace CtxUi.Server.Api;
@@ -16,13 +17,18 @@ public sealed record UsageLine(
     string Method,
     string? Tool,
     int DurationMs,
-    UsageOutcome Outcome);
+    UsageOutcome Outcome,
+    int Status,
+    int RequestBytes,
+    long ResponseBytes);
 
 public static class UsageEndpoints
 {
     public static void MapUsage(this RouteGroupBuilder api)
     {
         api.MapGet("/overview", OverviewAsync).WithTags("usage").WithSummary("Same as the Overview page: the last day and the last 7 days");
+        api.MapGet("/metrics", MetricsAsync).WithTags("usage")
+            .WithSummary("Metrics of a period, optionally narrowed to a client, an inbound and a tool; days are 1, 7, 30 or 90 within the log retention, 7 by default");
         var usage = api.MapGroup("/usage").WithTags("usage");
         usage.MapGet("/days", DaysAsync).WithSummary("Daily totals, UTC; days from 1 to 3650, 7 by default");
         usage.MapGet("/log", LogAsync).WithSummary("Recent calls, newest first; limit from 1 to 1000, 50 by default");
@@ -30,6 +36,10 @@ public static class UsageEndpoints
 
     private static async Task<Ok<Overview>> OverviewAsync(OverviewService overview, CancellationToken ct) =>
         TypedResults.Ok(await overview.LoadAsync(ct));
+
+    private static async Task<Ok<MetricsReport>> MetricsAsync(
+        int? days, Guid? clientId, Guid? inboundId, string? tool, MetricsService metrics, CancellationToken ct) =>
+        TypedResults.Ok(await metrics.LoadAsync(new MetricsFilter(clientId, inboundId, tool), days, ct));
 
     private static async Task<Ok<List<DailyTotal>>> DaysAsync(
         Guid? clientId, int? days, UsageStore usage, ClientService clients, TimeProvider clock, CancellationToken ct)
@@ -59,7 +69,10 @@ public static class UsageEndpoints
                 line.Method,
                 line.Tool,
                 line.DurationMs,
-                line.Outcome))
+                line.Outcome,
+                line.Status,
+                line.RequestBytes,
+                line.ResponseBytes))
             .ToList());
     }
 

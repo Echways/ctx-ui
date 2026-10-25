@@ -1,5 +1,5 @@
 <ConnectPage Title="@ConnectText.PageDone" DevicesLink="true">
-    <p class="lead">@string.Format(ConnectText.SignedInAs, ClientName)</p>
+    <p class="lead"><Phrase Pattern="@ConnectText.SignedInAs" Arguments="[ClientName]" /></p>
     <p>@ConnectText.DoneNext</p>
 </ConnectPage>
 

@@ -1,0 +1,29 @@
+@foreach (var (text, isArgument) in Parts)
+{
+    if (!isArgument)
+    {
+        @text
+    }
+    else if (ArgumentClass is null)
+    {
+        <strong>@text</strong>
+    }
+    else
+    {
+        <span class="@ArgumentClass">@text</span>
+    }
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public string Pattern { get; set; } = "";
+
+    [Parameter, EditorRequired]
+    public string[] Arguments { get; set; } = [];
+
+    [Parameter]
+    public string? ArgumentClass { get; set; }
+
+    private IEnumerable<(string Text, bool IsArgument)> Parts =>
+        PhrasePattern.Split(Pattern).Select((part, index) => index % 2 == 0 ? (part, false) : (Arguments[int.Parse(part, CultureInfo.InvariantCulture)], true));
+}

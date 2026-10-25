@@ -113,8 +113,10 @@ public class OAuthRegistrationTests
 
         using var response = await browser.GetAsync(Authorize(metadata.Url, "http://localhost:3118/callback", gateway.Issuer + "/mcp/echo"));
 
-        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
-        Assert.Contains("invalid_client", await response.Content.ReadAsStringAsync());
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var page = await response.Content.ReadAsStringAsync();
+        Assert.Contains("Запрос приложения не принят", page);
+        Assert.Contains("invalid_client", page);
     }
 
     [Fact]
@@ -182,6 +184,66 @@ public class OAuthRegistrationTests
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         Assert.Equal(error, (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("error").GetString());
+    }
+
+    [Fact]
+    public async Task Dcr_refuses_more_than_ten_redirect_uris()
+    {
+        await using var gateway = await StartAsync();
+
+        using var response = await gateway.Http.PostAsJsonAsync(
+            "/connect/register",
+            new Dictionary<string, object>
+            {
+                ["client_name"] = "Many",
+                ["redirect_uris"] = Enumerable.Range(1, 11).Select(port => $"http://localhost:{port}/callback").ToArray(),
+            });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal("invalid_redirect_uri", (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("error").GetString());
+    }
+
+    [Fact]
+    public async Task Dcr_refuses_an_oversized_body()
+    {
+        await using var gateway = await StartAsync();
+
+        using var response = await gateway.Http.PostAsJsonAsync(
+            "/connect/register",
+            new Dictionary<string, object> { ["client_name"] = new string('a', 20_000), ["redirect_uris"] = new[] { "http://localhost/callback" } });
+
+        Assert.Equal(HttpStatusCode.RequestEntityTooLarge, response.StatusCode);
+        Assert.Equal("invalid_client_metadata", (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("error").GetString());
+    }
+
+    [Fact]
+    public async Task Dcr_cleans_the_app_name()
+    {
+        await using var gateway = await StartAsync();
+
+        using var response = await gateway.Http.PostAsJsonAsync(
+            "/connect/register",
+            new Dictionary<string, object> { ["client_name"] = "  Claude\n\u0000Code  " + new string('x', 200), ["redirect_uris"] = new[] { "http://localhost/callback" } });
+
+        var name = (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("client_name").GetString()!;
+        Assert.StartsWith("Claude Code x", name);
+        Assert.Equal(101, name.Length);
+    }
+
+    [Fact]
+    public async Task Unknown_client_gets_a_page_that_explains()
+    {
+        await using var gateway = await StartAsync();
+        await gateway.AddInboundAsync("echo", "https://mcp.example.org/mcp");
+        using var browser = Browser(gateway);
+
+        using var response = await browser.GetAsync(Authorize("nobody", OAuthFlow.Callback, gateway.Issuer + "/mcp/echo"));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal("text/html", response.Content.Headers.ContentType?.MediaType);
+        var page = await response.Content.ReadAsStringAsync();
+        Assert.Contains("Запрос приложения не принят", page);
+        Assert.Contains("client_id", page);
     }
 
     [Fact]

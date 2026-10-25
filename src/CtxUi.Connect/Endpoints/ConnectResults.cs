@@ -16,8 +16,13 @@ public static class ConnectResults
         where TPage : IComponent =>
         new(parameters) { StatusCode = status };
 
-    public static RazorComponentResult<NoticePage> Notice(string text, int status = StatusCodes.Status200OK) =>
-        Page<NoticePage>(new { Text = text }, status);
+    public static RazorComponentResult<NoticePage> Notice(
+        string text,
+        int status = StatusCodes.Status200OK,
+        string? title = null,
+        string? detail = null,
+        bool backToSignIn = true) =>
+        Page<NoticePage>(new { Text = text, Title = title, Detail = detail, BackToSignIn = backToSignIn }, status);
 
     public static IResult ToSignIn(HttpContext http, string returnUrl) =>
         Results.Redirect(http.Request.PathBase + SignInPath + QueryString.Create("returnUrl", returnUrl));

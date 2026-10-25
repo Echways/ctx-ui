@@ -312,6 +312,29 @@ public class ApiClientsTests
     }
 
     [Fact]
+    public async Task A_single_link_is_removed_by_id()
+    {
+        await using var gateway = await StartWithEchoAsync();
+        using var api = await ApiClient.IssueAsync(gateway);
+        var id = Id(await IssueAsync(api, new { name = "Иванов", inbounds = new[] { "echo" } }));
+        await gateway.ChangeAsync(async services =>
+        {
+            var links = services.GetRequiredService<CtxUi.Core.SignIn.ClientLinkService>();
+            await links.LinkAsync(await links.InviteAsync(Guid.Parse(id)), new CtxUi.Core.SignIn.ExternalIdentity("github", "42", "ivanov@example.org"));
+            await links.LinkAsync(await links.InviteAsync(Guid.Parse(id)), new CtxUi.Core.SignIn.ExternalIdentity("github", "43", "ivanov@work.example"));
+            return true;
+        });
+
+        using var listed = await api.GetAsync($"api/v1/clients/{id}/links");
+        var work = (await ApiClient.ReadAsync(listed)).EnumerateArray().Single(link => link.GetProperty("display").GetString() == "ivanov@work.example");
+        using var removed = await api.DeleteAsync($"api/v1/clients/{id}/links/{work.GetProperty("id").GetString()}");
+        using var left = await api.GetAsync($"api/v1/clients/{id}/links");
+
+        Assert.Equal(HttpStatusCode.NoContent, removed.StatusCode);
+        Assert.Equal("ivanov@example.org", Assert.Single((await ApiClient.ReadAsync(left)).EnumerateArray()).GetProperty("display").GetString());
+    }
+
+    [Fact]
     public async Task Reissue_reports_revoked_devices()
     {
         await using var gateway = await StartWithEchoAsync();

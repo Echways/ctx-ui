@@ -1,7 +1,7 @@
 <ConnectPage Title="@ConnectText.PageLimit">
     @if (SelfRevoke)
     {
-        <p class="lead">@string.Format(ConnectText.LimitLead, Limit)</p>
+        <p class="lead">@ConnectWords.Count(ConnectText.LimitLead, Limit)</p>
     }
     else
     {
@@ -17,15 +17,19 @@
                         <AntiforgeryToken />
                         <input type="hidden" name="deviceId" value="@device.Id" />
                         <input type="hidden" name="returnUrl" value="@ReturnUrl" />
-                        <button class="primary" type="submit">@ConnectText.Replace</button>
+                        <button class="plain small" type="submit" aria-label="@string.Format(ConnectText.ReplaceOf, device.Name)">@ConnectText.Replace</button>
                     </form>
                 }
             </DeviceCard>
         }
     </ul>
+    <p class="aside"><a href="@(Http.Request.PathBase + AuthorizeEndpoint.DenyUrl(ReturnUrl))">@ConnectText.LimitCancel</a></p>
 </ConnectPage>
 
 @code {
+    [CascadingParameter]
+    private HttpContext Http { get; set; } = default!;
+
     [Parameter]
     public IReadOnlyList<Device> Devices { get; set; } = [];
 

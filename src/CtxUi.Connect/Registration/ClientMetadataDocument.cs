@@ -21,8 +21,7 @@ public sealed record ClientMetadataDocument(
             var root = document.RootElement;
             if (root.ValueKind != JsonValueKind.Object
                 || Text(root, "client_id") != url.OriginalString
-                || Text(root, "client_name") is not { } name
-                || string.IsNullOrWhiteSpace(name)
+                || AppNames.Clean(Text(root, "client_name")) is not { Length: > 0 } name
                 || !root.TryGetProperty("redirect_uris", out var redirects)
                 || redirects.ValueKind != JsonValueKind.Array)
                 return null;
@@ -40,7 +39,7 @@ public sealed record ClientMetadataDocument(
             if (uris.Count == 0 || method is not (null or "none"))
                 return null;
 
-            return new ClientMetadataDocument(url.OriginalString, name.Trim(), uris, method, CacheLifetime(cache));
+            return new ClientMetadataDocument(url.OriginalString, name, uris, method, CacheLifetime(cache));
         }
         catch (JsonException)
         {

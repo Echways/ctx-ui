@@ -47,10 +47,44 @@ public class ConnectPagesTests
 
         await page.GotoAsync(flow.AuthorizeUrl);
         await SignInAsync(page, issued.Token);
-        await Expect(page.GetByText("Claude Code")).ToBeVisibleAsync();
+        await Expect(page.GetByText("Claude Code", new() { Exact = true })).ToBeVisibleAsync();
+        await Expect(page.GetByText("название указало само приложение, оно не проверено")).ToBeVisibleAsync();
         var callback = await ApproveAsync(page);
 
         Assert.Contains("code=", callback);
+    }
+
+    [Fact]
+    public async Task Sign_in_page_names_the_app_and_the_server()
+    {
+        await using var gateway = await OAuthHarness.StartAsync();
+        await gateway.AddInboundAsync("echo", "https://mcp.example.org/mcp");
+        using var flow = await OAuthFlow.StartAsync(gateway, "echo");
+        await using var browser = await BrowserAsync(gateway);
+        var page = await browser.NewPageAsync();
+
+        await page.GotoAsync(flow.AuthorizeUrl);
+
+        await Expect(page.Locator("p.lead")).ToHaveTextAsync("Войдите, чтобы подключить Claude Code к echo.");
+    }
+
+    [Fact]
+    public async Task Pages_follow_the_browser_language()
+    {
+        await using var gateway = await OAuthHarness.StartAsync();
+        var browser = await PanelSession.SharedBrowserAsync();
+        await using var context = await browser.NewContextAsync(new BrowserNewContextOptions
+        {
+            BaseURL = gateway.BaseUrl,
+            JavaScriptEnabled = false,
+            Locale = "en-US",
+        });
+        var page = await context.NewPageAsync();
+
+        await page.GotoAsync("/connect/signin");
+
+        await Expect(page.GetByRole(AriaRole.Heading, new() { Name = "Sign in" })).ToBeVisibleAsync();
+        await Expect(page.Locator("html")).ToHaveAttributeAsync("lang", "en");
     }
 
     [Fact]
@@ -87,7 +121,7 @@ public class ConnectPagesTests
         await page.GotoAsync(flow.AuthorizeUrl);
         await SignInAsync(page, issued.Token);
         await Expect(page.GetByRole(AriaRole.Heading, new() { Name = "Достигнут лимит устройств" })).ToBeVisibleAsync();
-        await page.GetByRole(AriaRole.Button, new() { Name = "Отключить и войти здесь" }).ClickAsync();
+        await page.GetByRole(AriaRole.Button, new() { Name = "и войти здесь" }).ClickAsync();
         var callback = await ApproveAsync(page);
 
         Assert.Contains("code=", callback);

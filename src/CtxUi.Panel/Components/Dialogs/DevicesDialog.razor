@@ -29,13 +29,15 @@
                         </div>
                         <p class="dev-apps">@(device.Apps.Count == 0 ? PanelText.DeviceNoApps : string.Format(PanelText.DeviceApps, string.Join(", ", device.Apps.Select(app => app.AppName))))</p>
                         <p class="dev-meta">
-                            @string.Format(PanelText.DeviceSignedIn, SignedInWith(device.SignedInWith)) ·
-                            @(device.LastUsedAt is { } used ? string.Format(PanelText.DeviceLastUsed, Words.Minute(used)) : PanelText.DeviceNeverUsed) ·
-                            <span class="mono">@string.Format(PanelText.DeviceSignInIp, device.SignInIp)</span>
+                            @string.Format(PanelText.DeviceSignedIn, Words.Minute(device.CreatedAt), SignedInWith(device.SignedInWith)) ·
+                            @PanelText.DeviceSignInIp <code>@device.SignInIp</code>
                         </p>
-                        @if (device.RevokedReason is { } reason)
+                        <p class="dev-meta">
+                            @(device.LastUsedAt is { } used ? string.Format(PanelText.DeviceLastUsed, Words.Minute(used)) : PanelText.DeviceNeverUsed)
+                        </p>
+                        @if (device is { RevokedReason: { } reason, RevokedAt: { } revokedAt })
                         {
-                            <p class="dev-reason">@PanelText.ResourceManager.GetString("Revoked_" + reason, PanelText.Culture)</p>
+                            <p class="dev-reason">@PanelText.ResourceManager.GetString("Revoked_" + reason, PanelText.Culture) · @Words.Minute(revokedAt)</p>
                         }
                     </li>
                 }
@@ -55,10 +57,11 @@
                     {
                         <li class="dev">
                             <div class="dev-head">
-                                <span>@LinkTitle(link) · <span class="mono">@link.Display</span></span>
+                                <span>@LinkTitle(link) · <code>@link.Display</code></span>
                                 <button type="button" class="link danger" aria-label="@string.Format(PanelText.UnlinkOf, LinkTitle(link))"
                                         @onclick="() => UnlinkAsync(link)">@PanelText.Unlink</button>
                             </div>
+                            <p class="dev-meta">@string.Format(PanelText.LinkedOn, Words.Day(link.LinkedAt))</p>
                         </li>
                     }
                 </ul>
@@ -120,8 +123,12 @@
 
     private async Task UnlinkAsync(ClientLink link)
     {
+        if (!await ConfirmDialog.AskAsync(
+                Dialogs, string.Format(PanelText.UnlinkQuestion, $"{LinkTitle(link)} · {link.Display}"), PanelText.UnlinkWarning, PanelText.Unlink, danger: true))
+            return;
+
         await Actions.ApplyAsync(
-            services => services.GetRequiredService<ClientLinkService>().UnlinkAsync(Id, link.Provider),
+            services => services.GetRequiredService<ClientLinkService>().UnlinkAsync(Id, link.Id),
             string.Format(PanelText.LinkRemoved, LinkTitle(link)));
         await LoadAsync();
     }

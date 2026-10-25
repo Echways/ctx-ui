@@ -24,18 +24,19 @@ public sealed class TokenReuseHandler(
 
     public async ValueTask HandleAsync(ValidateTokenContext context)
     {
+        var ct = context.CancellationToken;
         if (context.Principal is not { } principal
             || principal.GetTokenType() != TokenTypeIdentifiers.RefreshToken
             || principal.GetTokenId() is not { } tokenId
             || !Guid.TryParse(principal.GetClaim(Claims.Subject), out var clientId)
             || !Guid.TryParse(principal.GetClaim(ConnectClaims.Device), out var deviceId)
-            || await tokens.FindByIdAsync(tokenId) is not { } token
-            || await tokens.HasStatusAsync(token, Statuses.Redeemed) is false
-            || await tokens.GetRedemptionDateAsync(token) is not { } redeemed
+            || await tokens.FindByIdAsync(tokenId, ct) is not { } token
+            || await tokens.HasStatusAsync(token, Statuses.Redeemed, ct) is false
+            || await tokens.GetRedemptionDateAsync(token, ct) is not { } redeemed
             || clock.GetUtcNow() < redeemed + server.CurrentValue.RefreshTokenReuseLeeway)
             return;
 
-        await devices.RevokeAsync(clientId, deviceId, DeviceRevocation.TokenReused);
-        await snapshot.RefreshAsync();
+        await devices.RevokeAsync(clientId, deviceId, DeviceRevocation.TokenReused, CancellationToken.None);
+        await snapshot.RefreshAsync(CancellationToken.None);
     }
 }

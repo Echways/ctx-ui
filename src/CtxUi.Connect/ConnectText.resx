@@ -52,7 +52,7 @@
     <value>{0} wants to connect to {1} on your behalf.</value>
   </data>
   <data name="ConsentReturn" xml:space="preserve">
-    <value>After that you return to</value>
+    <value>Returns you to</value>
   </data>
   <data name="ConsentLoopback" xml:space="preserve">
     <value>The app receives the answer only on this computer. Allow it only if you have just started it yourself.</value>
@@ -70,7 +70,7 @@
     <value>Device limit reached</value>
   </data>
   <data name="LimitLead" xml:space="preserve">
-    <value>You can use up to {0} devices. Disconnect one of them to sign in here.</value>
+    <value>You can use up to {number} {n, plural, one {device} other {devices}}. Disconnect one of them to sign in here.</value>
   </data>
   <data name="LimitAskAdmin" xml:space="preserve">
     <value>The device limit is reached, contact the administrator.</value>
@@ -79,19 +79,19 @@
     <value>Disconnect and sign in here</value>
   </data>
   <data name="DeviceSince" xml:space="preserve">
-    <value>signed in {0}</value>
+    <value>Signed in {0} {1}</value>
   </data>
   <data name="DeviceUsed" xml:space="preserve">
-    <value>last used {0}</value>
+    <value>Last used {0}</value>
   </data>
   <data name="DeviceUnused" xml:space="preserve">
-    <value>not used yet</value>
+    <value>Not used yet</value>
   </data>
   <data name="DeviceIp" xml:space="preserve">
     <value>IP {0}</value>
   </data>
   <data name="DeviceNoApps" xml:space="preserve">
-    <value>no apps yet</value>
+    <value>No apps yet</value>
   </data>
   <data name="ThisDevice" xml:space="preserve">
     <value>This device</value>
@@ -139,7 +139,7 @@
     <value>Link an account</value>
   </data>
   <data name="InviteLead" xml:space="preserve">
-    <value>Link an account to the client “{0}”. Next time you can sign in with it.</value>
+    <value>You are invited to sign in as {0}.</value>
   </data>
   <data name="SignInWith" xml:space="preserve">
     <value>Sign in with {0}</value>
@@ -155,5 +155,59 @@
   </data>
   <data name="AccountNotLinked" xml:space="preserve">
     <value>This account is not linked to any client. Ask the administrator for an invitation link.</value>
+  </data>
+  <data name="SignInLeadFor" xml:space="preserve">
+    <value>Sign in to connect {0} to {1}.</value>
+  </data>
+  <data name="Or" xml:space="preserve">
+    <value>or</value>
+  </data>
+  <data name="NoSignInMethods" xml:space="preserve">
+    <value>Sign-in is not available right now. Contact the administrator.</value>
+  </data>
+  <data name="PageExpiredTitle" xml:space="preserve">
+    <value>This page has expired</value>
+  </data>
+  <data name="PageExpired" xml:space="preserve">
+    <value>The form was open for too long or was sent from another site. Go back, reload the page and try again.</value>
+  </data>
+  <data name="RequestInvalidTitle" xml:space="preserve">
+    <value>The app’s request was not accepted</value>
+  </data>
+  <data name="RequestInvalid" xml:space="preserve">
+    <value>The app sent a sign-in request that this server cannot accept. Connect again from the app; if it happens again, tell the app’s developer or the administrator.</value>
+  </data>
+  <data name="ConsentApp" xml:space="preserve">
+    <value>App</value>
+  </data>
+  <data name="ConsentVerified" xml:space="preserve">
+    <value>verified by {0}</value>
+  </data>
+  <data name="ConsentUnverified" xml:space="preserve">
+    <value>the app named itself, the name is not verified</value>
+  </data>
+  <data name="ConsentSignedIn" xml:space="preserve">
+    <value>Signed in as</value>
+  </data>
+  <data name="ConsentGrants" xml:space="preserve">
+    <value>The app will call the tools of this server on your behalf and stay connected while you use this device. You can disconnect it at any time in My devices.</value>
+  </data>
+  <data name="SwitchAccount" xml:space="preserve">
+    <value>Sign in with another key or account</value>
+  </data>
+  <data name="LimitCancel" xml:space="preserve">
+    <value>Cancel and return to the app</value>
+  </data>
+  <data name="ReplaceOf" xml:space="preserve">
+    <value>Disconnect {0} and sign in here</value>
+  </data>
+  <data name="DisconnectOf" xml:space="preserve">
+    <value>Disconnect {0}</value>
+  </data>
+  <data name="DevicesEmpty" xml:space="preserve">
+    <value>No devices yet. A device appears here when you connect an app from this browser.</value>
+  </data>
+  <data name="InviteHow" xml:space="preserve">
+    <value>Choose the account to link. The link works once; after that sign in with the same account.</value>
   </data>
 </root>

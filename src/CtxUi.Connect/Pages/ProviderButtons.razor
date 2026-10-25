@@ -3,7 +3,11 @@
     <ul class="providers">
         @foreach (var provider in Providers)
         {
-            <li><a class="primary" href="@ExternalEndpoints.ChallengeUrl(Http, provider.Name, ReturnUrl, Invite)">@string.Format(ConnectText.SignInWith, provider.Title)</a></li>
+            <li>
+                <a class="@(Secondary ? "plain block" : "primary")" href="@ExternalEndpoints.ChallengeUrl(Http, provider.Name, ReturnUrl, Invite)">
+                    @string.Format(ConnectText.SignInWith, provider.Title)
+                </a>
+            </li>
         }
     </ul>
 }
@@ -20,4 +24,7 @@
 
     [Parameter]
     public string? Invite { get; set; }
+
+    [Parameter]
+    public bool Secondary { get; set; }
 }

@@ -36,7 +36,9 @@ public static partial class ConnectServices
     private const string FramingPolicy = "default-src 'self'; frame-ancestors 'none'";
     public const int SignInAttempts = 10;
 
-    public static readonly PathString[] OpenPaths = [Prefix, WellKnown, "/_content/CtxUi.Connect", "/_content/CtxUi.Panel/fonts"];
+    public const string Favicon = "/_content/CtxUi.Panel/favicon.svg";
+
+    public static readonly PathString[] OpenPaths = [Prefix, WellKnown, "/_content/CtxUi.Connect", "/_content/CtxUi.Panel/fonts", Favicon];
 
     public static IServiceCollection AddCtxUiConnect(this IServiceCollection services, IConfiguration section, string keysDir)
     {
@@ -47,10 +49,12 @@ public static partial class ConnectServices
         services.TryAddSingleton<IMetadataAddressPolicy, PublicAddressPolicy>();
         services.AddSingleton<ClientMetadataFetcher>();
         services.AddScoped<RegisteredApps>();
+        services.AddScoped<ConnectTargets>();
         services.Configure<WebEncoderOptions>(options => options.TextEncoderSettings = new TextEncoderSettings(UnicodeRanges.All));
         services.AddScoped<TokenReuseHandler>();
         services.AddSingleton<DeviceJanitor>();
         services.AddHostedService(provider => provider.GetRequiredService<DeviceJanitor>());
+        services.PostConfigure<RequestLocalizationOptions>(options => options.RequestCultureProviders.Add(new BrowserLanguage()));
         services.AddAuthentication().AddConnectSession();
         services.AddExternalProviders();
         services.AddRateLimiter(limiter =>
@@ -97,7 +101,8 @@ public static partial class ConnectServices
 
                 var aspNetCore = server.UseAspNetCore()
                     .EnableAuthorizationEndpointPassthrough()
-                    .EnableTokenEndpointPassthrough();
+                    .EnableTokenEndpointPassthrough()
+                    .EnableErrorPassthrough();
                 if (issuerUri?.Scheme == Uri.UriSchemeHttp)
                     aspNetCore.DisableTransportSecurityRequirement();
             })

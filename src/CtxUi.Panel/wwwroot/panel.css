@@ -2049,8 +2049,10 @@ svg.hz:focus-visible {
     }
 }
 
-.oauth {
-    padding-bottom: 8px;
+.settings {
+    display: grid;
+    gap: 48px;
+    max-width: 880px;
 }
 
 .providers {

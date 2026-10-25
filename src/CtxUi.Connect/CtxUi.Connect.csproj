@@ -6,6 +6,7 @@
     <PackageReference Include="OpenIddict.EntityFrameworkCore" />
     <PackageReference Include="OpenIddict.Validation.ServerIntegration" />
     <PackageReference Include="UAParser" />
+    <PackageReference Include="MessageFormat" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.Google" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.MicrosoftAccount" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" />

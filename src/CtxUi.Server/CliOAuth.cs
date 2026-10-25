@@ -20,6 +20,10 @@ public static partial class Cli
         var secretFromInput = new Option<bool>("--client-secret-stdin") { Description = ServerText.ProviderSecretStdinOption };
         var issuer = new Option<string?>("--issuer") { Description = ServerText.ProviderIssuerOption };
         var title = new Option<string?>("--title") { Description = ServerText.ProviderTitleOption };
+        var devices = new Option<string?>("--devices") { Description = ServerText.OAuthDevicesOption };
+        var directKey = new Option<string?>("--direct-key") { Description = ServerText.OAuthDirectKeyOption };
+        var idleDays = new Option<string?>("--idle-days") { Description = ServerText.OAuthIdleDaysOption };
+        var selfRevoke = new Option<string?>("--self-revoke") { Description = ServerText.OAuthSelfRevokeOption };
 
         Task Change(IServiceProvider services, SignInSettingsUpdate update, CancellationToken ct) =>
             services.GetRequiredService<SignInSettingsService>().UpdateAsync(update, PublicUrl(services), ct);
@@ -41,7 +45,13 @@ public static partial class Cli
             {
                 var settings = services.GetRequiredService<SignInSettingsService>();
                 var current = await settings.GetAsync(ct);
+                var publicUrl = PublicUrl(services);
                 output.WriteLine(string.Format(ServerText.OAuthState, OnOff(current.Enabled)));
+                if (!OAuthAvailability.IsAllowed(publicUrl))
+                    output.WriteLine(string.Format(ServerText.OAuthUnavailable, publicUrl));
+                else if (current.Enabled)
+                    output.WriteLine(string.Format(ServerText.OAuthDiscoveryLine, $"{publicUrl}/.well-known/oauth-authorization-server"));
+
                 output.WriteLine(string.Format(ServerText.OAuthKeySignIn, OnOff(current.KeySignIn)));
                 output.WriteLine(string.Format(ServerText.OAuthIdleDays, current.IdleDays));
                 output.WriteLine(string.Format(ServerText.OAuthDefaultDevices, DeviceLimitText(current.DefaultMaxDevices)));
@@ -58,7 +68,7 @@ public static partial class Cli
                 foreach (var saved in providers)
                 {
                     output.WriteLine(string.Format(
-                        ServerText.OAuthProviderLine, saved.Name, OnOff(saved.Enabled), $"{PublicUrl(services)}/connect/callback/{saved.Name}"));
+                        ServerText.OAuthProviderLine, saved.Name, OnOff(saved.Enabled), $"{publicUrl}/connect/callback/{saved.Name}"));
                 }
             }),
             leaf("on", ServerText.OAuthOnCommand, [], async (_, services, ct) =>
@@ -74,6 +84,28 @@ public static partial class Cli
 
                 await Change(services, new SignInSettingsUpdate { Enabled = false }, ct);
                 output.WriteLine(ServerText.OAuthDisabledDone);
+            }),
+            leaf("set", ServerText.OAuthSetCommand, [devices, directKey, idleDays, selfRevoke], async (parse, services, ct) =>
+            {
+                var limit = parse.GetValue(devices);
+                var direct = parse.GetValue(directKey);
+                var idle = parse.GetValue(idleDays);
+                var revoke = parse.GetValue(selfRevoke);
+                if (limit is null && direct is null && idle is null && revoke is null)
+                    throw new DomainException(ServerText.OAuthSetNothing);
+
+                await Change(
+                    services,
+                    new SignInSettingsUpdate
+                    {
+                        ChangeDefaultMaxDevices = limit is not null,
+                        DefaultMaxDevices = limit is null ? null : DevicesOption(limit, noneAllowed: true),
+                        DefaultDirectKey = direct is null ? null : OnOffOption(directKey.Name, direct),
+                        IdleDays = idle is null ? null : NumberOption(idleDays.Name, idle),
+                        SelfRevoke = revoke is null ? null : OnOffOption(selfRevoke.Name, revoke),
+                    },
+                    ct);
+                output.WriteLine(ServerText.OAuthSettingsSaved);
             }),
             new Command("key", ServerText.OAuthKeyCommand)
             {
@@ -144,23 +176,28 @@ public static partial class Cli
             {
                 var client = await services.GetRequiredService<ClientService>().GetAsync(parse.GetValue(name)!, ct);
                 var devices = await services.GetRequiredService<DeviceService>().ListAsync(client.Id, DateTimeOffset.MinValue, ct);
+                if (devices.Count == 0)
+                {
+                    output.WriteLine(ServerText.NoDevices);
+                    return;
+                }
+
+                output.WriteLine(ServerText.DeviceHeader);
                 foreach (var device in devices)
                 {
                     output.WriteLine(string.Format(
                         ServerText.DeviceLine,
                         device.Id.ToString()[..DeviceIdLength],
                         device.Name,
-                        device.Apps.Count == 0 ? ServerText.NoApps : string.Join(", ", device.Apps.Select(app => app.AppName)),
-                        SignedInWithText(device.SignedInWith),
                         device.LastUsedAt is { } used ? Date(used, "yyyy-MM-dd HH:mm") : ServerText.DeviceNeverUsed,
                         device.SignInIp,
+                        SignedInWithText(device.SignedInWith),
                         device.RevokedReason is { } reason
                             ? ServerText.ResourceManager.GetString("DeviceReason_" + reason, CultureInfo.CurrentUICulture)
                             : ServerText.DeviceActive));
+                    if (device.Apps.Count > 0)
+                        output.WriteLine(string.Format(ServerText.DeviceApps, string.Join(", ", device.Apps.Select(app => app.AppName))));
                 }
-
-                if (devices.Count == 0)
-                    output.WriteLine(ServerText.NoDevices);
             }),
             leaf("device-off", ServerText.ClientDeviceOffCommand, [name, deviceId, all], async (parse, services, ct) =>
             {
@@ -234,15 +271,13 @@ public static partial class Cli
             directKey is null ? current.DirectKey : OnOffOption("--direct-key", directKey));
     }
 
-    private static int? DevicesOption(string text, bool noneAllowed)
-    {
-        if (noneAllowed && text == LimitArgument.None)
-            return null;
+    private static int? DevicesOption(string text, bool noneAllowed) =>
+        noneAllowed && text == LimitArgument.None ? null : NumberOption("--devices", text);
 
-        return int.TryParse(text, NumberStyles.None, CultureInfo.InvariantCulture, out var value)
+    private static int NumberOption(string option, string text) =>
+        int.TryParse(text, NumberStyles.None, CultureInfo.InvariantCulture, out var value)
             ? value
-            : throw new DomainException(string.Format(ServerText.DevicesInvalid, text));
-    }
+            : throw new DomainException(string.Format(ServerText.NumberExpected, option, text));
 
     private static bool OnOffOption(string option, string text) => text switch
     {

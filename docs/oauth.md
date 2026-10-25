@@ -21,6 +21,9 @@ for development).
 
 The address is the same as for a direct key, so a client can use either way.
 
+The sign-in pages follow the browser language (English or Russian); the link
+in the corner switches it.
+
 ## Devices and the limit
 
 A browser that signs in is a **device**, remembered by a cookie for a year. A
@@ -30,9 +33,9 @@ sign-in.
 - A client may have a device limit (`--devices N`, the field in the client
   window, a default in the OAuth section). Past the limit the sign-in page
   lists the devices and lets the person replace one, unless the administrator
-  turned that off.
-- A device that is not used for the idle period (30 days by default, 1–365)
-  is disconnected. A refresh token lives as long as that period and is moved
+  turned that off (`ctx-ui oauth set --self-revoke off`).
+- A device that is not used for the idle period (30 days by default, 1–365,
+  `ctx-ui oauth set --idle-days N`) is disconnected. A refresh token lives as long as that period and is moved
   forward each time it is used.
 - Administrators disconnect devices in the panel (**Devices** in the client
   menu), with `ctx-ui client device-off` or through the API. The app is
@@ -53,7 +56,9 @@ sudo ctx-ui client invite "Ivanov 4419"
 
 The link `https://<host>/connect/invite/<code>` works once and lives 7 days.
 The panel (connection window), the REST API (`POST /clients/{id}/invite`) and
-the CLI issue it. `client links` and `client unlink` show and remove bindings.
+the CLI issue it. `client links` and `client unlink <name> <provider>` show and
+remove bindings; the panel (**Devices** in the client menu) and the API
+(`DELETE /clients/{id}/links/{linkId}`) also remove a single account.
 
 ## Providers
 
@@ -101,5 +106,9 @@ claude mcp add --transport http learn https://mcp.example.com/mcp/learn
   [configuration.md](configuration.md)), or every device is recorded with the
   proxy's address. The proxy must send `X-Forwarded-For` and
   `X-Forwarded-Proto`.
-- `ctx-ui oauth status` prints the state and the return address of each
-  provider.
+- `ctx-ui oauth status` prints the state, the server metadata address and the
+  return address of each provider, and warns when the public address rules
+  OAuth out.
+- An app that sends a broken request (unknown `client_id`, a return address it
+  did not register, a client metadata document that cannot be fetched) gets a
+  page that explains it, with the technical reason below.

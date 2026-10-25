@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.WebUtilities;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using OpenIddict.Abstractions;
 using OpenIddict.Server.AspNetCore;
@@ -13,7 +12,6 @@ using CtxUi.Connect.Pages;
 using CtxUi.Connect.Registration;
 using CtxUi.Connect.Resources;
 using CtxUi.Connect.SignIn;
-using CtxUi.Core.Data;
 using CtxUi.Core.Routing;
 using CtxUi.Core.SignIn;
 using static OpenIddict.Abstractions.OpenIddictConstants;
@@ -29,8 +27,8 @@ public static class AuthorizeEndpoint
     public static IEndpointRouteBuilder MapAuthorize(this IEndpointRouteBuilder app)
     {
         app.MapMethods(Path, [HttpMethods.Get, HttpMethods.Post], AuthorizeAsync).DisableAntiforgery();
-        app.MapPost(ConnectServices.Prefix + "/consent", ConsentAsync);
-        app.MapPost(ConnectServices.Prefix + "/limit/replace", ReplaceAsync);
+        app.MapPost(ConnectServices.Prefix + "/consent", ConsentAsync).RequirePageForm();
+        app.MapPost(ConnectServices.Prefix + "/limit/replace", ReplaceAsync).RequireSetting(signIn => signIn.SelfRevoke).RequirePageForm();
         return app;
     }
 
@@ -48,24 +46,38 @@ public static class AuthorizeEndpoint
     public static string ReturnUrl(OpenIddictRequest request) =>
         Path + QueryString.Create(Forwarded(request).Select(pair => KeyValuePair.Create(pair.Key, (string?)pair.Value)));
 
+    public static string DenyUrl(string returnUrl) => QueryHelpers.AddQueryString(returnUrl, ConsentPage.DenyParameter, "1");
+
     private static async Task<IResult> AuthorizeAsync(
         HttpContext http,
         ResourceHandlers resources,
-        ISnapshotSource snapshot,
+        ISnapshotSource snapshots,
         DeviceService devices,
         RegisteredApps apps,
+        ConnectTargets targets,
         IOpenIddictAuthorizationManager authorizations,
-        CtxUiDbContext db,
         TimeProvider clock)
     {
+        if (http.GetOpenIddictServerResponse() is { Error: { } error } failure)
+        {
+            return ConnectResults.Notice(
+                ConnectText.RequestInvalid,
+                StatusCodes.Status400BadRequest,
+                ConnectText.RequestInvalidTitle,
+                failure.ErrorDescription is { } description ? $"{error}: {description}" : error,
+                backToSignIn: false);
+        }
+
         var request = http.GetOpenIddictServerRequest()!;
         if (request.HasParameter(ConsentPage.DenyParameter))
             return ConnectResults.Refuse(Errors.AccessDenied, "the user did not allow the access");
-        if (resources.ServedSlugOf(request) is not { } slug)
+
+        var snapshot = snapshots.Current;
+        if (resources.ServedSlugOf(request) is not { } slug || snapshot.Route(slug) is not { } route)
             return ConnectResults.Refuse(Errors.InvalidTarget, ResourceHandlers.Refusal);
 
         var returnUrl = ReturnUrl(request);
-        if (await SignedIn.ReadAsync(http, snapshot) is not { } signedIn)
+        if (await SignedIn.ReadAsync(http, snapshots) is not { } signedIn)
             return ConnectResults.ToSignIn(http, returnUrl);
 
         var client = signedIn.Client;
@@ -73,40 +85,38 @@ public static class AuthorizeEndpoint
             return ConnectResults.Notice(ConnectText.ClientDisabled);
         if (client.ExpiresAt is { } expiresAt && clock.GetUtcNow() >= expiresAt)
             return ConnectResults.Notice(ConnectText.ClientExpired);
-        if (!client.InboundIds.Contains(snapshot.Current.Route(slug)!.Id))
+        if (!client.InboundIds.Contains(route.Id))
             return ConnectResults.Notice(string.Format(ConnectText.NoAccessToInbound, client.Name));
 
-        var admission = await devices.AdmitAsync(client.Id, DeviceMarkerCookie.GetOrIssue(http), signedIn.Seen(http));
+        var ct = http.RequestAborted;
+        var admission = await devices.AdmitAsync(client.Id, DeviceMarkerCookie.GetOrIssue(http), signedIn.Seen(http), ct);
         if (admission.Device is not { } device)
         {
             return ConnectResults.Page<LimitPage>(new
             {
                 Devices = admission.Active,
                 Limit = client.MaxDevices ?? admission.Active.Count,
-                snapshot.Current.SignIn.SelfRevoke,
+                snapshot.SignIn.SelfRevoke,
                 ReturnUrl = returnUrl,
             });
         }
 
-        var app = (await apps.IdentityAsync(request.ClientId!, http.RequestAborted))!;
-        var authorizationId = await devices.AppAuthorizationAsync(device.Id, app.Key);
-        if (authorizationId is null || await authorizations.FindByIdAsync(authorizationId) is not { } authorization
-            || !await authorizations.HasStatusAsync(authorization, Statuses.Valid))
+        var app = (await apps.IdentityAsync(request.ClientId!, ct))!;
+        var authorizationId = await devices.AppAuthorizationAsync(device.Id, app.Key, ct);
+        if (authorizationId is null || await authorizations.FindByIdAsync(authorizationId, ct) is not { } authorization
+            || !await authorizations.HasStatusAsync(authorization, Statuses.Valid, ct))
         {
-            var inbound = await db.Inbounds.AsNoTracking().Where(saved => saved.Slug == slug).Select(saved => saved.Name).SingleAsync();
             return ConnectResults.Page<ConsentPage>(new
             {
-                AppName = app.Name,
-                InboundName = inbound,
-                app.RedirectHosts,
-                app.LoopbackOnly,
+                App = app,
+                InboundName = await targets.InboundNameAsync(slug, ct),
                 ClientName = client.Name,
                 ReturnUrl = returnUrl,
                 Request = Forwarded(request),
             });
         }
 
-        await snapshot.RefreshAsync();
+        await snapshots.RefreshAsync(ct);
         var identity = new ClaimsIdentity(TokenValidationParameters.DefaultAuthenticationType, Claims.Name, Claims.Role);
         identity.SetClaim(Claims.Subject, client.Id.ToString())
             .SetClaim(Claims.Name, client.Name)
@@ -117,7 +127,7 @@ public static class AuthorizeEndpoint
             .SetAuthorizationId(authorizationId)
             .SetDestinations(_ => TokenEndpoint.Destinations);
         var principal = new ClaimsPrincipal(identity);
-        principal.SetRefreshTokenLifetime(TimeSpan.FromDays(snapshot.Current.SignIn.IdleDays));
+        principal.SetRefreshTokenLifetime(TimeSpan.FromDays(snapshot.SignIn.IdleDays));
         return Results.SignIn(principal, authenticationScheme: OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
     }
 
@@ -133,12 +143,15 @@ public static class AuthorizeEndpoint
         var target = AuthorizeTarget(returnUrl);
         if (await SignedIn.ReadAsync(http, snapshot) is not { } signedIn)
             return ConnectResults.ToSignIn(http, target);
+        if (target == ConnectResults.SignInPath)
+            return ConnectResults.Back(http, target);
 
-        var clientId = QueryHelpers.ParseQuery(new Uri("http://local" + target).Query)[Parameters.ClientId].ToString();
-        var admission = await devices.AdmitAsync(signedIn.Client.Id, DeviceMarkerCookie.GetOrIssue(http), signedIn.Seen(http));
+        var ct = http.RequestAborted;
+        var clientId = QueryHelpers.ParseQuery(target[Path.Length..])[Parameters.ClientId].ToString();
+        var admission = await devices.AdmitAsync(signedIn.Client.Id, DeviceMarkerCookie.GetOrIssue(http), signedIn.Seen(http), ct);
         if (admission.Device is { } device
-            && await apps.IdentityAsync(clientId, http.RequestAborted) is { } app
-            && await apps.ApplicationIdAsync(clientId, http.RequestAborted) is { } applicationId)
+            && await apps.IdentityAsync(clientId, ct) is { } app
+            && await apps.ApplicationIdAsync(clientId, ct) is { } applicationId)
         {
             var authorization = await authorizations.CreateAsync(new OpenIddictAuthorizationDescriptor
             {
@@ -148,8 +161,8 @@ public static class AuthorizeEndpoint
                 Status = Statuses.Valid,
                 CreationDate = clock.GetUtcNow(),
                 Scopes = { ConnectServices.McpScope, Scopes.OfflineAccess },
-            });
-            await devices.AddAppAsync(device.Id, app.Key, app.Name, (await authorizations.GetIdAsync(authorization))!);
+            }, ct);
+            await devices.AddAppAsync(device.Id, app.Key, app.Name, (await authorizations.GetIdAsync(authorization, ct))!, ct);
         }
 
         return ConnectResults.Back(http, target);
@@ -163,13 +176,11 @@ public static class AuthorizeEndpoint
         DeviceService devices)
     {
         var target = AuthorizeTarget(returnUrl);
-        if (!snapshot.Current.SignIn.SelfRevoke)
-            return Results.NotFound();
         if (await SignedIn.ReadAsync(http, snapshot) is not { } signedIn)
             return ConnectResults.ToSignIn(http, target);
 
-        await devices.ReplaceAsync(signedIn.Client.Id, deviceId, DeviceMarkerCookie.GetOrIssue(http), signedIn.Seen(http));
-        await snapshot.RefreshAsync();
+        await devices.ReplaceAsync(signedIn.Client.Id, deviceId, DeviceMarkerCookie.GetOrIssue(http), signedIn.Seen(http), http.RequestAborted);
+        await snapshot.RefreshAsync(http.RequestAborted);
         return ConnectResults.Back(http, target);
     }
 

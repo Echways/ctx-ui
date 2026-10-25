@@ -147,6 +147,31 @@ public class ClientLinkServiceTests
     }
 
     [Fact]
+    public async Task Unlink_by_id_removes_only_that_account()
+    {
+        await using var database = await TwoClientsAsync();
+        await Links(database).LinkAsync(await Links(database).InviteAsync(_ivanov), Ivanov);
+        await Links(database).LinkAsync(await Links(database).InviteAsync(_ivanov), Ivanov with { Subject = "user-2" });
+        var first = (await Links(database).ListAsync(_ivanov)).Single(link => link.Subject == Ivanov.Subject);
+
+        await Links(database).UnlinkAsync(_ivanov, first.Id);
+
+        Assert.Equal("user-2", Assert.Single(await Links(database).ListAsync(_ivanov)).Subject);
+        await Assert.ThrowsAsync<NotFoundException>(() => Links(database).UnlinkAsync(_ivanov, first.Id));
+    }
+
+    [Fact]
+    public async Task Unlink_by_id_ignores_other_clients()
+    {
+        await using var database = await TwoClientsAsync();
+        await Links(database).LinkAsync(await Links(database).InviteAsync(_ivanov), Ivanov);
+        var link = Assert.Single(await Links(database).ListAsync(_ivanov));
+
+        await Assert.ThrowsAsync<NotFoundException>(() => Links(database).UnlinkAsync(_petrov, link.Id));
+        Assert.Single(await Links(database).ListAsync(_ivanov));
+    }
+
+    [Fact]
     public async Task Inviting_an_unknown_client_is_not_found()
     {
         await using var database = await TestDatabase.CreateAsync();

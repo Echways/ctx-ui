@@ -90,6 +90,14 @@ public sealed class ClientLinkService(CtxUiDbContext db, TimeProvider clock)
         await db.SaveChangesAsync(ct);
     }
 
+    public async Task UnlinkAsync(Guid clientId, Guid linkId, CancellationToken ct = default)
+    {
+        var link = await db.ClientLinks.SingleOrDefaultAsync(saved => saved.Id == linkId && saved.ClientId == clientId, ct)
+            ?? throw new NotFoundException(CoreText.LinkIdNotFound);
+        db.ClientLinks.Remove(link);
+        await db.SaveChangesAsync(ct);
+    }
+
     private async Task<Client?> FindInvitedAsync(string? code, CancellationToken ct)
     {
         if (!InviteCode.IsWellFormed(code))

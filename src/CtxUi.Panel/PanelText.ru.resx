@@ -598,7 +598,7 @@
     <value>Выключить вход через браузер?</value>
   </data>
   <data name="OAuthOffWarning" xml:space="preserve">
-    <value>Клиентов без постоянного ключа: {0}. Они потеряют доступ, пока вход через браузер выключен.</value>
+    <value>Клиентов без постоянного ключа: {number}. Они потеряют доступ, пока вход через браузер выключен.</value>
   </data>
   <data name="OAuthOffYes" xml:space="preserve">
     <value>Выключить</value>
@@ -616,7 +616,7 @@
     <value>Аккаунты привязываются к клиентам по ссылке-приглашению: случайный человек войти не сможет.</value>
   </data>
   <data name="Defaults" xml:space="preserve">
-    <value>Значения по умолчанию</value>
+    <value>Значения по умолчанию для новых клиентов</value>
   </data>
   <data name="DeviceLimit" xml:space="preserve">
     <value>Лимит устройств</value>
@@ -754,7 +754,7 @@
     <value>Отключить {0}</value>
   </data>
   <data name="DeviceSignedIn" xml:space="preserve">
-    <value>Вход: {0}</value>
+    <value>Вход {0}: {1}</value>
   </data>
   <data name="DeviceByKey" xml:space="preserve">
     <value>ключ</value>
@@ -766,7 +766,7 @@
     <value>Ещё не использовалось</value>
   </data>
   <data name="DeviceSignInIp" xml:space="preserve">
-    <value>IP при входе: {0}</value>
+    <value>IP при входе</value>
   </data>
   <data name="DeviceApps" xml:space="preserve">
     <value>Приложения: {0}</value>
@@ -817,7 +817,7 @@
     <value>Аккаунт {0} отвязан</value>
   </data>
   <data name="ReissueDevices" xml:space="preserve">
-    <value>Устройств, подключённых по ключу, будет отключено: {0}.</value>
+    <value>{n, plural, one {Будет отключено {number} устройство, вошедшее по ключу.} few {Будут отключены {number} устройства, вошедшие по ключу.} many {Будут отключены {number} устройств, вошедших по ключу.} other {Будут отключены {number} устройства, вошедшие по ключу.}}</value>
   </data>
   <data name="ForOAuthApps" xml:space="preserve">
     <value>Для приложений с входом через браузер</value>
@@ -845,5 +845,32 @@
   </data>
   <data name="MessageInvite" xml:space="preserve">
     <value>Чтобы входить через аккаунт, сначала привяжите его: {0}</value>
+  </data>
+  <data name="OAuthDiscovery" xml:space="preserve">
+    <value>Метаданные сервера</value>
+  </data>
+  <data name="CopyOAuthDiscovery" xml:space="preserve">
+    <value>Скопировать адрес метаданных сервера</value>
+  </data>
+  <data name="OAuthDiscoveryHelp" xml:space="preserve">
+    <value>По этому адресу приложения находят страницу входа.</value>
+  </data>
+  <data name="OpenSignInPage" xml:space="preserve">
+    <value>Открыть страницу входа</value>
+  </data>
+  <data name="IdleDaysHelp" xml:space="preserve">
+    <value>От 1 до {0}. Приложению, которым не пользовались столько дней, придётся войти заново.</value>
+  </data>
+  <data name="SelfRevokeHelp" xml:space="preserve">
+    <value>На странице «Мои устройства» и при достижении лимита устройств.</value>
+  </data>
+  <data name="LinkedOn" xml:space="preserve">
+    <value>Привязан {0}</value>
+  </data>
+  <data name="UnlinkQuestion" xml:space="preserve">
+    <value>Отвязать {0}?</value>
+  </data>
+  <data name="UnlinkWarning" xml:space="preserve">
+    <value>Чтобы снова входить этим аккаунтом, человеку понадобится новая ссылка-приглашение.</value>
   </data>
 </root>

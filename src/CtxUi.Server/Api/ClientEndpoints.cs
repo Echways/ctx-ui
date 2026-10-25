@@ -39,7 +39,7 @@ public sealed record DeviceView(
 
 public sealed record InviteView(string Url, DateTimeOffset ExpiresAt);
 
-public sealed record LinkView(string Provider, string Display, DateTimeOffset LinkedAt);
+public sealed record LinkView(Guid Id, string Provider, string Display, DateTimeOffset LinkedAt);
 
 public sealed record ConnectionAddress(string Inbound, string Url, string UrlWithToken);
 
@@ -86,7 +86,8 @@ public static class ClientEndpoints
         clients.MapPost("/{id:guid}/invite", InviteAsync).WithSummary("Issue an invite link that binds an outside account to the client")
             .WithDescription("The link works once and expires in 7 days; a new one replaces the previous.");
         clients.MapGet("/{id:guid}/links", LinksAsync).WithSummary("Accounts linked to the client");
-        clients.MapDelete("/{id:guid}/links/{provider}", UnlinkAsync).WithSummary("Unlink the accounts of a provider");
+        clients.MapDelete("/{id:guid}/links/{linkId:guid}", UnlinkOneAsync).WithSummary("Unlink one account");
+        clients.MapDelete("/{id:guid}/links/{provider}", UnlinkAsync).WithSummary("Unlink every account of a provider");
         clients.MapDelete("/{id:guid}", RemoveAsync).WithSummary("Remove the client");
     }
 
@@ -221,7 +222,13 @@ public static class ClientEndpoints
     private static async Task<Ok<List<LinkView>>> LinksAsync(Guid id, ClientService clients, ClientLinkService links, CancellationToken ct)
     {
         await clients.GetAsync(id, ct);
-        return TypedResults.Ok((await links.ListAsync(id, ct)).Select(link => new LinkView(link.Provider, link.Display, link.LinkedAt)).ToList());
+        return TypedResults.Ok((await links.ListAsync(id, ct)).Select(link => new LinkView(link.Id, link.Provider, link.Display, link.LinkedAt)).ToList());
+    }
+
+    private static async Task<NoContent> UnlinkOneAsync(Guid id, Guid linkId, ClientLinkService links, CancellationToken ct)
+    {
+        await links.UnlinkAsync(id, linkId, ct);
+        return TypedResults.NoContent();
     }
 
     private static async Task<NoContent> UnlinkAsync(Guid id, string provider, ClientLinkService links, CancellationToken ct)

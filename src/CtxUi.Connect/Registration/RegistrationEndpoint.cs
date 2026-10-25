@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using static OpenIddict.Abstractions.OpenIddictConstants;
 
@@ -24,9 +25,11 @@ public static class RegistrationEndpoint
 {
     public const string Path = ConnectServices.Prefix + "/register";
 
+    public const long MaxBodyBytes = 16 * 1024;
+
     public static IEndpointRouteBuilder MapRegistration(this IEndpointRouteBuilder app)
     {
-        app.MapPost(Path, RegisterAsync).DisableAntiforgery();
+        app.MapPost(Path, RegisterAsync).DisableAntiforgery().WithMetadata(new RequestSizeLimitAttribute(MaxBodyBytes));
         return app;
     }
 
@@ -40,6 +43,12 @@ public static class RegistrationEndpoint
         catch (JsonException)
         {
             return Results.BadRequest(new RegistrationError("invalid_client_metadata", "the body must be a JSON object"));
+        }
+        catch (BadHttpRequestException exception) when (exception.StatusCode == StatusCodes.Status413PayloadTooLarge)
+        {
+            return Results.Json(
+                new RegistrationError("invalid_client_metadata", $"the body must not exceed {MaxBodyBytes} bytes"),
+                statusCode: StatusCodes.Status413PayloadTooLarge);
         }
 
         var result = await apps.RegisterAsync(body, ct);

@@ -61,6 +61,41 @@ public sealed class CliOAuthTests : IDisposable
     }
 
     [Fact]
+    public async Task Set_changes_device_settings_and_defaults()
+    {
+        var set = await RunAsync("oauth", "set", "--idle-days", "14", "--self-revoke", "off", "--devices", "3", "--direct-key", "off");
+        var status = await RunAsync("oauth", "status");
+
+        Assert.Equal(0, set.Code);
+        Assert.Contains("Настройки OAuth сохранены", set.Output);
+        Assert.Contains("Дней без использования до отключения устройства: 14", status.Output);
+        Assert.Contains("Лимит устройств у новых клиентов: 3", status.Output);
+        Assert.Contains("Клиент сам отключает устройства: нет", status.Output);
+    }
+
+    [Theory]
+    [InlineData(new string[0], "нечего менять")]
+    [InlineData(new[] { "--idle-days", "abc" }, "--idle-days: ожидалось число, получено abc")]
+    [InlineData(new[] { "--idle-days", "400" }, "365")]
+    [InlineData(new[] { "--self-revoke", "maybe" }, "--self-revoke")]
+    public async Task Set_refuses_wrong_input(string[] options, string expected)
+    {
+        var refused = await RunAsync(["oauth", "set", .. options]);
+
+        Assert.Equal(1, refused.Code);
+        Assert.Contains(expected, refused.Error);
+    }
+
+    [Fact]
+    public async Task Status_warns_when_the_public_url_rules_oauth_out()
+    {
+        var status = await CliRunner.RunWithPublicUrlAsync("http://mcp.example.org", _dataDir, "oauth", "status");
+
+        Assert.Contains("http://mcp.example.org", status.Output);
+        Assert.Contains("https://", status.Output);
+    }
+
+    [Fact]
     public async Task Key_off_is_refused_while_no_provider_is_left()
     {
         await RunAsync("oauth", "on");

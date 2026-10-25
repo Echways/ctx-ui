@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using OpenIddict.Abstractions;
+using OpenIddict.EntityFrameworkCore.Models;
 using CtxUi.Connect.Registration;
 using CtxUi.Core.Data;
 using CtxUi.Core.Routing;
@@ -53,19 +54,16 @@ public sealed partial class DeviceJanitor(
         var now = clock.GetUtcNow();
 
         var idle = await devices.RevokeIdleAsync(ct);
-        var revokedIds = await db.Devices.AsNoTracking().Where(device => device.RevokedAt != null).Select(device => device.Id).ToListAsync(ct);
-        foreach (var deviceId in revokedIds)
-        {
-            foreach (var authorizationId in await devices.AuthorizationIdsAsync(deviceId, ct))
-                await RevokeAsync(authorizations, authorizationId, ct);
-        }
-
-        var removedClients = await db.Set<OpenIddict.EntityFrameworkCore.Models.OpenIddictEntityFrameworkCoreAuthorization>()
+        var ofRevokedDevices = await db.DeviceApps.AsNoTracking()
+            .Where(app => db.Devices.Any(device => device.Id == app.DeviceId && device.RevokedAt != null))
+            .Select(app => app.AuthorizationId)
+            .ToHashSetAsync(ct);
+        var valid = await db.Set<OpenIddictEntityFrameworkCoreAuthorization>().AsNoTracking()
             .Where(authorization => authorization.Id != null && authorization.Subject != null && authorization.Status == Statuses.Valid)
-            .Select(authorization => new { Id = authorization.Id!, authorization.Subject })
+            .Select(authorization => new { Id = authorization.Id!, Subject = authorization.Subject! })
             .ToListAsync(ct);
         var liveClients = await db.Clients.AsNoTracking().Select(client => client.Id.ToString()).ToHashSetAsync(ct);
-        foreach (var authorization in removedClients.Where(authorization => !liveClients.Contains(authorization.Subject!)))
+        foreach (var authorization in valid.Where(authorization => ofRevokedDevices.Contains(authorization.Id) || !liveClients.Contains(authorization.Subject)))
             await RevokeAsync(authorizations, authorization.Id, ct);
 
         var pruned = await devices.PruneAsync(now - RevokedRetention, ct);

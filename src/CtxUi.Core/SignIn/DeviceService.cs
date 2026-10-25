@@ -89,9 +89,6 @@ public sealed class DeviceService(CtxUiDbContext db, TimeProvider clock)
         await db.SaveChangesAsync(ct);
     }
 
-    public async Task<IReadOnlyList<string>> AuthorizationIdsAsync(Guid deviceId, CancellationToken ct = default) =>
-        await db.DeviceApps.AsNoTracking().Where(app => app.DeviceId == deviceId).Select(app => app.AuthorizationId).ToListAsync(ct);
-
     public async Task RevokeAsync(Guid clientId, Guid deviceId, DeviceRevocation reason, CancellationToken ct = default)
     {
         var device = await db.Devices.SingleOrDefaultAsync(saved => saved.Id == deviceId && saved.ClientId == clientId, ct)

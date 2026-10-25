@@ -254,7 +254,7 @@ public class DeviceServiceTests
         await Devices(database).AddAppAsync(device.Id, "dcr:cursor", "Cursor", "authorization-3");
 
         Assert.Equal("authorization-3", await Devices(database).AppAuthorizationAsync(device.Id, "dcr:cursor"));
-        Assert.Equal(["authorization-2", "authorization-3"], (await Devices(database).AuthorizationIdsAsync(device.Id)).Order());
+        Assert.Equal("authorization-2", await Devices(database).AppAuthorizationAsync(device.Id, "https://claude.ai/metadata"));
     }
 
     [Fact]

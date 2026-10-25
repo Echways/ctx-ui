@@ -1,23 +1,30 @@
 <ConnectPage Title="@ConnectText.MyDevices">
-    <p class="lead">@string.Format(ConnectText.SignedInAs, ClientName)</p>
+    <p class="lead"><Phrase Pattern="@ConnectText.SignedInAs" Arguments="[ClientName]" /></p>
     <p class="quiet">@(SelfRevoke ? ConnectText.DevicesLead : ConnectText.DevicesManagedByAdmin)</p>
-    <ul class="devices">
-        @foreach (var device in Devices)
-        {
-            <DeviceCard Device="device" Current="device.Id == CurrentDeviceId">
-                @if (SelfRevoke)
-                {
-                    <form method="post" action="@(ConnectServices.Prefix)/devices/@device.Id/revoke">
-                        <AntiforgeryToken />
-                        <button class="plain" type="submit">@ConnectText.Disconnect</button>
-                    </form>
-                }
-            </DeviceCard>
-        }
-    </ul>
-    <form method="post" action="@(ConnectServices.Prefix)/signout">
+    @if (Devices.Count == 0)
+    {
+        <p class="empty">@ConnectText.DevicesEmpty</p>
+    }
+    else
+    {
+        <ul class="devices">
+            @foreach (var device in Devices)
+            {
+                <DeviceCard Device="device" Current="device.Id == CurrentDeviceId">
+                    @if (SelfRevoke)
+                    {
+                        <form method="post" action="@(ConnectServices.Prefix)/devices/@device.Id/revoke">
+                            <AntiforgeryToken />
+                            <button class="plain small" type="submit" aria-label="@string.Format(ConnectText.DisconnectOf, device.Name)">@ConnectText.Disconnect</button>
+                        </form>
+                    }
+                </DeviceCard>
+            }
+        </ul>
+    }
+    <form class="aside" method="post" action="@(ConnectServices.Prefix)/signout">
         <AntiforgeryToken />
-        <button class="plain" type="submit">@ConnectText.SignOut</button>
+        <button class="link" type="submit">@ConnectText.SignOut</button>
     </form>
 </ConnectPage>
 

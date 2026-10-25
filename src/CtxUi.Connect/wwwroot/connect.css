@@ -47,6 +47,11 @@ body {
     -webkit-font-smoothing: antialiased;
 }
 
+:focus-visible {
+    outline: 2px solid var(--glow);
+    outline-offset: 3px;
+}
+
 a {
     color: var(--light);
     text-decoration-color: var(--line);
@@ -96,12 +101,18 @@ p {
     margin: 0 0 16px;
 }
 
+strong {
+    font-weight: 500;
+    color: var(--white);
+}
+
 .lead {
     color: var(--light);
 }
 
 .quiet,
-.hint {
+.hint,
+.aside {
     color: var(--mist);
     font-size: 13px;
     line-height: 20px;
@@ -109,7 +120,7 @@ p {
 
 .mono {
     font: 400 13px/20px var(--mono);
-    word-break: break-all;
+    overflow-wrap: anywhere;
 }
 
 .alert,
@@ -126,6 +137,21 @@ p {
 
 .warn {
     border-color: var(--ochre);
+}
+
+.detail {
+    padding: 12px 14px;
+    border-radius: var(--round);
+    background: var(--deep);
+    color: var(--mist);
+}
+
+.empty {
+    padding: 24px 16px;
+    border: 1px dashed var(--rule);
+    border-radius: var(--round);
+    color: var(--mist);
+    text-align: center;
 }
 
 .stack {
@@ -150,9 +176,14 @@ p {
     font: 400 14px/20px var(--mono);
 }
 
-.field:focus {
+.field:focus-visible {
     outline: none;
     border-color: var(--glow);
+    box-shadow: 0 0 0 1px var(--glow);
+}
+
+.field[aria-invalid="true"] {
+    border-color: var(--vermilion);
 }
 
 button {
@@ -160,11 +191,16 @@ button {
     cursor: pointer;
 }
 
+.primary,
+.plain {
+    padding: 12px 18px;
+    border-radius: var(--round);
+    text-align: center;
+}
+
 .primary {
     width: 100%;
-    padding: 12px 18px;
     border: 0;
-    border-radius: var(--round);
     background: var(--klein);
     color: var(--white);
 }
@@ -172,13 +208,10 @@ button {
 .primary:hover,
 .primary:focus-visible {
     background: var(--glow);
-    outline: none;
 }
 
 .plain {
-    padding: 10px 16px;
     border: 1px solid var(--rule);
-    border-radius: var(--round);
     background: transparent;
     color: var(--light);
 }
@@ -186,7 +219,40 @@ button {
 .plain:hover,
 .plain:focus-visible {
     border-color: var(--line);
-    outline: none;
+}
+
+.small {
+    padding: 6px 12px;
+    font-size: 13px;
+    line-height: 20px;
+}
+
+.block {
+    display: block;
+    width: 100%;
+}
+
+a.primary,
+a.plain {
+    display: block;
+    font-weight: 500;
+    text-decoration: none;
+}
+
+.link {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--mist);
+    font: inherit;
+    text-decoration: underline;
+    text-decoration-color: var(--line);
+    text-underline-offset: 3px;
+}
+
+.link:hover,
+.link:focus-visible {
+    color: var(--light);
 }
 
 .actions {
@@ -199,6 +265,69 @@ button {
     width: 100%;
 }
 
+.aside {
+    margin: 24px 0 0;
+}
+
+.divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 24px 0 0;
+    color: var(--mist);
+    font-size: 13px;
+}
+
+.divider::before,
+.divider::after {
+    content: "";
+    flex: 1;
+    border-top: 1px solid var(--rule);
+}
+
+.providers {
+    display: grid;
+    gap: 10px;
+    margin: 24px 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.facts {
+    display: grid;
+    gap: 12px;
+    margin: 24px 0;
+    padding: 16px;
+    border: 1px solid var(--rule);
+    border-radius: var(--round);
+    background: var(--deep);
+}
+
+.facts dt {
+    color: var(--mist);
+    font-size: 13px;
+    line-height: 20px;
+}
+
+.facts dd {
+    margin: 0;
+}
+
+.verified,
+.unverified {
+    display: block;
+    font-size: 13px;
+    line-height: 20px;
+}
+
+.verified {
+    color: var(--mist);
+}
+
+.unverified {
+    color: var(--ochre);
+}
+
 .devices {
     list-style: none;
     margin: 24px 0;
@@ -208,10 +337,20 @@ button {
 }
 
 .device {
+    display: grid;
+    gap: 4px;
     padding: 16px;
     border: 1px solid var(--rule);
     border-radius: var(--round);
     background: var(--deep);
+}
+
+.device.current {
+    border-color: var(--line);
+}
+
+.device p {
+    margin: 0;
 }
 
 .device-head {
@@ -219,7 +358,6 @@ button {
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    margin-bottom: 4px;
 }
 
 .device-name {
@@ -227,6 +365,7 @@ button {
 }
 
 .badge {
+    flex: none;
     padding: 2px 8px;
     border: 1px solid var(--line);
     border-radius: 999px;
@@ -236,19 +375,20 @@ button {
 }
 
 .device-apps {
-    margin-bottom: 4px;
+    color: var(--light);
+    font-size: 14px;
 }
 
 .device-meta {
     color: var(--mist);
     font-size: 13px;
     line-height: 20px;
-    margin-bottom: 12px;
 }
 
-.device form:last-child,
-.device .device-meta:last-child {
-    margin-bottom: 0;
+.device-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 8px;
 }
 
 .foot {
@@ -256,18 +396,4 @@ button {
     padding-top: 20px;
     border-top: 1px solid var(--rule);
     font-size: 13px;
-}
-
-.providers {
-  display: grid;
-  gap: 0.75rem;
-  margin: 1.25rem 0 0;
-  padding: 0;
-  list-style: none;
-}
-
-a.primary {
-  display: block;
-  text-align: center;
-  text-decoration: none;
 }

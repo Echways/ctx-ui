@@ -75,7 +75,7 @@ public class PanelOAuthTests
 
         await Expect(page.GetByRole(AriaRole.Dialog)).ToContainTextAsync("Клиентов без постоянного ключа: 1");
         await page.GetByRole(AriaRole.Dialog).GetByRole(AriaRole.Button, new() { Name = "Выключить" }).ClickAsync();
-        await Expect(page.GetByText("Вход через браузер выключен")).ToBeVisibleAsync();
+        await Expect(page.GetByText("Вход через браузер выключен", new() { Exact = true })).ToBeVisibleAsync();
         Assert.False((await gateway.ChangeAsync(services => services.GetRequiredService<SignInSettingsService>().GetAsync())).Enabled);
     }
 

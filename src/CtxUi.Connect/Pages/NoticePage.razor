@@ -1,6 +1,13 @@
 <ConnectPage Title="@(Title ?? ConnectText.PageNotice)">
     <p class="lead" role="alert">@Text</p>
-    <p><a href="@(Http.Request.PathBase + ConnectServices.Prefix + "/signin")">@ConnectText.BackToSignIn</a></p>
+    @if (Detail is not null)
+    {
+        <p class="detail mono">@Detail</p>
+    }
+    @if (BackToSignIn)
+    {
+        <p><a href="@(Http.Request.PathBase + ConnectServices.Prefix + "/signin")">@ConnectText.BackToSignIn</a></p>
+    }
 </ConnectPage>
 
 @code {
@@ -12,4 +19,10 @@
 
     [Parameter, EditorRequired]
     public string Text { get; set; } = "";
+
+    [Parameter]
+    public string? Detail { get; set; }
+
+    [Parameter]
+    public bool BackToSignIn { get; set; } = true;
 }

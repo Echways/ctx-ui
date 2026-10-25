@@ -23,6 +23,8 @@ public sealed class RegisteredApps(
     TimeProvider clock)
 {
     public const string DynamicClientPrefix = "dcr_";
+    public const int MaxRedirectUris = 10;
+    public const int MaxRedirectUriLength = 2000;
 
     private const string CachedUntilProperty = "ctx_cached_until";
     private const string CreatedProperty = "ctx_created";
@@ -67,7 +69,9 @@ public sealed class RegisteredApps(
         {
             foreach (var redirect in redirects.EnumerateArray())
             {
-                if (redirect.ValueKind != JsonValueKind.String || !RedirectUris.IsAllowedForRegistration(redirect.GetString()!))
+                if (redirect.ValueKind != JsonValueKind.String
+                    || redirect.GetString()!.Length > MaxRedirectUriLength
+                    || !RedirectUris.IsAllowedForRegistration(redirect.GetString()!))
                     return Refused("", [], "invalid_redirect_uri", "redirect URIs must be https, loopback http or an app scheme");
 
                 uris.Add(redirect.GetString()!);
@@ -76,13 +80,15 @@ public sealed class RegisteredApps(
 
         if (uris.Count == 0)
             return Refused("", [], "invalid_redirect_uri", "at least one redirect URI is required");
+        if (uris.Count > MaxRedirectUris)
+            return Refused("", [], "invalid_redirect_uri", $"at most {MaxRedirectUris} redirect URIs are accepted");
         if (Text(request, "token_endpoint_auth_method") is not (null or ClientAuthenticationMethods.None or ClientAuthenticationMethods.ClientSecretPost or ClientAuthenticationMethods.ClientSecretBasic))
             return Refused("", uris, "invalid_client_metadata", "only public clients are registered, the token endpoint authentication method is always none");
         if (!Subset(request, "grant_types", GrantTypes) || !Subset(request, "response_types", ResponseTypes))
             return Refused("", uris, "invalid_client_metadata", "only the authorization code flow with refresh tokens is supported");
 
         uris = uris.Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToList();
-        var name = Text(request, "client_name")?.Trim() is { Length: > 0 } given ? given : AppIdentity.Of(null, "", uris).RedirectHosts[0];
+        var name = AppNames.Clean(Text(request, "client_name")) is { Length: > 0 } given ? given : AppIdentity.Of(null, "", uris).RedirectHosts[0];
         var clientId = DynamicClientPrefix + AppIdentity.Fingerprint(name, uris)[..DynamicIdLength];
         if (await apps.FindByClientIdAsync(clientId, ct) is null)
             await apps.CreateAsync(Describe(clientId, name, uris, clock.GetUtcNow()), ct);

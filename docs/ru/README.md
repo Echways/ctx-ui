@@ -181,9 +181,10 @@ Slug: 1–64 символа, `a-z 0-9 -`, без дефиса по краям.
 
 | Команда | Действие |
 | --- | --- |
-| `oauth status` | состояние, значения по умолчанию, провайдеры и их адреса возврата |
+| `oauth status` | состояние, адрес метаданных сервера, значения по умолчанию, провайдеры и их адреса возврата; предупреждает, если OAuth невозможен из-за публичного адреса |
 | `oauth on\|off` | включить или выключить вход через браузер; `off` предупреждает о клиентах без постоянного ключа |
 | `oauth key on\|off` | разрешить или запретить вход по ключу |
+| `oauth set [--idle-days N] [--self-revoke on\|off] [--devices N\|none] [--direct-key on\|off]` | срок неактивности устройств, самостоятельное отключение, значения по умолчанию для новых клиентов |
 | `oauth provider set <имя> --client-id <id>` | добавить провайдера или изменить его |
 | `oauth provider on\|off\|remove <имя>` | включить, выключить, удалить |
 | `oauth provider list` | настроенные провайдеры |
@@ -218,7 +219,7 @@ Slug: 1–64 символа, `a-z 0-9 -`, без дефиса по краям.
 | `inbounds`, `inbounds/{slug}` | список, один, `PUT` создаёт или заменяет, `enable`, `disable`, `DELETE` |
 | `clients`, `clients/{id}` | список (`?name=` находит одного), один, `POST` выпускает, `PATCH` меняет, `connection`, `enable`, `disable`, `reset-quota`, `reissue`, `DELETE` |
 | `clients/{id}/devices`, `…/devices/{deviceId}` | список устройств, `DELETE` отключает одно или все |
-| `clients/{id}/invite`, `clients/{id}/links`, `…/links/{provider}` | `POST` выпускает ссылку-приглашение, список и `DELETE` привязок |
+| `clients/{id}/invite`, `clients/{id}/links`, `…/links/{linkId}`, `…/links/{provider}` | `POST` выпускает ссылку-приглашение, список привязок, `DELETE` отвязывает один аккаунт или все аккаунты провайдера |
 | `oauth`, `oauth/providers/{name}` | настройки (`PATCH`), провайдеры (`PUT`, `enable`, `disable`, `DELETE`); секреты не возвращаются никогда |
 | `usage/days`, `usage/log`, `overview` | итоги по дням, последние вызовы, «Обзор» панели |
 

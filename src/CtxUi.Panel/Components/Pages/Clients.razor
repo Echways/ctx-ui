@@ -170,7 +170,7 @@ else
     private async Task ReissueAsync(Client client)
     {
         var keyDevices = await Backend.ReadAsync(services => services.GetRequiredService<ClientService>().CountKeyDevicesAsync(client.Id));
-        var warning = keyDevices > 0 ? $"{PanelText.ReissueWarning} {string.Format(PanelText.ReissueDevices, keyDevices)}" : PanelText.ReissueWarning;
+        var warning = keyDevices > 0 ? $"{PanelText.ReissueWarning} {Words.Count(PanelText.ReissueDevices, keyDevices)}" : PanelText.ReissueWarning;
         if (!await ConfirmDialog.AskAsync(
                 Dialogs, string.Format(PanelText.ReissueQuestion, client.Name), warning, PanelText.ReissueYes, danger: false))
             return;

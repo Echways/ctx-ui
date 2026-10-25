@@ -347,6 +347,57 @@ public class OAuthDeviceTests
     }
 
     [Fact]
+    public async Task Revoking_without_the_page_token_is_refused()
+    {
+        await using var gateway = await OAuthHarness.StartAsync();
+        await gateway.AddInboundAsync("echo", "https://mcp.example.org/mcp");
+        var issued = await gateway.AddClientAsync("Иванов", ["echo"]);
+        var (flow, _, _) = await ConnectAsync(gateway, issued.Token);
+        using var _ = flow;
+        var device = Assert.Single(await DevicesAsync(gateway, issued.Client.Id));
+
+        using var forged = await flow.Browser.PostAsync($"/connect/devices/{device.Id}/revoke", new FormUrlEncodedContent([]));
+
+        Assert.Equal(HttpStatusCode.BadRequest, forged.StatusCode);
+        Assert.Contains("Страница устарела", await forged.Content.ReadAsStringAsync());
+        Assert.Null(Assert.Single(await DevicesAsync(gateway, issued.Client.Id)).RevokedAt);
+    }
+
+    [Fact]
+    public async Task Signing_out_without_the_page_token_is_refused()
+    {
+        await using var gateway = await OAuthHarness.StartAsync();
+        await gateway.AddInboundAsync("echo", "https://mcp.example.org/mcp");
+        var issued = await gateway.AddClientAsync("Иванов", ["echo"]);
+        var (flow, _, _) = await ConnectAsync(gateway, issued.Token);
+        using var _ = flow;
+
+        using var forged = await flow.Browser.PostAsync("/connect/signout", new FormUrlEncodedContent([]));
+        using var after = await flow.Browser.GetAsync("/connect/devices");
+
+        Assert.Equal(HttpStatusCode.BadRequest, forged.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, after.StatusCode);
+    }
+
+    [Fact]
+    public async Task Cancelling_on_the_limit_page_returns_access_denied_to_the_app()
+    {
+        await using var gateway = await OAuthHarness.StartAsync();
+        await gateway.AddInboundAsync("echo", "https://mcp.example.org/mcp");
+        var issued = await gateway.AddClientAsync("Иванов", ["echo"]);
+        await SetLimitAsync(gateway, issued.Client.Id, 1);
+        var (laptop, _, _) = await ConnectAsync(gateway, issued.Token);
+        using var _ = laptop;
+        using var phone = await OAuthFlow.StartAsync(gateway, "echo");
+
+        await phone.SignInWithKeyAsync(issued.Token);
+        await phone.NavigateAsync(phone.LinkTo("/connect/authorize?"));
+
+        Assert.Equal("access_denied", phone.Answer?.GetValueOrDefault("error"));
+        Assert.Single(await DevicesAsync(gateway, issued.Client.Id));
+    }
+
+    [Fact]
     public async Task Device_remembers_the_forwarded_browser_ip()
     {
         await using var gateway = await OAuthHarness.StartAsync();

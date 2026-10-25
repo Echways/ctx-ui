@@ -598,7 +598,7 @@
     <value>Turn off browser sign-in?</value>
   </data>
   <data name="OAuthOffWarning" xml:space="preserve">
-    <value>{0} client(s) have no permanent key and will lose access until it is turned on again.</value>
+    <value>{n, plural, one {{number} client has} other {{number} clients have}} no permanent key and will lose access until browser sign-in is turned on again.</value>
   </data>
   <data name="OAuthOffYes" xml:space="preserve">
     <value>Turn off</value>
@@ -754,7 +754,7 @@ Paste the issuer address, the client ID and the secret here.</value>
     <value>Disconnect {0}</value>
   </data>
   <data name="DeviceSignedIn" xml:space="preserve">
-    <value>Signed in with {0}</value>
+    <value>Signed in {0} with {1}</value>
   </data>
   <data name="DeviceByKey" xml:space="preserve">
     <value>a key</value>
@@ -766,7 +766,7 @@ Paste the issuer address, the client ID and the secret here.</value>
     <value>Not used yet</value>
   </data>
   <data name="DeviceSignInIp" xml:space="preserve">
-    <value>IP at sign-in: {0}</value>
+    <value>IP at sign-in</value>
   </data>
   <data name="DeviceApps" xml:space="preserve">
     <value>Apps: {0}</value>
@@ -817,7 +817,7 @@ Paste the issuer address, the client ID and the secret here.</value>
     <value>Account {0} unlinked</value>
   </data>
   <data name="ReissueDevices" xml:space="preserve">
-    <value>Devices signed in with the key that will be disconnected: {0}.</value>
+    <value>{n, plural, one {{number} device signed in with the key will be disconnected.} other {{number} devices signed in with the key will be disconnected.}}</value>
   </data>
   <data name="ForOAuthApps" xml:space="preserve">
     <value>For apps with browser sign-in</value>
@@ -845,5 +845,32 @@ Paste the issuer address, the client ID and the secret here.</value>
   </data>
   <data name="MessageInvite" xml:space="preserve">
     <value>To sign in with an account, link it first: {0}</value>
+  </data>
+  <data name="OAuthDiscovery" xml:space="preserve">
+    <value>Server metadata</value>
+  </data>
+  <data name="CopyOAuthDiscovery" xml:space="preserve">
+    <value>Copy the server metadata address</value>
+  </data>
+  <data name="OAuthDiscoveryHelp" xml:space="preserve">
+    <value>Apps find the sign-in page through this address.</value>
+  </data>
+  <data name="OpenSignInPage" xml:space="preserve">
+    <value>Open the sign-in page</value>
+  </data>
+  <data name="IdleDaysHelp" xml:space="preserve">
+    <value>From 1 to {0}. An app that is not used this long has to sign in again.</value>
+  </data>
+  <data name="SelfRevokeHelp" xml:space="preserve">
+    <value>On the My devices page and when the device limit is reached.</value>
+  </data>
+  <data name="LinkedOn" xml:space="preserve">
+    <value>Linked {0}</value>
+  </data>
+  <data name="UnlinkQuestion" xml:space="preserve">
+    <value>Unlink {0}?</value>
+  </data>
+  <data name="UnlinkWarning" xml:space="preserve">
+    <value>The person will need a new invite link to sign in with this account again.</value>
   </data>
 </root>

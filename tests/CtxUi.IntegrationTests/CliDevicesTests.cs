@@ -179,6 +179,6 @@ public sealed class CliDevicesTests : IDisposable
 
         var reissued = await CliRunner.RunAsync(gateway.DataDir, "client", "reissue", "Иванов");
 
-        Assert.Contains("Отключено устройств: 1", reissued.Output);
+        Assert.Contains("Отключено устройств, вошедших по старому ключу: 1", reissued.Output);
     }
 }

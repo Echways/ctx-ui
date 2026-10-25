@@ -507,9 +507,6 @@
   <data name="OnOffExpected" xml:space="preserve">
     <value>{0}: ожидалось on или off, получено {1}</value>
   </data>
-  <data name="DevicesInvalid" xml:space="preserve">
-    <value>--devices: ожидалось число, получено {0}</value>
-  </data>
   <data name="DeviceLimitLine" xml:space="preserve">
     <value>Лимит устройств: {0}</value>
   </data>
@@ -532,7 +529,7 @@
     <value>нет</value>
   </data>
   <data name="DeviceLine" xml:space="preserve">
-    <value>{0}  {1}  {2}  {3}  {4}  {5}  {6}</value>
+    <value>{0,-8}  {1,-27} {2,-16} {3,-15} {4,-11} {5}</value>
   </data>
   <data name="DeviceActive" xml:space="preserve">
     <value>активно</value>
@@ -558,11 +555,8 @@
   <data name="DeviceByKey" xml:space="preserve">
     <value>ключ</value>
   </data>
-  <data name="NoApps" xml:space="preserve">
-    <value>нет приложений</value>
-  </data>
   <data name="DeviceNeverUsed" xml:space="preserve">
-    <value>не использовалось</value>
+    <value>никогда</value>
   </data>
   <data name="DeviceOffDone" xml:space="preserve">
     <value>Устройство {0} отключено</value>
@@ -580,7 +574,7 @@
     <value>id нескольких устройств начинается с {0}, укажите больше символов</value>
   </data>
   <data name="ReissueRevoked" xml:space="preserve">
-    <value>Отключено устройств: {0}</value>
+    <value>Отключено устройств, вошедших по старому ключу: {0}</value>
   </data>
   <data name="InviteLine" xml:space="preserve">
     <value>Ссылка-приглашение: {0}</value>
@@ -602,5 +596,41 @@
   </data>
   <data name="DefaultDevicesInvalid" xml:space="preserve">
     <value>defaultMaxDevices: ожидалось число или none, получено {0}</value>
+  </data>
+  <data name="OAuthDevicesOption" xml:space="preserve">
+    <value>лимит устройств для новых клиентов: число или none</value>
+  </data>
+  <data name="OAuthDirectKeyOption" xml:space="preserve">
+    <value>постоянный ключ у новых клиентов: on или off</value>
+  </data>
+  <data name="OAuthIdleDaysOption" xml:space="preserve">
+    <value>дней без использования до отключения устройства, от 1 до 365</value>
+  </data>
+  <data name="OAuthSelfRevokeOption" xml:space="preserve">
+    <value>клиент может сам отключать устройства: on или off</value>
+  </data>
+  <data name="OAuthSetCommand" xml:space="preserve">
+    <value>изменить настройки устройств и значения по умолчанию для новых клиентов</value>
+  </data>
+  <data name="OAuthSetNothing" xml:space="preserve">
+    <value>нечего менять: укажите --devices, --direct-key, --idle-days или --self-revoke</value>
+  </data>
+  <data name="OAuthSettingsSaved" xml:space="preserve">
+    <value>Настройки OAuth сохранены</value>
+  </data>
+  <data name="OAuthUnavailable" xml:space="preserve">
+    <value>Внимание: OAuth не может работать, публичный адрес {0} должен начинаться с https://. Задайте CtxUi__PublicUrl.</value>
+  </data>
+  <data name="OAuthDiscoveryLine" xml:space="preserve">
+    <value>Метаданные сервера: {0}</value>
+  </data>
+  <data name="NumberExpected" xml:space="preserve">
+    <value>{0}: ожидалось число, получено {1}</value>
+  </data>
+  <data name="DeviceHeader" xml:space="preserve">
+    <value>ID        УСТРОЙСТВО                  ПОСЛЕДНИЙ РАЗ    IP ПРИ ВХОДЕ    ВХОД        СОСТОЯНИЕ</value>
+  </data>
+  <data name="DeviceApps" xml:space="preserve">
+    <value>          приложения: {0}</value>
   </data>
 </root>

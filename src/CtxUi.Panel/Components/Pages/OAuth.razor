@@ -18,41 +18,51 @@
 }
 else
 {
-    <section class="group oauth" @key="_revision">
-        @if (!Available)
-        {
-            <p class="hint" role="note">@string.Format(PanelText.OAuthNeedsHttps, PublicUrl)</p>
-        }
-        <MudSwitch T="bool" Value="_settings.Enabled" Disabled="@(!Available && !_settings.Enabled)" Label="@PanelText.OAuthSwitch"
-                   ValueChanged="SwitchAsync" />
-        <MudSwitch T="bool" Value="_settings.KeySignIn" Label="@PanelText.KeySignInSwitch" ValueChanged="SwitchKeyAsync" />
-        <p class="hint">@PanelText.KeySignInHelp</p>
-    </section>
-    <section class="group" aria-labelledby="providers-head">
-        <h2 id="providers-head">@PanelText.Providers</h2>
-        <p class="hint">@PanelText.ProvidersHelp</p>
-        <div class="providers">
-            @foreach (var info in ProviderCatalog.All)
+    <div class="settings">
+        <section class="group" @key="_revision">
+            @if (!Available)
             {
-                <ProviderCard @key="info.Name" Info="info" Stored="_providers.GetValueOrDefault(info.Name)" PublicUrl="@PublicUrl" OnChanged="LoadAsync" />
+                <p class="hint" role="note">@string.Format(PanelText.OAuthNeedsHttps, PublicUrl)</p>
             }
-        </div>
-    </section>
-    <section class="group" aria-labelledby="defaults-head">
-        <h2 id="defaults-head">@PanelText.Defaults</h2>
-        <div class="pair">
+            <MudSwitch T="bool" Value="_settings.Enabled" Disabled="@(!Available && !_settings.Enabled)" Label="@PanelText.OAuthSwitch"
+                       ValueChanged="SwitchAsync" />
+            <MudSwitch T="bool" Value="_settings.KeySignIn" Label="@PanelText.KeySignInSwitch" ValueChanged="SwitchKeyAsync" />
+            <p class="hint">@PanelText.KeySignInHelp</p>
+            @if (_settings.Enabled && Available)
+            {
+                <CopyLine Label="@PanelText.OAuthDiscovery" Value="@DiscoveryUrl" CopyLabel="@PanelText.CopyOAuthDiscovery" />
+                <p class="hint">
+                    @PanelText.OAuthDiscoveryHelp
+                    <a class="link" href="@SignInUrl" target="_blank" rel="noopener noreferrer">@PanelText.OpenSignInPage</a>
+                </p>
+            }
+        </section>
+        <section class="group" aria-labelledby="providers-head">
+            <h2 id="providers-head">@PanelText.Providers</h2>
+            <p class="hint">@PanelText.ProvidersHelp</p>
+            <div class="providers">
+                @foreach (var info in ProviderCatalog.All)
+                {
+                    <ProviderCard @key="info.Name" Info="info" Stored="_providers.GetValueOrDefault(info.Name)" PublicUrl="@PublicUrl" OnChanged="LoadAsync" />
+                }
+            </div>
+        </section>
+        <section class="group" aria-labelledby="devices-head">
+            <h2 id="devices-head">@PanelText.GroupDevices</h2>
+            <MudNumericField T="int?" @bind-Value="_idleDays" Label="@PanelText.IdleDays" Immediate="true" HideSpinButtons="true"
+                             Min="1" Max="SignInSettings.MaxIdleDays" HelperText="@string.Format(PanelText.IdleDaysHelp, SignInSettings.MaxIdleDays)" />
+            <MudSwitch T="bool" @bind-Value="_selfRevoke" Label="@PanelText.SelfRevoke" />
+            <p class="hint">@PanelText.SelfRevokeHelp</p>
+            <h3>@PanelText.Defaults</h3>
             <MudNumericField T="int?" @bind-Value="_limit" Label="@PanelText.DeviceLimit" Immediate="true" HideSpinButtons="true"
                              HelperText="@PanelText.DeviceLimitHelp" />
-            <MudNumericField T="int?" @bind-Value="_idleDays" Label="@PanelText.IdleDays" Immediate="true" HideSpinButtons="true"
-                             Min="1" Max="SignInSettings.MaxIdleDays" />
-        </div>
-        <MudSwitch T="bool" @bind-Value="_directKey" Label="@PanelText.DirectKeyWorks" />
-        <p class="hint">@PanelText.DirectKeyHelp</p>
-        <MudSwitch T="bool" @bind-Value="_selfRevoke" Label="@PanelText.SelfRevoke" />
-        <div class="actions">
-            <button type="button" class="btn-k pigment" @onclick="SaveDefaultsAsync">@PanelText.Save</button>
-        </div>
-    </section>
+            <MudSwitch T="bool" @bind-Value="_directKey" Label="@PanelText.DirectKeyWorks" />
+            <p class="hint">@PanelText.DirectKeyHelp</p>
+            <div class="actions">
+                <button type="button" class="btn-k pigment" @onclick="SaveDefaultsAsync">@PanelText.Save</button>
+            </div>
+        </section>
+    </div>
 }
 
 @code {
@@ -68,6 +78,10 @@ else
     private string PublicUrl => Options.Value.PublicUrl;
 
     private bool Available => OAuthAvailability.IsAllowed(PublicUrl);
+
+    private string DiscoveryUrl => OAuthResource.Issuer(PublicUrl) + "/.well-known/oauth-authorization-server";
+
+    private string SignInUrl => OAuthResource.Issuer(PublicUrl) + "/connect/signin";
 
     protected override Task OnInitializedAsync() => LoadAsync();
 
@@ -94,7 +108,7 @@ else
             var withoutKey = await Backend.ReadAsync(services => services.GetRequiredService<SignInSettingsService>().ClientsWithoutDirectKeyAsync());
             if (withoutKey > 0
                 && !await ConfirmDialog.AskAsync(
-                    Dialogs, PanelText.OAuthOffQuestion, string.Format(PanelText.OAuthOffWarning, withoutKey), PanelText.OAuthOffYes, danger: true))
+                    Dialogs, PanelText.OAuthOffQuestion, Words.Count(PanelText.OAuthOffWarning, withoutKey), PanelText.OAuthOffYes, danger: true))
             {
                 await LoadAsync();
                 return;

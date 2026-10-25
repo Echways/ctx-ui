@@ -1,5 +1,14 @@
 <ConnectPage Title="@ConnectText.PageSignIn" DevicesLink="true">
-    <p class="lead">@ConnectText.SignInLead</p>
+    <p class="lead">
+        @if (Target is { } target)
+        {
+            <Phrase Pattern="@ConnectText.SignInLeadFor" Arguments="[target.App.Name, target.InboundName]" />
+        }
+        else
+        {
+            @ConnectText.SignInLead
+        }
+    </p>
     @if (Error is not null)
     {
         <p class="alert" role="alert">@Error</p>
@@ -10,12 +19,21 @@
             <AntiforgeryToken />
             <input type="hidden" name="returnUrl" value="@ReturnUrl" />
             <label class="label" for="key">@ConnectText.AccessKey</label>
-            <input class="field" id="key" name="key" type="password" autocomplete="off" spellcheck="false" required />
-            <p class="hint">@ConnectText.AccessKeyHint</p>
+            <input class="field" id="key" name="key" type="password" autocomplete="off" spellcheck="false" autocapitalize="off"
+                   required autofocus aria-describedby="key-hint" aria-invalid="@(Error is null ? "false" : "true")" />
+            <p class="hint" id="key-hint">@ConnectText.AccessKeyHint</p>
             <button class="primary" type="submit">@ConnectText.SignInButton</button>
         </form>
     }
-    <ProviderButtons Providers="Providers" ReturnUrl="@ReturnUrl" />
+    @if (KeySignIn && Providers.Count > 0)
+    {
+        <p class="divider" role="separator"><span>@ConnectText.Or</span></p>
+    }
+    <ProviderButtons Providers="Providers" ReturnUrl="@ReturnUrl" Secondary="KeySignIn" />
+    @if (!KeySignIn && Providers.Count == 0)
+    {
+        <p class="alert" role="alert">@ConnectText.NoSignInMethods</p>
+    }
 </ConnectPage>
 
 @code {
@@ -27,6 +45,9 @@
 
     [Parameter]
     public IReadOnlyList<ProviderButton> Providers { get; set; } = [];
+
+    [Parameter]
+    public ConnectTarget? Target { get; set; }
 
     [Parameter]
     public string? Error { get; set; }

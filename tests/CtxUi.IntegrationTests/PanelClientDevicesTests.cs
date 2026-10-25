@@ -102,6 +102,9 @@ public class PanelClientDevicesTests
         await RowMenu.ChooseAsync(Row(page, "Иванов"), "Устройства");
         await Expect(Dialog(page)).ToContainTextAsync("ivanov@example.org");
         await Dialog(page).GetByRole(AriaRole.Button, new() { Name = "Отвязать GitHub" }).ClickAsync();
+        var confirm = page.GetByRole(AriaRole.Dialog).Filter(new() { HasText = "Отвязать GitHub · ivanov@example.org?" });
+        await Expect(confirm).ToContainTextAsync("понадобится новая ссылка-приглашение");
+        await confirm.GetByRole(AriaRole.Button, new() { Name = "Отвязать", Exact = true }).ClickAsync();
 
         await Expect(page.GetByText("Аккаунт GitHub отвязан")).ToBeVisibleAsync();
         Assert.Empty(await gateway.ChangeAsync(services => services.GetRequiredService<ClientLinkService>().ListAsync(issued.Client.Id)));
@@ -117,6 +120,6 @@ public class PanelClientDevicesTests
 
         await RowMenu.ChooseAsync(Row(page, "Иванов"), "Новый токен");
 
-        await Expect(page.GetByRole(AriaRole.Dialog)).ToContainTextAsync("Устройств, подключённых по ключу, будет отключено: 1.");
+        await Expect(page.GetByRole(AriaRole.Dialog)).ToContainTextAsync("Будет отключено 1 устройство, вошедшее по ключу.");
     }
 }

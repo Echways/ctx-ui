@@ -507,9 +507,6 @@
   <data name="OnOffExpected" xml:space="preserve">
     <value>{0}: expected on or off, got {1}</value>
   </data>
-  <data name="DevicesInvalid" xml:space="preserve">
-    <value>--devices: expected a number, got {0}</value>
-  </data>
   <data name="DeviceLimitLine" xml:space="preserve">
     <value>Device limit: {0}</value>
   </data>
@@ -532,7 +529,7 @@
     <value>no</value>
   </data>
   <data name="DeviceLine" xml:space="preserve">
-    <value>{0}  {1}  {2}  {3}  {4}  {5}  {6}</value>
+    <value>{0,-8}  {1,-27} {2,-16} {3,-15} {4,-11} {5}</value>
   </data>
   <data name="DeviceActive" xml:space="preserve">
     <value>active</value>
@@ -556,13 +553,10 @@
     <value>No devices.</value>
   </data>
   <data name="DeviceByKey" xml:space="preserve">
-    <value>a key</value>
-  </data>
-  <data name="NoApps" xml:space="preserve">
-    <value>no apps</value>
+    <value>key</value>
   </data>
   <data name="DeviceNeverUsed" xml:space="preserve">
-    <value>never used</value>
+    <value>never</value>
   </data>
   <data name="DeviceOffDone" xml:space="preserve">
     <value>Device {0} disconnected</value>
@@ -580,7 +574,7 @@
     <value>several devices start with {0}, give more characters</value>
   </data>
   <data name="ReissueRevoked" xml:space="preserve">
-    <value>Devices disconnected: {0}</value>
+    <value>Devices signed in with the old key were disconnected: {0}</value>
   </data>
   <data name="InviteLine" xml:space="preserve">
     <value>Invite link: {0}</value>
@@ -602,5 +596,41 @@
   </data>
   <data name="DefaultDevicesInvalid" xml:space="preserve">
     <value>defaultMaxDevices: expected a number or none, got {0}</value>
+  </data>
+  <data name="OAuthDevicesOption" xml:space="preserve">
+    <value>device limit for new clients: a number or none</value>
+  </data>
+  <data name="OAuthDirectKeyOption" xml:space="preserve">
+    <value>a permanent key works for new clients: on or off</value>
+  </data>
+  <data name="OAuthIdleDaysOption" xml:space="preserve">
+    <value>days without use before a device is disconnected, from 1 to 365</value>
+  </data>
+  <data name="OAuthSelfRevokeOption" xml:space="preserve">
+    <value>a client can disconnect its own devices: on or off</value>
+  </data>
+  <data name="OAuthSetCommand" xml:space="preserve">
+    <value>change the device settings and the defaults for new clients</value>
+  </data>
+  <data name="OAuthSetNothing" xml:space="preserve">
+    <value>nothing to change: give --devices, --direct-key, --idle-days or --self-revoke</value>
+  </data>
+  <data name="OAuthSettingsSaved" xml:space="preserve">
+    <value>OAuth settings saved</value>
+  </data>
+  <data name="OAuthUnavailable" xml:space="preserve">
+    <value>Warning: OAuth cannot work, the public address {0} must start with https://. Set CtxUi__PublicUrl.</value>
+  </data>
+  <data name="OAuthDiscoveryLine" xml:space="preserve">
+    <value>Server metadata: {0}</value>
+  </data>
+  <data name="NumberExpected" xml:space="preserve">
+    <value>{0}: expected a number, got {1}</value>
+  </data>
+  <data name="DeviceHeader" xml:space="preserve">
+    <value>ID        DEVICE                      LAST USED        SIGN-IN IP      SIGNED IN   STATE</value>
+  </data>
+  <data name="DeviceApps" xml:space="preserve">
+    <value>          apps: {0}</value>
   </data>
 </root>

@@ -180,9 +180,10 @@ Both accept `--client <name>`. Times are UTC. Data reaches the database every
 
 | Command | Effect |
 | --- | --- |
-| `oauth status` | state, defaults, providers with their return addresses |
+| `oauth status` | state, server metadata address, defaults, providers with their return addresses; warns when the public address rules OAuth out |
 | `oauth on\|off` | turn browser sign-in on or off; `off` warns about clients without a direct key |
 | `oauth key on\|off` | allow or forbid signing in with a key |
+| `oauth set [--idle-days N] [--self-revoke on\|off] [--devices N\|none] [--direct-key on\|off]` | idle period of devices, self-service disconnecting, defaults for new clients |
 | `oauth provider set <name> --client-id <id>` | add or change a provider |
 | `oauth provider on\|off\|remove <name>` | enable, disable, remove |
 | `oauth provider list` | configured providers |
@@ -217,7 +218,7 @@ Lives under the panel's secret path, like the panel itself:
 | `inbounds`, `inbounds/{slug}` | list, get, `PUT` creates or replaces, `enable`, `disable`, `DELETE` |
 | `clients`, `clients/{id}` | list (`?name=` finds one), get, `POST` issues, `PATCH` changes, `connection`, `enable`, `disable`, `reset-quota`, `reissue`, `DELETE` |
 | `clients/{id}/devices`, `…/devices/{deviceId}` | list devices, `DELETE` disconnects one or all |
-| `clients/{id}/invite`, `clients/{id}/links`, `…/links/{provider}` | `POST` issues an invite link, list and `DELETE` links |
+| `clients/{id}/invite`, `clients/{id}/links`, `…/links/{linkId}`, `…/links/{provider}` | `POST` issues an invite link, list links, `DELETE` unlinks one account or every account of a provider |
 | `oauth`, `oauth/providers/{name}` | settings (`PATCH`), providers (`PUT`, `enable`, `disable`, `DELETE`); secrets are never returned |
 | `usage/days`, `usage/log`, `overview` | daily totals, recent calls, the panel's overview |
 

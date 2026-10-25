@@ -198,4 +198,7 @@
   <data name="LinkNotFound" xml:space="preserve">
     <value>the client has no linked {0} accounts</value>
   </data>
+  <data name="DeviceNotFound" xml:space="preserve">
+    <value>device not found</value>
+  </data>
 </root>

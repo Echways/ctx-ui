@@ -198,4 +198,7 @@
   <data name="LinkNotFound" xml:space="preserve">
     <value>у клиента нет привязанных аккаунтов {0}</value>
   </data>
+  <data name="DeviceNotFound" xml:space="preserve">
+    <value>устройство не найдено</value>
+  </data>
 </root>

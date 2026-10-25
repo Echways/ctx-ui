@@ -6,6 +6,7 @@ using CtxUi.Core.ApiKeys;
 using CtxUi.Core.Clients;
 using CtxUi.Core.Inbounds;
 using CtxUi.Core.Settings;
+using CtxUi.Core.SignIn;
 using CtxUi.Core.Usage;
 
 namespace CtxUi.Core.Data;
@@ -21,6 +22,11 @@ public sealed class CtxUiDbContext(DbContextOptions<CtxUiDbContext> options) : D
     public DbSet<Admin> Admins => Set<Admin>();
     public DbSet<Setting> Settings => Set<Setting>();
     public DbSet<ApiKey> ApiKeys => Set<ApiKey>();
+    public DbSet<SignInSettings> SignInSettings => Set<SignInSettings>();
+    public DbSet<SignInProvider> SignInProviders => Set<SignInProvider>();
+    public DbSet<Device> Devices => Set<Device>();
+    public DbSet<DeviceApp> DeviceApps => Set<DeviceApp>();
+    public DbSet<ClientLink> ClientLinks => Set<ClientLink>();
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder) =>
         configurationBuilder.Properties<DateTimeOffset>().HaveConversion<UnixMillisConverter>();
@@ -46,6 +52,7 @@ public sealed class CtxUiDbContext(DbContextOptions<CtxUiDbContext> options) : D
                     value => new Dictionary<string, string>(value)));
             entity.HasMany(client => client.Inbounds).WithOne()
                 .HasForeignKey(link => link.ClientId).OnDelete(DeleteBehavior.Cascade);
+            entity.Property(client => client.DirectKey).HasDefaultValue(true).HasSentinel(true);
         });
 
         modelBuilder.Entity<ClientInbound>(entity =>
@@ -74,6 +81,31 @@ public sealed class CtxUiDbContext(DbContextOptions<CtxUiDbContext> options) : D
             entity.HasIndex(apiKey => apiKey.SecretHash).IsUnique();
         });
 
+        modelBuilder.Entity<SignInSettings>().HasData(new SignInSettings());
+
+        modelBuilder.Entity<SignInProvider>(entity => entity.HasKey(provider => provider.Name));
+
+        modelBuilder.Entity<Device>(entity =>
+        {
+            entity.HasIndex(device => new { device.ClientId, device.MarkerHash });
+            entity.HasOne<Client>().WithMany()
+                .HasForeignKey(device => device.ClientId).OnDelete(DeleteBehavior.Cascade);
+            entity.HasMany(device => device.Apps).WithOne()
+                .HasForeignKey(app => app.DeviceId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<DeviceApp>(entity => entity.HasKey(app => new { app.DeviceId, app.AppKey }));
+
+        modelBuilder.Entity<ClientLink>(entity =>
+        {
+            entity.HasIndex(link => new { link.Provider, link.Subject }).IsUnique();
+            entity.HasIndex(link => link.ClientId);
+            entity.HasOne<Client>().WithMany()
+                .HasForeignKey(link => link.ClientId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.UseOpenIddict();
+
         modelBuilder.Entity<RoutingState>().HasData(new RoutingState { Id = 1, Revision = 0 });
     }
 
@@ -97,5 +129,5 @@ public sealed class CtxUiDbContext(DbContextOptions<CtxUiDbContext> options) : D
 
     private bool RoutingChanged() => ChangeTracker.Entries().Any(entry =>
         entry.State is EntityState.Added or EntityState.Modified or EntityState.Deleted &&
-        entry.Entity is Inbound or Client or ClientInbound);
+        entry.Entity is Inbound or Client or ClientInbound or SignIn.SignInSettings or SignInProvider or Device or ClientLink);
 }

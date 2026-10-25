@@ -10,4 +10,5 @@ public sealed class UsageEvent
     public string? Tool { get; set; }
     public int DurationMs { get; set; }
     public UsageOutcome Outcome { get; set; }
+    public Guid? DeviceId { get; set; }
 }

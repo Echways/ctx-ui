@@ -20,6 +20,10 @@ public sealed class Client
     public DateTimeOffset PeriodStartedAt { get; set; }
     public long UsedCalls { get; set; }
     public DateTimeOffset? UsedSince { get; set; }
+    public int? MaxDevices { get; set; }
+    public bool DirectKey { get; set; } = true;
+    public string? InviteHash { get; set; }
+    public DateTimeOffset? InviteExpiresAt { get; set; }
     public Dictionary<string, string> Metadata { get; set; } = new();
     public List<ClientInbound> Inbounds { get; set; } = [];
 }

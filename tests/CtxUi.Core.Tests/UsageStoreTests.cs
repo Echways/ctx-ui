@@ -176,4 +176,17 @@ public class UsageStoreTests
 
         Assert.Equal(0, await database.NewContext().RoutingStates.AsNoTracking().Select(state => state.Revision).SingleAsync());
     }
+
+    [Fact]
+    public async Task Device_of_a_call_is_written_and_read_back()
+    {
+        await using var database = await TestDatabase.CreateAsync();
+        var device = Guid.Parse("55555555-5555-5555-5555-555555555555");
+
+        await Store(database).AppendAsync([Call() with { DeviceId = device }, Call(tool: "keyed")]);
+
+        var lines = await Store(database).RecentAsync(null, 10);
+        Assert.Null(lines[0].DeviceId);
+        Assert.Equal(device, lines[1].DeviceId);
+    }
 }

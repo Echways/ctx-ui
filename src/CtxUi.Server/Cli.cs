@@ -8,6 +8,7 @@ using CtxUi.Core.Clients;
 using CtxUi.Core.Data;
 using CtxUi.Core.Inbounds;
 using CtxUi.Core.Settings;
+using CtxUi.Core.SignIn;
 using CtxUi.Core.Usage;
 using CtxUi.Panel;
 using CtxUi.Panel.Accounts;
@@ -15,15 +16,16 @@ using CtxUi.Server.Api;
 
 namespace CtxUi.Server;
 
-public static class Cli
+public static partial class Cli
 {
-    public static bool Handles(string[] args) => args.Length > 0 && args[0] is "inbound" or "client" or "usage" or "admin" or "apikey" or "backup";
+    public static bool Handles(string[] args) => args.Length > 0 && args[0] is "inbound" or "client" or "usage" or "admin" or "apikey" or "backup" or "oauth";
 
     public static async Task<int> RunAsync(
         string[] args,
         TextWriter output,
         TextWriter error,
-        Action<HostApplicationBuilder>? configure = null)
+        Action<HostApplicationBuilder>? configure = null,
+        TextReader? input = null)
     {
         var builder = Host.CreateApplicationBuilder();
         configure?.Invoke(builder);
@@ -45,7 +47,7 @@ public static class Cli
 
         var root = new RootCommand(ServerText.RootDescription)
         {
-            InboundCommand(), ClientCommand(), UsageCommand(), AdminCommand(), ApiKeyCommand(), BackupCommand(),
+            InboundCommand(), ClientCommand(), UsageCommand(), AdminCommand(), ApiKeyCommand(), BackupCommand(), OAuthCommand(Leaf, output, input ?? Console.In),
         };
         return await root.Parse(args).InvokeAsync(new InvocationConfiguration { Output = output, Error = error });
 
@@ -109,6 +111,8 @@ public static class Cli
             var concurrency = new Option<string?>("--concurrency") { Description = ServerText.ClientConcurrencyOption };
             var quota = new Option<string?>("--quota") { Description = ServerText.ClientQuotaOption };
             var resetDays = new Option<string?>("--reset-days") { Description = ServerText.ClientResetDaysOption };
+            var devices = new Option<string?>("--devices") { Description = ServerText.ClientDevicesOption };
+            var directKey = new Option<string?>("--direct-key") { Description = ServerText.ClientDirectKeyOption };
 
             ClientLimits? Limits(ParseResult parse, ClientLimits current)
             {
@@ -126,22 +130,24 @@ public static class Cli
             async Task<Guid> ClientIdAsync(ParseResult parse, IServiceProvider services, CancellationToken ct) =>
                 (await services.GetRequiredService<ClientService>().GetAsync(parse.GetValue(name)!, ct)).Id;
 
-            return new Command("client", ServerText.ClientCommand)
+            var client = new Command("client", ServerText.ClientCommand)
             {
                 Leaf(
                     "add",
                     ServerText.ClientAddCommand,
-                    [name, inbound, expires, meta, rate, concurrency, quota, resetDays],
+                    [name, inbound, expires, meta, rate, concurrency, quota, resetDays, devices, directKey],
                     async (parse, services, ct) =>
                     {
                         var clients = services.GetRequiredService<ClientService>();
+                        var defaults = await services.GetRequiredService<SignInSettingsService>().GetAsync(ct);
                         var issued = await clients.AddAsync(
                             parse.GetValue(name)!,
                             parse.GetValue(inbound) ?? [],
                             Expiry(parse.GetValue(expires)),
                             PairLines.Parse(parse.GetValue(meta)),
                             Limits(parse, ClientLimits.None),
-                            ct: ct);
+                            AccessFrom(parse.GetValue(devices), parse.GetValue(directKey), new ClientAccessPolicy(defaults.DefaultMaxDevices, defaults.DefaultDirectKey), noneAllowed: false),
+                            ct);
                         WriteConnection(services, await clients.GetAsync(issued.Client.Id, ct), issued.Token);
                     }),
                 Leaf("list", ServerText.ClientListCommand, [], async (_, services, ct) =>
@@ -163,11 +169,16 @@ public static class Cli
                     var clients = services.GetRequiredService<ClientService>();
                     var client = await clients.GetAsync(parse.GetValue(name)!, ct);
                     WriteConnection(services, client, clients.Reveal(client));
+                    output.WriteLine(string.Format(ServerText.DeviceLimitLine, DeviceLimitText(client.MaxDevices)));
+                    output.WriteLine(string.Format(ServerText.DirectKeyLine, YesNo(client.DirectKey)));
+                    output.WriteLine(string.Format(ServerText.DevicesActiveLine, await services.GetRequiredService<DeviceService>().ActiveCountAsync(client.Id, ct)));
+                    var links = await services.GetRequiredService<ClientLinkService>().ListAsync(client.Id, ct);
+                    output.WriteLine(string.Format(ServerText.LinksLine, links.Count == 0 ? ServerText.NoLinks : string.Join(", ", links.Select(link => $"{link.Provider} ({link.Display})"))));
                 }),
                 Leaf(
                     "set",
                     ServerText.ClientSetCommand,
-                    [name, inbound, expires, rate, concurrency, quota, resetDays],
+                    [name, inbound, expires, rate, concurrency, quota, resetDays, devices, directKey],
                     async (parse, services, ct) =>
                     {
                         var clients = services.GetRequiredService<ClientService>();
@@ -180,6 +191,7 @@ public static class Cli
                             ExpiresAt = Expiry(date),
                             InboundSlugs = slugs is { Length: > 0 } ? slugs : null,
                             Limits = Limits(parse, ClientLimits.Of(client)),
+                            Access = AccessFrom(parse.GetValue(devices), parse.GetValue(directKey), ClientAccessPolicy.Of(client), noneAllowed: true),
                         };
                         await clients.UpdateAsync(client.Id, update, ct);
                         output.WriteLine(string.Format(ServerText.ClientChanged, parse.GetValue(name)));
@@ -193,7 +205,10 @@ public static class Cli
                 {
                     var clients = services.GetRequiredService<ClientService>();
                     var client = await clients.GetAsync(parse.GetValue(name)!, ct);
-                    WriteConnection(services, client, (await clients.ReissueAsync(client.Id, ct)).Token);
+                    var reissued = await clients.ReissueAsync(client.Id, ct);
+                    WriteConnection(services, client, reissued.Token);
+                    if (reissued.DevicesRevoked > 0)
+                        output.WriteLine(string.Format(ServerText.ReissueRevoked, reissued.DevicesRevoked));
                 }),
                 Leaf("enable", ServerText.ClientEnableCommand, [name], async (parse, services, ct) =>
                 {
@@ -211,6 +226,10 @@ public static class Cli
                     output.WriteLine(string.Format(ServerText.ClientRemoved, parse.GetValue(name)));
                 }),
             };
+            foreach (var command in ClientDeviceCommands(Leaf, output, name))
+                client.Add(command);
+
+            return client;
         }
 
         Command UsageCommand()
@@ -255,6 +274,7 @@ public static class Cli
                         .RecentAsync(await ClientIdAsync(parse, services, ct), count, ct);
                     var clients = await services.GetRequiredService<ClientService>().NamesAsync(ct);
                     var inbounds = await services.GetRequiredService<InboundService>().SlugsAsync(ct);
+                    var devices = await services.GetRequiredService<DeviceService>().NamesAsync(ct);
                     foreach (var line in lines)
                     {
                         var what = line.Tool is null ? line.Method : $"{line.Method} {line.Tool}";
@@ -265,7 +285,8 @@ public static class Cli
                             inbounds.GetValueOrDefault(line.InboundId, ServerText.Removed),
                             UsageOutcomes.Text(line.Outcome),
                             line.DurationMs,
-                            what));
+                            what,
+                            line.DeviceId is { } deviceId ? devices.GetValueOrDefault(deviceId, ServerText.NoDevice) : ServerText.NoDevice));
                     }
 
                     if (lines.Count == 0)

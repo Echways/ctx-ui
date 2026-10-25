@@ -85,6 +85,8 @@ public sealed class RoutingSnapshot
 
     public ClientAccess? ClientById(Guid id) => _clientsById.GetValueOrDefault(id);
 
+    public InboundRoute? Route(string slug) => _routes.GetValueOrDefault(slug);
+
     public bool IsDeviceActive(Guid deviceId, Guid clientId) =>
         _activeDevices.TryGetValue(deviceId, out var owner) && owner == clientId;
 

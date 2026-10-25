@@ -7,7 +7,12 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using OpenIddict.Server;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using OpenIddict.EntityFrameworkCore.Models;
+using CtxUi.Connect.Endpoints;
 using CtxUi.Connect.Metadata;
+using CtxUi.Connect.Registration;
+using CtxUi.Connect.Resources;
 using CtxUi.Core.Data;
 using CtxUi.Core.Routing;
 using CtxUi.Core.SignIn;
@@ -29,8 +34,18 @@ public static partial class ConnectServices
         var issuer = OAuthResource.Issuer((section.Get<ConnectOptions>() ?? new ConnectOptions()).PublicUrl);
         services.AddSingleton<OAuthGate>();
         services.AddSingleton<IAccessTokenValidator, AccessTokenValidator>();
+        services.TryAddSingleton<IMetadataAddressPolicy, PublicAddressPolicy>();
+        services.AddSingleton<ClientMetadataFetcher>();
+        services.AddScoped<RegisteredApps>();
+        services.AddSingleton<ResourceHandlers>();
+        services.AddHttpClient(ClientMetadataFetcher.HttpClientName, client => client.Timeout = ClientMetadataFetcher.Timeout)
+            .ConfigurePrimaryHttpMessageHandler(provider => ClientMetadataFetcher.Handler(provider.GetRequiredService<IMetadataAddressPolicy>()));
         services.AddOpenIddict()
-            .AddCore(core => core.UseEntityFrameworkCore().UseDbContext<CtxUiDbContext>())
+            .AddCore(core =>
+            {
+                core.UseEntityFrameworkCore().UseDbContext<CtxUiDbContext>();
+                core.ReplaceApplicationManager<OpenIddictEntityFrameworkCoreApplication, CtxUiApplicationManager>();
+            })
             .AddServer(server =>
             {
                 var issuerUri = Uri.TryCreate(issuer, UriKind.Absolute, out var parsed) ? parsed : null;
@@ -51,6 +66,9 @@ public static partial class ConnectServices
                     .SetAccessTokenLifetime(TimeSpan.FromHours(1))
                     .AddEventHandler(ServerMetadataHandler.Descriptor(issuer))
                     .Configure(options => options.CodeChallengeMethods.Remove(CodeChallengeMethods.Plain));
+
+                foreach (var descriptor in ClientMetadataHandler.Descriptors.Append(ResourceHandlers.Descriptor))
+                    server.AddEventHandler(descriptor);
 
                 var aspNetCore = server.UseAspNetCore()
                     .EnableAuthorizationEndpointPassthrough()
@@ -86,6 +104,8 @@ public static partial class ConnectServices
     public static WebApplication MapCtxUiConnect(this WebApplication app)
     {
         app.MapResourceMetadata();
+        app.MapRegistration();
+        app.MapAuthorize();
         return app;
     }
 

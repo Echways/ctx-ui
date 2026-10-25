@@ -154,4 +154,11 @@ public class RoutingSnapshotTests
         Assert.False(SignInConfig.Off.IsActive("https://mcp.example.org"));
         Assert.Same(SignInConfig.Off, RoutingSnapshot.Empty.SignIn);
     }
+
+    [Fact]
+    public void Route_is_found_by_its_exact_slug()
+    {
+        Assert.Equal(Echo, Snapshot().Route("echo"));
+        Assert.Null(Snapshot().Route("Echo"));
+    }
 }

@@ -8,13 +8,13 @@ namespace CtxUi.IntegrationTests;
 
 public static class OAuthHarness
 {
-    public static async Task<GatewayHost> StartAsync(Action<WebApplicationBuilder>? configure = null)
+    public static async Task<GatewayHost> StartAsync(Action<WebApplicationBuilder>? configure = null, string? publicUrlSuffix = null)
     {
         var port = FreePort();
         var gateway = await GatewayHost.StartAsync(
             builder =>
             {
-                builder.Configuration["CtxUi:PublicUrl"] = $"http://127.0.0.1:{port}";
+                builder.Configuration["CtxUi:PublicUrl"] = $"http://127.0.0.1:{port}{publicUrlSuffix}";
                 configure?.Invoke(builder);
             },
             port);

@@ -204,4 +204,7 @@
   <data name="LinkIdNotFound" xml:space="preserve">
     <value>the client has no such linked account</value>
   </data>
+  <data name="MetricsDaysInvalid" xml:space="preserve">
+    <value>days: one of {0} is needed</value>
+  </data>
 </root>

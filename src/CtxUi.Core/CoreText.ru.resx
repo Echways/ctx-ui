@@ -204,4 +204,7 @@
   <data name="LinkIdNotFound" xml:space="preserve">
     <value>у клиента нет такого привязанного аккаунта</value>
   </data>
+  <data name="MetricsDaysInvalid" xml:space="preserve">
+    <value>days: нужно одно из значений {0}</value>
+  </data>
 </root>

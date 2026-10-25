@@ -6,6 +6,7 @@ using CtxUi.Core.ApiKeys;
 using CtxUi.Core.Clients;
 using CtxUi.Core.Data;
 using CtxUi.Core.Inbounds;
+using CtxUi.Core.Metrics;
 using CtxUi.Core.Routing;
 using CtxUi.Core.Settings;
 using CtxUi.Core.SignIn;
@@ -27,6 +28,7 @@ public static class CoreServices
         services.AddScoped<RoutingSnapshotLoader>();
         services.AddScoped<UsageStore>();
         services.AddScoped<OverviewService>();
+        services.AddScoped<MetricsService>();
         services.AddScoped<PanelSettings>();
         services.AddScoped<ApiKeyService>();
         services.AddScoped<SignInSettingsService>();

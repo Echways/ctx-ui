@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="OpenIddict.AspNetCore" />
+    <PackageReference Include="OpenIddict.EntityFrameworkCore" />
+    <PackageReference Include="OpenIddict.Validation.ServerIntegration" />
+    <PackageReference Include="UAParser" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.Google" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.MicrosoftAccount" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" />
+    <PackageReference Include="AspNet.Security.OAuth.GitHub" />
+    <PackageReference Include="AspNet.Security.OAuth.GitLab" />
+    <PackageReference Include="AspNet.Security.OAuth.Yandex" />
+    <PackageReference Include="AspNet.Security.OAuth.VkId" />
+    <PackageReference Include="AspNet.Security.OAuth.Discord" />
+    <ProjectReference Include="..\CtxUi.Core\CtxUi.Core.csproj" />
+  </ItemGroup>
+
+</Project>

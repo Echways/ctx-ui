@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.Extensions.Options;
+using CtxUi.Connect;
 using CtxUi.Core.Data;
 using CtxUi.Gateway;
 using CtxUi.Panel;
@@ -21,6 +23,9 @@ public static class ServerApp
         builder.Services.AddCtxUi(builder.Configuration);
         builder.Services.AddCtxUiGateway(builder.Configuration.GetSection(CtxUiOptions.Section));
         builder.Services.AddCtxUiPanel(builder.Configuration.GetSection(CtxUiOptions.Section));
+        builder.Services.AddCtxUiConnect(
+            builder.Configuration.GetSection(CtxUiOptions.Section),
+            ServiceRegistration.KeysPath(builder.Configuration));
         builder.Services.AddCtxUiApi();
         builder.Services.AddHealthChecks().AddDbContextCheck<CtxUiDbContext>();
         builder.Services.Configure<ForwardedHeadersOptions>(options =>
@@ -32,8 +37,10 @@ public static class ServerApp
 
         var app = builder.Build();
         app.UseForwardedHeaders();
+        app.UseForwardedHeaders(ForwardedFor(app.Services.GetRequiredService<IOptions<CtxUiOptions>>().Value.TrustedProxies));
         app.UseTokenPath();
-        app.UseCtxUiPanelGate(GatewayServices.Path, HealthProbe.Path);
+        app.UseCtxUiConnectGate();
+        app.UseCtxUiPanelGate([GatewayServices.Path, HealthProbe.Path, .. ConnectServices.OpenPaths]);
         app.UseCtxUiPanelLanguage();
         app.UseCtxUiApiDocs();
         app.UseRouting();
@@ -42,6 +49,7 @@ public static class ServerApp
         app.UseAntiforgery();
         app.MapCtxUiGateway();
         app.MapCtxUiApi();
+        app.MapCtxUiConnect();
         app.MapCtxUiPanel();
         app.MapHealthChecks(HealthProbe.Path);
         return app;
@@ -53,6 +61,21 @@ public static class ServerApp
             await scope.ServiceProvider.GetRequiredService<CtxUiDbContext>().PrepareAsync(ct);
 
         await app.Services.LoadCtxUiGatewayAsync(ct);
+        app.Services.LoadCtxUiConnect();
         await app.Services.LoadCtxUiPanelAsync(ct);
+    }
+
+    private static ForwardedHeadersOptions ForwardedFor(string trustedProxies)
+    {
+        var (proxies, networks) = ProxyTrust.Parse(trustedProxies);
+        var options = new ForwardedHeadersOptions { ForwardedHeaders = ForwardedHeaders.XForwardedFor, ForwardLimit = 1 };
+        options.KnownProxies.Clear();
+        options.KnownIPNetworks.Clear();
+        foreach (var proxy in proxies)
+            options.KnownProxies.Add(proxy);
+        foreach (var network in networks)
+            options.KnownIPNetworks.Add(network);
+
+        return options;
     }
 }

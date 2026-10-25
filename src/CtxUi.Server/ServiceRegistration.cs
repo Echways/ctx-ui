@@ -19,11 +19,12 @@ public static class ServiceRegistration
             .Validate(
                 options => Languages.IsSupported(options.Language),
                 $"{CtxUiOptions.Section}:Language must be one of: {string.Join(", ", Languages.Supported)}")
+            .Validate(
+                options => ProxyTrust.IsValid(options.TrustedProxies),
+                $"{CtxUiOptions.Section}:TrustedProxies must be IP addresses or networks (10.0.0.0/8) separated by commas")
             .ValidateOnStart();
-        var options = section.Get<CtxUiOptions>() ?? new CtxUiOptions();
-
-        var dataDir = Path.GetFullPath(options.DataDir);
-        var keysDir = Path.Combine(dataDir, KeysDirectory);
+        var keysDir = KeysPath(configuration);
+        var dataDir = Path.GetDirectoryName(keysDir)!;
         CreatePrivateDirectory(dataDir);
         CreatePrivateDirectory(keysDir);
 
@@ -35,6 +36,10 @@ public static class ServiceRegistration
         services.AddCtxUiAccounts();
         return services;
     }
+
+    public static string KeysPath(IConfiguration configuration) => Path.Combine(
+        Path.GetFullPath((configuration.GetSection(CtxUiOptions.Section).Get<CtxUiOptions>() ?? new CtxUiOptions()).DataDir),
+        KeysDirectory);
 
     public static ILoggingBuilder AddCtxUiFilters(this ILoggingBuilder logging) => logging
         .AddFilter("Microsoft.AspNetCore.Hosting.Diagnostics", LogLevel.Warning)

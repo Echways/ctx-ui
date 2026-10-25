@@ -2,6 +2,7 @@ using System.Net;
 using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Time.Testing;
 using CtxUi.Core.Clients;
 using CtxUi.Core.Inbounds;
@@ -70,6 +71,15 @@ public class AccessTests
         Assert.Equal("Bearer", byHeader.Headers.WwwAuthenticate.ToString());
         Assert.Contains("вход в браузере", await byHeader.Content.ReadAsStringAsync());
         Assert.Empty(upstream.Requests);
+    }
+
+    [Fact]
+    public async Task Invalid_trusted_proxies_stop_the_start()
+    {
+        var error = await Assert.ThrowsAsync<OptionsValidationException>(
+            () => GatewayHost.StartAsync(builder => builder.Configuration["CtxUi:TrustedProxies"] = "10.0.0.0/33"));
+
+        Assert.Contains("TrustedProxies", error.Message);
     }
 
     [Fact]

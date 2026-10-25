@@ -4,7 +4,7 @@
         @foreach (var provider in Providers)
         {
             <li>
-                <a class="@(Secondary ? "plain block" : "primary")" href="@ExternalEndpoints.ChallengeUrl(Http, provider.Name, ReturnUrl, Invite)">
+                <a class="@(Secondary ? "button ghost" : "button")" href="@ExternalEndpoints.ChallengeUrl(Http, provider.Name, ReturnUrl, Invite)">
                     @string.Format(ConnectText.SignInWith, provider.Title)
                 </a>
             </li>

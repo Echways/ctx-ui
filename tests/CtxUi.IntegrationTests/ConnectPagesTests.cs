@@ -14,6 +14,7 @@ public class ConnectPagesTests
         {
             BaseURL = gateway.BaseUrl,
             JavaScriptEnabled = false,
+            ReducedMotion = ReducedMotion.Reduce,
             Locale = "ru-RU",
         });
         context.SetDefaultTimeout(5_000);

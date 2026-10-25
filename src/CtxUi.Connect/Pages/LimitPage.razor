@@ -17,7 +17,7 @@
                         <AntiforgeryToken />
                         <input type="hidden" name="deviceId" value="@device.Id" />
                         <input type="hidden" name="returnUrl" value="@ReturnUrl" />
-                        <button class="plain small" type="submit" aria-label="@string.Format(ConnectText.ReplaceOf, device.Name)">@ConnectText.Replace</button>
+                        <button class="link" type="submit" aria-label="@string.Format(ConnectText.ReplaceOf, device.Name)">@ConnectText.Replace</button>
                     </form>
                 }
             </DeviceCard>

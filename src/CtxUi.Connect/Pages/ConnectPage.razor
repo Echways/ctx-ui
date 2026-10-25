@@ -6,25 +6,33 @@
     <meta name="robots" content="noindex, nofollow" />
     <meta name="referrer" content="no-referrer" />
     <meta name="color-scheme" content="dark" />
-    <meta name="theme-color" content="#080C1C" />
+    <meta name="theme-color" content="#002FA7" />
     <title>@Title · ctx-ui</title>
     <link rel="icon" href="@(Http.Request.PathBase + ConnectServices.Favicon)" type="image/svg+xml" />
     <link rel="stylesheet" href="@(Http.Request.PathBase)/_content/CtxUi.Connect/connect.css" />
 </head>
 <body>
-    <main class="sheet">
-        <header class="mast">
-            <span class="mark">ctx-ui</span>
-            <a class="switch" href="@ConnectLanguage.SwitchPath(Http)" hreflang="@ConnectText.LanguageSwitchCulture" lang="@ConnectText.LanguageSwitchCulture">@ConnectText.LanguageSwitchName</a>
-        </header>
-        <h1>@Title</h1>
-        @ChildContent
-        @if (DevicesLink)
-        {
-            <footer class="foot">
-                <a href="@(Http.Request.PathBase + ConnectResults.DevicesPath)">@ConnectText.MyDevices</a>
-            </footer>
-        }
+    <main class="entrance pigment">
+        <div class="entrance-in">
+            <header class="entrance-top">
+                @if (Alert is not null)
+                {
+                    <p class="refusal" role="alert">@Alert</p>
+                }
+                <nav class="entrance-links">
+                    @if (DevicesLink)
+                    {
+                        <a href="@(Http.Request.PathBase + ConnectResults.DevicesPath)">@ConnectText.MyDevices</a>
+                    }
+                    <a href="@ConnectLanguage.SwitchPath(Http)" hreflang="@ConnectText.LanguageSwitchCulture" lang="@ConnectText.LanguageSwitchCulture">@ConnectText.LanguageSwitchName</a>
+                </nav>
+            </header>
+            <div class="page">
+                <h1>@Title</h1>
+                @ChildContent
+            </div>
+        </div>
+        <div class="monument" aria-hidden="true">ctx-ui</div>
     </main>
 </body>
 </html>
@@ -35,6 +43,9 @@
 
     [Parameter, EditorRequired]
     public string Title { get; set; } = "";
+
+    [Parameter]
+    public string? Alert { get; set; }
 
     [Parameter]
     public bool DevicesLink { get; set; }

@@ -15,7 +15,7 @@
                     {
                         <form method="post" action="@(ConnectServices.Prefix)/devices/@device.Id/revoke">
                             <AntiforgeryToken />
-                            <button class="plain small" type="submit" aria-label="@string.Format(ConnectText.DisconnectOf, device.Name)">@ConnectText.Disconnect</button>
+                            <button class="link" type="submit" aria-label="@string.Format(ConnectText.DisconnectOf, device.Name)">@ConnectText.Disconnect</button>
                         </form>
                     }
                 </DeviceCard>

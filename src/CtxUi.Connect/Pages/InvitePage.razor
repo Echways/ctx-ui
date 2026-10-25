@@ -1,11 +1,7 @@
-<ConnectPage Title="@ConnectText.PageInvite">
+<ConnectPage Title="@ConnectText.PageInvite" Alert="@(Providers.Count == 0 ? ConnectText.NoSignInMethods : null)">
     <p class="lead"><Phrase Pattern="@ConnectText.InviteLead" Arguments="[ClientName]" /></p>
     <p class="quiet">@ConnectText.InviteHow</p>
     <ProviderButtons Providers="Providers" Invite="@Code" />
-    @if (Providers.Count == 0)
-    {
-        <p class="alert" role="alert">@ConnectText.NoSignInMethods</p>
-    }
 </ConnectPage>
 
 @code {

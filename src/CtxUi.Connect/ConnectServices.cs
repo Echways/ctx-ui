@@ -33,7 +33,7 @@ public static partial class ConnectServices
     public const string Prefix = "/connect";
     public const string WellKnown = "/.well-known";
     public const string McpScope = "mcp";
-    private const string FramingPolicy = "default-src 'self'; frame-ancestors 'none'";
+    private const string FramingPolicy = "default-src 'self'; img-src 'self' data:; frame-ancestors 'none'";
     public const int SignInAttempts = 10;
 
     public const string Favicon = "/_content/CtxUi.Panel/favicon.svg";

@@ -28,7 +28,7 @@
         <form method="post" action="@(ConnectServices.Prefix)/consent">
             <AntiforgeryToken />
             <input type="hidden" name="returnUrl" value="@ReturnUrl" />
-            <button class="primary" type="submit">@ConnectText.Allow</button>
+            <button class="button" type="submit">@ConnectText.Allow</button>
         </form>
         <form method="post" action="@(ConnectServices.Prefix)/authorize">
             @foreach (var (name, value) in Request)
@@ -36,7 +36,7 @@
                 <input type="hidden" name="@name" value="@value" />
             }
             <input type="hidden" name="@DenyParameter" value="1" />
-            <button class="plain" type="submit">@ConnectText.Cancel</button>
+            <button class="link" type="submit">@ConnectText.Cancel</button>
         </form>
     </div>
     <p class="aside"><a href="@SwitchUrl">@ConnectText.SwitchAccount</a></p>

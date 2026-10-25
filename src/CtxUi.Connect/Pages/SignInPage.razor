@@ -1,4 +1,4 @@
-<ConnectPage Title="@ConnectText.PageSignIn" DevicesLink="true">
+<ConnectPage Title="@ConnectText.PageSignIn" Alert="@Alert" DevicesLink="true">
     <p class="lead">
         @if (Target is { } target)
         {
@@ -9,10 +9,6 @@
             @ConnectText.SignInLead
         }
     </p>
-    @if (Error is not null)
-    {
-        <p class="alert" role="alert">@Error</p>
-    }
     @if (KeySignIn)
     {
         <form class="stack" method="post" action="@(ConnectServices.Prefix)/signin">
@@ -22,7 +18,7 @@
             <input class="field" id="key" name="key" type="password" autocomplete="off" spellcheck="false" autocapitalize="off"
                    required autofocus aria-describedby="key-hint" aria-invalid="@(Error is null ? "false" : "true")" />
             <p class="hint" id="key-hint">@ConnectText.AccessKeyHint</p>
-            <button class="primary" type="submit">@ConnectText.SignInButton</button>
+            <button class="button" type="submit">@ConnectText.SignInButton</button>
         </form>
     }
     @if (KeySignIn && Providers.Count > 0)
@@ -30,10 +26,6 @@
         <p class="divider" role="separator"><span>@ConnectText.Or</span></p>
     }
     <ProviderButtons Providers="Providers" ReturnUrl="@ReturnUrl" Secondary="KeySignIn" />
-    @if (!KeySignIn && Providers.Count == 0)
-    {
-        <p class="alert" role="alert">@ConnectText.NoSignInMethods</p>
-    }
 </ConnectPage>
 
 @code {
@@ -51,4 +43,6 @@
 
     [Parameter]
     public string? Error { get; set; }
+
+    private string? Alert => Error ?? (KeySignIn || Providers.Count > 0 ? null : ConnectText.NoSignInMethods);
 }

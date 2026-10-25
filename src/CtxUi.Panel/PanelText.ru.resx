@@ -459,6 +459,9 @@
   <data name="MessageWarning" xml:space="preserve">
     <value>Токен и адрес с токеном равносильны паролю: не передавайте их дальше.</value>
   </data>
+  <data name="AccessSection" xml:space="preserve">
+    <value>Доступ</value>
+  </data>
   <data name="Sections" xml:space="preserve">
     <value>Разделы</value>
   </data>

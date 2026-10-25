@@ -28,6 +28,7 @@ window.ctxUi = {
         requestAnimationFrame(() => mark.classList.add("moving"));
         new MutationObserver(place).observe(nav, { subtree: true, attributeFilter: ["class"] });
         new ResizeObserver(place).observe(nav);
+        nav.addEventListener("transitionend", place);
         document.fonts.ready.then(place);
     },
 };

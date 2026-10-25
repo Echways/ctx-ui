@@ -459,6 +459,9 @@
   <data name="MessageWarning" xml:space="preserve">
     <value>The token and the address with the token are as good as a password: do not pass them on.</value>
   </data>
+  <data name="AccessSection" xml:space="preserve">
+    <value>Access</value>
+  </data>
   <data name="Sections" xml:space="preserve">
     <value>Sections</value>
   </data>

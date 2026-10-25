@@ -1017,6 +1017,10 @@ body:has(.mud-overlay-dialog) .mud-popover:has(.mud-menu-list) {
     min-width: 0;
 }
 
+.group > .mud-input-control-boolean-input + :not(.mud-input-control-boolean-input) {
+    margin-top: 8px;
+}
+
 .group h3 {
     margin: 0;
     font: 600 13px/20px var(--sans);

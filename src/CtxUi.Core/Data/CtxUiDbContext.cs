@@ -19,6 +19,7 @@ public sealed class CtxUiDbContext(DbContextOptions<CtxUiDbContext> options) : D
     public DbSet<RoutingState> RoutingStates => Set<RoutingState>();
     public DbSet<UsageEvent> UsageEvents => Set<UsageEvent>();
     public DbSet<UsageDaily> UsageDays => Set<UsageDaily>();
+    public DbSet<UsageRefusal> UsageRefusals => Set<UsageRefusal>();
     public DbSet<Admin> Admins => Set<Admin>();
     public DbSet<Setting> Settings => Set<Setting>();
     public DbSet<ApiKey> ApiKeys => Set<ApiKey>();
@@ -66,10 +67,14 @@ public sealed class CtxUiDbContext(DbContextOptions<CtxUiDbContext> options) : D
         {
             entity.HasIndex(usage => usage.At);
             entity.HasIndex(usage => new { usage.ClientId, usage.At });
+            entity.HasIndex(usage => new { usage.InboundId, usage.At });
         });
 
         modelBuilder.Entity<UsageDaily>(entity =>
             entity.HasKey(daily => new { daily.Day, daily.ClientId, daily.InboundId }));
+
+        modelBuilder.Entity<UsageRefusal>(entity =>
+            entity.HasKey(refusal => new { refusal.Minute, refusal.ClientId, refusal.InboundId, refusal.Outcome }));
 
         modelBuilder.Entity<Admin>(entity => entity.HasIndex(admin => admin.NameKey).IsUnique());
 

@@ -189,4 +189,64 @@ public class UsageStoreTests
         Assert.Null(lines[0].DeviceId);
         Assert.Equal(device, lines[1].DeviceId);
     }
+
+    [Fact]
+    public async Task Status_and_traffic_of_a_call_are_written_and_read_back()
+    {
+        await using var database = await TestDatabase.CreateAsync();
+
+        await Store(database).AppendAsync([Call(UsageOutcome.UpstreamFailed) with { Status = 504, RequestBytes = 120, ResponseBytes = 3_000_000_000 }]);
+
+        var usage = Assert.Single(await Store(database).RecentAsync(null, 10));
+        Assert.Equal((504, 120, 3_000_000_000L), (usage.Status, usage.RequestBytes, usage.ResponseBytes));
+    }
+
+    [Fact]
+    public async Task Unlogged_refusals_add_up_by_minute_client_inbound_and_reason()
+    {
+        await using var database = await TestDatabase.CreateAsync();
+        var minute = TestData.Now.AddSeconds(30);
+
+        await Store(database).AppendAsync(
+        [
+            Call(UsageOutcome.RateLimited, method: null, tool: null, at: minute),
+            Call(UsageOutcome.RateLimited, method: null, tool: null, at: minute.AddSeconds(20)),
+            Call(UsageOutcome.ConcurrencyLimited, method: null, tool: null, at: minute),
+            Call(UsageOutcome.RateLimited, method: null, tool: null, at: minute, client: Petrov),
+        ]);
+        await Store(database).AppendAsync(
+        [
+            Call(UsageOutcome.RateLimited, method: null, tool: null, at: minute.AddSeconds(25)),
+            Call(UsageOutcome.RateLimited, method: null, tool: null, at: minute.AddMinutes(1)),
+            Call(),
+        ]);
+
+        var rows = await database.NewContext().UsageRefusals.AsNoTracking().ToListAsync();
+        Assert.Equal(
+            [
+                (TestData.Now, Ivanov, UsageOutcome.RateLimited, 3),
+                (TestData.Now, Ivanov, UsageOutcome.ConcurrencyLimited, 1),
+                (TestData.Now, Petrov, UsageOutcome.RateLimited, 1),
+                (TestData.Now.AddMinutes(1), Ivanov, UsageOutcome.RateLimited, 1),
+            ],
+            rows.OrderBy(row => row.Minute).ThenBy(row => row.ClientId == Petrov).ThenBy(row => row.Outcome)
+                .Select(row => (row.Minute, row.ClientId, row.Outcome, row.Count)));
+        Assert.All(rows, row => Assert.Equal(Echo, row.InboundId));
+    }
+
+    [Fact]
+    public async Task Pruning_removes_old_refusal_counts_with_the_log()
+    {
+        await using var database = await TestDatabase.CreateAsync();
+        await Store(database).AppendAsync(
+        [
+            Call(UsageOutcome.RateLimited, method: null, tool: null, at: TestData.Now.AddDays(-31)),
+            Call(UsageOutcome.RateLimited, method: null, tool: null),
+        ]);
+
+        var removed = await Store(database).PruneAsync(TestData.Now.AddDays(-30));
+
+        Assert.Equal(1, removed);
+        Assert.Equal(TestData.Now, (await database.NewContext().UsageRefusals.AsNoTracking().SingleAsync()).Minute);
+    }
 }

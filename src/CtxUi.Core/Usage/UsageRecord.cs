@@ -12,6 +12,12 @@ public sealed record UsageRecord(
 {
     public const string ToolsCall = "tools/call";
 
+    public int Status { get; init; }
+
+    public int RequestBytes { get; init; }
+
+    public long ResponseBytes { get; init; }
+
     public bool Forwarded => IsForwarded(Outcome);
 
     public DateOnly Day => DateOnly.FromDateTime(At.UtcDateTime);

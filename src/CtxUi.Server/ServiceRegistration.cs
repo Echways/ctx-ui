@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.DataProtection;
 using CtxUi.Core;
 using CtxUi.Core.Secrets;
+using CtxUi.Core.Usage;
 using CtxUi.Panel;
 
 namespace CtxUi.Server;
@@ -29,6 +30,7 @@ public static class ServiceRegistration
         CreatePrivateDirectory(keysDir);
 
         services.AddCtxUiCore(dataDir);
+        services.Configure<UsageOptions>(section);
         services.AddDataProtection()
             .SetApplicationName("CtxUi")
             .PersistKeysToFileSystem(new DirectoryInfo(keysDir));

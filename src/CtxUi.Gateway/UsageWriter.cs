@@ -12,6 +12,7 @@ public sealed partial class UsageWriter(
     UsageJournal journal,
     IServiceScopeFactory scopes,
     IOptions<GatewayOptions> options,
+    IOptions<UsageOptions> usage,
     TimeProvider clock,
     ILogger<UsageWriter> logger) : BackgroundService
 {
@@ -74,7 +75,7 @@ public sealed partial class UsageWriter(
         _prunedAt = now;
         await using var scope = scopes.CreateAsyncScope();
         var removed = await scope.ServiceProvider.GetRequiredService<UsageStore>()
-            .PruneAsync(now.AddDays(-options.Value.UsageRetentionDays));
+            .PruneAsync(now.AddDays(-usage.Value.UsageRetentionDays));
         if (removed > 0)
             Pruned(logger, removed);
     }

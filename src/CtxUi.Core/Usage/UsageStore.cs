@@ -27,9 +27,51 @@ public sealed class UsageStore(CtxUiDbContext db)
                 DurationMs = record.DurationMs,
                 Outcome = record.Outcome,
                 DeviceId = record.DeviceId,
+                Status = record.Status,
+                RequestBytes = record.RequestBytes,
+                ResponseBytes = record.ResponseBytes,
             });
         }
 
+        await AddUpDaysAsync(records, ct);
+        await AddUpRefusalsAsync(records.Where(record => record.Method is null).ToList(), ct);
+        await db.SaveChangesAsync(ct);
+    }
+
+    public async Task<int> PruneAsync(DateTimeOffset olderThan, CancellationToken ct = default) =>
+        await db.UsageEvents.Where(usage => usage.At < olderThan).ExecuteDeleteAsync(ct)
+        + await db.UsageRefusals.Where(refusal => refusal.Minute < olderThan).ExecuteDeleteAsync(ct);
+
+    public Task<List<UsageEvent>> RecentAsync(Guid? clientId, int limit, CancellationToken ct = default)
+    {
+        var events = db.UsageEvents.AsNoTracking();
+        if (clientId is { } id)
+            events = events.Where(usage => usage.ClientId == id);
+
+        return events.OrderByDescending(usage => usage.Id).Take(limit).ToListAsync(ct);
+    }
+
+    public Task<List<DailyTotal>> DailyAsync(Guid? clientId, DateOnly from, CancellationToken ct = default)
+    {
+        var days = db.UsageDays.AsNoTracking().Where(daily => daily.Day >= from);
+        if (clientId is { } id)
+            days = days.Where(daily => daily.ClientId == id);
+
+        return days
+            .GroupBy(daily => daily.Day)
+            .OrderBy(group => group.Key)
+            .Select(group => new DailyTotal(
+                group.Key,
+                group.Sum(daily => daily.Calls),
+                group.Sum(daily => daily.ToolCalls),
+                group.Sum(daily => daily.Errors),
+                group.Sum(daily => daily.Refused),
+                group.Sum(daily => daily.DurationMs)))
+            .ToListAsync(ct);
+    }
+
+    private async Task AddUpDaysAsync(IReadOnlyCollection<UsageRecord> records, CancellationToken ct)
+    {
         var days = records.Select(record => record.Day).Distinct().ToList();
         var clientIds = records.Select(record => record.ClientId).Distinct().ToList();
         var known = (await db.UsageDays
@@ -60,38 +102,31 @@ public sealed class UsageStore(CtxUiDbContext db)
             if (record.Outcome == UsageOutcome.UpstreamFailed)
                 daily.Errors++;
         }
-
-        await db.SaveChangesAsync(ct);
     }
 
-    public Task<int> PruneAsync(DateTimeOffset olderThan, CancellationToken ct = default) =>
-        db.UsageEvents.Where(usage => usage.At < olderThan).ExecuteDeleteAsync(ct);
-
-    public Task<List<UsageEvent>> RecentAsync(Guid? clientId, int limit, CancellationToken ct = default)
+    private async Task AddUpRefusalsAsync(List<UsageRecord> refusals, CancellationToken ct)
     {
-        var events = db.UsageEvents.AsNoTracking();
-        if (clientId is { } id)
-            events = events.Where(usage => usage.ClientId == id);
+        if (refusals.Count == 0)
+            return;
 
-        return events.OrderByDescending(usage => usage.Id).Take(limit).ToListAsync(ct);
-    }
+        var minutes = refusals.Select(refusal => Timeline.Floor(refusal.At, UsageRefusal.Precision)).ToList();
+        var (first, last) = (minutes.Min(), minutes.Max());
+        var known = (await db.UsageRefusals
+                .Where(refusal => refusal.Minute >= first && refusal.Minute <= last)
+                .ToListAsync(ct))
+            .ToDictionary(refusal => (refusal.Minute, refusal.ClientId, refusal.InboundId, refusal.Outcome));
 
-    public Task<List<DailyTotal>> DailyAsync(Guid? clientId, DateOnly from, CancellationToken ct = default)
-    {
-        var days = db.UsageDays.AsNoTracking().Where(daily => daily.Day >= from);
-        if (clientId is { } id)
-            days = days.Where(daily => daily.ClientId == id);
+        foreach (var (record, minute) in refusals.Zip(minutes))
+        {
+            var key = (minute, record.ClientId, record.InboundId, record.Outcome);
+            if (!known.TryGetValue(key, out var refusal))
+            {
+                refusal = new UsageRefusal { Minute = minute, ClientId = record.ClientId, InboundId = record.InboundId, Outcome = record.Outcome };
+                known.Add(key, refusal);
+                db.UsageRefusals.Add(refusal);
+            }
 
-        return days
-            .GroupBy(daily => daily.Day)
-            .OrderBy(group => group.Key)
-            .Select(group => new DailyTotal(
-                group.Key,
-                group.Sum(daily => daily.Calls),
-                group.Sum(daily => daily.ToolCalls),
-                group.Sum(daily => daily.Errors),
-                group.Sum(daily => daily.Refused),
-                group.Sum(daily => daily.DurationMs)))
-            .ToListAsync(ct);
+            refusal.Count++;
+        }
     }
 }

@@ -170,4 +170,23 @@ public class PanelConnectionTests
         await Expect(Dialog(page).GetByRole(AriaRole.Button, new() { Name = "Выпустить новый токен" })).ToBeVisibleAsync();
         Assert.DoesNotContain(issued.Token, await page.ContentAsync());
     }
+
+    [Fact]
+    public async Task Invite_link_appears_when_oauth_is_on()
+    {
+        await using var gateway = await StartAsync();
+        await gateway.AddInboundAsync("learn", "https://learn.example.org/mcp");
+        await gateway.AddClientAsync("Иванов", ["learn"]);
+        await OAuthPages.EnableAsync(gateway, PublicUrl);
+        await OAuthPages.AddProviderAsync(gateway);
+        await using var session = await PanelSession.SignInAsync(gateway);
+        var page = await OpenClientsAsync(session);
+
+        await Row(page, "Иванов").GetByRole(AriaRole.Button, new() { Name = "Подключение" }).ClickAsync();
+        await Expect(Dialog(page).GetByLabel("Для приложений с входом через браузер")).ToHaveTextAsync($"{PublicUrl}/mcp/learn");
+        await Dialog(page).GetByRole(AriaRole.Button, new() { Name = "Ссылка-приглашение" }).ClickAsync();
+
+        await Expect(Dialog(page).GetByLabel("Ссылка-приглашение", new() { Exact = true })).ToContainTextAsync($"{PublicUrl}/connect/invite/");
+        await Expect(Message(page)).ToContainTextAsync($"{PublicUrl}/connect/invite/");
+    }
 }

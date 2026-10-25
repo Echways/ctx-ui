@@ -41,10 +41,11 @@ else
             <MudTh>@PanelText.Inbound</MudTh>
             <MudTh>@PanelText.CallColumn</MudTh>
             <MudTh>@PanelText.OutcomeColumn</MudTh>
+            <MudTh>@PanelText.DeviceColumn</MudTh>
             <MudTh Class="num">@PanelText.DurationColumn</MudTh>
         </HeaderContent>
         <GroupHeaderTemplate>
-            <MudTd colspan="6" Class="day-row">@(((DateOnly)context.Key!).ToString("d MMMM", CultureInfo.CurrentCulture))</MudTd>
+            <MudTd colspan="7" Class="day-row">@(((DateOnly)context.Key!).ToString("d MMMM", CultureInfo.CurrentCulture))</MudTd>
         </GroupHeaderTemplate>
         <RowTemplate>
             <MudTd><code>@Words.Clock(context.At, seconds: true)</code></MudTd>
@@ -52,6 +53,7 @@ else
             <MudTd DataLabel="@PanelText.Inbound"><code>@_inbounds.GetValueOrDefault(context.InboundId, PanelText.Removed)</code></MudTd>
             <MudTd DataLabel="@PanelText.CallColumn"><code>@(context.Tool is null ? context.Method : $"{context.Method} {context.Tool}")</code></MudTd>
             <MudTd DataLabel="@PanelText.OutcomeColumn" Class="@Tone(context.Outcome)">@UsageOutcomes.Text(context.Outcome)</MudTd>
+            <MudTd DataLabel="@PanelText.DeviceColumn">@(context.DeviceId is { } deviceId && _devices.TryGetValue(deviceId, out var device) ? device : "—")</MudTd>
             <MudTd DataLabel="@PanelText.DurationColumn" Class="num">@string.Format(PanelText.Milliseconds, Words.Number(context.DurationMs))</MudTd>
         </RowTemplate>
     </MudTable>
@@ -73,6 +75,7 @@ else
 
     private Dictionary<Guid, string> _clients = new();
     private Dictionary<Guid, string> _inbounds = new();
+    private Dictionary<Guid, string> _devices = new();
     private List<UsageEvent>? _lines;
     private Guid? _clientId;
     private DateTimeOffset? _loadedAt;
@@ -94,15 +97,16 @@ else
 
     private async Task LoadAsync()
     {
-        (_clients, _inbounds, _lines) = await ReadAsync();
+        (_clients, _inbounds, _devices, _lines) = await ReadAsync();
         _loadedAt = Clock.GetUtcNow();
     }
 
-    private Task<(Dictionary<Guid, string>, Dictionary<Guid, string>, List<UsageEvent>)> ReadAsync() => Backend.ReadAsync(async services =>
+    private Task<(Dictionary<Guid, string>, Dictionary<Guid, string>, Dictionary<Guid, string>, List<UsageEvent>)> ReadAsync() => Backend.ReadAsync(async services =>
     {
         var clients = await services.GetRequiredService<ClientService>().NamesAsync();
         var inbounds = await services.GetRequiredService<InboundService>().SlugsAsync();
+        var devices = await services.GetRequiredService<DeviceService>().NamesAsync();
         var lines = await services.GetRequiredService<UsageStore>().RecentAsync(_clientId, Shown);
-        return (clients, inbounds, lines);
+        return (clients, inbounds, devices, lines);
     });
 }

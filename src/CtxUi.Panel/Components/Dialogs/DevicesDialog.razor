@@ -1,0 +1,128 @@
+@inject PanelBackend Backend
+@inject PanelActions Actions
+@inject IDialogService Dialogs
+@inject TimeProvider Clock
+
+<Sheet>
+    <ChildContent>
+        @if (_devices is null)
+        {
+            <div class="placeholder" aria-hidden="true"><i></i><i></i><i></i></div>
+        }
+        else
+        {
+            @if (_devices.Count == 0)
+            {
+                <p class="hint">@PanelText.DevicesEmpty</p>
+            }
+            <ul class="devs">
+                @foreach (var device in _devices)
+                {
+                    <li class="@(device.RevokedAt is null ? "dev" : "dev off")">
+                        <div class="dev-head">
+                            <strong>@device.Name</strong>
+                            @if (device.RevokedAt is null)
+                            {
+                                <button type="button" class="link danger" aria-label="@string.Format(PanelText.DisconnectDeviceOf, device.Name)"
+                                        @onclick="() => DisconnectAsync(device)">@PanelText.DisconnectDevice</button>
+                            }
+                        </div>
+                        <p class="dev-apps">@(device.Apps.Count == 0 ? PanelText.DeviceNoApps : string.Format(PanelText.DeviceApps, string.Join(", ", device.Apps.Select(app => app.AppName))))</p>
+                        <p class="dev-meta">
+                            @string.Format(PanelText.DeviceSignedIn, SignedInWith(device.SignedInWith)) ·
+                            @(device.LastUsedAt is { } used ? string.Format(PanelText.DeviceLastUsed, Words.Minute(used)) : PanelText.DeviceNeverUsed) ·
+                            <span class="mono">@string.Format(PanelText.DeviceSignInIp, device.SignInIp)</span>
+                        </p>
+                        @if (device.RevokedReason is { } reason)
+                        {
+                            <p class="dev-reason">@PanelText.ResourceManager.GetString("Revoked_" + reason, PanelText.Culture)</p>
+                        }
+                    </li>
+                }
+            </ul>
+            @if (_devices.Any(device => device.RevokedAt is null))
+            {
+                <button type="button" class="btn-danger" @onclick="DisconnectAllAsync">@PanelText.DisconnectAll</button>
+            }
+            <section class="group">
+                <h3>@PanelText.LinkedAccounts</h3>
+                @if (_links!.Count == 0)
+                {
+                    <p class="hint">@PanelText.NoLinks</p>
+                }
+                <ul class="devs">
+                    @foreach (var link in _links)
+                    {
+                        <li class="dev">
+                            <div class="dev-head">
+                                <span>@LinkTitle(link) · <span class="mono">@link.Display</span></span>
+                                <button type="button" class="link danger" aria-label="@string.Format(PanelText.UnlinkOf, LinkTitle(link))"
+                                        @onclick="() => UnlinkAsync(link)">@PanelText.Unlink</button>
+                            </div>
+                        </li>
+                    }
+                </ul>
+            </section>
+        }
+    </ChildContent>
+</Sheet>
+
+@code {
+    private List<Device>? _devices;
+    private List<ClientLink>? _links;
+    private string _name = "";
+    private IReadOnlyDictionary<string, string> _titles = new Dictionary<string, string>();
+
+    [Parameter]
+    public Guid Id { get; set; }
+
+    protected override Task OnInitializedAsync() => LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        (_name, _devices, _links, _titles) = await Backend.ReadAsync(async services =>
+        {
+            var client = await services.GetRequiredService<ClientService>().GetAsync(Id);
+            var devices = await services.GetRequiredService<DeviceService>().ListAsync(Id, DateTimeOffset.MinValue);
+            var links = await services.GetRequiredService<ClientLinkService>().ListAsync(Id);
+            var providers = await services.GetRequiredService<SignInSettingsService>().ProvidersAsync();
+            return (client.Name, devices, links, (IReadOnlyDictionary<string, string>)providers.Where(provider => provider.Title is not null).ToDictionary(provider => provider.Name, provider => provider.Title!));
+        });
+    }
+
+    private string SignedInWith(string method) =>
+        method == Device.ByKey ? PanelText.DeviceByKey : ProviderTitle(method);
+
+    private string LinkTitle(ClientLink link) => ProviderTitle(link.Provider);
+
+    private string ProviderTitle(string name) =>
+        _titles.GetValueOrDefault(name) ?? ProviderCatalog.Find(name)?.Title ?? name;
+
+    private async Task DisconnectAsync(Device device)
+    {
+        await Actions.ApplyAsync(
+            services => services.GetRequiredService<DeviceService>().RevokeAsync(Id, device.Id, DeviceRevocation.Admin),
+            string.Format(PanelText.DeviceDisconnected, device.Name));
+        await LoadAsync();
+    }
+
+    private async Task DisconnectAllAsync()
+    {
+        if (!await ConfirmDialog.AskAsync(
+                Dialogs, string.Format(PanelText.DisconnectAllQuestion, _name), PanelText.DisconnectAllWarning, PanelText.DisconnectAll, danger: true))
+            return;
+
+        await Actions.ApplyAsync(
+            services => services.GetRequiredService<DeviceService>().RevokeAllAsync(Id, DeviceRevocation.Admin),
+            PanelText.AllDevicesDisconnected);
+        await LoadAsync();
+    }
+
+    private async Task UnlinkAsync(ClientLink link)
+    {
+        await Actions.ApplyAsync(
+            services => services.GetRequiredService<ClientLinkService>().UnlinkAsync(Id, link.Provider),
+            string.Format(PanelText.LinkRemoved, LinkTitle(link)));
+        await LoadAsync();
+    }
+}

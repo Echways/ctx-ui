@@ -576,4 +576,274 @@
   <data name="Copy" xml:space="preserve">
     <value>Copy</value>
   </data>
+  <data name="OAuth" xml:space="preserve">
+    <value>OAuth</value>
+  </data>
+  <data name="OAuthLead" xml:space="preserve">
+    <value>Apps such as Claude, ChatGPT or Cursor connect with the server address and sign in in the browser, without copying a key.</value>
+  </data>
+  <data name="OAuthNeedsHttps" xml:space="preserve">
+    <value>Browser sign-in needs a public address that starts with https://. Now: {0}. Set CtxUi__PublicUrl and restart the service.</value>
+  </data>
+  <data name="OAuthSwitch" xml:space="preserve">
+    <value>Browser sign-in (OAuth)</value>
+  </data>
+  <data name="OAuthOn" xml:space="preserve">
+    <value>Browser sign-in is on</value>
+  </data>
+  <data name="OAuthOff" xml:space="preserve">
+    <value>Browser sign-in is off</value>
+  </data>
+  <data name="OAuthOffQuestion" xml:space="preserve">
+    <value>Turn off browser sign-in?</value>
+  </data>
+  <data name="OAuthOffWarning" xml:space="preserve">
+    <value>{0} client(s) have no permanent key and will lose access until it is turned on again.</value>
+  </data>
+  <data name="OAuthOffYes" xml:space="preserve">
+    <value>Turn off</value>
+  </data>
+  <data name="KeySignInSwitch" xml:space="preserve">
+    <value>Sign in with a key</value>
+  </data>
+  <data name="KeySignInHelp" xml:space="preserve">
+    <value>A client can type its key on the sign-in page.</value>
+  </data>
+  <data name="Providers" xml:space="preserve">
+    <value>Providers</value>
+  </data>
+  <data name="ProvidersHelp" xml:space="preserve">
+    <value>Accounts are linked to clients with an invite link, so nobody can sign in by accident.</value>
+  </data>
+  <data name="Defaults" xml:space="preserve">
+    <value>Defaults for new clients</value>
+  </data>
+  <data name="DeviceLimit" xml:space="preserve">
+    <value>Device limit</value>
+  </data>
+  <data name="DirectKeyWorks" xml:space="preserve">
+    <value>A permanent key works</value>
+  </data>
+  <data name="IdleDays" xml:space="preserve">
+    <value>Days without use before a device is disconnected</value>
+  </data>
+  <data name="SelfRevoke" xml:space="preserve">
+    <value>A client can disconnect its own devices</value>
+  </data>
+  <data name="OAuthSaved" xml:space="preserve">
+    <value>Settings saved</value>
+  </data>
+  <data name="ReturnAddress" xml:space="preserve">
+    <value>Return address</value>
+  </data>
+  <data name="CopyReturnAddress" xml:space="preserve">
+    <value>Copy the return address of {0}</value>
+  </data>
+  <data name="OpenConsole" xml:space="preserve">
+    <value>Open the {0} console</value>
+  </data>
+  <data name="ProviderClientId" xml:space="preserve">
+    <value>Client ID</value>
+  </data>
+  <data name="ProviderSecret" xml:space="preserve">
+    <value>Client secret</value>
+  </data>
+  <data name="SecretKept" xml:space="preserve">
+    <value>Set. Leave empty to keep it.</value>
+  </data>
+  <data name="ProviderIssuer" xml:space="preserve">
+    <value>Issuer (https://…)</value>
+  </data>
+  <data name="ProviderTitle" xml:space="preserve">
+    <value>Button title</value>
+  </data>
+  <data name="ProviderEnabled" xml:space="preserve">
+    <value>Enabled</value>
+  </data>
+  <data name="ProviderConfigured" xml:space="preserve">
+    <value>set up</value>
+  </data>
+  <data name="ProviderNotConfigured" xml:space="preserve">
+    <value>not set up</value>
+  </data>
+  <data name="ProviderSaved" xml:space="preserve">
+    <value>Provider {0} saved</value>
+  </data>
+  <data name="ProviderRemoved" xml:space="preserve">
+    <value>Provider {0} removed</value>
+  </data>
+  <data name="ProviderRemoveQuestion" xml:space="preserve">
+    <value>Remove the provider {0}?</value>
+  </data>
+  <data name="ProviderRemoveWarning" xml:space="preserve">
+    <value>Accounts linked through it are unlinked, and its clients will have to sign in another way.</value>
+  </data>
+  <data name="ProviderEnabledDone" xml:space="preserve">
+    <value>Provider {0} switched</value>
+  </data>
+  <data name="ProviderSteps_google" xml:space="preserve">
+    <value>Open the Google Cloud console and create an OAuth client of type “Web application”.
+Add the return address to the authorized redirect URIs.
+Paste the client ID and secret here.</value>
+  </data>
+  <data name="ProviderSteps_microsoft" xml:space="preserve">
+    <value>Register an app in Microsoft Entra ID with the platform “Web”.
+Add the return address as a redirect URI.
+Create a client secret and paste it here with the application (client) ID.</value>
+  </data>
+  <data name="ProviderSteps_github" xml:space="preserve">
+    <value>Open GitHub → Settings → Developer settings and create an OAuth App.
+Set the return address as the authorization callback URL.
+Generate a client secret and paste it here with the client ID.</value>
+  </data>
+  <data name="ProviderSteps_gitlab" xml:space="preserve">
+    <value>Open GitLab → Preferences → Applications and add an application.
+Set the return address as the redirect URI and tick the scope read_user.
+Paste the application ID and secret here.</value>
+  </data>
+  <data name="ProviderSteps_yandex" xml:space="preserve">
+    <value>Create an app at oauth.yandex.ru with the platform “Web services”.
+Set the return address as the callback URL and allow access to the login and e-mail.
+Paste the ID and password here.</value>
+  </data>
+  <data name="ProviderSteps_vkid" xml:space="preserve">
+    <value>Create an app in VK ID for business with the platform “Web”.
+Add the return address as a trusted redirect URL.
+Paste the app ID and the protected key here.</value>
+  </data>
+  <data name="ProviderSteps_discord" xml:space="preserve">
+    <value>Open the Discord developer portal and create an application.
+Add the return address in OAuth2 → Redirects.
+Paste the client ID and secret here.</value>
+  </data>
+  <data name="ProviderSteps_telegram" xml:space="preserve">
+    <value>Open @BotFather, choose your bot and set up “Log in with Telegram”.
+Add the return address to the allowed URLs.
+Paste the client ID and secret here.</value>
+  </data>
+  <data name="ProviderSteps_oidc" xml:space="preserve">
+    <value>Create an OpenID Connect client in your identity provider (Keycloak, Authentik, Okta and others).
+Add the return address as a redirect URI.
+Paste the issuer address, the client ID and the secret here.</value>
+  </data>
+  <data name="GroupDevices" xml:space="preserve">
+    <value>Devices</value>
+  </data>
+  <data name="DeviceLimitHelp" xml:space="preserve">
+    <value>How many devices can be signed in at once. Empty means no limit.</value>
+  </data>
+  <data name="DirectKeyHelp" xml:space="preserve">
+    <value>Without it the key only signs in through the browser and cannot be used directly in a header or an address.</value>
+  </data>
+  <data name="Devices" xml:space="preserve">
+    <value>Devices</value>
+  </data>
+  <data name="DevicesTitle" xml:space="preserve">
+    <value>Devices: {0}</value>
+  </data>
+  <data name="DevicesEmpty" xml:space="preserve">
+    <value>No devices have signed in yet.</value>
+  </data>
+  <data name="DisconnectDevice" xml:space="preserve">
+    <value>Disconnect</value>
+  </data>
+  <data name="DisconnectAll" xml:space="preserve">
+    <value>Disconnect all</value>
+  </data>
+  <data name="DisconnectDeviceOf" xml:space="preserve">
+    <value>Disconnect {0}</value>
+  </data>
+  <data name="DeviceSignedIn" xml:space="preserve">
+    <value>Signed in with {0}</value>
+  </data>
+  <data name="DeviceByKey" xml:space="preserve">
+    <value>a key</value>
+  </data>
+  <data name="DeviceLastUsed" xml:space="preserve">
+    <value>Last used {0}</value>
+  </data>
+  <data name="DeviceNeverUsed" xml:space="preserve">
+    <value>Not used yet</value>
+  </data>
+  <data name="DeviceSignInIp" xml:space="preserve">
+    <value>IP at sign-in: {0}</value>
+  </data>
+  <data name="DeviceApps" xml:space="preserve">
+    <value>Apps: {0}</value>
+  </data>
+  <data name="DeviceNoApps" xml:space="preserve">
+    <value>No apps yet</value>
+  </data>
+  <data name="Revoked_User" xml:space="preserve">
+    <value>Disconnected by the client</value>
+  </data>
+  <data name="Revoked_Admin" xml:space="preserve">
+    <value>Disconnected by an administrator</value>
+  </data>
+  <data name="Revoked_TokenReused" xml:space="preserve">
+    <value>Disconnected: a used token was presented again</value>
+  </data>
+  <data name="Revoked_Idle" xml:space="preserve">
+    <value>Disconnected: not used for too long</value>
+  </data>
+  <data name="Revoked_KeyReissued" xml:space="preserve">
+    <value>Disconnected: the key was reissued</value>
+  </data>
+  <data name="DeviceDisconnected" xml:space="preserve">
+    <value>Device {0} disconnected</value>
+  </data>
+  <data name="AllDevicesDisconnected" xml:space="preserve">
+    <value>All devices disconnected</value>
+  </data>
+  <data name="DisconnectAllQuestion" xml:space="preserve">
+    <value>Disconnect all devices of {0}?</value>
+  </data>
+  <data name="DisconnectAllWarning" xml:space="preserve">
+    <value>Every app will have to sign in again.</value>
+  </data>
+  <data name="LinkedAccounts" xml:space="preserve">
+    <value>Linked accounts</value>
+  </data>
+  <data name="NoLinks" xml:space="preserve">
+    <value>No accounts linked.</value>
+  </data>
+  <data name="Unlink" xml:space="preserve">
+    <value>Unlink</value>
+  </data>
+  <data name="UnlinkOf" xml:space="preserve">
+    <value>Unlink {0}</value>
+  </data>
+  <data name="LinkRemoved" xml:space="preserve">
+    <value>Account {0} unlinked</value>
+  </data>
+  <data name="ReissueDevices" xml:space="preserve">
+    <value>Devices signed in with the key that will be disconnected: {0}.</value>
+  </data>
+  <data name="ForOAuthApps" xml:space="preserve">
+    <value>For apps with browser sign-in</value>
+  </data>
+  <data name="InviteLink" xml:space="preserve">
+    <value>Invite link</value>
+  </data>
+  <data name="InviteLinkHelp" xml:space="preserve">
+    <value>A person opens it and links a Google, GitHub or another account to this client. It works once.</value>
+  </data>
+  <data name="InviteValidUntil" xml:space="preserve">
+    <value>Valid until {0}</value>
+  </data>
+  <data name="InviteCopy" xml:space="preserve">
+    <value>Copy the invite link</value>
+  </data>
+  <data name="DeviceColumn" xml:space="preserve">
+    <value>Device</value>
+  </data>
+  <data name="MessageBrowserSignIn" xml:space="preserve">
+    <value>An app with browser sign-in needs only the address above: connect it and sign in in the browser.</value>
+  </data>
+  <data name="MessageSignInKey" xml:space="preserve">
+    <value>Sign in with the key: {0}</value>
+  </data>
+  <data name="MessageInvite" xml:space="preserve">
+    <value>To sign in with an account, link it first: {0}</value>
+  </data>
 </root>

@@ -576,4 +576,274 @@
   <data name="Copy" xml:space="preserve">
     <value>Копировать</value>
   </data>
+  <data name="OAuth" xml:space="preserve">
+    <value>OAuth</value>
+  </data>
+  <data name="OAuthLead" xml:space="preserve">
+    <value>Приложения вроде Claude, ChatGPT или Cursor подключаются по адресу сервера и входят в браузере, без копирования ключа.</value>
+  </data>
+  <data name="OAuthNeedsHttps" xml:space="preserve">
+    <value>Для входа через браузер нужен публичный адрес с https://. Сейчас: {0}. Задайте CtxUi__PublicUrl и перезапустите сервис.</value>
+  </data>
+  <data name="OAuthSwitch" xml:space="preserve">
+    <value>Вход через браузер (OAuth)</value>
+  </data>
+  <data name="OAuthOn" xml:space="preserve">
+    <value>Вход через браузер включён</value>
+  </data>
+  <data name="OAuthOff" xml:space="preserve">
+    <value>Вход через браузер выключен</value>
+  </data>
+  <data name="OAuthOffQuestion" xml:space="preserve">
+    <value>Выключить вход через браузер?</value>
+  </data>
+  <data name="OAuthOffWarning" xml:space="preserve">
+    <value>Клиентов без постоянного ключа: {0}. Они потеряют доступ, пока вход через браузер выключен.</value>
+  </data>
+  <data name="OAuthOffYes" xml:space="preserve">
+    <value>Выключить</value>
+  </data>
+  <data name="KeySignInSwitch" xml:space="preserve">
+    <value>Вход по ключу</value>
+  </data>
+  <data name="KeySignInHelp" xml:space="preserve">
+    <value>Клиент может ввести свой ключ на странице входа.</value>
+  </data>
+  <data name="Providers" xml:space="preserve">
+    <value>Провайдеры</value>
+  </data>
+  <data name="ProvidersHelp" xml:space="preserve">
+    <value>Аккаунты привязываются к клиентам по ссылке-приглашению: случайный человек войти не сможет.</value>
+  </data>
+  <data name="Defaults" xml:space="preserve">
+    <value>Значения по умолчанию</value>
+  </data>
+  <data name="DeviceLimit" xml:space="preserve">
+    <value>Лимит устройств</value>
+  </data>
+  <data name="DirectKeyWorks" xml:space="preserve">
+    <value>Постоянный ключ работает</value>
+  </data>
+  <data name="IdleDays" xml:space="preserve">
+    <value>Дней без использования до отключения устройства</value>
+  </data>
+  <data name="SelfRevoke" xml:space="preserve">
+    <value>Клиент может сам отключать устройства</value>
+  </data>
+  <data name="OAuthSaved" xml:space="preserve">
+    <value>Настройки сохранены</value>
+  </data>
+  <data name="ReturnAddress" xml:space="preserve">
+    <value>Адрес возврата</value>
+  </data>
+  <data name="CopyReturnAddress" xml:space="preserve">
+    <value>Скопировать адрес возврата для {0}</value>
+  </data>
+  <data name="OpenConsole" xml:space="preserve">
+    <value>Открыть консоль {0}</value>
+  </data>
+  <data name="ProviderClientId" xml:space="preserve">
+    <value>Client ID</value>
+  </data>
+  <data name="ProviderSecret" xml:space="preserve">
+    <value>Client secret</value>
+  </data>
+  <data name="SecretKept" xml:space="preserve">
+    <value>Задан. Оставьте пустым, чтобы не менять.</value>
+  </data>
+  <data name="ProviderIssuer" xml:space="preserve">
+    <value>Issuer (https://…)</value>
+  </data>
+  <data name="ProviderTitle" xml:space="preserve">
+    <value>Название кнопки</value>
+  </data>
+  <data name="ProviderEnabled" xml:space="preserve">
+    <value>Включён</value>
+  </data>
+  <data name="ProviderConfigured" xml:space="preserve">
+    <value>настроен</value>
+  </data>
+  <data name="ProviderNotConfigured" xml:space="preserve">
+    <value>не настроен</value>
+  </data>
+  <data name="ProviderSaved" xml:space="preserve">
+    <value>Провайдер {0} сохранён</value>
+  </data>
+  <data name="ProviderRemoved" xml:space="preserve">
+    <value>Провайдер {0} удалён</value>
+  </data>
+  <data name="ProviderRemoveQuestion" xml:space="preserve">
+    <value>Удалить провайдера {0}?</value>
+  </data>
+  <data name="ProviderRemoveWarning" xml:space="preserve">
+    <value>Привязанные через него аккаунты отвяжутся, а клиентам придётся входить другим способом.</value>
+  </data>
+  <data name="ProviderEnabledDone" xml:space="preserve">
+    <value>Провайдер {0}: настройка изменена</value>
+  </data>
+  <data name="ProviderSteps_google" xml:space="preserve">
+    <value>Откройте консоль Google Cloud и создайте OAuth-клиента типа «Веб-приложение».
+Добавьте адрес возврата в разрешённые URI перенаправления.
+Вставьте сюда client ID и secret.</value>
+  </data>
+  <data name="ProviderSteps_microsoft" xml:space="preserve">
+    <value>Зарегистрируйте приложение в Microsoft Entra ID с платформой «Web».
+Добавьте адрес возврата как URI перенаправления.
+Создайте client secret и вставьте его сюда вместе с идентификатором приложения.</value>
+  </data>
+  <data name="ProviderSteps_github" xml:space="preserve">
+    <value>Откройте GitHub → Settings → Developer settings и создайте OAuth App.
+Укажите адрес возврата как Authorization callback URL.
+Создайте client secret и вставьте его сюда вместе с client ID.</value>
+  </data>
+  <data name="ProviderSteps_gitlab" xml:space="preserve">
+    <value>Откройте GitLab → Preferences → Applications и добавьте приложение.
+Укажите адрес возврата как Redirect URI и отметьте scope read_user.
+Вставьте сюда Application ID и secret.</value>
+  </data>
+  <data name="ProviderSteps_yandex" xml:space="preserve">
+    <value>Создайте приложение на oauth.yandex.ru с платформой «Веб-сервисы».
+Укажите адрес возврата как Callback URI и разрешите доступ к логину и почте.
+Вставьте сюда ID и пароль приложения.</value>
+  </data>
+  <data name="ProviderSteps_vkid" xml:space="preserve">
+    <value>Создайте приложение в VK ID для бизнеса с платформой «Web».
+Добавьте адрес возврата в доверенные Redirect URL.
+Вставьте сюда ID приложения и защищённый ключ.</value>
+  </data>
+  <data name="ProviderSteps_discord" xml:space="preserve">
+    <value>Откройте портал разработчиков Discord и создайте приложение.
+Добавьте адрес возврата в OAuth2 → Redirects.
+Вставьте сюда client ID и secret.</value>
+  </data>
+  <data name="ProviderSteps_telegram" xml:space="preserve">
+    <value>Откройте @BotFather, выберите бота и настройте «Вход через Telegram».
+Добавьте адрес возврата в разрешённые URL.
+Вставьте сюда client ID и secret.</value>
+  </data>
+  <data name="ProviderSteps_oidc" xml:space="preserve">
+    <value>Создайте OpenID Connect-клиента у своего провайдера (Keycloak, Authentik, Okta и другие).
+Добавьте адрес возврата как redirect URI.
+Вставьте сюда адрес issuer, client ID и secret.</value>
+  </data>
+  <data name="GroupDevices" xml:space="preserve">
+    <value>Устройства</value>
+  </data>
+  <data name="DeviceLimitHelp" xml:space="preserve">
+    <value>Сколько устройств может быть подключено одновременно. Пусто — без ограничения.</value>
+  </data>
+  <data name="DirectKeyHelp" xml:space="preserve">
+    <value>Без него ключ годится только для входа через браузер, а не прямо в заголовке или адресе.</value>
+  </data>
+  <data name="Devices" xml:space="preserve">
+    <value>Устройства</value>
+  </data>
+  <data name="DevicesTitle" xml:space="preserve">
+    <value>Устройства: {0}</value>
+  </data>
+  <data name="DevicesEmpty" xml:space="preserve">
+    <value>Устройств пока нет.</value>
+  </data>
+  <data name="DisconnectDevice" xml:space="preserve">
+    <value>Отключить</value>
+  </data>
+  <data name="DisconnectAll" xml:space="preserve">
+    <value>Отключить все</value>
+  </data>
+  <data name="DisconnectDeviceOf" xml:space="preserve">
+    <value>Отключить {0}</value>
+  </data>
+  <data name="DeviceSignedIn" xml:space="preserve">
+    <value>Вход: {0}</value>
+  </data>
+  <data name="DeviceByKey" xml:space="preserve">
+    <value>ключ</value>
+  </data>
+  <data name="DeviceLastUsed" xml:space="preserve">
+    <value>Последнее использование: {0}</value>
+  </data>
+  <data name="DeviceNeverUsed" xml:space="preserve">
+    <value>Ещё не использовалось</value>
+  </data>
+  <data name="DeviceSignInIp" xml:space="preserve">
+    <value>IP при входе: {0}</value>
+  </data>
+  <data name="DeviceApps" xml:space="preserve">
+    <value>Приложения: {0}</value>
+  </data>
+  <data name="DeviceNoApps" xml:space="preserve">
+    <value>Приложений пока нет</value>
+  </data>
+  <data name="Revoked_User" xml:space="preserve">
+    <value>Отключено клиентом</value>
+  </data>
+  <data name="Revoked_Admin" xml:space="preserve">
+    <value>Отключено администратором</value>
+  </data>
+  <data name="Revoked_TokenReused" xml:space="preserve">
+    <value>Отключено: повторно предъявлен уже использованный токен</value>
+  </data>
+  <data name="Revoked_Idle" xml:space="preserve">
+    <value>Отключено: слишком долго не использовалось</value>
+  </data>
+  <data name="Revoked_KeyReissued" xml:space="preserve">
+    <value>Отключено: ключ перевыпущен</value>
+  </data>
+  <data name="DeviceDisconnected" xml:space="preserve">
+    <value>Устройство «{0}» отключено</value>
+  </data>
+  <data name="AllDevicesDisconnected" xml:space="preserve">
+    <value>Все устройства отключены</value>
+  </data>
+  <data name="DisconnectAllQuestion" xml:space="preserve">
+    <value>Отключить все устройства «{0}»?</value>
+  </data>
+  <data name="DisconnectAllWarning" xml:space="preserve">
+    <value>Всем приложениям придётся войти заново.</value>
+  </data>
+  <data name="LinkedAccounts" xml:space="preserve">
+    <value>Привязанные аккаунты</value>
+  </data>
+  <data name="NoLinks" xml:space="preserve">
+    <value>Аккаунтов не привязано.</value>
+  </data>
+  <data name="Unlink" xml:space="preserve">
+    <value>Отвязать</value>
+  </data>
+  <data name="UnlinkOf" xml:space="preserve">
+    <value>Отвязать {0}</value>
+  </data>
+  <data name="LinkRemoved" xml:space="preserve">
+    <value>Аккаунт {0} отвязан</value>
+  </data>
+  <data name="ReissueDevices" xml:space="preserve">
+    <value>Устройств, подключённых по ключу, будет отключено: {0}.</value>
+  </data>
+  <data name="ForOAuthApps" xml:space="preserve">
+    <value>Для приложений с входом через браузер</value>
+  </data>
+  <data name="InviteLink" xml:space="preserve">
+    <value>Ссылка-приглашение</value>
+  </data>
+  <data name="InviteLinkHelp" xml:space="preserve">
+    <value>Человек открывает её и привязывает свой аккаунт Google, GitHub или другой к этому клиенту. Работает один раз.</value>
+  </data>
+  <data name="InviteValidUntil" xml:space="preserve">
+    <value>Действует до {0}</value>
+  </data>
+  <data name="InviteCopy" xml:space="preserve">
+    <value>Скопировать ссылку-приглашение</value>
+  </data>
+  <data name="DeviceColumn" xml:space="preserve">
+    <value>Устройство</value>
+  </data>
+  <data name="MessageBrowserSignIn" xml:space="preserve">
+    <value>Приложению с входом через браузер хватит адреса выше: подключите его и войдите в браузере.</value>
+  </data>
+  <data name="MessageSignInKey" xml:space="preserve">
+    <value>Войти можно ключом: {0}</value>
+  </data>
+  <data name="MessageInvite" xml:space="preserve">
+    <value>Чтобы входить через аккаунт, сначала привяжите его: {0}</value>
+  </data>
 </root>

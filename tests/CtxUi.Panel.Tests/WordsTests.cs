@@ -31,4 +31,26 @@ public class WordsTests
         Assert.Equal("2026-10-11 23:30", Words.Minute(Moment));
         Assert.Equal("23:30", Words.Clock(Moment));
     }
+
+    [Theory]
+    [InlineData(0, "0\u00A0мс")]
+    [InlineData(999, "999\u00A0мс")]
+    [InlineData(1_240, "1,2\u00A0с")]
+    [InlineData(12_600, "13\u00A0с")]
+    public void Duration_switches_to_seconds_from_one_second(int milliseconds, string expected) =>
+        Assert.Equal(expected, Words.Duration(milliseconds));
+
+    [Theory]
+    [InlineData(0, "0\u00A0Б")]
+    [InlineData(1_023, "1\u00A0023\u00A0Б")]
+    [InlineData(1_536, "1,5\u00A0КБ")]
+    [InlineData(150 * 1_024, "150\u00A0КБ")]
+    [InlineData(5L * 1_024 * 1_024 * 1_024 * 1_024, "5\u00A0120\u00A0ГБ")]
+    public void Size_picks_the_largest_unit_below_1024(long bytes, string expected) => Assert.Equal(expected, Words.Size(bytes));
+
+    [Theory]
+    [InlineData(0, "0\u00A0%")]
+    [InlineData(0.1234, "12,3\u00A0%")]
+    [InlineData(1, "100\u00A0%")]
+    public void Share_is_a_percent_with_one_decimal(double share, string expected) => Assert.Equal(expected, Words.Share(share));
 }

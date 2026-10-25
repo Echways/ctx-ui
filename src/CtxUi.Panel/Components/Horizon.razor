@@ -29,9 +29,9 @@
             <rect class="tick" x="@Percent(tick)" y="@(Base + 4)" width="1" height="5" rx="0.5" />
         }
         <g mask="url(#@_id-mirror)">
-            @for (var slot = 0; slot < Quarters.Count; slot++)
+            @for (var slot = 0; slot < Slots.Count; slot++)
             {
-                var calls = Quarters[slot].Calls;
+                var calls = Slots[slot].Calls;
                 if (calls > 0)
                 {
                     var x = Percent(slot + 0.5);
@@ -39,27 +39,27 @@
                 }
             }
         </g>
-        @for (var slot = 0; slot < Quarters.Count; slot++)
+        @for (var slot = 0; slot < Slots.Count; slot++)
         {
-            var quarter = Quarters[slot];
+            var stroke = Slots[slot];
             var x = Percent(slot + 0.5);
             var on = slot == _chosen ? "on" : "";
-            if (quarter.Calls == 0)
+            if (stroke.Calls == 0)
             {
                 <circle class="z @on" cx="@x" cy="@Number(Base - 0.5)" r="1" />
                 continue;
             }
 
-            var top = Base - Stroke(quarter.Calls);
+            var top = Base - Stroke(stroke.Calls);
             <line class="s @on" x1="@x" x2="@x" y1="@Number(Base - 1.5)" y2="@Number(top)" style="--i: @slot" />
-            if (quarter.Failures > 0)
+            if (stroke.Failures > 0)
             {
                 <circle class="f @on" cx="@x" cy="@Number(top - 8)" r="2.6" style="--i: @slot" />
             }
         }
         <circle class="halo" cx="100%" cy="@Number(Base + 0.5)" r="8" />
         <circle class="now" cx="100%" cy="@Number(Base + 0.5)" r="3.5" />
-        @for (var slot = 0; slot < Quarters.Count; slot++)
+        @for (var slot = 0; slot < Slots.Count; slot++)
         {
             var chosen = slot;
             <rect class="hit" x="@Percent(slot)" y="0" width="@Percent(1)" height="@Height" @onmouseenter="() => _chosen = chosen" />
@@ -68,7 +68,7 @@
     <div class="hz-axis" aria-hidden="true">
         @foreach (var tick in Ticks)
         {
-            <span style="left: @Percent(tick)">@Words.Clock(Quarters[tick].Start)</span>
+            <span style="left: @Percent(tick)">@Scale.Tick(Slots[tick].Start)</span>
         }
         <span class="now-label">@PanelText.Now</span>
     </div>
@@ -81,47 +81,50 @@
     private const int Lowest = 3;
     private const int Mirror = 32;
     private const double Echo = 0.22;
-    private static readonly TimeSpan Length = TimeSpan.FromMinutes(15);
 
     private readonly string _id = "horizon-" + Guid.NewGuid().ToString("N")[..8];
     private int? _chosen;
 
     [Parameter, EditorRequired]
-    public IReadOnlyList<Slot> Quarters { get; set; } = [];
+    public IReadOnlyList<Slot> Slots { get; set; } = [];
+
+    [Parameter]
+    public TimeSpan Length { get; set; } = TimeSpan.FromMinutes(15);
 
     [Parameter]
     public bool Grow { get; set; }
 
-    private int Peak => Math.Max(1, Quarters.Max(quarter => quarter.Calls));
+    private TimelineScale Scale => new(Length);
 
-    private IEnumerable<int> Ticks => Enumerable.Range(0, Quarters.Count)
-        .Where(slot => Quarters[slot].Start is { Minute: 0 } start && start.UtcDateTime.Hour % 6 == 0);
+    private int Peak => Math.Max(1, Slots.Max(slot => slot.Calls));
+
+    private IEnumerable<int> Ticks => Enumerable.Range(0, Slots.Count).Where(slot => Scale.IsTick(Slots[slot].Start));
 
     private string Label => string.Format(
-        PanelText.HorizonLabel, Words.Number(Quarters.Sum(quarter => quarter.Calls)), Words.Number(Quarters.Sum(quarter => quarter.Failures)));
+        PanelText.HorizonLabel, Scale.Span, Words.Number(Slots.Sum(slot => slot.Calls)), Words.Number(Slots.Sum(slot => slot.Failures)));
 
     private string Readout
     {
         get
         {
             if (_chosen is not { } slot)
-                return PanelText.HorizonHint;
+                return Scale.Hint;
 
-            var quarter = Quarters[slot];
+            var chosen = Slots[slot];
             var parts = new List<string>
             {
-                string.Format(PanelText.HorizonQuarter, Words.Clock(quarter.Start), Words.Clock(quarter.Start + Length)),
-                Words.Count(PanelText.QuarterCalls, quarter.Calls),
+                Scale.Slot(chosen.Start),
+                Words.Count(PanelText.QuarterCalls, chosen.Calls),
             };
-            if (quarter.Failures > 0)
-                parts.Add(Words.Count(PanelText.QuarterFailures, quarter.Failures));
+            if (chosen.Failures > 0)
+                parts.Add(Words.Count(PanelText.QuarterFailures, chosen.Failures));
             return string.Join(" · ", parts);
         }
     }
 
     private double Stroke(int calls) => Math.Max(Lowest, Math.Sqrt((double)calls / Peak) * Tallest);
 
-    private string Percent(double slot) => Number(slot * 100 / Quarters.Count) + "%";
+    private string Percent(double slot) => Number(slot * 100 / Slots.Count) + "%";
 
     private static string Number(double value) => value.ToString("0.###", CultureInfo.InvariantCulture);
 
@@ -129,7 +132,7 @@
 
     private void Move(KeyboardEventArgs key)
     {
-        var last = Quarters.Count - 1;
+        var last = Slots.Count - 1;
         _chosen = key.Key switch
         {
             "ArrowLeft" => _chosen is { } slot ? Math.Max(0, slot - 1) : last,

@@ -3,6 +3,7 @@
 @inject PanelBackend Backend
 @inject TimeProvider Clock
 @inject IJSRuntime Js
+@inject NavigationManager Navigation
 
 <PageHead Title="@PanelText.Overview" UpdatedAt="_loadedAt" OnRefresh="LoadAsync" />
 <AutoRefresh OnTick="LoadAsync" />
@@ -14,7 +15,7 @@
 else
 {
     <div class="@(_grow ? "arrive" : "")">
-        <Horizon Quarters="_overview.Quarters" Grow="_grow" />
+        <Horizon Slots="_overview.Quarters" Grow="_grow" />
 
         @if (_overview.Inbounds.Count == 0)
         {
@@ -37,7 +38,8 @@ else
 
             <section class="block">
                 <h2>@PanelText.Inbounds</h2>
-                <MudTable Items="_overview.Inbounds" Elevation="0" Class="tbl" RowClassFunc="@((inbound, _) => inbound.Enabled ? "" : "dim")">
+                <MudTable Items="_overview.Inbounds" Elevation="0" Class="tbl" RowClassFunc="@((inbound, _) => inbound.Enabled ? "click" : "click dim")"
+                          OnRowClick="@((TableRowClickEventArgs<InboundActivity> row) => Navigation.NavigateTo(MetricsAddress.Of(new MetricsFilter(InboundId: row.Item!.Id), MetricsPeriod.Day.Days)))">
                     <HeaderContent>
                         <MudTh>@PanelText.Address</MudTh>
                         <MudTh>@PanelText.Title</MudTh>

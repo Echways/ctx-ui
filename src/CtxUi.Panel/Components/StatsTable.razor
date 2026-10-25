@@ -1,0 +1,79 @@
+@typeparam TRow
+
+<MudTable T="TRow" Items="Shown" Elevation="0" Class="tbl" RowClassFunc="@((_, _) => OnPick.HasDelegate ? "click" : "")"
+          OnRowClick="@((TableRowClickEventArgs<TRow> row) => OnPick.InvokeAsync(row.Item))">
+    <HeaderContent>
+        <MudTh>@Head</MudTh>
+        @if (ExtraHead is not null)
+        {
+            <MudTh Class="num">@ExtraHead</MudTh>
+        }
+        <MudTh Class="num">@PanelText.CallCountColumn</MudTh>
+        <MudTh Class="num">@PanelText.ErrorsColumn</MudTh>
+        <MudTh Class="num">@PanelText.MedianColumn</MudTh>
+        <MudTh Class="num">@PanelText.TailColumn</MudTh>
+        <MudTh Class="num">@PanelText.TrafficColumn</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        @{ var stats = Stats(context); }
+        <MudTd>@Label(context)</MudTd>
+        @if (ExtraHead is not null)
+        {
+            <MudTd DataLabel="@ExtraHead" Class="num">@Extra?.Invoke(context)</MudTd>
+        }
+        <MudTd DataLabel="@PanelText.CallCountColumn" Class="num">@Words.OrDash(stats.Calls)</MudTd>
+        <MudTd DataLabel="@PanelText.ErrorsColumn" Class="@(stats.Errors > 0 ? "num bad-t" : "num")" title="@ErrorDetail(stats)">
+            @if (stats.Errors > 0)
+            {
+                @Words.Number(stats.Errors)@(" ")<span class="share">@Words.Share(stats.ErrorShare)</span>
+            }
+            else
+            {
+                @Words.OrDash(0)
+            }
+        </MudTd>
+        <MudTd DataLabel="@PanelText.MedianColumn" Class="num">@Words.Duration(stats.Latency.P50)</MudTd>
+        <MudTd DataLabel="@PanelText.TailColumn" Class="num">@Words.Duration(stats.Latency.P95)</MudTd>
+        <MudTd DataLabel="@PanelText.TrafficColumn" Class="num" title="@TrafficDetail(stats)">@Words.Size(stats.RequestBytes + stats.ResponseBytes)</MudTd>
+    </RowTemplate>
+</MudTable>
+@if (Items.Count > Limit && !_all)
+{
+    <button type="button" class="link more-rows" @onclick="() => _all = true">@string.Format(PanelText.ShowAll, Words.Number(Items.Count))</button>
+}
+
+@code {
+    private bool _all;
+
+    [Parameter, EditorRequired]
+    public IReadOnlyList<TRow> Items { get; set; } = [];
+
+    [Parameter, EditorRequired]
+    public Func<TRow, CallStats> Stats { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public string Head { get; set; } = "";
+
+    [Parameter, EditorRequired]
+    public RenderFragment<TRow> Label { get; set; } = default!;
+
+    [Parameter]
+    public string? ExtraHead { get; set; }
+
+    [Parameter]
+    public RenderFragment<TRow>? Extra { get; set; }
+
+    [Parameter]
+    public EventCallback<TRow> OnPick { get; set; }
+
+    [Parameter]
+    public int Limit { get; set; } = 10;
+
+    private IEnumerable<TRow> Shown => _all ? Items : Items.Take(Limit);
+
+    private static string ErrorDetail(CallStats stats) =>
+        string.Format(PanelText.ErrorsDetail, Words.Number(stats.Failures), Words.Number(stats.Rejected), Words.Number(stats.Aborted));
+
+    private static string TrafficDetail(CallStats stats) =>
+        string.Format(PanelText.TrafficDetail, Words.Size(stats.RequestBytes), Words.Size(stats.ResponseBytes));
+}

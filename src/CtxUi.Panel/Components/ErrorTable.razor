@@ -1,0 +1,39 @@
+
+<MudTable T="ErrorGroup" Items="Items" Elevation="0" Class="tbl" RowClassFunc="@((_, _) => "click")"
+          OnRowClick="@((TableRowClickEventArgs<ErrorGroup> row) => OnPick.InvokeAsync(row.Item))">
+    <HeaderContent>
+        <MudTh>@PanelText.Inbound</MudTh>
+        <MudTh>@PanelText.CallColumn</MudTh>
+        <MudTh>@PanelText.OutcomeColumn</MudTh>
+        <MudTh Class="num">@PanelText.TimesColumn</MudTh>
+        <MudTh Class="num">@PanelText.LastTimeColumn</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd><code>@(context.Slug ?? PanelText.Removed)</code></MudTd>
+        <MudTd DataLabel="@PanelText.CallColumn"><code>@(context.Tool is null ? context.Method : $"{context.Method} {context.Tool}")</code></MudTd>
+        <MudTd DataLabel="@PanelText.OutcomeColumn" Class="@Tone(context.Outcome)">
+            @UsageOutcomes.Text(context.Outcome)
+            @if (context.Status > 0)
+            {
+                @(" ")<span class="note">HTTP @context.Status</span>
+            }
+        </MudTd>
+        <MudTd DataLabel="@PanelText.TimesColumn" Class="num">@Words.Number(context.Count)</MudTd>
+        <MudTd DataLabel="@PanelText.LastTimeColumn" Class="num">@Words.Minute(context.LastAt)</MudTd>
+    </RowTemplate>
+</MudTable>
+
+@code {
+    [Parameter, EditorRequired]
+    public IReadOnlyList<ErrorGroup> Items { get; set; } = [];
+
+    [Parameter]
+    public EventCallback<ErrorGroup> OnPick { get; set; }
+
+    private static string Tone(UsageOutcome outcome) => outcome switch
+    {
+        UsageOutcome.UpstreamFailed => "bad-t",
+        UsageOutcome.UpstreamRejected => "warn-t",
+        _ => "",
+    };
+}

@@ -1,0 +1,26 @@
+@using System.Globalization
+
+<div class="strips @(Wide ? "wide" : "")">
+    @foreach (var (strip, index) in Items.Select((strip, index) => (strip, index)))
+    {
+        <div class="strip @(strip.Lit ? "lit" : "")" title="@strip.Detail">
+            <span class="strip-name">@strip.Label</span>
+            <span class="num">@strip.Shown</span>
+            <span class="strip-line" style="width: @Share(strip.Value); --i: @index"></span>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public IReadOnlyList<Strip> Items { get; set; } = [];
+
+    [Parameter]
+    public long? Peak { get; set; }
+
+    [Parameter]
+    public bool Wide { get; set; }
+
+    private string Share(long value) =>
+        (100.0 * value / Math.Max(1, Peak ?? Items.Max(strip => strip.Value))).ToString("0.#", CultureInfo.InvariantCulture) + "%";
+}

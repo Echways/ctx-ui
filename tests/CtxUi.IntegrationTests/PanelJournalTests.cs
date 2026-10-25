@@ -52,7 +52,7 @@ public class PanelJournalTests
         await Expect(Rows(page).Nth(3).GetByRole(AriaRole.Cell).Nth(4)).ToHaveTextAsync("выполнен");
         await Expect(Rows(page).Nth(4).GetByRole(AriaRole.Cell).Nth(2)).ToHaveTextAsync("broken");
         await Expect(Rows(page).Nth(4).GetByRole(AriaRole.Cell).Nth(3)).ToHaveTextAsync("tools/call search");
-        await Expect(Rows(page).Nth(4).GetByRole(AriaRole.Cell).Nth(4)).ToHaveTextAsync("сбой upstream");
+        await Expect(Rows(page).Nth(4).GetByRole(AriaRole.Cell).Nth(4)).ToHaveTextAsync("сбой upstream HTTP 500");
         await Expect(Rows(page).Nth(5).GetByRole(AriaRole.Cell).Nth(3)).ToHaveTextAsync("tools/list");
         await Expect(Rows(page).Nth(5).GetByRole(AriaRole.Cell).First).ToHaveTextAsync(
             new System.Text.RegularExpressions.Regex(@"^\d{2}:\d{2}:\d{2}$"));

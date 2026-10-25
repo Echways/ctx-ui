@@ -475,7 +475,7 @@
     <value>Back to overview</value>
   </data>
   <data name="HorizonLabel" xml:space="preserve">
-    <value>Calls in the last 24 hours by 15 minutes: {0} in total, {1} failed. Left and right arrows move between quarters.</value>
+    <value>Calls {0}: {1} in total, {2} failed. Left and right arrows move between strokes.</value>
   </data>
   <data name="HorizonHint" xml:space="preserve">
     <value>Last 24 hours, 15 minutes per stroke</value>
@@ -547,7 +547,7 @@
     <value>for the REST API and scripts</value>
   </data>
   <data name="Milliseconds" xml:space="preserve">
-    <value>{0} ms</value>
+    <value>{0} ms</value>
   </data>
   <data name="Actions" xml:space="preserve">
     <value>Actions</value>
@@ -875,5 +875,176 @@ Paste the issuer address, the client ID and the secret here.</value>
   </data>
   <data name="UnlinkWarning" xml:space="preserve">
     <value>The person will need a new invite link to sign in with this account again.</value>
+  </data>
+  <data name="Seconds" xml:space="preserve">
+    <value>{0} s</value>
+  </data>
+  <data name="Bytes" xml:space="preserve">
+    <value>{0} B</value>
+  </data>
+  <data name="Kilobytes" xml:space="preserve">
+    <value>{0} KB</value>
+  </data>
+  <data name="Megabytes" xml:space="preserve">
+    <value>{0} MB</value>
+  </data>
+  <data name="Gigabytes" xml:space="preserve">
+    <value>{0} GB</value>
+  </data>
+  <data name="Percent" xml:space="preserve">
+    <value>{0}%</value>
+  </data>
+  <data name="HorizonSpanDay" xml:space="preserve">
+    <value>in the last 24 hours by 15 minutes</value>
+  </data>
+  <data name="HorizonSpanWeek" xml:space="preserve">
+    <value>in the last 7 days by 2 hours</value>
+  </data>
+  <data name="HorizonSpanMonth" xml:space="preserve">
+    <value>in the last 30 days by 8 hours</value>
+  </data>
+  <data name="HorizonSpanSeason" xml:space="preserve">
+    <value>in the last 90 days by day</value>
+  </data>
+  <data name="HorizonHintWeek" xml:space="preserve">
+    <value>Last 7 days, 2 hours per stroke</value>
+  </data>
+  <data name="HorizonHintMonth" xml:space="preserve">
+    <value>Last 30 days, 8 hours per stroke</value>
+  </data>
+  <data name="HorizonHintSeason" xml:space="preserve">
+    <value>Last 90 days, a day per stroke</value>
+  </data>
+  <data name="HorizonSlot" xml:space="preserve">
+    <value>{0}, {1}–{2} UTC</value>
+  </data>
+  <data name="ErrorsColumn" xml:space="preserve">
+    <value>Errors</value>
+  </data>
+  <data name="MedianColumn" xml:space="preserve">
+    <value>Median</value>
+  </data>
+  <data name="TailColumn" xml:space="preserve">
+    <value>p95</value>
+  </data>
+  <data name="TrafficColumn" xml:space="preserve">
+    <value>Traffic</value>
+  </data>
+  <data name="ShowAll" xml:space="preserve">
+    <value>Show all {0}</value>
+  </data>
+  <data name="ErrorsDetail" xml:space="preserve">
+    <value>upstream failures: {0} · rejected by the upstream: {1} · aborted by the client: {2}</value>
+  </data>
+  <data name="TrafficDetail" xml:space="preserve">
+    <value>requests {0} · responses {1}</value>
+  </data>
+  <data name="TimesColumn" xml:space="preserve">
+    <value>Times</value>
+  </data>
+  <data name="LastTimeColumn" xml:space="preserve">
+    <value>Last</value>
+  </data>
+  <data name="Metrics" xml:space="preserve">
+    <value>Metrics</value>
+  </data>
+  <data name="Period" xml:space="preserve">
+    <value>Period</value>
+  </data>
+  <data name="MetricsFilter" xml:space="preserve">
+    <value>Filter</value>
+  </data>
+  <data name="AllCalls" xml:space="preserve">
+    <value>All calls</value>
+  </data>
+  <data name="Tool" xml:space="preserve">
+    <value>Tool</value>
+  </data>
+  <data name="Method" xml:space="preserve">
+    <value>Method</value>
+  </data>
+  <data name="ClientJournal" xml:space="preserve">
+    <value>Client log</value>
+  </data>
+  <data name="MetricsEmpty" xml:space="preserve">
+    <value>No calls in this period</value>
+  </data>
+  <data name="FigureCallsOnly" xml:space="preserve">
+    <value>{n, plural, one {call} other {calls}}</value>
+  </data>
+  <data name="FigureErrors" xml:space="preserve">
+    <value>{n, plural, one {error} other {errors}}</value>
+  </data>
+  <data name="FigureLatency" xml:space="preserve">
+    <value>response time, p95</value>
+  </data>
+  <data name="FigureLatencyRest" xml:space="preserve">
+    <value>median {0} · p99 {1}</value>
+  </data>
+  <data name="FigureWithAccess" xml:space="preserve">
+    <value>of {number} with access</value>
+  </data>
+  <data name="FigureTraffic" xml:space="preserve">
+    <value>traffic</value>
+  </data>
+  <data name="FunnelTitle" xml:space="preserve">
+    <value>Clients' path</value>
+  </data>
+  <data name="FunnelLead" xml:space="preserve">
+    <value>How far the clients who came by got</value>
+  </data>
+  <data name="FunnelSeen" xml:space="preserve">
+    <value>Came by</value>
+  </data>
+  <data name="FunnelInitialized" xml:space="preserve">
+    <value>Opened a session</value>
+  </data>
+  <data name="FunnelListed" xml:space="preserve">
+    <value>Listed the tools</value>
+  </data>
+  <data name="FunnelCalled" xml:space="preserve">
+    <value>Called a tool</value>
+  </data>
+  <data name="FunnelSucceeded" xml:space="preserve">
+    <value>Got a tool answer</value>
+  </data>
+  <data name="ToolsTitle" xml:space="preserve">
+    <value>Tools</value>
+  </data>
+  <data name="MethodsTitle" xml:space="preserve">
+    <value>Methods</value>
+  </data>
+  <data name="ErrorsTitle" xml:space="preserve">
+    <value>Frequent errors</value>
+  </data>
+  <data name="RefusalsTitle" xml:space="preserve">
+    <value>Gateway refusals</value>
+  </data>
+  <data name="RefusalsLead" xml:space="preserve">
+    <value>Requests the gateway did not pass to the upstream: limits, quota, a body it could not take</value>
+  </data>
+  <data name="LatencyTitle" xml:space="preserve">
+    <value>Response time</value>
+  </data>
+  <data name="PeriodDay" xml:space="preserve">
+    <value>24 hours</value>
+  </data>
+  <data name="PeriodDays" xml:space="preserve">
+    <value>{number} days</value>
+  </data>
+  <data name="LatencyBelow" xml:space="preserve">
+    <value>under {0}</value>
+  </data>
+  <data name="LatencyBetween" xml:space="preserve">
+    <value>{0} – {1}</value>
+  </data>
+  <data name="LatencyAbove" xml:space="preserve">
+    <value>{0} and more</value>
+  </data>
+  <data name="RemoveFilter" xml:space="preserve">
+    <value>Remove the filter {0}: {1}</value>
+  </data>
+  <data name="RemoveFilterHint" xml:space="preserve">
+    <value>Remove</value>
   </data>
 </root>

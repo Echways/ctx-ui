@@ -84,6 +84,7 @@ else
                     <MudMenu Label="⋯" AriaLabel="@string.Format(PanelText.MoreActions, context.Name)" Class="more"
                              AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
                         <MudMenuItem OnClick="() => EditAsync(context)">@PanelText.Edit</MudMenuItem>
+                        <MudMenuItem Href="@MetricsAddress.Of(new MetricsFilter(ClientId: context.Id))">@PanelText.Metrics</MudMenuItem>
                         <MudMenuItem OnClick="() => DevicesAsync(context)">@PanelText.Devices</MudMenuItem>
                         <MudMenuItem OnClick="() => ResetAsync(context)">@PanelText.ResetQuota</MudMenuItem>
                         <MudMenuItem OnClick="() => ReissueAsync(context)">@PanelText.NewToken</MudMenuItem>

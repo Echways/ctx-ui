@@ -1,0 +1,254 @@
+@page "/metrics"
+@inject PanelBackend Backend
+@inject TimeProvider Clock
+@inject NavigationManager Navigation
+
+<PageHead Title="@PanelText.Metrics" UpdatedAt="_loadedAt" OnRefresh="LoadAsync">
+    <Actions>
+        @if (_report is { } shown)
+        {
+            <nav class="periods" aria-label="@PanelText.Period">
+                @foreach (var days in shown.Periods)
+                {
+                    var current = days == shown.Period.Days;
+                    <a href="@MetricsAddress.Of(shown.Filter, days)" class="@(current ? "on" : "")" aria-current="@(current ? "page" : null)">@PeriodName(days)</a>
+                }
+            </nav>
+        }
+    </Actions>
+</PageHead>
+<AutoRefresh OnTick="LoadAsync" />
+
+@if (_report is not { } report)
+{
+    <div class="placeholder" aria-hidden="true"><i></i><i></i><i></i></div>
+}
+else
+{
+    @if (report.Filter != MetricsFilter.All)
+    {
+        <nav class="crumbs" aria-label="@PanelText.MetricsFilter">
+            <a class="crumb" href="@MetricsAddress.Of(MetricsFilter.All, report.Period.Days)">@PanelText.AllCalls</a>
+            @if (report.Filter.ClientId is not null)
+            {
+                <Crumb Kind="@PanelText.Client" Value="@(report.Subject.Client ?? PanelText.Removed)"
+                       Without="@MetricsAddress.Of(report.Filter with { ClientId = null }, report.Period.Days)" />
+            }
+            @if (report.Filter.InboundId is not null)
+            {
+                <Crumb Kind="@PanelText.Inbound" Value="@(report.Subject.Inbound ?? PanelText.Removed)" Code="true"
+                       Without="@MetricsAddress.Of(report.Filter with { InboundId = null }, report.Period.Days)" />
+            }
+            @if (report.Filter.Tool is { } tool)
+            {
+                <Crumb Kind="@PanelText.Tool" Value="@tool" Code="true"
+                       Without="@MetricsAddress.Of(report.Filter with { Tool = null }, report.Period.Days)" />
+            }
+            @if (report.Filter.ClientId is { } clientId)
+            {
+                <a class="link crumbs-end" href="journal?client=@clientId">@PanelText.ClientJournal</a>
+            }
+        </nav>
+    }
+
+    <Horizon Slots="report.Slots" Length="report.Period.SlotLength" />
+
+    @if (report.Totals.Calls == 0 && report.RefusalTotal == 0)
+    {
+        <div class="empty">
+            <p>@PanelText.MetricsEmpty</p>
+        </div>
+    }
+    else
+    {
+        <div class="figs">
+            <Figure Value="report.Totals.Calls" First="@Words.Count(PanelText.FigureCallsOnly, report.Totals.Calls)"
+                    Second="@string.Format(PanelText.FigureTools, Words.Number(report.Totals.ToolCalls))" />
+            <Figure Value="report.Totals.Errors" First="@Words.Count(PanelText.FigureErrors, report.Totals.Errors)"
+                    Second="@ErrorShare(report.Totals)" Alarm="report.Totals.Errors > 0" />
+            <Figure Text="@Words.Duration(report.Totals.Latency.P95)" First="@PanelText.FigureLatency"
+                    Second="@string.Format(PanelText.FigureLatencyRest, Words.Duration(report.Totals.Latency.P50), Words.Duration(report.Totals.Latency.P99))" />
+            @if (report.ClientsWithAccess is { } withAccess)
+            {
+                <Figure Value="report.Funnel.Seen" First="@Words.Count(PanelText.FigureSeen, report.Funnel.Seen)"
+                        Second="@Words.Count(PanelText.FigureWithAccess, withAccess)" />
+            }
+            else
+            {
+                <Figure Text="@Words.Size(report.Totals.RequestBytes + report.Totals.ResponseBytes)" First="@PanelText.FigureTraffic"
+                        Second="@string.Format(PanelText.TrafficDetail, Words.Size(report.Totals.RequestBytes), Words.Size(report.Totals.ResponseBytes))" />
+            }
+        </div>
+
+        @if (report.Filter.ClientId is null && report.Filter.Tool is null && report.Funnel.Seen > 0)
+        {
+            <section class="block">
+                <h2>@PanelText.FunnelTitle</h2>
+                <p class="lead">@PanelText.FunnelLead</p>
+                <Strips Items="FunnelStrips(report.Funnel)" Peak="report.Funnel.Seen" Wide="true" />
+            </section>
+        }
+
+        @if (report.Inbounds.Count > 0)
+        {
+            <section class="block">
+                <h2>@PanelText.Inbounds</h2>
+                <StatsTable Items="report.Inbounds" Stats="row => row.Stats" Head="@PanelText.Address"
+                            OnPick="@((InboundStats row) => Narrow(report, report.Filter with { InboundId = row.Id }))">
+                    <Label>
+                        <code>/mcp/@(context.Slug ?? PanelText.Removed)</code>
+                        @if (context.Name is { } name && name != context.Slug)
+                        {
+                            @(" ")<span class="note">@name</span>
+                        }
+                    </Label>
+                </StatsTable>
+            </section>
+        }
+
+        @if (report.Tools.Count > 0)
+        {
+            <section class="block">
+                <h2>@PanelText.ToolsTitle</h2>
+                <StatsTable Items="report.Tools" Stats="row => row.Stats" Head="@PanelText.Tool"
+                            OnPick="@((ToolStats row) => Narrow(report, report.Filter with { InboundId = row.InboundId, Tool = row.Tool }))">
+                    <Label>
+                        <code>@context.Tool</code>
+                        @if (report.Filter.InboundId is null)
+                        {
+                            @(" ")<span class="note">@(context.Slug ?? PanelText.Removed)</span>
+                        }
+                    </Label>
+                </StatsTable>
+            </section>
+        }
+
+        @if (report.Methods.Count > 0)
+        {
+            <section class="block">
+                <h2>@PanelText.MethodsTitle</h2>
+                <StatsTable Items="report.Methods" Stats="row => row.Stats" Head="@PanelText.Method">
+                    <Label><code>@context.Method</code></Label>
+                </StatsTable>
+            </section>
+        }
+
+        @if (report.Clients.Count > 0)
+        {
+            <section class="block">
+                <h2>@PanelText.Clients</h2>
+                <StatsTable Items="report.Clients" Stats="row => row.Stats" Head="@PanelText.Client" ExtraHead="@PanelText.RefusalsColumn"
+                            OnPick="@((ClientStats row) => Narrow(report, report.Filter with { ClientId = row.Id }))">
+                    <Label>@(context.Name ?? PanelText.Removed)</Label>
+                    <Extra>@Words.OrDash(context.Refusals)</Extra>
+                </StatsTable>
+            </section>
+        }
+
+        @if (report.Devices.Count > 0)
+        {
+            <section class="block">
+                <h2>@PanelText.Devices</h2>
+                <StatsTable Items="report.Devices" Stats="row => row.Stats" Head="@PanelText.DeviceColumn">
+                    <Label>
+                        @(context.Name ?? PanelText.Removed)
+                        @foreach (var app in context.Apps)
+                        {
+                            @(" ")<span class="note">@app</span>
+                        }
+                    </Label>
+                </StatsTable>
+            </section>
+        }
+
+        @if (report.Errors.Count > 0)
+        {
+            <section class="block">
+                <h2>@PanelText.ErrorsTitle</h2>
+                <ErrorTable Items="report.Errors"
+                            OnPick="@((ErrorGroup error) => Narrow(report, report.Filter with { InboundId = error.InboundId, Tool = error.Tool }))" />
+            </section>
+        }
+
+        @if (report.Refusals.Count > 0)
+        {
+            <section class="block">
+                <h2>@PanelText.RefusalsTitle</h2>
+                <p class="lead">@PanelText.RefusalsLead</p>
+                <Strips Items="RefusalStrips(report.Refusals)" Wide="true" />
+            </section>
+        }
+
+        @if (report.Totals.Calls > 0)
+        {
+            <section class="block">
+                <h2>@PanelText.LatencyTitle</h2>
+                <Strips Items="LatencyStrips(report)" Wide="true" />
+            </section>
+        }
+    }
+}
+
+@code {
+    private MetricsReport? _report;
+    private DateTimeOffset? _loadedAt;
+
+    [SupplyParameterFromQuery(Name = "days")]
+    private int? Days { get; set; }
+
+    [SupplyParameterFromQuery(Name = "client")]
+    private Guid? ClientId { get; set; }
+
+    [SupplyParameterFromQuery(Name = "inbound")]
+    private Guid? InboundId { get; set; }
+
+    [SupplyParameterFromQuery(Name = "tool")]
+    private string? Tool { get; set; }
+
+    protected override Task OnParametersSetAsync() => LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        var filter = new MetricsFilter(ClientId, InboundId, string.IsNullOrEmpty(Tool) ? null : Tool);
+        _report = await Backend.ReadAsync(services =>
+        {
+            var metrics = services.GetRequiredService<MetricsService>();
+            return metrics.LoadAsync(filter, metrics.Periods.Any(period => period.Days == Days) ? Days : null);
+        });
+        _loadedAt = Clock.GetUtcNow();
+    }
+
+    private void Narrow(MetricsReport report, MetricsFilter filter) => Navigation.NavigateTo(MetricsAddress.Of(filter, report.Period.Days));
+
+    private static string PeriodName(int days) => days == 1 ? PanelText.PeriodDay : Words.Count(PanelText.PeriodDays, days);
+
+    private static string ErrorShare(CallStats totals) =>
+        totals.Calls == 0 ? PanelText.NoCalls : string.Format(PanelText.FailureShare, Math.Round(100 * totals.ErrorShare, 1));
+
+    private static List<Strip> FunnelStrips(Funnel funnel) =>
+    [
+        Step(PanelText.FunnelSeen, funnel.Seen, funnel.Seen),
+        Step(PanelText.FunnelInitialized, funnel.Initialized, funnel.Seen),
+        Step(PanelText.FunnelListed, funnel.Listed, funnel.Seen),
+        Step(PanelText.FunnelCalled, funnel.Called, funnel.Seen),
+        Step(PanelText.FunnelSucceeded, funnel.Succeeded, funnel.Seen),
+    ];
+
+    private static Strip Step(string label, int clients, int seen) =>
+        new(label, clients, $"{Words.Number(clients)} · {Words.Share(seen == 0 ? 0 : (double)clients / seen)}");
+
+    private static List<Strip> RefusalStrips(IEnumerable<RefusalCount> refusals) => refusals
+        .Select(refusal => new Strip(Words.Sentence(UsageOutcomes.Text(refusal.Outcome)), refusal.Count, Words.Number(refusal.Count)))
+        .ToList();
+
+    private static List<Strip> LatencyStrips(MetricsReport report) => report.Latency
+        .Select(bucket => new Strip(
+            bucket.UntilMs is { } until
+                ? bucket.FromMs == 0
+                    ? string.Format(PanelText.LatencyBelow, Words.Duration(until))
+                    : string.Format(PanelText.LatencyBetween, Words.Duration(bucket.FromMs), Words.Duration(until))
+                : string.Format(PanelText.LatencyAbove, Words.Duration(bucket.FromMs)),
+            bucket.Calls,
+            $"{Words.Number(bucket.Calls)} · {Words.Share((double)bucket.Calls / report.Totals.Calls)}"))
+        .ToList();
+}

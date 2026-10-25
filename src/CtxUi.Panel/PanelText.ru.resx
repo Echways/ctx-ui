@@ -475,7 +475,7 @@
     <value>Вернуться к обзору</value>
   </data>
   <data name="HorizonLabel" xml:space="preserve">
-    <value>Вызовы за последние сутки по 15 минут: всего {0}, сбоев {1}. Стрелки влево и вправо переходят между отрезками.</value>
+    <value>Вызовы {0}: всего {1}, сбоев {2}. Стрелки влево и вправо переходят между отрезками.</value>
   </data>
   <data name="HorizonHint" xml:space="preserve">
     <value>Последние сутки, по 15 минут на штрих</value>
@@ -547,7 +547,7 @@
     <value>для REST API и скриптов</value>
   </data>
   <data name="Milliseconds" xml:space="preserve">
-    <value>{0} мс</value>
+    <value>{0} мс</value>
   </data>
   <data name="Actions" xml:space="preserve">
     <value>Действия</value>
@@ -875,5 +875,176 @@
   </data>
   <data name="UnlinkWarning" xml:space="preserve">
     <value>Чтобы снова входить этим аккаунтом, человеку понадобится новая ссылка-приглашение.</value>
+  </data>
+  <data name="Seconds" xml:space="preserve">
+    <value>{0} с</value>
+  </data>
+  <data name="Bytes" xml:space="preserve">
+    <value>{0} Б</value>
+  </data>
+  <data name="Kilobytes" xml:space="preserve">
+    <value>{0} КБ</value>
+  </data>
+  <data name="Megabytes" xml:space="preserve">
+    <value>{0} МБ</value>
+  </data>
+  <data name="Gigabytes" xml:space="preserve">
+    <value>{0} ГБ</value>
+  </data>
+  <data name="Percent" xml:space="preserve">
+    <value>{0} %</value>
+  </data>
+  <data name="HorizonSpanDay" xml:space="preserve">
+    <value>за последние сутки по 15 минут</value>
+  </data>
+  <data name="HorizonSpanWeek" xml:space="preserve">
+    <value>за последние 7 дней по 2 часа</value>
+  </data>
+  <data name="HorizonSpanMonth" xml:space="preserve">
+    <value>за последние 30 дней по 8 часов</value>
+  </data>
+  <data name="HorizonSpanSeason" xml:space="preserve">
+    <value>за последние 90 дней по суткам</value>
+  </data>
+  <data name="HorizonHintWeek" xml:space="preserve">
+    <value>Последние 7 дней, по 2 часа на штрих</value>
+  </data>
+  <data name="HorizonHintMonth" xml:space="preserve">
+    <value>Последние 30 дней, по 8 часов на штрих</value>
+  </data>
+  <data name="HorizonHintSeason" xml:space="preserve">
+    <value>Последние 90 дней, по суткам на штрих</value>
+  </data>
+  <data name="HorizonSlot" xml:space="preserve">
+    <value>{0}, {1}–{2} UTC</value>
+  </data>
+  <data name="ErrorsColumn" xml:space="preserve">
+    <value>Ошибки</value>
+  </data>
+  <data name="MedianColumn" xml:space="preserve">
+    <value>Медиана</value>
+  </data>
+  <data name="TailColumn" xml:space="preserve">
+    <value>p95</value>
+  </data>
+  <data name="TrafficColumn" xml:space="preserve">
+    <value>Трафик</value>
+  </data>
+  <data name="ShowAll" xml:space="preserve">
+    <value>Показать все: {0}</value>
+  </data>
+  <data name="ErrorsDetail" xml:space="preserve">
+    <value>сбоев upstream: {0} · отклонено upstream: {1} · прервано клиентом: {2}</value>
+  </data>
+  <data name="TrafficDetail" xml:space="preserve">
+    <value>запросы {0} · ответы {1}</value>
+  </data>
+  <data name="TimesColumn" xml:space="preserve">
+    <value>Раз</value>
+  </data>
+  <data name="LastTimeColumn" xml:space="preserve">
+    <value>Последний</value>
+  </data>
+  <data name="Metrics" xml:space="preserve">
+    <value>Метрики</value>
+  </data>
+  <data name="Period" xml:space="preserve">
+    <value>Период</value>
+  </data>
+  <data name="MetricsFilter" xml:space="preserve">
+    <value>Фильтр</value>
+  </data>
+  <data name="AllCalls" xml:space="preserve">
+    <value>Все вызовы</value>
+  </data>
+  <data name="Tool" xml:space="preserve">
+    <value>Инструмент</value>
+  </data>
+  <data name="Method" xml:space="preserve">
+    <value>Метод</value>
+  </data>
+  <data name="ClientJournal" xml:space="preserve">
+    <value>Журнал клиента</value>
+  </data>
+  <data name="MetricsEmpty" xml:space="preserve">
+    <value>За этот период вызовов не было</value>
+  </data>
+  <data name="FigureCallsOnly" xml:space="preserve">
+    <value>{n, plural, one {вызов} few {вызова} many {вызовов} other {вызова}}</value>
+  </data>
+  <data name="FigureErrors" xml:space="preserve">
+    <value>{n, plural, one {ошибка} few {ошибки} many {ошибок} other {ошибки}}</value>
+  </data>
+  <data name="FigureLatency" xml:space="preserve">
+    <value>время ответа, p95</value>
+  </data>
+  <data name="FigureLatencyRest" xml:space="preserve">
+    <value>медиана {0} · p99 {1}</value>
+  </data>
+  <data name="FigureWithAccess" xml:space="preserve">
+    <value>из {number} с доступом</value>
+  </data>
+  <data name="FigureTraffic" xml:space="preserve">
+    <value>трафик</value>
+  </data>
+  <data name="FunnelTitle" xml:space="preserve">
+    <value>Путь клиентов</value>
+  </data>
+  <data name="FunnelLead" xml:space="preserve">
+    <value>Докуда дошли заходившие клиенты</value>
+  </data>
+  <data name="FunnelSeen" xml:space="preserve">
+    <value>Заходили</value>
+  </data>
+  <data name="FunnelInitialized" xml:space="preserve">
+    <value>Открыли сессию</value>
+  </data>
+  <data name="FunnelListed" xml:space="preserve">
+    <value>Получили список инструментов</value>
+  </data>
+  <data name="FunnelCalled" xml:space="preserve">
+    <value>Вызывали инструменты</value>
+  </data>
+  <data name="FunnelSucceeded" xml:space="preserve">
+    <value>Получили ответ инструмента</value>
+  </data>
+  <data name="ToolsTitle" xml:space="preserve">
+    <value>Инструменты</value>
+  </data>
+  <data name="MethodsTitle" xml:space="preserve">
+    <value>Методы</value>
+  </data>
+  <data name="ErrorsTitle" xml:space="preserve">
+    <value>Частые ошибки</value>
+  </data>
+  <data name="RefusalsTitle" xml:space="preserve">
+    <value>Отказы шлюза</value>
+  </data>
+  <data name="RefusalsLead" xml:space="preserve">
+    <value>Запросы, которые шлюз не пропустил к upstream: лимиты, квота, неподходящее тело</value>
+  </data>
+  <data name="LatencyTitle" xml:space="preserve">
+    <value>Время ответа</value>
+  </data>
+  <data name="PeriodDay" xml:space="preserve">
+    <value>Сутки</value>
+  </data>
+  <data name="PeriodDays" xml:space="preserve">
+    <value>{n, plural, one {{number} день} few {{number} дня} many {{number} дней} other {{number} дня}}</value>
+  </data>
+  <data name="LatencyBelow" xml:space="preserve">
+    <value>до {0}</value>
+  </data>
+  <data name="LatencyBetween" xml:space="preserve">
+    <value>{0} – {1}</value>
+  </data>
+  <data name="LatencyAbove" xml:space="preserve">
+    <value>от {0}</value>
+  </data>
+  <data name="RemoveFilter" xml:space="preserve">
+    <value>Убрать фильтр {0}: {1}</value>
+  </data>
+  <data name="RemoveFilterHint" xml:space="preserve">
+    <value>Убрать</value>
   </data>
 </root>

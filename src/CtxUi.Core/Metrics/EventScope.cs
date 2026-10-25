@@ -26,7 +26,7 @@ internal sealed class RefusalRow
 
 internal sealed class EventScope
 {
-    public static readonly IReadOnlyList<int> LatencyBounds = [100, 250, 500, 1_000, 2_500, 5_000, 10_000, 30_000];
+    private static readonly IReadOnlyList<int> LatencyBounds = [100, 250, 500, 1_000, 2_500, 5_000, 10_000, 30_000];
 
     private static readonly string Forwarded = Outcomes(UsageRecord.IsForwarded);
 

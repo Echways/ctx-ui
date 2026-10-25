@@ -13,6 +13,8 @@ public enum ForwardOutcome
     UpstreamFailed,
 }
 
+public readonly record struct Forwarded(ForwardOutcome Outcome, long ResponseBytes);
+
 public sealed partial class HttpUpstream(IHttpForwarder forwarder, ILogger<HttpUpstream> logger) : IDisposable
 {
     private readonly HttpMessageInvoker _client = new(new SocketsHttpHandler
@@ -25,7 +27,16 @@ public sealed partial class HttpUpstream(IHttpForwarder forwarder, ILogger<HttpU
         ConnectTimeout = TimeSpan.FromSeconds(15),
     });
 
-    public async Task<ForwardOutcome> ForwardAsync(HttpContext context, InboundRoute route, ClientAccess client)
+    public async Task<Forwarded> ForwardAsync(HttpContext context, InboundRoute route, ClientAccess client)
+    {
+        var traffic = new ResponseTraffic();
+        context.Features.Set(traffic);
+        return new Forwarded(await SendAsync(context, route, client), traffic.Bytes);
+    }
+
+    public void Dispose() => _client.Dispose();
+
+    private async Task<ForwardOutcome> SendAsync(HttpContext context, InboundRoute route, ClientAccess client)
     {
         var config = new ForwarderRequestConfig { ActivityTimeout = route.RequestTimeout };
         var error = await forwarder.SendAsync(
@@ -51,8 +62,6 @@ public sealed partial class HttpUpstream(IHttpForwarder forwarder, ILogger<HttpU
                 return ForwardOutcome.UpstreamFailed;
         }
     }
-
-    public void Dispose() => _client.Dispose();
 
     [LoggerMessage(Level = LogLevel.Information, Message = "inbound {Slug}: the client aborted the request ({Error})")]
     private static partial void ClientAborted(ILogger logger, string slug, ForwarderError error);

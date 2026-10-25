@@ -45,6 +45,8 @@ public sealed partial class GatewayHandler(
             context.Response.StatusCode);
     }
 
+    private static long Share(long total, int parts, int part) => total / parts + (part < total % parts ? 1 : 0);
+
     private static UsageOutcome Outcome(ForwardOutcome forward, int status) => forward switch
     {
         ForwardOutcome.ClientAborted => UsageOutcome.ClientAborted,
@@ -69,7 +71,7 @@ public sealed partial class GatewayHandler(
         }
 
         if (!HttpMethods.IsPost(context.Request.Method))
-            return Outcome(await upstream.ForwardAsync(context, route, client), context.Response.StatusCode);
+            return Outcome((await upstream.ForwardAsync(context, route, client)).Outcome, context.Response.StatusCode);
 
         using var slot = await limiter.AcquireSlotAsync(client, context.RequestAborted);
         if (!slot.IsAcquired)
@@ -99,29 +101,41 @@ public sealed partial class GatewayHandler(
         }
 
         UsageOutcome outcome;
+        long responseBytes;
         var charge = envelope.ToolCalls > 0 ? ledger.Charge(client, envelope.ToolCalls, now) : (QuotaCharge?)null;
         if (charge is { Accepted: false } refused)
         {
             await Rejection.WriteQuotaExhaustedAsync(context, envelope, QuotaRefusal.Text(refused, now));
             outcome = UsageOutcome.QuotaExhausted;
+            responseBytes = context.Response.ContentLength ?? 0;
         }
         else
         {
             context.Request.Body = new MemoryStream(body.Bytes.Array!, body.Bytes.Offset, body.Bytes.Count, writable: false);
-            outcome = Outcome(await upstream.ForwardAsync(context, route, client), context.Response.StatusCode);
+            var forwarded = await upstream.ForwardAsync(context, route, client);
+            outcome = Outcome(forwarded.Outcome, context.Response.StatusCode);
+            responseBytes = forwarded.ResponseBytes;
             if (charge is { } accepted && outcome is UsageOutcome.UpstreamRejected or UsageOutcome.UpstreamFailed)
                 ledger.Refund(client.Id, accepted);
         }
 
         var duration = (int)Math.Min(int.MaxValue, clock.GetElapsedTime(started).TotalMilliseconds);
-        foreach (var call in envelope.Calls.Where(call => call.Method is not null))
-            journal.Record(new UsageRecord(client.Id, route.Id, now, call.Method, call.Tool, duration, outcome, deviceId));
+        var calls = envelope.Calls.Where(call => call.Method is not null).ToList();
+        for (var part = 0; part < calls.Count; part++)
+        {
+            journal.Record(new UsageRecord(client.Id, route.Id, now, calls[part].Method, calls[part].Tool, duration, outcome, deviceId)
+            {
+                Status = context.Response.StatusCode,
+                RequestBytes = (int)Share(body.Bytes.Count, calls.Count, part),
+                ResponseBytes = Share(responseBytes, calls.Count, part),
+            });
+        }
 
         return outcome;
 
         UsageOutcome Refused(UsageOutcome reason)
         {
-            journal.Record(new UsageRecord(client.Id, route.Id, now, null, null, 0, reason, deviceId));
+            journal.Record(new UsageRecord(client.Id, route.Id, now, null, null, 0, reason, deviceId) { Status = context.Response.StatusCode });
             return reason;
         }
     }

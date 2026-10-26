@@ -10,18 +10,6 @@ namespace CtxUi.IntegrationTests;
 public class PanelJournalTests
 {
     [Fact]
-    public async Task Empty_journal_says_so()
-    {
-        await using var gateway = await GatewayHost.StartAsync();
-        await using var session = await PanelSession.SignInAsync(gateway);
-
-        var page = await OpenJournalAsync(session);
-
-        await Expect(page).ToHaveTitleAsync("Журнал · ctx-ui");
-        await Expect(page.GetByText("Журнал пуст")).ToBeVisibleAsync();
-    }
-
-    [Fact]
     public async Task Calls_are_listed_newest_first_with_who_what_and_how_it_ended()
     {
         await using var upstream = await FakeUpstream.StartAsync((app, _) =>

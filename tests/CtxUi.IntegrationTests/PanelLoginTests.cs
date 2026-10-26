@@ -6,7 +6,7 @@ namespace CtxUi.IntegrationTests;
 public class PanelLoginTests
 {
     [Fact]
-    public async Task Login_form_comes_with_its_style_and_knows_where_the_panel_lives()
+    public async Task Login_form_knows_where_the_panel_lives_and_brings_its_own_style_fonts_icon_and_night_colour()
     {
         await using var gateway = await GatewayHost.StartAsync();
         using var panel = new PanelClient(gateway);
@@ -14,6 +14,9 @@ public class PanelLoginTests
         using var form = await panel.GetAsync("login");
         using var style = await panel.GetAsync("_content/Enfilade/enfilade.css");
         using var script = await panel.GetAsync("_framework/blazor.web.js");
+        using var sans = await panel.GetAsync("_content/Enfilade/fonts/onest.woff2");
+        using var mono = await panel.GetAsync("_content/Enfilade/fonts/martian-mono.woff2");
+        using var icon = await panel.GetAsync("_content/CtxUi.Panel/favicon.svg");
         var html = await PanelClient.PageAsync(form);
 
         Assert.Equal(HttpStatusCode.OK, form.StatusCode);
@@ -23,20 +26,6 @@ public class PanelLoginTests
         Assert.DoesNotContain(Refusal, html);
         Assert.Equal(HttpStatusCode.OK, style.StatusCode);
         Assert.Equal(HttpStatusCode.OK, script.StatusCode);
-    }
-
-    [Fact]
-    public async Task Panel_brings_its_own_fonts_icon_and_night_colour()
-    {
-        await using var gateway = await GatewayHost.StartAsync();
-        using var panel = new PanelClient(gateway);
-
-        using var form = await panel.GetAsync("login");
-        using var sans = await panel.GetAsync("_content/Enfilade/fonts/onest.woff2");
-        using var mono = await panel.GetAsync("_content/Enfilade/fonts/martian-mono.woff2");
-        using var icon = await panel.GetAsync("_content/CtxUi.Panel/favicon.svg");
-        var html = await PanelClient.PageAsync(form);
-
         Assert.Contains("<meta name=\"theme-color\" content=\"#080C1C\"", html);
         Assert.Contains("rel=\"icon\"", html);
         Assert.Contains("rel=\"preload\"", html);

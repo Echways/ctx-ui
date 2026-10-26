@@ -12,12 +12,6 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="LanguageSwitch" xml:space="preserve">
-    <value>Русский</value>
-  </data>
-  <data name="LanguageSwitchCulture" xml:space="preserve">
-    <value>ru</value>
-  </data>
   <data name="SignOut" xml:space="preserve">
     <value>Sign out</value>
   </data>
@@ -42,9 +36,6 @@
   <data name="ApiKeys" xml:space="preserve">
     <value>API keys</value>
   </data>
-  <data name="Refresh" xml:space="preserve">
-    <value>Refresh</value>
-  </data>
   <data name="Edit" xml:space="preserve">
     <value>Edit</value>
   </data>
@@ -56,15 +47,6 @@
   </data>
   <data name="Save" xml:space="preserve">
     <value>Save</value>
-  </data>
-  <data name="Close" xml:space="preserve">
-    <value>Close</value>
-  </data>
-  <data name="Copied" xml:space="preserve">
-    <value>Copied</value>
-  </data>
-  <data name="CopyNeedsHttps" xml:space="preserve">
-    <value>The browser copies only on a page opened over HTTPS: select the text and copy it yourself</value>
   </data>
   <data name="Name" xml:space="preserve">
     <value>Name</value>
@@ -273,12 +255,6 @@
   <data name="Stay" xml:space="preserve">
     <value>Stay</value>
   </data>
-  <data name="NotFoundTitle" xml:space="preserve">
-    <value>Page not found</value>
-  </data>
-  <data name="NotFoundHeading" xml:space="preserve">
-    <value>There is no such page</value>
-  </data>
   <data name="NoCalls" xml:space="preserve">
     <value>no calls</value>
   </data>
@@ -462,18 +438,6 @@
   <data name="AccessSection" xml:space="preserve">
     <value>Access</value>
   </data>
-  <data name="Sections" xml:space="preserve">
-    <value>Sections</value>
-  </data>
-  <data name="UpdatedAt" xml:space="preserve">
-    <value>updated {0} UTC</value>
-  </data>
-  <data name="PageTitle" xml:space="preserve">
-    <value>{0} · ctx-ui</value>
-  </data>
-  <data name="BackToOverview" xml:space="preserve">
-    <value>Back to overview</value>
-  </data>
   <data name="HorizonLabel" xml:space="preserve">
     <value>Calls {0}: {1} in total, {2} failed. Left and right arrows move between strokes.</value>
   </data>
@@ -575,9 +539,6 @@
   </data>
   <data name="WithTokenInPath" xml:space="preserve">
     <value>With token in path</value>
-  </data>
-  <data name="Copy" xml:space="preserve">
-    <value>Copy</value>
   </data>
   <data name="OAuth" xml:space="preserve">
     <value>OAuth</value>
@@ -876,24 +837,6 @@ Paste the issuer address, the client ID and the secret here.</value>
   <data name="UnlinkWarning" xml:space="preserve">
     <value>The person will need a new invite link to sign in with this account again.</value>
   </data>
-  <data name="Seconds" xml:space="preserve">
-    <value>{0} s</value>
-  </data>
-  <data name="Bytes" xml:space="preserve">
-    <value>{0} B</value>
-  </data>
-  <data name="Kilobytes" xml:space="preserve">
-    <value>{0} KB</value>
-  </data>
-  <data name="Megabytes" xml:space="preserve">
-    <value>{0} MB</value>
-  </data>
-  <data name="Gigabytes" xml:space="preserve">
-    <value>{0} GB</value>
-  </data>
-  <data name="Percent" xml:space="preserve">
-    <value>{0}%</value>
-  </data>
   <data name="HorizonSpanDay" xml:space="preserve">
     <value>in the last 24 hours by 15 minutes</value>
   </data>
@@ -1040,11 +983,5 @@ Paste the issuer address, the client ID and the secret here.</value>
   </data>
   <data name="LatencyAbove" xml:space="preserve">
     <value>{0} and more</value>
-  </data>
-  <data name="RemoveFilter" xml:space="preserve">
-    <value>Remove the filter {0}: {1}</value>
-  </data>
-  <data name="RemoveFilterHint" xml:space="preserve">
-    <value>Remove</value>
   </data>
 </root>

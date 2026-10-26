@@ -4,6 +4,7 @@ using System.Net;
 using System.Resources;
 using Microsoft.Extensions.Options;
 using Microsoft.Playwright;
+using Enfilade;
 using CtxUi.Core;
 using CtxUi.Panel;
 using static Microsoft.Playwright.Assertions;
@@ -112,6 +113,7 @@ public class PanelLanguageTests
 
     [Theory]
     [InlineData(typeof(PanelServices), "CtxUi.Panel.PanelText")]
+    [InlineData(typeof(EnfiladeOptions), "Enfilade.EnfiladeText")]
     [InlineData(typeof(DomainException), "CtxUi.Core.CoreText")]
     public void Every_text_has_both_languages(Type anchor, string resources)
     {

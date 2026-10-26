@@ -1,16 +1,17 @@
 @page "/"
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
 @using Microsoft.JSInterop
 @inject PanelBackend Backend
 @inject TimeProvider Clock
-@inject IJSRuntime Js
+@inject ProtectedSessionStorage Session
 @inject NavigationManager Navigation
 
-<PageHead Title="@PanelText.Overview" UpdatedAt="_loadedAt" OnRefresh="LoadAsync" />
+<PageHead UpdatedAt="_loadedAt" OnRefresh="LoadAsync" />
 <AutoRefresh OnTick="LoadAsync" />
 
 @if (_overview is null)
 {
-    <div class="placeholder" aria-hidden="true"><i></i><i></i><i></i></div>
+    <Placeholder />
 }
 else
 {
@@ -75,6 +76,8 @@ else
 }
 
 @code {
+    private const string HorizonSeen = "ctx-ui:horizon";
+
     private CtxUi.Core.Usage.Overview? _overview;
     private DateTimeOffset? _loadedAt;
     private bool _grow;
@@ -85,8 +88,24 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        _grow = await Js.InvokeAsync<bool>("ctxUi.firstVisit", "ctx-ui:horizon");
+        _grow = await FirstVisitAsync();
         await ReadAsync();
+    }
+
+    private async Task<bool> FirstVisitAsync()
+    {
+        try
+        {
+            if ((await Session.GetAsync<bool>(HorizonSeen)).Success)
+                return false;
+
+            await Session.SetAsync(HorizonSeen, true);
+            return true;
+        }
+        catch (JSException)
+        {
+            return false;
+        }
     }
 
     private Task LoadAsync()

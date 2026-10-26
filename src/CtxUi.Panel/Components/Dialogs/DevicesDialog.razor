@@ -7,7 +7,7 @@
     <ChildContent>
         @if (_devices is null)
         {
-            <div class="placeholder" aria-hidden="true"><i></i><i></i><i></i></div>
+            <Placeholder />
         }
         else
         {
@@ -111,8 +111,7 @@
 
     private async Task DisconnectAllAsync()
     {
-        if (!await ConfirmDialog.AskAsync(
-                Dialogs, string.Format(PanelText.DisconnectAllQuestion, _name), PanelText.DisconnectAllWarning, PanelText.DisconnectAll, danger: true))
+        if (!await Dialogs.ConfirmAsync(string.Format(PanelText.DisconnectAllQuestion, _name), PanelText.DisconnectAllWarning, PanelText.DisconnectAll, danger: true))
             return;
 
         await Actions.ApplyAsync(
@@ -123,8 +122,7 @@
 
     private async Task UnlinkAsync(ClientLink link)
     {
-        if (!await ConfirmDialog.AskAsync(
-                Dialogs, string.Format(PanelText.UnlinkQuestion, $"{LinkTitle(link)} · {link.Display}"), PanelText.UnlinkWarning, PanelText.Unlink, danger: true))
+        if (!await Dialogs.ConfirmAsync(string.Format(PanelText.UnlinkQuestion, $"{LinkTitle(link)} · {link.Display}"), PanelText.UnlinkWarning, PanelText.Unlink, danger: true))
             return;
 
         await Actions.ApplyAsync(

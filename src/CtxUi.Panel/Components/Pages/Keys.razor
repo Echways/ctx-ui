@@ -4,7 +4,7 @@
 @inject PanelActions Actions
 @inject TimeProvider Clock
 
-<PageHead Title="@PanelText.ApiKeys" Count="_keys?.Count" UpdatedAt="_loadedAt" OnRefresh="LoadAsync">
+<PageHead Count="_keys?.Count" UpdatedAt="_loadedAt" OnRefresh="LoadAsync">
     <Summary>
         <span>@PanelText.KeysSummary</span>
     </Summary>
@@ -19,7 +19,7 @@
 
 @if (_keys is null)
 {
-    <div class="placeholder" aria-hidden="true"><i></i><i></i><i></i></div>
+    <Placeholder />
 }
 else if (_keys.Count == 0)
 {
@@ -65,14 +65,14 @@ else
 
     private async Task AddAsync()
     {
-        var dialog = await Dialogs.ShowAsync<ApiKeyDialog>(PanelText.NewApiKey, Sheet.Form);
+        var dialog = await Dialogs.ShowSheetAsync<ApiKeyDialog>(PanelText.NewApiKey);
         await dialog.Result;
         await LoadAsync();
     }
 
     private async Task RemoveAsync(ApiKey key)
     {
-        if (!await ConfirmDialog.AskAsync(Dialogs, string.Format(PanelText.RevokeQuestion, key.Name), PanelText.RevokeWarning, PanelText.Revoke, danger: true))
+        if (!await Dialogs.ConfirmAsync(string.Format(PanelText.RevokeQuestion, key.Name), PanelText.RevokeWarning, PanelText.Revoke, danger: true))
             return;
 
         await Actions.ApplyAsync(

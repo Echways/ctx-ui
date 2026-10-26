@@ -12,7 +12,7 @@ public class PanelLoginTests
         using var panel = new PanelClient(gateway);
 
         using var form = await panel.GetAsync("login");
-        using var style = await panel.GetAsync("_content/CtxUi.Panel/panel.css");
+        using var style = await panel.GetAsync("_content/Enfilade/enfilade.css");
         using var script = await panel.GetAsync("_framework/blazor.web.js");
         var html = await PanelClient.PageAsync(form);
 
@@ -32,8 +32,8 @@ public class PanelLoginTests
         using var panel = new PanelClient(gateway);
 
         using var form = await panel.GetAsync("login");
-        using var sans = await panel.GetAsync("_content/CtxUi.Panel/fonts/onest.woff2");
-        using var mono = await panel.GetAsync("_content/CtxUi.Panel/fonts/martian-mono.woff2");
+        using var sans = await panel.GetAsync("_content/Enfilade/fonts/onest.woff2");
+        using var mono = await panel.GetAsync("_content/Enfilade/fonts/martian-mono.woff2");
         using var icon = await panel.GetAsync("_content/CtxUi.Panel/favicon.svg");
         var html = await PanelClient.PageAsync(form);
 

@@ -12,6 +12,7 @@ public class PanelAccessTests
     [InlineData("/_framework/blazor.web.js")]
     [InlineData("/_blazor/negotiate")]
     [InlineData("/_content/CtxUi.Panel/panel.css")]
+    [InlineData("/_content/Enfilade/enfilade.css")]
     [InlineData("/abcdefgh12345678/login")]
     public async Task Without_the_secret_path_the_panel_does_not_exist(string path)
     {

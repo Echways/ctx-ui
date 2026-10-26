@@ -1,4 +1,5 @@
 using System.Text;
+using Enfilade;
 using CtxUi.Core.Clients;
 
 namespace CtxUi.Panel;

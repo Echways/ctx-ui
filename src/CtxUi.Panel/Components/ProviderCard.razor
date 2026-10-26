@@ -87,8 +87,7 @@
 
     private async Task RemoveAsync()
     {
-        if (!await ConfirmDialog.AskAsync(
-                Dialogs, string.Format(PanelText.ProviderRemoveQuestion, Name), PanelText.ProviderRemoveWarning, PanelText.Delete, danger: true))
+        if (!await Dialogs.ConfirmAsync(string.Format(PanelText.ProviderRemoveQuestion, Name), PanelText.ProviderRemoveWarning, PanelText.Delete, danger: true))
             return;
 
         await Actions.ApplyAsync(

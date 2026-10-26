@@ -52,7 +52,13 @@ else
             <MudTd DataLabel="@PanelText.Client">@_clients.GetValueOrDefault(context.ClientId, PanelText.Removed)</MudTd>
             <MudTd DataLabel="@PanelText.Inbound"><code>@_inbounds.GetValueOrDefault(context.InboundId, PanelText.Removed)</code></MudTd>
             <MudTd DataLabel="@PanelText.CallColumn"><code>@(context.Tool is null ? context.Method : $"{context.Method} {context.Tool}")</code></MudTd>
-            <MudTd DataLabel="@PanelText.OutcomeColumn" Class="@Tone(context.Outcome)">@UsageOutcomes.Text(context.Outcome)</MudTd>
+            <MudTd DataLabel="@PanelText.OutcomeColumn" Class="@Tone(context.Outcome)">
+                @UsageOutcomes.Text(context.Outcome)
+                @if (context.Outcome is UsageOutcome.UpstreamFailed or UsageOutcome.UpstreamRejected && context.Status > 0)
+                {
+                    @(" ")<span class="note">HTTP @context.Status</span>
+                }
+            </MudTd>
             <MudTd DataLabel="@PanelText.DeviceColumn">@(context.DeviceId is { } deviceId && _devices.TryGetValue(deviceId, out var device) ? device : "—")</MudTd>
             <MudTd DataLabel="@PanelText.DurationColumn" Class="num">@string.Format(PanelText.Milliseconds, Words.Number(context.DurationMs))</MudTd>
         </RowTemplate>
@@ -80,7 +86,14 @@ else
     private Guid? _clientId;
     private DateTimeOffset? _loadedAt;
 
-    protected override Task OnInitializedAsync() => LoadAsync();
+    [SupplyParameterFromQuery(Name = "client")]
+    private Guid? Client { get; set; }
+
+    protected override Task OnInitializedAsync()
+    {
+        _clientId = Client;
+        return LoadAsync();
+    }
 
     private static string Tone(UsageOutcome outcome) => outcome switch
     {

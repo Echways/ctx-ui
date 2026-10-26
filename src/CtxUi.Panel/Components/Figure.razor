@@ -1,5 +1,5 @@
 <figure class="fig @(Alarm ? "alarm" : "")" aria-labelledby="@_id-value @_id-note">
-    <b id="@_id-value">@Words.Number(Value)</b>
+    <b id="@_id-value" class="@(Text is null ? "" : "word")">@(Text ?? Words.Number(Value))</b>
     <figcaption id="@_id-note">
         <span>@First</span>
         <span>@Second</span>
@@ -9,8 +9,11 @@
 @code {
     private readonly string _id = "figure-" + Guid.NewGuid().ToString("N")[..8];
 
-    [Parameter, EditorRequired]
+    [Parameter]
     public long Value { get; set; }
+
+    [Parameter]
+    public string? Text { get; set; }
 
     [Parameter, EditorRequired]
     public string First { get; set; } = "";

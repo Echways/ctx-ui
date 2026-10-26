@@ -19,6 +19,27 @@ public static class Words
 
     public static string Number(long value) => value.ToString("N0", CultureInfo.CurrentCulture);
 
+    public static string Duration(int milliseconds) => milliseconds < 1_000
+        ? string.Format(PanelText.Milliseconds, Number(milliseconds))
+        : string.Format(PanelText.Seconds, (milliseconds / 1_000.0).ToString(milliseconds < 10_000 ? "0.#" : "N0", CultureInfo.CurrentCulture));
+
+    public static string Size(long bytes)
+    {
+        string[] units = [PanelText.Bytes, PanelText.Kilobytes, PanelText.Megabytes, PanelText.Gigabytes];
+        var value = (double)bytes;
+        var unit = 0;
+        while (value >= 1_024 && unit < units.Length - 1)
+        {
+            value /= 1_024;
+            unit++;
+        }
+
+        return string.Format(units[unit], value.ToString(unit == 0 || value >= 100 ? "N0" : "0.#", CultureInfo.CurrentCulture));
+    }
+
+    public static string Share(double share) =>
+        string.Format(PanelText.Percent, Math.Round(100 * share, 1).ToString("0.#", CultureInfo.CurrentCulture));
+
     public static string OrDash(long value) => value == 0 ? "–" : Number(value);
 
     public static string Count(string pattern, long count) => MessageFormatter.Format(

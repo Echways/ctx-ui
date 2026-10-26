@@ -1,16 +1,6 @@
 @using System.Globalization
 
-<div class="days">
-    @foreach (var (day, index) in Shown.Select((day, index) => (day, index)))
-    {
-        var today = day.Day == Today;
-        <div class="day @(today ? "today" : "")" title="@Detail(day)">
-            <span class="day-name">@Name(day.Day)@(today ? ", " + PanelText.Today : "")</span>
-            <span class="num">@Words.Number(day.Calls)</span>
-            <span class="day-bar" style="width: @Share(day.Calls); --i: @index"></span>
-        </div>
-    }
-</div>
+<Strips Items="Bars" />
 <details class="more-days">
     <summary>@PanelText.DaysInDetail</summary>
     <MudTable Items="Shown.AsEnumerable().Reverse()" Elevation="0" Class="tbl">
@@ -45,10 +35,16 @@
         .Select(day => Days.FirstOrDefault(total => total.Day == day) ?? new DailyTotal(day, 0, 0, 0, 0, 0))
         .ToList();
 
-    private string Name(DateOnly day) => day.ToString("d MMMM", CultureInfo.CurrentCulture);
+    private List<Strip> Bars => Shown
+        .Select(day => new Strip(
+            day.Day == Today ? $"{Name(day.Day)}, {PanelText.Today}" : Name(day.Day),
+            day.Calls,
+            Words.Number(day.Calls),
+            Detail(day),
+            day.Day == Today))
+        .ToList();
 
-    private string Share(int calls) =>
-        (100.0 * calls / Math.Max(1, Shown.Max(day => day.Calls))).ToString("0.#", CultureInfo.InvariantCulture) + "%";
+    private string Name(DateOnly day) => day.ToString("d MMMM", CultureInfo.CurrentCulture);
 
     private static string Detail(DailyTotal day) =>
         $"{PanelText.UpstreamFailuresColumn}: {day.Errors} · {PanelText.RefusalsColumn}: {day.Refused}";

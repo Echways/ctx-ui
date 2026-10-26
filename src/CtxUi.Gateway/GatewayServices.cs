@@ -14,6 +14,8 @@ public static class GatewayServices
     {
         services.Configure<GatewayOptions>(section);
         services.AddHttpForwarder();
+        services.AddHttpContextAccessor();
+        services.AddTelemetryConsumer<ResponseTrafficTelemetry>();
         services.AddSingleton<SnapshotStore>();
         services.AddSingleton<IRoutingRefresh>(provider => provider.GetRequiredService<SnapshotStore>());
         services.AddSingleton<ISnapshotSource>(provider => provider.GetRequiredService<SnapshotStore>());

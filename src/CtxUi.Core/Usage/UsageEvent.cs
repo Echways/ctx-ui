@@ -11,4 +11,7 @@ public sealed class UsageEvent
     public int DurationMs { get; set; }
     public UsageOutcome Outcome { get; set; }
     public Guid? DeviceId { get; set; }
+    public int Status { get; set; }
+    public int RequestBytes { get; set; }
+    public long ResponseBytes { get; set; }
 }

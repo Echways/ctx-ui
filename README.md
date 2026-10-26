@@ -81,9 +81,10 @@ English and Russian, the choice is kept in a cookie for a year.
 | Section | Contents |
 | --- | --- |
 | Overview | active clients, calls and upstream failures over 24 h; per-inbound and daily totals |
+| Metrics | 24 hours, 7, 30 or 90 days: calls, errors, response time p50/p95/p99, traffic, the clients' path from the first call to a tool answer, breakdowns by inbound, tool, method, client and device, frequent errors with HTTP status, gateway refusals by reason; any row narrows the view down to that client, inbound or tool |
 | Inbounds | create, edit, enable/disable, delete |
 | Clients | create, edit, enable/disable, search, connection window, new token, quota reset |
-| Log | recent calls, filter by client |
+| Log | recent calls with HTTP status, filter by client |
 | API keys | issue, revoke, link to Swagger UI |
 | OAuth | browser sign-in switch, providers, defaults for devices |
 
@@ -220,7 +221,7 @@ Lives under the panel's secret path, like the panel itself:
 | `clients/{id}/devices`, `…/devices/{deviceId}` | list devices, `DELETE` disconnects one or all |
 | `clients/{id}/invite`, `clients/{id}/links`, `…/links/{linkId}`, `…/links/{provider}` | `POST` issues an invite link, list links, `DELETE` unlinks one account or every account of a provider |
 | `oauth`, `oauth/providers/{name}` | settings (`PATCH`), providers (`PUT`, `enable`, `disable`, `DELETE`); secrets are never returned |
-| `usage/days`, `usage/log`, `overview` | daily totals, recent calls, the panel's overview |
+| `usage/days`, `usage/log`, `overview`, `metrics` | daily totals, recent calls, the panel's overview, the Metrics page (`days`, `clientId`, `inboundId`, `tool`) |
 
 Errors are `application/problem+json`: 400 wrong input, 401 no or unknown
 key, 404 no such object, 409 the token cannot be shown (`keys/` lost). The

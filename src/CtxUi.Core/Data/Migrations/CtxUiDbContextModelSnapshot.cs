@@ -509,6 +509,15 @@ namespace CtxUi.Core.Data.Migrations
                     b.Property<int>("Outcome")
                         .HasColumnType("INTEGER");
 
+                    b.Property<int>("RequestBytes")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("ResponseBytes")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("Tool")
                         .HasColumnType("TEXT");
 
@@ -518,7 +527,31 @@ namespace CtxUi.Core.Data.Migrations
 
                     b.HasIndex("ClientId", "At");
 
+                    b.HasIndex("InboundId", "At");
+
                     b.ToTable("UsageEvents");
+                });
+
+            modelBuilder.Entity("CtxUi.Core.Usage.UsageRefusal", b =>
+                {
+                    b.Property<long>("Minute")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid>("ClientId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("InboundId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Outcome")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Count")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Minute", "ClientId", "InboundId", "Outcome");
+
+                    b.ToTable("UsageRefusals");
                 });
 
             modelBuilder.Entity("OpenIddict.EntityFrameworkCore.Models.OpenIddictEntityFrameworkCoreApplication", b =>

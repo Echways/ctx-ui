@@ -38,7 +38,7 @@ public static partial class ConnectServices
 
     public const string Favicon = "/_content/CtxUi.Panel/favicon.svg";
 
-    public static readonly PathString[] OpenPaths = [Prefix, WellKnown, "/_content/CtxUi.Connect", "/_content/CtxUi.Panel/fonts", Favicon];
+    public static readonly PathString[] OpenPaths = [Prefix, WellKnown, "/_content/CtxUi.Connect", "/_content/Enfilade/fonts", Favicon];
 
     public static IServiceCollection AddCtxUiConnect(this IServiceCollection services, IConfiguration section, string keysDir)
     {

@@ -5,7 +5,7 @@
 @inject TimeProvider Clock
 @inject NavigationManager Navigation
 
-<PageHead Title="@PanelText.Inbounds" Count="_rows?.Count" UpdatedAt="_loadedAt" OnRefresh="LoadAsync">
+<PageHead Count="_rows?.Count" UpdatedAt="_loadedAt" OnRefresh="LoadAsync">
     <Summary>
         @if (_rows is { Count: > 0 })
         {
@@ -22,7 +22,7 @@
 
 @if (_rows is null)
 {
-    <div class="placeholder" aria-hidden="true"><i></i><i></i><i></i></div>
+    <Placeholder />
 }
 else if (_rows.Count == 0)
 {
@@ -98,7 +98,7 @@ else
 
     private async Task AddAsync()
     {
-        var dialog = await Dialogs.ShowAsync<InboundDialog>(PanelText.NewInbound, Sheet.Form);
+        var dialog = await Dialogs.ShowSheetAsync<InboundDialog>(PanelText.NewInbound);
         if (await dialog.Result is { Canceled: false })
             await LoadAsync();
     }
@@ -106,7 +106,7 @@ else
     private async Task EditAsync(Inbound inbound)
     {
         var parameters = new DialogParameters<InboundDialog> { { dialog => dialog.Slug, inbound.Slug } };
-        var dialog = await Dialogs.ShowAsync<InboundDialog>(string.Format(PanelText.InboundTitle, inbound.Slug), parameters, Sheet.Form);
+        var dialog = await Dialogs.ShowSheetAsync<InboundDialog>(string.Format(PanelText.InboundTitle, inbound.Slug), parameters);
         if (await dialog.Result is { Canceled: false })
             await LoadAsync();
     }
@@ -122,8 +122,7 @@ else
     private async Task RemoveAsync(Row row)
     {
         var slug = row.Inbound.Slug;
-        if (await ConfirmDialog.AskAsync(
-                Dialogs, string.Format(PanelText.RemoveInboundQuestion, slug), string.Format(PanelText.RemoveInboundWarning, slug, row.Clients),
+        if (await Dialogs.ConfirmAsync(string.Format(PanelText.RemoveInboundQuestion, slug), string.Format(PanelText.RemoveInboundWarning, slug, row.Clients),
                 PanelText.Delete, danger: true))
         {
             await Actions.ApplyAsync(

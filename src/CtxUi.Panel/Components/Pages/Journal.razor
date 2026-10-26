@@ -3,7 +3,7 @@
 @inject PanelBackend Backend
 @inject TimeProvider Clock
 
-<PageHead Title="@PanelText.Journal" UpdatedAt="_loadedAt" OnRefresh="LoadAsync">
+<PageHead UpdatedAt="_loadedAt" OnRefresh="LoadAsync">
     <Summary>
         @if (_lines is { Count: > 0 })
         {
@@ -24,7 +24,7 @@
 
 @if (_lines is null)
 {
-    <div class="placeholder" aria-hidden="true"><i></i><i></i><i></i></div>
+    <Placeholder />
 }
 else if (_lines.Count == 0)
 {

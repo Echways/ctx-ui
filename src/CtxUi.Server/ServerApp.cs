@@ -47,7 +47,6 @@ public static class ServerApp
         app.UseRateLimiter();
         app.UseAuthentication();
         app.UseAuthorization();
-        app.UseAntiforgery();
         app.MapCtxUiGateway();
         app.MapCtxUiApi();
         app.MapCtxUiConnect();

@@ -2,19 +2,18 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Localization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using MudBlazor.Services;
+using Enfilade;
 using CtxUi.Core;
 using CtxUi.Core.Admins;
 using CtxUi.Core.Data;
 using CtxUi.Core.Settings;
 using CtxUi.Panel.Accounts;
-using CtxUi.Panel.Components;
+using CtxUi.Panel.Components.Pages;
 
 namespace CtxUi.Panel;
 
@@ -23,6 +22,10 @@ public static partial class PanelServices
     public const int MaxFailedSignIns = 5;
 
     public static readonly TimeSpan Lockout = TimeSpan.FromMinutes(15);
+
+    private const string Brand = "ctx-ui";
+
+    private const string Favicon = "_content/CtxUi.Panel/favicon.svg";
 
     public static IServiceCollection AddCtxUiPanel(this IServiceCollection services, IConfiguration section)
     {
@@ -50,26 +53,27 @@ public static partial class PanelServices
         });
         services.Configure<SecurityStampValidatorOptions>(options => options.ValidationInterval = sessionCheck);
         services.AddAuthorization();
-        services.AddCascadingAuthenticationState();
-        services.AddRazorComponents().AddInteractiveServerComponents();
+        services.AddOptions<EnfiladeOptions>().Configure<IOptions<PanelOptions>>((shell, panel) =>
+        {
+            shell.Brand = Brand;
+            shell.Favicon = Favicon;
+            shell.Language = panel.Value.Language;
+            shell.Languages = [.. Languages.Supported];
+            shell.LoginPath = "login";
+            shell.SignOutPath = "logout";
+            shell.AutoRefreshInterval = panel.Value.AutoRefreshInterval;
+        });
+        services.AddEnfilade()
+            .AddSection<Overview>(() => PanelText.Overview)
+            .AddSection<Metrics>(() => PanelText.Metrics)
+            .AddSection<Inbounds>(() => PanelText.Inbounds)
+            .AddSection<Clients>(() => PanelText.Clients)
+            .AddSection<Journal>(() => PanelText.Journal)
+            .AddCaption(() => PanelText.AccessSection)
+            .AddSection<OAuth>(() => PanelText.OAuth)
+            .AddSection<Keys>(() => PanelText.ApiKeys)
+            .AddStylesheet("_content/CtxUi.Panel/panel.css");
         services.AddScoped<AuthenticationStateProvider, AdminSessionState>();
-        services.AddMudServices(mud =>
-        {
-            mud.SnackbarConfiguration.PositionClass = MudBlazor.Defaults.Classes.Position.BottomLeft;
-            mud.SnackbarConfiguration.HideIcon = true;
-            mud.SnackbarConfiguration.ShowCloseIcon = false;
-            mud.SnackbarConfiguration.ShowTransitionDuration = 160;
-            mud.SnackbarConfiguration.HideTransitionDuration = 160;
-        });
-        services.AddScoped<Clipboard>();
-        services.AddOptions<RequestLocalizationOptions>().Configure<IOptions<PanelOptions>>((options, panel) =>
-        {
-            var supported = Languages.Supported.ToArray();
-            options.SetDefaultCulture(panel.Value.Language)
-                .AddSupportedCultures(supported)
-                .AddSupportedUICultures(supported);
-            options.RequestCultureProviders = [new CookieRequestCultureProvider()];
-        });
         return services;
     }
 
@@ -83,9 +87,7 @@ public static partial class PanelServices
 
     public static WebApplication MapCtxUiPanel(this WebApplication app)
     {
-        app.MapStaticAssets();
-        app.MapGet("/language/{culture}", PanelLanguage.Choose);
-        app.MapRazorComponents<App>().AddInteractiveServerRenderMode().RequireAuthorization();
+        app.MapEnfilade();
         return app;
     }
 

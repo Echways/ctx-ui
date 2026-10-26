@@ -4,7 +4,7 @@
 @inject PanelActions Actions
 @inject TimeProvider Clock
 
-<PageHead Title="@PanelText.Clients" Count="_clients?.Count" UpdatedAt="_clients is null ? null : _loadedAt" OnRefresh="LoadAsync">
+<PageHead Count="_clients?.Count" UpdatedAt="_clients is null ? null : _loadedAt" OnRefresh="LoadAsync">
     <Summary>
         @if (_clients is { Count: > 0 })
         {
@@ -23,7 +23,7 @@
 
 @if (_clients is null)
 {
-    <div class="placeholder" aria-hidden="true"><i></i><i></i><i></i></div>
+    <Placeholder />
 }
 else if (_clients.Count == 0)
 {
@@ -133,7 +133,7 @@ else
 
     private async Task AddAsync()
     {
-        var dialog = await Dialogs.ShowAsync<ClientDialog>(PanelText.NewClient, Sheet.Form);
+        var dialog = await Dialogs.ShowSheetAsync<ClientDialog>(PanelText.NewClient);
         if (await dialog.Result is not { Canceled: false, Data: Client added })
             return;
 
@@ -144,7 +144,7 @@ else
     private async Task EditAsync(Client client)
     {
         var parameters = new DialogParameters<ClientDialog> { { dialog => dialog.Id, client.Id } };
-        var dialog = await Dialogs.ShowAsync<ClientDialog>(string.Format(PanelText.ClientTitle, client.Name), parameters, Sheet.Form);
+        var dialog = await Dialogs.ShowSheetAsync<ClientDialog>(string.Format(PanelText.ClientTitle, client.Name), parameters);
         if (await dialog.Result is { Canceled: false })
             await LoadAsync();
     }
@@ -153,10 +153,10 @@ else
 
     private async Task ConnectAsync(Client client, bool fresh)
     {
-        var dialog = await Dialogs.ShowAsync<ConnectionDialog>(
+        var dialog = await Dialogs.ShowSheetAsync<ConnectionDialog>(
             string.Format(PanelText.ConnectionTitle, client.Name),
             new DialogParameters<ConnectionDialog> { { sheet => sheet.Id, client.Id }, { sheet => sheet.Fresh, fresh } },
-            Sheet.View);
+            form: false);
         if (await dialog.Result is { Canceled: false, Data: ConnectionDialog.Reissue }
             && _clients!.FirstOrDefault(known => known.Id == client.Id) is { } current)
             await ReissueAsync(current);
@@ -165,15 +165,14 @@ else
     private async Task DevicesAsync(Client client)
     {
         var parameters = new DialogParameters<DevicesDialog> { { dialog => dialog.Id, client.Id } };
-        await Dialogs.ShowAsync<DevicesDialog>(string.Format(PanelText.DevicesTitle, client.Name), parameters, Sheet.View);
+        await Dialogs.ShowSheetAsync<DevicesDialog>(string.Format(PanelText.DevicesTitle, client.Name), parameters, form: false);
     }
 
     private async Task ReissueAsync(Client client)
     {
         var keyDevices = await Backend.ReadAsync(services => services.GetRequiredService<ClientService>().CountKeyDevicesAsync(client.Id));
         var warning = keyDevices > 0 ? $"{PanelText.ReissueWarning} {Words.Count(PanelText.ReissueDevices, keyDevices)}" : PanelText.ReissueWarning;
-        if (!await ConfirmDialog.AskAsync(
-                Dialogs, string.Format(PanelText.ReissueQuestion, client.Name), warning, PanelText.ReissueYes, danger: false))
+        if (!await Dialogs.ConfirmAsync(string.Format(PanelText.ReissueQuestion, client.Name), warning, PanelText.ReissueYes))
             return;
 
         await Actions.ApplyAsync(OnClient(client, clients => clients.ReissueAsync(client.Id)), string.Format(PanelText.TokenReissued, client.Name));
@@ -184,8 +183,7 @@ else
 
     private async Task RemoveAsync(Client client)
     {
-        if (await ConfirmDialog.AskAsync(
-                Dialogs, string.Format(PanelText.RemoveClientQuestion, client.Name), PanelText.RemoveClientWarning, PanelText.Delete, danger: true))
+        if (await Dialogs.ConfirmAsync(string.Format(PanelText.RemoveClientQuestion, client.Name), PanelText.RemoveClientWarning, PanelText.Delete, danger: true))
         {
             await Actions.ApplyAsync(OnClient(client, clients => clients.RemoveAsync(client.Id)), string.Format(PanelText.ClientRemoved, client.Name));
             await LoadAsync();

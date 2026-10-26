@@ -3,7 +3,7 @@
 @inject TimeProvider Clock
 @inject NavigationManager Navigation
 
-<PageHead Title="@PanelText.Metrics" UpdatedAt="_loadedAt" OnRefresh="LoadAsync">
+<PageHead UpdatedAt="_loadedAt" OnRefresh="LoadAsync">
     <Actions>
         @if (_report is { } shown)
         {
@@ -21,7 +21,7 @@
 
 @if (_report is not { } report)
 {
-    <div class="placeholder" aria-hidden="true"><i></i><i></i><i></i></div>
+    <Placeholder />
 }
 else
 {

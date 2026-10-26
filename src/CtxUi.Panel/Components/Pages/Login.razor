@@ -1,5 +1,5 @@
 @page "/login"
-@layout BareLayout
+@layout EntranceLayout
 @attribute [AllowAnonymous]
 @attribute [ExcludeFromInteractiveRouting]
 @inject SignInManager<Admin> SignIn
@@ -15,9 +15,7 @@
                 @string.Format(PanelText.SignInRefused, PanelServices.MaxFailedSignIns, (int)PanelServices.Lockout.TotalMinutes)
             </p>
         }
-        <a href="@PanelLanguage.SwitchPath(Navigation)" lang="@PanelText.LanguageSwitchCulture" data-enhance-nav="false">
-            @PanelText.LanguageSwitch
-        </a>
+        <LanguageLink />
     </div>
     <form class="signin" method="post" @formname="login" @onsubmit="SignInAsync">
         <AntiforgeryToken />

@@ -44,7 +44,7 @@ public class PanelShellTests
 
         await Expect(page.GetByRole(AriaRole.Heading, new() { Name = "Такой страницы нет" })).ToBeVisibleAsync();
         await Expect(page).ToHaveTitleAsync("Страница не найдена · ctx-ui");
-        await page.GetByRole(AriaRole.Link, new() { Name = "Вернуться к обзору" }).ClickAsync();
+        await page.GetByRole(AriaRole.Link, new() { Name = "Вернуться на главную" }).ClickAsync();
         await Expect(page.GetByRole(AriaRole.Heading, new() { Name = "Обзор" })).ToBeVisibleAsync();
     }
 
@@ -85,7 +85,7 @@ public class PanelShellTests
         await page.GetByRole(AriaRole.Navigation).GetByRole(AriaRole.Link, new() { Name = "Клиенты" }).ClickAsync();
         await Expect(page.GetByRole(AriaRole.Row)).ToHaveCountAsync(2);
 
-        Assert.Equal(0, await page.EvaluateAsync<int>("document.documentElement.scrollWidth - innerWidth"));
+        Assert.Equal(0, await page.EvaluateAsync<int>("scrollTo(innerWidth, scrollY) ?? scrollX"));
     }
 
     [Fact]

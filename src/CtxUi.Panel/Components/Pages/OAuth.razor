@@ -6,7 +6,7 @@
 @inject IOptions<PanelOptions> Options
 @inject TimeProvider Clock
 
-<PageHead Title="@PanelText.OAuth" UpdatedAt="_settings is null ? null : _loadedAt" OnRefresh="LoadAsync">
+<PageHead UpdatedAt="_settings is null ? null : _loadedAt" OnRefresh="LoadAsync">
     <Summary>
         <span>@PanelText.OAuthLead</span>
     </Summary>
@@ -14,7 +14,7 @@
 
 @if (_settings is null)
 {
-    <div class="placeholder" aria-hidden="true"><i></i><i></i><i></i></div>
+    <Placeholder />
 }
 else
 {
@@ -107,8 +107,7 @@ else
         {
             var withoutKey = await Backend.ReadAsync(services => services.GetRequiredService<SignInSettingsService>().ClientsWithoutDirectKeyAsync());
             if (withoutKey > 0
-                && !await ConfirmDialog.AskAsync(
-                    Dialogs, PanelText.OAuthOffQuestion, Words.Count(PanelText.OAuthOffWarning, withoutKey), PanelText.OAuthOffYes, danger: true))
+                && !await Dialogs.ConfirmAsync(PanelText.OAuthOffQuestion, Words.Count(PanelText.OAuthOffWarning, withoutKey), PanelText.OAuthOffYes, danger: true))
             {
                 await LoadAsync();
                 return;

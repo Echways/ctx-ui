@@ -12,12 +12,6 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="LanguageSwitch" xml:space="preserve">
-    <value>English</value>
-  </data>
-  <data name="LanguageSwitchCulture" xml:space="preserve">
-    <value>en</value>
-  </data>
   <data name="SignOut" xml:space="preserve">
     <value>Выйти</value>
   </data>
@@ -42,9 +36,6 @@
   <data name="ApiKeys" xml:space="preserve">
     <value>Ключи API</value>
   </data>
-  <data name="Refresh" xml:space="preserve">
-    <value>Обновить</value>
-  </data>
   <data name="Edit" xml:space="preserve">
     <value>Изменить</value>
   </data>
@@ -56,15 +47,6 @@
   </data>
   <data name="Save" xml:space="preserve">
     <value>Сохранить</value>
-  </data>
-  <data name="Close" xml:space="preserve">
-    <value>Закрыть</value>
-  </data>
-  <data name="Copied" xml:space="preserve">
-    <value>Скопировано</value>
-  </data>
-  <data name="CopyNeedsHttps" xml:space="preserve">
-    <value>Браузер копирует только на странице, открытой по HTTPS: выделите текст и скопируйте его сами</value>
   </data>
   <data name="Name" xml:space="preserve">
     <value>Имя</value>
@@ -273,12 +255,6 @@
   <data name="Stay" xml:space="preserve">
     <value>Остаться</value>
   </data>
-  <data name="NotFoundTitle" xml:space="preserve">
-    <value>Страница не найдена</value>
-  </data>
-  <data name="NotFoundHeading" xml:space="preserve">
-    <value>Такой страницы нет</value>
-  </data>
   <data name="NoCalls" xml:space="preserve">
     <value>вызовов не было</value>
   </data>
@@ -462,18 +438,6 @@
   <data name="AccessSection" xml:space="preserve">
     <value>Доступ</value>
   </data>
-  <data name="Sections" xml:space="preserve">
-    <value>Разделы</value>
-  </data>
-  <data name="UpdatedAt" xml:space="preserve">
-    <value>обновлено {0} UTC</value>
-  </data>
-  <data name="PageTitle" xml:space="preserve">
-    <value>{0} · ctx-ui</value>
-  </data>
-  <data name="BackToOverview" xml:space="preserve">
-    <value>Вернуться к обзору</value>
-  </data>
   <data name="HorizonLabel" xml:space="preserve">
     <value>Вызовы {0}: всего {1}, сбоев {2}. Стрелки влево и вправо переходят между отрезками.</value>
   </data>
@@ -575,9 +539,6 @@
   </data>
   <data name="WithTokenInPath" xml:space="preserve">
     <value>С токеном в пути</value>
-  </data>
-  <data name="Copy" xml:space="preserve">
-    <value>Копировать</value>
   </data>
   <data name="OAuth" xml:space="preserve">
     <value>OAuth</value>
@@ -876,24 +837,6 @@
   <data name="UnlinkWarning" xml:space="preserve">
     <value>Чтобы снова входить этим аккаунтом, человеку понадобится новая ссылка-приглашение.</value>
   </data>
-  <data name="Seconds" xml:space="preserve">
-    <value>{0} с</value>
-  </data>
-  <data name="Bytes" xml:space="preserve">
-    <value>{0} Б</value>
-  </data>
-  <data name="Kilobytes" xml:space="preserve">
-    <value>{0} КБ</value>
-  </data>
-  <data name="Megabytes" xml:space="preserve">
-    <value>{0} МБ</value>
-  </data>
-  <data name="Gigabytes" xml:space="preserve">
-    <value>{0} ГБ</value>
-  </data>
-  <data name="Percent" xml:space="preserve">
-    <value>{0} %</value>
-  </data>
   <data name="HorizonSpanDay" xml:space="preserve">
     <value>за последние сутки по 15 минут</value>
   </data>
@@ -1040,11 +983,5 @@
   </data>
   <data name="LatencyAbove" xml:space="preserve">
     <value>от {0}</value>
-  </data>
-  <data name="RemoveFilter" xml:space="preserve">
-    <value>Убрать фильтр {0}: {1}</value>
-  </data>
-  <data name="RemoveFilterHint" xml:space="preserve">
-    <value>Убрать</value>
   </data>
 </root>

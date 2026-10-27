@@ -1,4 +1,5 @@
 @page "/metrics"
+@using System.Globalization
 @inject PanelBackend Backend
 @inject TimeProvider Clock
 @inject NavigationManager Navigation
@@ -194,13 +195,13 @@ else
     private DateTimeOffset? _loadedAt;
 
     [SupplyParameterFromQuery(Name = "days")]
-    private int? Days { get; set; }
+    private string? Days { get; set; }
 
     [SupplyParameterFromQuery(Name = "client")]
-    private Guid? ClientId { get; set; }
+    private string? ClientId { get; set; }
 
     [SupplyParameterFromQuery(Name = "inbound")]
-    private Guid? InboundId { get; set; }
+    private string? InboundId { get; set; }
 
     [SupplyParameterFromQuery(Name = "tool")]
     private string? Tool { get; set; }
@@ -209,14 +210,17 @@ else
 
     private async Task LoadAsync()
     {
-        var filter = new MetricsFilter(ClientId, InboundId, string.IsNullOrEmpty(Tool) ? null : Tool);
+        var filter = new MetricsFilter(Id(ClientId), Id(InboundId), string.IsNullOrEmpty(Tool) ? null : Tool);
+        int? days = int.TryParse(Days, CultureInfo.InvariantCulture, out var asked) ? asked : null;
         _report = await Backend.ReadAsync(services =>
         {
             var metrics = services.GetRequiredService<MetricsService>();
-            return metrics.LoadAsync(filter, metrics.Periods.Any(period => period.Days == Days) ? Days : null);
+            return metrics.LoadAsync(filter, metrics.Periods.Any(period => period.Days == days) ? days : null);
         });
         _loadedAt = Clock.GetUtcNow();
     }
+
+    private static Guid? Id(string? value) => Guid.TryParse(value, out var id) ? id : null;
 
     private void Narrow(MetricsReport report, MetricsFilter filter) => Navigation.NavigateTo(MetricsAddress.Of(filter, report.Period.Days));
 

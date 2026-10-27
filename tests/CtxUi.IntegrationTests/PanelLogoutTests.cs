@@ -7,23 +7,7 @@ namespace CtxUi.IntegrationTests;
 public class PanelLogoutTests
 {
     [Fact]
-    public async Task Logout_from_the_bar_closes_the_panel()
-    {
-        await using var gateway = await GatewayHost.StartAsync();
-        await using var session = await PanelSession.SignInAsync(gateway);
-        var page = session.Page;
-
-        await page.GetByRole(AriaRole.Banner).GetByRole(AriaRole.Button, new() { Name = "Выйти" }).ClickAsync();
-        await Expect(page.GetByText("Выйти из панели?")).ToBeVisibleAsync();
-        await page.GetByRole(AriaRole.Button, new() { Name = "Выйти" }).ClickAsync();
-
-        await Expect(page.GetByLabel("Пароль")).ToBeVisibleAsync();
-        await page.GotoAsync("");
-        await Expect(page).ToHaveURLAsync(new System.Text.RegularExpressions.Regex("/login"));
-    }
-
-    [Fact]
-    public async Task Changing_ones_mind_at_logout_returns_to_the_panel()
+    public async Task Logout_from_the_bar_asks_first_and_closes_the_panel_only_when_confirmed()
     {
         await using var gateway = await GatewayHost.StartAsync();
         await using var session = await PanelSession.SignInAsync(gateway);
@@ -33,6 +17,14 @@ public class PanelLogoutTests
         await page.GetByRole(AriaRole.Link, new() { Name = "Остаться" }).ClickAsync();
 
         await Expect(page.GetByRole(AriaRole.Heading, new() { Name = "Обзор" })).ToBeVisibleAsync();
+
+        await page.GetByRole(AriaRole.Banner).GetByRole(AriaRole.Button, new() { Name = "Выйти" }).ClickAsync();
+        await Expect(page.GetByText("Выйти из панели?")).ToBeVisibleAsync();
+        await page.GetByRole(AriaRole.Button, new() { Name = "Выйти" }).ClickAsync();
+
+        await Expect(page.GetByLabel("Пароль")).ToBeVisibleAsync();
+        await page.GotoAsync("");
+        await Expect(page).ToHaveURLAsync(new System.Text.RegularExpressions.Regex("/login"));
     }
 
     [Fact]

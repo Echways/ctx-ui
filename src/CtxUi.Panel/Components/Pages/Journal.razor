@@ -87,11 +87,11 @@ else
     private DateTimeOffset? _loadedAt;
 
     [SupplyParameterFromQuery(Name = "client")]
-    private Guid? Client { get; set; }
+    private string? Client { get; set; }
 
     protected override Task OnInitializedAsync()
     {
-        _clientId = Client;
+        _clientId = Guid.TryParse(Client, out var clientId) ? clientId : null;
         return LoadAsync();
     }
 

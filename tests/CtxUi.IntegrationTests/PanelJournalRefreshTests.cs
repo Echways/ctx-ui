@@ -32,6 +32,7 @@ public class PanelJournalRefreshTests
         var issued = await gateway.AddClientAsync("Иванов", ["echo"]);
         await using var session = await PanelSession.SignInAsync(gateway);
         var page = await OpenJournalAsync(session);
+        await Expect(page).ToHaveTitleAsync("Журнал · ctx-ui");
         await Expect(page.GetByText("Журнал пуст")).ToBeVisibleAsync();
         await CallAsync(gateway, "echo", issued.Token, ToolsList);
         await JournalHasAsync(gateway, 1);

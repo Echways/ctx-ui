@@ -7,7 +7,7 @@ namespace CtxUi.IntegrationTests;
 public class PanelJournalFilterTests
 {
     [Fact]
-    public async Task Journal_can_be_narrowed_to_one_client_and_widened_back()
+    public async Task Journal_can_be_narrowed_to_one_client_and_widened_back_even_by_a_cut_off_link()
     {
         await using var upstream = await FakeUpstream.StartAsync();
         await using var gateway = await GatewayHost.StartAsync();
@@ -27,6 +27,9 @@ public class PanelJournalFilterTests
         await Expect(Rows(page).Filter(new() { HasText = "Иванов" })).ToHaveCountAsync(0);
 
         await ChooseClientAsync(page, "Все клиенты");
+        await Expect(Rows(page)).ToHaveCountAsync(5);
+
+        await page.GotoAsync("journal?client=1f0c2a");
         await Expect(Rows(page)).ToHaveCountAsync(5);
     }
 

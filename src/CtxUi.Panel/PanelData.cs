@@ -44,6 +44,27 @@ public sealed class PanelData(PanelBackend backend) : IPanelData
     public Task SetInboundEnabledAsync(string slug, bool enabled, CancellationToken ct = default) =>
         backend.ChangeAsync(services => services.GetRequiredService<InboundService>().SetEnabledAsync(slug, enabled, ct));
 
+    public Task<InboundSummary> AddHttpInboundAsync(HttpInboundDraft draft, CancellationToken ct = default) =>
+        backend.ChangeAsync(async services => Summary(await services.GetRequiredService<InboundService>().AddHttpAsync(
+            draft.Slug,
+            new InboundSettings
+            {
+                Name = draft.Name,
+                Url = draft.Url,
+                UpstreamHeaders = draft.UpstreamHeaders,
+                ForwardIdentity = draft.ForwardIdentity,
+            },
+            ct)));
+
+    public Task RemoveInboundAsync(string slug, CancellationToken ct = default) =>
+        backend.ChangeAsync(services => services.GetRequiredService<InboundService>().RemoveAsync(slug, ct));
+
+    public Task<IReadOnlyList<Guid>> InboundClientsAsync(string slug, CancellationToken ct = default) =>
+        backend.ReadAsync(services => services.GetRequiredService<ClientService>().InboundClientsAsync(slug, ct));
+
+    public Task SetInboundClientsAsync(string slug, IReadOnlyCollection<Guid> clientIds, CancellationToken ct = default) =>
+        backend.ChangeAsync(services => services.GetRequiredService<ClientService>().SetInboundClientsAsync(slug, clientIds, ct));
+
     public Task<IReadOnlyList<UsageDay>> UsageDaysAsync(DateOnly from, DateOnly to, Guid? clientId = null, CancellationToken ct = default) =>
         backend.ReadAsync<IReadOnlyList<UsageDay>>(async services =>
             [.. (await services.GetRequiredService<UsageStore>().DaysAsync(from, to, clientId, ct))

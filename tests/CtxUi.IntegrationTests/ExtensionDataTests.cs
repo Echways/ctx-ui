@@ -1,5 +1,6 @@
 using System.Net;
 using Microsoft.Extensions.DependencyInjection;
+using CtxUi.Core;
 using CtxUi.Extensions;
 
 namespace CtxUi.IntegrationTests;
@@ -70,5 +71,83 @@ public class ExtensionDataTests
         using var response = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/echo", issued.Token));
         Assert.NotEqual(HttpStatusCode.OK, response.StatusCode);
         Assert.Empty(upstream.Requests);
+    }
+
+    [Fact]
+    public async Task Added_inbound_takes_calls_of_linked_client_at_once()
+    {
+        await using var upstream = await FakeUpstream.StartAsync();
+        await using var gateway = await GatewayHost.StartAsync();
+        await gateway.AddInboundAsync("other", upstream.McpUrl);
+        var issued = await gateway.AddClientAsync("Иванов", ["other"]);
+        var data = Data(gateway);
+
+        var inbound = await data.AddHttpInboundAsync(new HttpInboundDraft("built", "Built", upstream.McpUrl,
+            new Dictionary<string, string> { ["X-Route-Secret"] = "s" }));
+        await data.SetInboundClientsAsync("built", [issued.Client.Id]);
+
+        using var call = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/built", issued.Token, ToolCall));
+        Assert.Equal(HttpStatusCode.OK, call.StatusCode);
+        Assert.Equal("s", upstream.LastHeader("X-Route-Secret"));
+        Assert.Equal([issued.Client.Id], await data.InboundClientsAsync("built"));
+        Assert.Equal("built", inbound.Slug);
+        Assert.Equal("Built", inbound.Name);
+    }
+
+    [Fact]
+    public async Task Setting_inbound_clients_keeps_their_other_inbounds()
+    {
+        await using var upstream = await FakeUpstream.StartAsync();
+        await using var gateway = await GatewayHost.StartAsync();
+        await gateway.AddInboundAsync("a", upstream.McpUrl);
+        await gateway.AddInboundAsync("b", upstream.McpUrl);
+        var issued = await gateway.AddClientAsync("Иванов", ["a"]);
+        var data = Data(gateway);
+
+        await data.SetInboundClientsAsync("b", [issued.Client.Id]);
+        await data.SetInboundClientsAsync("b", []);
+
+        using var call = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/a", issued.Token, ToolCall));
+        Assert.Equal(HttpStatusCode.OK, call.StatusCode);
+        Assert.Empty(await data.InboundClientsAsync("b"));
+        Assert.Equal([issued.Client.Id], await data.InboundClientsAsync("a"));
+    }
+
+    [Fact]
+    public async Task Setting_inbound_clients_rejects_an_unknown_client()
+    {
+        await using var upstream = await FakeUpstream.StartAsync();
+        await using var gateway = await GatewayHost.StartAsync();
+        await gateway.AddInboundAsync("a", upstream.McpUrl);
+
+        await Assert.ThrowsAsync<NotFoundException>(() => Data(gateway).SetInboundClientsAsync("a", [Guid.NewGuid()]));
+    }
+
+    [Fact]
+    public async Task Removed_inbound_stops_taking_calls()
+    {
+        await using var upstream = await FakeUpstream.StartAsync();
+        await using var gateway = await GatewayHost.StartAsync();
+        await gateway.AddInboundAsync("echo", upstream.McpUrl);
+        var issued = await gateway.AddClientAsync("Иванов", ["echo"]);
+        var data = Data(gateway);
+
+        await data.RemoveInboundAsync("echo");
+
+        using var call = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/echo", issued.Token, ToolCall));
+        Assert.NotEqual(HttpStatusCode.OK, call.StatusCode);
+        Assert.Empty(await data.InboundsAsync());
+        Assert.Empty(upstream.Requests);
+    }
+
+    [Fact]
+    public async Task Adding_a_taken_slug_throws_DomainException()
+    {
+        await using var upstream = await FakeUpstream.StartAsync();
+        await using var gateway = await GatewayHost.StartAsync();
+        await gateway.AddInboundAsync("echo", upstream.McpUrl);
+
+        await Assert.ThrowsAsync<DomainException>(() =>
+            Data(gateway).AddHttpInboundAsync(new HttpInboundDraft("echo", "Echo", upstream.McpUrl)));
     }
 }

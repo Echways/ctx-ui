@@ -169,7 +169,19 @@ await data.SetClientEnabledAsync(clients[0].Id, false);
 var days = await data.UsageDaysAsync(from, to, clients[0].Id);
 ```
 
-Changes take effect in the gateway at once.
+Since API `1.1` an extension can also create HTTP inbounds and link clients to
+them. `SetInboundClientsAsync` replaces the clients of one inbound and leaves
+their other inbounds untouched:
+
+```csharp
+await data.AddHttpInboundAsync(new HttpInboundDraft("built", "Built", "https://mcp.example.com/mcp"));
+await data.SetInboundClientsAsync("built", [clients[0].Id]);
+var linked = await data.InboundClientsAsync("built");
+await data.RemoveInboundAsync("built");
+```
+
+A taken slug or an invalid address throws `DomainException`, an unknown client
+throws `NotFoundException`. Changes take effect in the gateway at once.
 
 ### Services and settings
 
@@ -240,7 +252,7 @@ Keep other files of the extension in `context.DataDirectory`.
 
 ## Versions and compatibility
 
-The manifest of a package records the extension API version, currently `1.0`. A
+The manifest of a package records the extension API version, currently `1.1`. A
 server loads an extension when the major version equals its own and the minor
 version is not higher. An incompatible extension is skipped with an error in the
 log and the server keeps working.

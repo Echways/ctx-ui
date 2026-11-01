@@ -14,5 +14,13 @@ public interface IPanelData
 
     Task SetInboundEnabledAsync(string slug, bool enabled, CancellationToken ct = default);
 
+    Task<InboundSummary> AddHttpInboundAsync(HttpInboundDraft draft, CancellationToken ct = default);
+
+    Task RemoveInboundAsync(string slug, CancellationToken ct = default);
+
+    Task<IReadOnlyList<Guid>> InboundClientsAsync(string slug, CancellationToken ct = default);
+
+    Task SetInboundClientsAsync(string slug, IReadOnlyCollection<Guid> clientIds, CancellationToken ct = default);
+
     Task<IReadOnlyList<UsageDay>> UsageDaysAsync(DateOnly from, DateOnly to, Guid? clientId = null, CancellationToken ct = default);
 }

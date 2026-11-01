@@ -168,7 +168,19 @@ await data.SetClientEnabledAsync(clients[0].Id, false);
 var days = await data.UsageDaysAsync(from, to, clients[0].Id);
 ```
 
-Изменения сразу действуют в шлюзе.
+С версии API `1.1` расширение также создаёт HTTP inbound'ы и связывает с ними клиентов.
+`SetInboundClientsAsync` заменяет клиентов одного inbound'а и не трогает другие их
+inbound'ы:
+
+```csharp
+await data.AddHttpInboundAsync(new HttpInboundDraft("built", "Built", "https://mcp.example.com/mcp"));
+await data.SetInboundClientsAsync("built", [clients[0].Id]);
+var linked = await data.InboundClientsAsync("built");
+await data.RemoveInboundAsync("built");
+```
+
+Занятый slug или неверный адрес дают `DomainException`, неизвестный клиент даёт
+`NotFoundException`. Изменения сразу действуют в шлюзе.
 
 ### Сервисы и настройки
 
@@ -238,7 +250,7 @@ dotnet ef migrations add Initial
 
 ## Версии и совместимость
 
-Манифест пакета хранит версию API расширений, сейчас `1.0`. Сервер загружает расширение,
+Манифест пакета хранит версию API расширений, сейчас `1.1`. Сервер загружает расширение,
 если мажорная версия равна его собственной, а минорная не выше. Несовместимое расширение
 пропускается с ошибкой в логе, сервер продолжает работать.
 

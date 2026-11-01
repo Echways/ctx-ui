@@ -19,7 +19,7 @@
 }
 else
 {
-    <Listing TItem="BuilderServer" Items="_servers" Sort="slug" SearchBy="[server => server.Name, server => server.Slug]">
+    <Listing TItem="BuilderServer" Items="_servers" Sort="slug" Href="@(server => $"builder/{server.Id}")" SearchBy="[server => server.Name, server => server.Slug]">
         <Filters>
             <Search />
         </Filters>

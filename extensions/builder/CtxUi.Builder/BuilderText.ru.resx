@@ -126,4 +126,220 @@
   <data name="CopyCommand" xml:space="preserve">
     <value>Скопировать команду</value>
   </data>
+  <data name="ProjectPathInvalid" xml:space="preserve">
+    <value>Недопустимый путь файла: {0}</value>
+  </data>
+  <data name="ProjectFileTypeNotAllowed" xml:space="preserve">
+    <value>В mcp/ допустимы только файлы .py и файлы данных: {0}</value>
+  </data>
+  <data name="DependencyInvalid" xml:space="preserve">
+    <value>Это не требование к пакету: {0}</value>
+  </data>
+  <data name="ArchiveUnreadable" xml:space="preserve">
+    <value>Файл не является читаемым архивом tar.gz или zip.</value>
+  </data>
+  <data name="ArchiveTooLarge" xml:space="preserve">
+    <value>Архив больше 16 МБ после распаковки.</value>
+  </data>
+  <data name="ArchiveTooManyEntries" xml:space="preserve">
+    <value>В архиве больше {0} записей.</value>
+  </data>
+  <data name="ArchiveLinkRefused" xml:space="preserve">
+    <value>В архиве есть ссылка, это не допускается: {0}</value>
+  </data>
+  <data name="ArchiveEntryKindRefused" xml:space="preserve">
+    <value>В архиве есть запись, которая не файл и не папка: {0}</value>
+  </data>
+  <data name="ArchiveDuplicate" xml:space="preserve">
+    <value>В архиве файл встречается дважды: {0}</value>
+  </data>
+  <data name="ArchiveNotUtf8" xml:space="preserve">
+    <value>Файл не является текстом в UTF-8: {0}</value>
+  </data>
+  <data name="BaseUrlInvalid" xml:space="preserve">
+    <value>Базовый адрес должен быть адресом http или https.</value>
+  </data>
+  <data name="AuthHeaderInvalid" xml:space="preserve">
+    <value>Имя заголовка может содержать только буквы, цифры и дефисы.</value>
+  </data>
+  <data name="AuthUsernameInvalid" xml:space="preserve">
+    <value>Нужно имя пользователя без двоеточия.</value>
+  </data>
+  <data name="NoTools" xml:space="preserve">
+    <value>Инструментов пока нет</value>
+  </data>
+  <data name="NoToolsHint" xml:space="preserve">
+    <value>Добавьте инструмент кнопкой с плюсом. Он откроется с рабочей заготовкой.</value>
+  </data>
+  <data name="Tools" xml:space="preserve">
+    <value>Инструменты</value>
+  </data>
+  <data name="DataFiles" xml:space="preserve">
+    <value>Файлы данных</value>
+  </data>
+  <data name="NewTool" xml:space="preserve">
+    <value>Новый инструмент</value>
+  </data>
+  <data name="ToolName" xml:space="preserve">
+    <value>Имя инструмента</value>
+  </data>
+  <data name="AddTool" xml:space="preserve">
+    <value>Добавить</value>
+  </data>
+  <data name="ToolExists" xml:space="preserve">
+    <value>Инструмент с таким именем уже есть.</value>
+  </data>
+  <data name="Settings" xml:space="preserve">
+    <value>Настройки</value>
+  </data>
+  <data name="Save" xml:space="preserve">
+    <value>Сохранить</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>Отмена</value>
+  </data>
+  <data name="StateSaved" xml:space="preserve">
+    <value>Сохранено</value>
+  </data>
+  <data name="StateUnsaved" xml:space="preserve">
+    <value>Есть несохранённые изменения</value>
+  </data>
+  <data name="StateSaving" xml:space="preserve">
+    <value>Сохранение</value>
+  </data>
+  <data name="StateConflict" xml:space="preserve">
+    <value>Не сохранено</value>
+  </data>
+  <data name="StateFailed" xml:space="preserve">
+    <value>Ошибка сохранения</value>
+  </data>
+  <data name="SaveFailed" xml:space="preserve">
+    <value>Не удалось сохранить черновик. Попробуйте ещё раз.</value>
+  </data>
+  <data name="LoadNewVersion" xml:space="preserve">
+    <value>Загрузить новую версию</value>
+  </data>
+  <data name="KeepMine" xml:space="preserve">
+    <value>Оставить мой текст и перезаписать</value>
+  </data>
+  <data name="ApiPane" xml:space="preserve">
+    <value>API</value>
+  </data>
+  <data name="ApiHint" xml:space="preserve">
+    <value>Адрес и авторизация для инструментов, созданных из описания OpenAPI.</value>
+  </data>
+  <data name="BaseUrl" xml:space="preserve">
+    <value>Базовый адрес</value>
+  </data>
+  <data name="AuthKind" xml:space="preserve">
+    <value>Авторизация</value>
+  </data>
+  <data name="AuthNone" xml:space="preserve">
+    <value>Нет</value>
+  </data>
+  <data name="AuthBearer" xml:space="preserve">
+    <value>Bearer-токен</value>
+  </data>
+  <data name="AuthHeader" xml:space="preserve">
+    <value>Заголовок</value>
+  </data>
+  <data name="AuthBasic" xml:space="preserve">
+    <value>Basic</value>
+  </data>
+  <data name="HeaderName" xml:space="preserve">
+    <value>Имя заголовка</value>
+  </data>
+  <data name="UserName" xml:space="preserve">
+    <value>Имя пользователя</value>
+  </data>
+  <data name="AuthSecret" xml:space="preserve">
+    <value>Токен или пароль</value>
+  </data>
+  <data name="KeepSecretHint" xml:space="preserve">
+    <value>Оставьте пустым, чтобы сохранить текущее значение.</value>
+  </data>
+  <data name="DependenciesPane" xml:space="preserve">
+    <value>Зависимости</value>
+  </data>
+  <data name="DependenciesHint" xml:space="preserve">
+    <value>Одно требование Python на строку. Версию FastMCP 4.1.4 задаёт конструктор.</value>
+  </data>
+  <data name="DependenciesLabel" xml:space="preserve">
+    <value>Требования</value>
+  </data>
+  <data name="SecretsPane" xml:space="preserve">
+    <value>Секреты</value>
+  </data>
+  <data name="SecretsHint" xml:space="preserve">
+    <value>Только для записи, видны одни имена. Сервер получает их переменными окружения.</value>
+  </data>
+  <data name="NoSecrets" xml:space="preserve">
+    <value>Секретов пока нет.</value>
+  </data>
+  <data name="SecretName" xml:space="preserve">
+    <value>Имя</value>
+  </data>
+  <data name="SecretValue" xml:space="preserve">
+    <value>Значение</value>
+  </data>
+  <data name="SetSecret" xml:space="preserve">
+    <value>Задать секрет</value>
+  </data>
+  <data name="AccessPane" xml:space="preserve">
+    <value>Сеть и лимиты</value>
+  </data>
+  <data name="AccessHint" xml:space="preserve">
+    <value>Изменения применяются к запущенной версии при её перезапуске.</value>
+  </data>
+  <data name="Memory" xml:space="preserve">
+    <value>Память, МБ</value>
+  </data>
+  <data name="Cpus" xml:space="preserve">
+    <value>Процессоры</value>
+  </data>
+  <data name="Pids" xml:space="preserve">
+    <value>Процессы</value>
+  </data>
+  <data name="AccessNotConfirmed" xml:space="preserve">
+    <value>Сначала подтвердите доступ ко всей сети.</value>
+  </data>
+  <data name="AccessConfirmTitle" xml:space="preserve">
+    <value>Разрешить всю сеть?</value>
+  </data>
+  <data name="AccessConfirmLead" xml:space="preserve">
+    <value>С доступом ко всей сети сервер сможет обращаться к:</value>
+  </data>
+  <data name="AccessConfirmLocal" xml:space="preserve">
+    <value>Узлам и службам вашей локальной сети.</value>
+  </data>
+  <data name="AccessConfirmDatabases" xml:space="preserve">
+    <value>Базам данных и административным портам по любым адресам.</value>
+  </data>
+  <data name="AccessConfirmMetadata" xml:space="preserve">
+    <value>Метаданным облака и другим служебным адресам.</value>
+  </data>
+  <data name="AccessConfirmMail" xml:space="preserve">
+    <value>Любым портам, включая почтовые 25, 465 и 587.</value>
+  </data>
+  <data name="AccessConfirmCode" xml:space="preserve">
+    <value>Опубликованный код работает с этим доступом.</value>
+  </data>
+  <data name="AccessConfirmYes" xml:space="preserve">
+    <value>Разрешить всю сеть</value>
+  </data>
+  <data name="ExportPane" xml:space="preserve">
+    <value>Экспорт</value>
+  </data>
+  <data name="ExportHint" xml:space="preserve">
+    <value>Скачайте проект архивом tar.gz, который запускается без панели.</value>
+  </data>
+  <data name="Export" xml:space="preserve">
+    <value>Скачать архив</value>
+  </data>
+  <data name="ImportArchive" xml:space="preserve">
+    <value>Архив с проектом</value>
+  </data>
+  <data name="ImportArchiveHint" xml:space="preserve">
+    <value>Необязательно. Архив tar.gz или zip с mcp/, openapi.json и builder.json.</value>
+  </data>
 </root>

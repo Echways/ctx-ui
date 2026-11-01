@@ -1,0 +1,95 @@
+@page "/builder/{Id:guid}"
+@inject ServerCatalog Catalog
+
+<PageHead>
+    <Summary>
+        <a class="link" href="builder">@BuilderText.Servers</a>
+        <span>/</span>
+        <span>@_settings?.Name</span>
+    </Summary>
+</PageHead>
+
+@if (_settings is null)
+{
+    <Placeholder />
+}
+else
+{
+    <div class="builder-workspace">
+        <ToolList Files="_files.Select(file => file.Path).ToList()" Selected="_selected" SettingsOpen="_settingsOpen"
+                  OnSelect="SelectAsync" OnSettings="OpenSettingsAsync" OnCreate="CreateToolAsync" />
+        <div class="builder-main">
+            @if (_settingsOpen)
+            {
+                <ServerSettings Settings="_settings" OnChanged="ReloadAsync" />
+            }
+            else if (_selected is not null && _files.FirstOrDefault(file => file.Path == _selected) is { } file)
+            {
+                <CodeEditor @ref="_editor" @key="file.Path" ServerId="Id" Path="@file.Path" Content="@file.Content" Revision="file.Revision" />
+            }
+            else
+            {
+                <EmptyState Title="@BuilderText.NoTools" Hint="@BuilderText.NoToolsHint" />
+            }
+        </div>
+    </div>
+}
+
+@code {
+    private List<DraftFile> _files = [];
+    private ServerSettingsView? _settings;
+    private CodeEditor? _editor;
+    private string? _selected;
+    private bool _settingsOpen;
+
+    [Parameter]
+    public Guid Id { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+        _selected = _files.OrderBy(file => file.Path, StringComparer.Ordinal).FirstOrDefault()?.Path;
+    }
+
+    private async Task LoadAsync()
+    {
+        _settings = await Catalog.SettingsAsync(Id, CancellationToken.None);
+        _files = [.. (await Catalog.DraftAsync(Id, CancellationToken.None)).Files];
+    }
+
+    private async Task FlushAsync()
+    {
+        if (_editor is not null)
+            await _editor.FlushAsync();
+    }
+
+    private async Task SelectAsync(string path)
+    {
+        await FlushAsync();
+        await LoadAsync();
+        _settingsOpen = false;
+        _selected = path;
+    }
+
+    private async Task OpenSettingsAsync()
+    {
+        await FlushAsync();
+        await LoadAsync();
+        _settingsOpen = true;
+    }
+
+    private async Task ReloadAsync() => await LoadAsync();
+
+    private async Task CreateToolAsync(string name)
+    {
+        await FlushAsync();
+        var path = $"mcp/{ProjectFiles.ToolFunctionName(name)}.py";
+        await LoadAsync();
+        if (_files.Any(file => file.Path == path))
+            throw new PanelException(BuilderText.ToolExists);
+        await Catalog.SaveFileAsync(Id, path, ProjectFiles.NewToolTemplate(name), 0, CancellationToken.None);
+        await LoadAsync();
+        _settingsOpen = false;
+        _selected = path;
+    }
+}

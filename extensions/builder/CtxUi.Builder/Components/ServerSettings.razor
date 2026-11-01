@@ -1,0 +1,165 @@
+@inject ServerCatalog Catalog
+@inject IJSRuntime Js
+@inject NavigationManager Navigation
+
+<div class="builder-settings">
+    <Pane Title="@BuilderText.ApiPane" Hint="@BuilderText.ApiHint">
+        <Form Model="_api" OnSubmit="SaveApiAsync" Submit="@BuilderText.Save">
+            <Field For="() => _api.BaseUrl" Label="@BuilderText.BaseUrl" />
+            <MudSelect T="ApiAuthKind" Label="@BuilderText.AuthKind" Value="_api.Kind" ValueChanged="kind => _api.Kind = kind" For="() => _api.Kind" data-testid="auth-kind">
+                @foreach (var option in AuthKinds)
+                {
+                    <MudSelectItem Value="option.Value">@option.Title</MudSelectItem>
+                }
+            </MudSelect>
+            @if (_api.Kind == ApiAuthKind.Header)
+            {
+                <Field For="() => _api.HeaderName" Label="@BuilderText.HeaderName" />
+            }
+            @if (_api.Kind == ApiAuthKind.Basic)
+            {
+                <Field For="() => _api.Username" Label="@BuilderText.UserName" />
+            }
+            @if (_api.Kind != ApiAuthKind.None)
+            {
+                <Field For="() => _api.Secret" Label="@BuilderText.AuthSecret" Hint="@(Settings.AuthHasSecret ? BuilderText.KeepSecretHint : null)" Secret />
+            }
+        </Form>
+    </Pane>
+
+    <Pane Title="@BuilderText.DependenciesPane" Hint="@BuilderText.DependenciesHint">
+        <Form Model="_dependencies" OnSubmit="SaveDependenciesAsync" Submit="@BuilderText.Save">
+            <Field For="() => _dependencies.Text" Label="@BuilderText.DependenciesLabel" Lines="6" />
+        </Form>
+    </Pane>
+
+    <Pane Title="@BuilderText.SecretsPane" Hint="@BuilderText.SecretsHint">
+        @if (Settings.SecretNames.Count == 0)
+        {
+            <p class="note">@BuilderText.NoSecrets</p>
+        }
+        else
+        {
+            <ul class="builder-secrets" data-testid="secret-names">
+                @foreach (var name in Settings.SecretNames)
+                {
+                    <li><Tag>@name</Tag></li>
+                }
+            </ul>
+        }
+        <Form Model="_secret" OnSubmit="SaveSecretAsync" Submit="@BuilderText.SetSecret">
+            <Field For="() => _secret.Name" Label="@BuilderText.SecretName" />
+            <Field For="() => _secret.Value" Label="@BuilderText.SecretValue" Secret />
+        </Form>
+    </Pane>
+
+    <Pane Title="@BuilderText.AccessPane" Hint="@BuilderText.AccessHint">
+        <Form Model="_access" OnSubmit="SaveAccessAsync" Submit="@BuilderText.Save">
+            <MudSelect T="NetworkAccess" Label="@BuilderText.Access" Value="_access.Access" ValueChanged="ChooseAccess" For="() => _access.Access" data-testid="access-select">
+                <MudSelectItem Value="NetworkAccess.InternetOnly">@BuilderText.AccessInternetOnly</MudSelectItem>
+                <MudSelectItem Value="NetworkAccess.FullNetwork">@BuilderText.AccessFullNetwork</MudSelectItem>
+            </MudSelect>
+            <Field For="() => _access.MemoryMb" Label="@BuilderText.Memory" />
+            <Field For="() => _access.Cpus" Label="@BuilderText.Cpus" />
+            <Field For="() => _access.Pids" Label="@BuilderText.Pids" />
+        </Form>
+        @if (_confirming)
+        {
+            <AccessConfirm OnConfirm="ConfirmAccess" OnCancel="CancelAccess" />
+        }
+    </Pane>
+
+    <Pane Title="@BuilderText.ExportPane" Hint="@BuilderText.ExportHint">
+        <Button OnClick="ExportAsync" Refresh="false" data-testid="export">@BuilderText.Export</Button>
+    </Pane>
+</div>
+
+@code {
+    private ApiForm _api = new();
+    private DependenciesForm _dependencies = new();
+    private SecretForm _secret = new();
+    private AccessForm _access = new();
+    private bool _confirming;
+    private bool _confirmed;
+    private ServerSettingsView? _loaded;
+
+    private static IReadOnlyList<Option<ApiAuthKind>> AuthKinds =>
+    [
+        new(ApiAuthKind.None, BuilderText.AuthNone),
+        new(ApiAuthKind.Bearer, BuilderText.AuthBearer),
+        new(ApiAuthKind.Header, BuilderText.AuthHeader),
+        new(ApiAuthKind.Basic, BuilderText.AuthBasic),
+    ];
+
+    [Parameter, EditorRequired]
+    public ServerSettingsView Settings { get; set; } = null!;
+
+    [Parameter]
+    public EventCallback OnChanged { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        if (ReferenceEquals(_loaded, Settings))
+            return;
+        _loaded = Settings;
+        _api = new ApiForm { BaseUrl = Settings.BaseUrl, Kind = Settings.AuthKind, HeaderName = Settings.AuthHeaderName, Username = Settings.AuthUsername };
+        _dependencies = new DependenciesForm { Text = Settings.Dependencies };
+        _secret = new SecretForm();
+        _access = new AccessForm { Access = Settings.Access, MemoryMb = Settings.Limits.MemoryMb, Cpus = Settings.Limits.Cpus, Pids = Settings.Limits.Pids };
+        _confirming = false;
+        _confirmed = false;
+    }
+
+    private async Task SaveApiAsync()
+    {
+        await Catalog.SetApiAsync(Settings.ServerId, _api.BaseUrl, new ApiAuthInput(_api.Kind, _api.HeaderName, _api.Username, _api.Secret), CancellationToken.None);
+        await OnChanged.InvokeAsync();
+    }
+
+    private async Task SaveDependenciesAsync()
+    {
+        await Catalog.SetDependenciesAsync(Settings.ServerId, _dependencies.Text, CancellationToken.None);
+        await OnChanged.InvokeAsync();
+    }
+
+    private async Task SaveSecretAsync()
+    {
+        await Catalog.SetSecretAsync(Settings.ServerId, _secret.Name, _secret.Value, CancellationToken.None);
+        await OnChanged.InvokeAsync();
+    }
+
+    private async Task SaveAccessAsync()
+    {
+        if (_access.Access == NetworkAccess.FullNetwork && Settings.Access != NetworkAccess.FullNetwork && !_confirmed)
+            throw new PanelException(BuilderText.AccessNotConfirmed);
+        await Catalog.SetAccessAsync(Settings.ServerId, _access.Access, new ServerLimits(_access.MemoryMb, _access.Cpus, _access.Pids), CancellationToken.None);
+        await OnChanged.InvokeAsync();
+    }
+
+    private void ChooseAccess(NetworkAccess access)
+    {
+        _access.Access = access;
+        _confirmed = false;
+        _confirming = access == NetworkAccess.FullNetwork && Settings.Access != NetworkAccess.FullNetwork;
+    }
+
+    private void ConfirmAccess()
+    {
+        _confirmed = true;
+        _confirming = false;
+    }
+
+    private void CancelAccess()
+    {
+        _access.Access = Settings.Access;
+        _confirming = false;
+    }
+
+    private async Task ExportAsync()
+    {
+        var export = await Catalog.ExportAsync(Settings.ServerId, CancellationToken.None);
+        await using var module = await Js.InvokeAsync<IJSObjectReference>("import", Navigation.ToAbsoluteUri("_content/CtxUi.Builder/editor.js").AbsoluteUri);
+        using var stream = new DotNetStreamReference(new MemoryStream(export.Content));
+        await module.InvokeVoidAsync("download", export.FileName, stream);
+    }
+}

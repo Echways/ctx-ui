@@ -1,0 +1,97 @@
+<nav class="builder-tools" aria-label="@BuilderText.Tools">
+    <div class="builder-tools-head">
+        <span class="builder-tools-title">@BuilderText.Tools</span>
+        <button type="button" class="link" aria-label="@BuilderText.NewTool" aria-expanded="@_adding" data-testid="new-tool" @onclick="Toggle">+</button>
+    </div>
+    @if (_adding)
+    {
+        <form class="builder-new-tool" @onsubmit="AddAsync" @onsubmit:preventDefault>
+            <input class="builder-input" type="text" aria-label="@BuilderText.ToolName" placeholder="@BuilderText.ToolName" maxlength="64"
+                   data-testid="new-tool-name" @bind="_name" @bind:event="oninput" />
+            <button type="submit" class="btn-k pigment" disabled="@(_busy || string.IsNullOrWhiteSpace(_name))" data-testid="add-tool">@BuilderText.AddTool</button>
+        </form>
+        @if (_error is not null)
+        {
+            <p class="bad-t" role="alert">@_error</p>
+        }
+    }
+    <ul class="builder-files">
+        @foreach (var path in Files.Where(IsTool))
+        {
+            <li>
+                <button type="button" class="builder-file" aria-current="@(IsOpen(path) ? "true" : null)" data-path="@path" @onclick="() => OnSelect.InvokeAsync(path)">@Name(path)</button>
+            </li>
+        }
+    </ul>
+    @if (Files.Any(path => !IsTool(path)))
+    {
+        <span class="builder-tools-title">@BuilderText.DataFiles</span>
+        <ul class="builder-files">
+            @foreach (var path in Files.Where(path => !IsTool(path)))
+            {
+                <li>
+                    <button type="button" class="builder-file" aria-current="@(IsOpen(path) ? "true" : null)" data-path="@path" @onclick="() => OnSelect.InvokeAsync(path)">@Name(path)</button>
+                </li>
+            }
+        </ul>
+    }
+    <hr class="builder-rule" />
+    <button type="button" class="builder-file" aria-current="@(SettingsOpen ? "true" : null)" data-testid="open-settings" @onclick="OnSettings">@BuilderText.Settings</button>
+</nav>
+
+@code {
+    private bool _adding;
+    private bool _busy;
+    private string _name = string.Empty;
+    private string? _error;
+
+    [Parameter, EditorRequired]
+    public IReadOnlyList<string> Files { get; set; } = [];
+
+    [Parameter]
+    public string? Selected { get; set; }
+
+    [Parameter]
+    public bool SettingsOpen { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnSelect { get; set; }
+
+    [Parameter]
+    public EventCallback OnSettings { get; set; }
+
+    [Parameter, EditorRequired]
+    public EventCallback<string> OnCreate { get; set; }
+
+    private bool IsOpen(string path) => !SettingsOpen && path == Selected;
+
+    private static bool IsTool(string path) => path.EndsWith(".py", StringComparison.OrdinalIgnoreCase);
+
+    private static string Name(string path) => path["mcp/".Length..];
+
+    private void Toggle()
+    {
+        _adding = !_adding;
+        _error = null;
+    }
+
+    private async Task AddAsync()
+    {
+        _busy = true;
+        _error = null;
+        try
+        {
+            await OnCreate.InvokeAsync(_name);
+            _name = string.Empty;
+            _adding = false;
+        }
+        catch (PanelException failure)
+        {
+            _error = failure.Message;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

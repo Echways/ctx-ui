@@ -126,4 +126,220 @@
   <data name="CopyCommand" xml:space="preserve">
     <value>Copy the command</value>
   </data>
+  <data name="ProjectPathInvalid" xml:space="preserve">
+    <value>File path is not allowed: {0}</value>
+  </data>
+  <data name="ProjectFileTypeNotAllowed" xml:space="preserve">
+    <value>Only .py and data files are allowed in mcp/: {0}</value>
+  </data>
+  <data name="DependencyInvalid" xml:space="preserve">
+    <value>Not a package requirement: {0}</value>
+  </data>
+  <data name="ArchiveUnreadable" xml:space="preserve">
+    <value>The file is not a readable tar.gz or zip archive.</value>
+  </data>
+  <data name="ArchiveTooLarge" xml:space="preserve">
+    <value>The archive is larger than 16 MB once unpacked.</value>
+  </data>
+  <data name="ArchiveTooManyEntries" xml:space="preserve">
+    <value>The archive has more than {0} entries.</value>
+  </data>
+  <data name="ArchiveLinkRefused" xml:space="preserve">
+    <value>The archive contains a link, which is not allowed: {0}</value>
+  </data>
+  <data name="ArchiveEntryKindRefused" xml:space="preserve">
+    <value>The archive contains an entry that is not a file or a folder: {0}</value>
+  </data>
+  <data name="ArchiveDuplicate" xml:space="preserve">
+    <value>The archive contains the file twice: {0}</value>
+  </data>
+  <data name="ArchiveNotUtf8" xml:space="preserve">
+    <value>The file is not valid UTF-8 text: {0}</value>
+  </data>
+  <data name="BaseUrlInvalid" xml:space="preserve">
+    <value>The base address must be an http or https URL.</value>
+  </data>
+  <data name="AuthHeaderInvalid" xml:space="preserve">
+    <value>The header name may hold letters, digits and dashes only.</value>
+  </data>
+  <data name="AuthUsernameInvalid" xml:space="preserve">
+    <value>The user name is required and cannot contain a colon.</value>
+  </data>
+  <data name="NoTools" xml:space="preserve">
+    <value>No tools yet</value>
+  </data>
+  <data name="NoToolsHint" xml:space="preserve">
+    <value>Add a tool with the plus button. It opens with a working template.</value>
+  </data>
+  <data name="Tools" xml:space="preserve">
+    <value>Tools</value>
+  </data>
+  <data name="DataFiles" xml:space="preserve">
+    <value>Data files</value>
+  </data>
+  <data name="NewTool" xml:space="preserve">
+    <value>New tool</value>
+  </data>
+  <data name="ToolName" xml:space="preserve">
+    <value>Tool name</value>
+  </data>
+  <data name="AddTool" xml:space="preserve">
+    <value>Add</value>
+  </data>
+  <data name="ToolExists" xml:space="preserve">
+    <value>A tool with this name already exists.</value>
+  </data>
+  <data name="Settings" xml:space="preserve">
+    <value>Settings</value>
+  </data>
+  <data name="Save" xml:space="preserve">
+    <value>Save</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="StateSaved" xml:space="preserve">
+    <value>Saved</value>
+  </data>
+  <data name="StateUnsaved" xml:space="preserve">
+    <value>Unsaved changes</value>
+  </data>
+  <data name="StateSaving" xml:space="preserve">
+    <value>Saving</value>
+  </data>
+  <data name="StateConflict" xml:space="preserve">
+    <value>Not saved</value>
+  </data>
+  <data name="StateFailed" xml:space="preserve">
+    <value>Save failed</value>
+  </data>
+  <data name="SaveFailed" xml:space="preserve">
+    <value>The draft could not be saved. Try again.</value>
+  </data>
+  <data name="LoadNewVersion" xml:space="preserve">
+    <value>Load the new version</value>
+  </data>
+  <data name="KeepMine" xml:space="preserve">
+    <value>Keep my text and overwrite</value>
+  </data>
+  <data name="ApiPane" xml:space="preserve">
+    <value>API</value>
+  </data>
+  <data name="ApiHint" xml:space="preserve">
+    <value>The address and authorization used by tools made from an OpenAPI description.</value>
+  </data>
+  <data name="BaseUrl" xml:space="preserve">
+    <value>Base address</value>
+  </data>
+  <data name="AuthKind" xml:space="preserve">
+    <value>Authorization</value>
+  </data>
+  <data name="AuthNone" xml:space="preserve">
+    <value>None</value>
+  </data>
+  <data name="AuthBearer" xml:space="preserve">
+    <value>Bearer token</value>
+  </data>
+  <data name="AuthHeader" xml:space="preserve">
+    <value>Header</value>
+  </data>
+  <data name="AuthBasic" xml:space="preserve">
+    <value>Basic</value>
+  </data>
+  <data name="HeaderName" xml:space="preserve">
+    <value>Header name</value>
+  </data>
+  <data name="UserName" xml:space="preserve">
+    <value>User name</value>
+  </data>
+  <data name="AuthSecret" xml:space="preserve">
+    <value>Token or password</value>
+  </data>
+  <data name="KeepSecretHint" xml:space="preserve">
+    <value>Leave empty to keep the stored value.</value>
+  </data>
+  <data name="DependenciesPane" xml:space="preserve">
+    <value>Dependencies</value>
+  </data>
+  <data name="DependenciesHint" xml:space="preserve">
+    <value>One Python requirement per line. FastMCP 4.1.4 is pinned by the builder.</value>
+  </data>
+  <data name="DependenciesLabel" xml:space="preserve">
+    <value>Requirements</value>
+  </data>
+  <data name="SecretsPane" xml:space="preserve">
+    <value>Secrets</value>
+  </data>
+  <data name="SecretsHint" xml:space="preserve">
+    <value>Write-only. Only names are shown. The server receives them as environment variables.</value>
+  </data>
+  <data name="NoSecrets" xml:space="preserve">
+    <value>No secrets yet.</value>
+  </data>
+  <data name="SecretName" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="SecretValue" xml:space="preserve">
+    <value>Value</value>
+  </data>
+  <data name="SetSecret" xml:space="preserve">
+    <value>Set secret</value>
+  </data>
+  <data name="AccessPane" xml:space="preserve">
+    <value>Network and limits</value>
+  </data>
+  <data name="AccessHint" xml:space="preserve">
+    <value>Changes apply to the running version when it restarts.</value>
+  </data>
+  <data name="Memory" xml:space="preserve">
+    <value>Memory, MB</value>
+  </data>
+  <data name="Cpus" xml:space="preserve">
+    <value>CPUs</value>
+  </data>
+  <data name="Pids" xml:space="preserve">
+    <value>Processes</value>
+  </data>
+  <data name="AccessNotConfirmed" xml:space="preserve">
+    <value>Confirm full network access first.</value>
+  </data>
+  <data name="AccessConfirmTitle" xml:space="preserve">
+    <value>Allow the whole network?</value>
+  </data>
+  <data name="AccessConfirmLead" xml:space="preserve">
+    <value>With full network access the server can reach:</value>
+  </data>
+  <data name="AccessConfirmLocal" xml:space="preserve">
+    <value>Hosts and services on your local network.</value>
+  </data>
+  <data name="AccessConfirmDatabases" xml:space="preserve">
+    <value>Databases and admin ports on any address.</value>
+  </data>
+  <data name="AccessConfirmMetadata" xml:space="preserve">
+    <value>Cloud metadata and other link-local addresses.</value>
+  </data>
+  <data name="AccessConfirmMail" xml:space="preserve">
+    <value>Any port, including mail ports 25, 465 and 587.</value>
+  </data>
+  <data name="AccessConfirmCode" xml:space="preserve">
+    <value>The code you publish runs with this access.</value>
+  </data>
+  <data name="AccessConfirmYes" xml:space="preserve">
+    <value>Allow whole network</value>
+  </data>
+  <data name="ExportPane" xml:space="preserve">
+    <value>Export</value>
+  </data>
+  <data name="ExportHint" xml:space="preserve">
+    <value>Download the project as a tar.gz archive that runs without the panel.</value>
+  </data>
+  <data name="Export" xml:space="preserve">
+    <value>Download archive</value>
+  </data>
+  <data name="ImportArchive" xml:space="preserve">
+    <value>Project archive</value>
+  </data>
+  <data name="ImportArchiveHint" xml:space="preserve">
+    <value>Optional. A tar.gz or zip with mcp/, openapi.json and builder.json.</value>
+  </data>
 </root>

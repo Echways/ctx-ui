@@ -1,14 +1,35 @@
 @inject ServerCatalog Catalog
+@inject NavigationManager Navigation
 
 <Sheet>
     <Form Model="_draft" OnSubmit="SaveAsync" Submit="@BuilderText.Create" Done="@BuilderText.ServerCreated">
         <Field For="() => _draft.Name" Label="@BuilderText.Name" />
         <Field For="() => _draft.Slug" Label="@BuilderText.Slug" Hint="@BuilderText.SlugHint" />
+        <div class="builder-archive">
+            <label for="builder-archive">@BuilderText.ImportArchive</label>
+            <InputFile id="builder-archive" OnChange="Choose" accept=".gz,.tgz,.zip" data-testid="archive" />
+            <p class="hint">@BuilderText.ImportArchiveHint</p>
+        </div>
     </Form>
 </Sheet>
 
 @code {
-    private readonly NewServerDraft _draft = new();
+    private const long MaximumArchiveBytes = 2 * ProjectFiles.MaxProjectBytes;
 
-    private Task SaveAsync() => Catalog.CreateAsync(_draft.Slug, _draft.Name, CancellationToken.None);
+    private readonly NewServerDraft _draft = new();
+    private IBrowserFile? _archive;
+
+    private void Choose(InputFileChangeEventArgs args) => _archive = args.FileCount == 0 ? null : args.File;
+
+    private async Task SaveAsync()
+    {
+        if (_archive is null)
+        {
+            await Catalog.CreateAsync(_draft.Slug, _draft.Name, CancellationToken.None);
+            return;
+        }
+
+        await using var stream = _archive.OpenReadStream(MaximumArchiveBytes);
+        await Catalog.ImportArchiveAsync(_draft.Slug, _draft.Name, stream, CancellationToken.None);
+    }
 }

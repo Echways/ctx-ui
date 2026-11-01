@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using CtxUi.Builder.Contracts;
 using CtxUi.Builder.Data;
@@ -10,7 +11,6 @@ namespace CtxUi.Builder.Servers;
 
 public sealed partial class ServerCatalog(BuilderDatabase database, SecretBox box, TimeProvider clock)
 {
-    private const int MaximumProjectBytes = 16 * 1024 * 1024;
     private const int RouteSecretBytes = 32;
     private const int MinimumMemoryMb = 6;
     private const double MinimumCpus = 0.01;
@@ -22,7 +22,31 @@ public sealed partial class ServerCatalog(BuilderDatabase database, SecretBox bo
     [GeneratedRegex("^[A-Za-z_][A-Za-z0-9_]{0,63}$")]
     private static partial Regex SecretNamePattern();
 
-    public async Task<BuilderServer> CreateAsync(string slug, string name, CancellationToken ct)
+    [GeneratedRegex("^[A-Za-z0-9-]{1,64}$")]
+    private static partial Regex HeaderNamePattern();
+
+    private sealed record StoredAuth(ApiAuthKind Kind, string? HeaderName, string? Username, string Secret);
+
+    public Task<BuilderServer> CreateAsync(string slug, string name, CancellationToken ct) => CreateCoreAsync(slug, name, null, ct);
+
+    public Task<BuilderServer> ImportAsync(string slug, string name, ProjectImport import, CancellationToken ct) => CreateCoreAsync(slug, name, import, ct);
+
+    public async Task<BuilderServer> ImportArchiveAsync(string slug, string name, Stream archive, CancellationToken ct)
+    {
+        ProjectImport import;
+        try
+        {
+            import = await ProjectFiles.ImportArchiveAsync(archive, ct);
+        }
+        catch (ProjectFileException failure)
+        {
+            throw new PanelException(failure.Message);
+        }
+
+        return await CreateCoreAsync(slug, name, import, ct);
+    }
+
+    private async Task<BuilderServer> CreateCoreAsync(string slug, string name, ProjectImport? import, CancellationToken ct)
     {
         if (!SlugPattern().IsMatch(slug))
             throw new PanelException(BuilderText.SlugInvalid);
@@ -46,7 +70,7 @@ public sealed partial class ServerCatalog(BuilderDatabase database, SecretBox bo
             CreatedAt = now,
         };
         database.Servers.Add(server);
-        database.Drafts.Add(new ServerDraft { ServerId = server.Id, UpdatedAt = now });
+        database.Drafts.Add(import is null ? new ServerDraft { ServerId = server.Id, UpdatedAt = now } : DraftOf(server.Id, import, now));
         try
         {
             await database.SaveChangesAsync(ct);
@@ -73,14 +97,15 @@ public sealed partial class ServerCatalog(BuilderDatabase database, SecretBox bo
 
     public async Task<long> SaveFileAsync(Guid id, string path, string content, long expectedRevision, CancellationToken ct)
     {
-        if (!IsProjectPath(path))
+        if (!path.StartsWith(ProjectRoot, StringComparison.Ordinal))
             throw new PanelException(BuilderText.PathInvalid);
+        path = ProjectPath(path);
         await RequireServerAsync(id, ct);
 
         var otherBytes = await database.Database
             .SqlQuery<long>($"SELECT COALESCE(SUM(LENGTH(CAST(Content AS BLOB))), 0) AS Value FROM Files WHERE ServerId = {id} AND Path <> {path}")
             .SingleAsync(ct);
-        if (otherBytes + Encoding.UTF8.GetByteCount(content) > MaximumProjectBytes)
+        if (otherBytes + Encoding.UTF8.GetByteCount(content) > ProjectFiles.MaxProjectBytes)
             throw new PanelException(BuilderText.ProjectTooLarge);
 
         var revision = expectedRevision + 1;
@@ -136,6 +161,74 @@ public sealed partial class ServerCatalog(BuilderDatabase database, SecretBox bo
             .SetProperty(server => server.PidsLimit, limits.Pids), ct);
     }
 
+    public async Task<ServerSettingsView> SettingsAsync(Guid id, CancellationToken ct)
+    {
+        var server = await database.Servers.AsNoTracking().SingleOrDefaultAsync(server => server.Id == id, ct)
+            ?? throw new PanelException(BuilderText.ServerNotFound);
+        var draft = await database.Drafts.AsNoTracking().SingleAsync(draft => draft.ServerId == id, ct);
+        var names = await database.Secrets.AsNoTracking().Where(secret => secret.ServerId == id).Select(secret => secret.Name).OrderBy(name => name).ToListAsync(ct);
+        var auth = OpenAuth(draft.ApiAuthSealed);
+        return new ServerSettingsView(
+            server.Id,
+            server.Slug,
+            server.Name,
+            server.NetworkAccess,
+            new ServerLimits(server.MemoryMb, server.CpuLimit, server.PidsLimit),
+            draft.BaseUrl,
+            auth?.Kind ?? ApiAuthKind.None,
+            auth?.HeaderName,
+            auth?.Username,
+            auth is not null,
+            draft.Dependencies ?? string.Empty,
+            names);
+    }
+
+    public async Task SetApiAsync(Guid id, string? baseUrl, ApiAuthInput auth, CancellationToken ct)
+    {
+        var uri = ParseBaseUrl(baseUrl);
+        await RequireServerAsync(id, ct);
+        var sealedAuth = SealAuth(auth, OpenAuth((await database.Drafts.AsNoTracking().SingleAsync(draft => draft.ServerId == id, ct)).ApiAuthSealed));
+        var address = uri?.ToString().TrimEnd('/');
+        var now = clock.GetUtcNow();
+        await database.Drafts.Where(draft => draft.ServerId == id).ExecuteUpdateAsync(setters => setters
+            .SetProperty(draft => draft.BaseUrl, address)
+            .SetProperty(draft => draft.ApiAuthSealed, sealedAuth)
+            .SetProperty(draft => draft.Revision, draft => draft.Revision + 1)
+            .SetProperty(draft => draft.UpdatedAt, now), ct);
+    }
+
+    public async Task SetDependenciesAsync(Guid id, string? text, CancellationToken ct)
+    {
+        IReadOnlyList<string> lines;
+        try
+        {
+            lines = ProjectFiles.ParseDependencies(text);
+        }
+        catch (ProjectFileException failure)
+        {
+            throw new PanelException(failure.Message);
+        }
+
+        await RequireServerAsync(id, ct);
+        var joined = lines.Count == 0 ? null : string.Join('\n', lines);
+        var now = clock.GetUtcNow();
+        await database.Drafts.Where(draft => draft.ServerId == id).ExecuteUpdateAsync(setters => setters
+            .SetProperty(draft => draft.Dependencies, joined)
+            .SetProperty(draft => draft.Revision, draft => draft.Revision + 1)
+            .SetProperty(draft => draft.UpdatedAt, now), ct);
+    }
+
+    public async Task<ProjectExport> ExportAsync(Guid id, CancellationToken ct)
+    {
+        var server = await database.Servers.AsNoTracking().SingleOrDefaultAsync(server => server.Id == id, ct)
+            ?? throw new PanelException(BuilderText.ServerNotFound);
+        var draft = await DraftAsync(id, ct);
+        return new ProjectExport($"{server.Slug}.tar.gz", await ProjectFiles.SnapshotAsync(draft, draft.Files, ProjectFiles.FastMcpVersion, ct));
+    }
+
+    private StoredAuth? OpenAuth(string? sealedAuth) =>
+        sealedAuth is null ? null : JsonSerializer.Deserialize<StoredAuth>(box.Open(sealedAuth));
+
     private async Task InsertFileAsync(Guid id, string path, string content, CancellationToken ct)
     {
         database.Files.Add(new DraftFile { ServerId = id, Path = path, Content = content, Revision = 1 });
@@ -159,11 +252,70 @@ public sealed partial class ServerCatalog(BuilderDatabase database, SecretBox bo
             throw new PanelException(BuilderText.ServerNotFound);
     }
 
-    private static bool IsProjectPath(string path)
+    private static string ProjectPath(string path)
     {
-        if (!path.StartsWith(ProjectRoot, StringComparison.Ordinal) || path.Length > 512 || path.Any(char.IsControl) || path.Contains('\\'))
-            return false;
-        return path[ProjectRoot.Length..].Split('/').All(segment => segment.Length > 0 && segment is not ("." or ".."));
+        try
+        {
+            return ProjectFiles.ValidatePath(path);
+        }
+        catch (ProjectFileException failure)
+        {
+            throw new PanelException(failure.Message);
+        }
+    }
+
+    private static ServerDraft DraftOf(Guid id, ProjectImport import, DateTimeOffset now)
+    {
+        var draft = new ServerDraft { ServerId = id, UpdatedAt = now, Revision = 1, Dependencies = import.Dependencies };
+        long bytes = 0;
+        foreach (var (path, content) in import.Files)
+        {
+            bytes += Encoding.UTF8.GetByteCount(content);
+            switch (ProjectPath(path))
+            {
+                case "openapi.json":
+                    draft.OpenApiJson = content;
+                    break;
+                case "builder.json":
+                    draft.BuilderJson = content;
+                    break;
+                default:
+                    draft.Files.Add(new DraftFile { ServerId = id, Path = path, Content = content, Revision = 1 });
+                    break;
+            }
+        }
+
+        if (bytes > ProjectFiles.MaxProjectBytes)
+            throw new PanelException(BuilderText.ProjectTooLarge);
+        return draft;
+    }
+
+    private static Uri? ParseBaseUrl(string? baseUrl)
+    {
+        if (string.IsNullOrWhiteSpace(baseUrl))
+            return null;
+        if (!Uri.TryCreate(baseUrl.Trim(), UriKind.Absolute, out var uri) || uri.Scheme is not ("http" or "https"))
+            throw new PanelException(BuilderText.BaseUrlInvalid);
+        return uri;
+    }
+
+    private string? SealAuth(ApiAuthInput input, StoredAuth? existing)
+    {
+        if (!Enum.IsDefined(input.Kind))
+            throw new PanelException(BuilderText.AccessInvalid);
+        if (input.Kind == ApiAuthKind.None)
+            return null;
+        if (input.Kind == ApiAuthKind.Header && !HeaderNamePattern().IsMatch(input.HeaderName ?? string.Empty))
+            throw new PanelException(BuilderText.AuthHeaderInvalid);
+        if (input.Kind == ApiAuthKind.Basic && (string.IsNullOrWhiteSpace(input.Username) || input.Username.Contains(':')))
+            throw new PanelException(BuilderText.AuthUsernameInvalid);
+
+        var secret = !string.IsNullOrEmpty(input.Secret) ? input.Secret : existing?.Kind == input.Kind ? existing.Secret : null;
+        if (string.IsNullOrEmpty(secret))
+            throw new PanelException(BuilderText.SecretValueRequired);
+
+        var stored = new StoredAuth(input.Kind, input.Kind == ApiAuthKind.Header ? input.HeaderName : null, input.Kind == ApiAuthKind.Basic ? input.Username?.Trim() : null, secret);
+        return box.Seal(JsonSerializer.Serialize(stored));
     }
 
     private static string Base64Url(byte[] bytes) => Convert.ToBase64String(bytes).TrimEnd('=').Replace('+', '-').Replace('/', '_');

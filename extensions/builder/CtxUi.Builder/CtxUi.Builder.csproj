@@ -21,6 +21,10 @@
                       StronglyTypedNamespace="CtxUi.Builder" StronglyTypedFileName="$(IntermediateOutputPath)BuilderText.Designer.cs" />
   </ItemGroup>
 
+  <ItemGroup>
+    <EmbeddedResource Include="..\runtime\main.py" LogicalName="runtime.main.py" />
+  </ItemGroup>
+
   <Import Project="..\..\..\src\CtxUi.Extensions\buildTransitive\CtxUi.Extensions.targets" />
 
 </Project>

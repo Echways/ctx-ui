@@ -33,6 +33,7 @@ public sealed class BuilderEntry : IPanelExtension
 
         context.Panel
             .AddCaption(() => BuilderText.Caption)
-            .AddSection<ServersPage>(() => BuilderText.Servers);
+            .AddSection<ServersPage>(() => BuilderText.Servers)
+            .AddStylesheet("builder.css");
     }
 }

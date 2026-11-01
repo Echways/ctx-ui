@@ -12,6 +12,7 @@ public sealed class ReleaseBuilder(
 {
     private const string LockFilePath = "/env/requirements.lock";
     private const string CodePath = "/code";
+    private const long MaxLockFileBytes = 1024 * 1024;
 
     private static readonly TimeSpan BuildTimeout = TimeSpan.FromMinutes(10);
 
@@ -80,7 +81,17 @@ public sealed class ReleaseBuilder(
         await networks.EnsureAsync(id, spec.Network, ct);
         await EnsureVolumesAsync(id, release.Number, hash, ct);
 
-        var reused = await UnpackAsync(id, release.Number, hash, archive, ct);
+        string? reused;
+        try
+        {
+            reused = await UnpackAsync(id, release.Number, hash, archive, ct);
+        }
+        catch (BuilderFileTooLargeException)
+        {
+            attempt.EnvironmentVolume = ContainerTemplate.EnvironmentVolume(id, hash);
+            throw;
+        }
+
         if (reused is not null)
         {
             release.AppendLog($"Environment {hash} is already built, reusing it.\n");
@@ -116,7 +127,7 @@ public sealed class ReleaseBuilder(
         {
             await using var body = new MemoryStream(archive, writable: false);
             await engine.ExtractArchiveAsync(id, parameters.Name, CodePath, body, ct);
-            return await engine.ReadFileAsync(id, parameters.Name, LockFilePath, ct);
+            return await engine.ReadFileAsync(id, parameters.Name, LockFilePath, MaxLockFileBytes, ct);
         }
         finally
         {
@@ -143,7 +154,7 @@ public sealed class ReleaseBuilder(
                 throw new InvalidOperationException($"Installing the dependencies failed with exit code {exitCode}.");
             }
 
-            var lockFile = await engine.ReadFileAsync(id, parameters.Name, LockFilePath, ct)
+            var lockFile = await engine.ReadFileAsync(id, parameters.Name, LockFilePath, MaxLockFileBytes, ct)
                 ?? throw new InvalidOperationException("The build finished without writing a lock file.");
             await engine.RemoveContainerAsync(id, parameters.Name, ct);
             return lockFile;

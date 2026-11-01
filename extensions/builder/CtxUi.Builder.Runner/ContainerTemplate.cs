@@ -143,8 +143,8 @@ public static class ContainerTemplate
             ]);
     }
 
-    public static CreateContainerParameters ActivationMarker(Guid id, int activation, int release, string activeContainer,
-        IReadOnlyCollection<string> retiringContainers, RunnerOptions options)
+    public static VolumesCreateParameters ActivationMarker(Guid id, int activation, int release, string activeContainer,
+        IReadOnlyCollection<string> retiringContainers)
     {
         var labels = Labels(id);
         labels[BuilderLabels.Role] = BuilderLabels.ActivationRole;
@@ -152,8 +152,7 @@ public static class ContainerTemplate
         labels[BuilderLabels.Release] = release.ToString(CultureInfo.InvariantCulture);
         labels[BuilderLabels.ActiveContainer] = activeContainer;
         labels[BuilderLabels.RetiringContainers] = string.Join(BuilderLabels.ListSeparator, retiringContainers);
-
-        return NeverStarted($"{Prefix(id)}-active-{activation}", labels, options, []);
+        return new VolumesCreateParameters { Name = $"{Prefix(id)}-active-{activation}", Labels = labels };
     }
 
     public static void EnsureSafeLimits(ServerLimits limits)

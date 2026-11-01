@@ -53,7 +53,12 @@ public sealed class Reconciler(
         await RemoveInterruptedBuildsAsync(server, containers, ct);
 
         var servers = containers.Where(container => !container.Labels.ContainsKey(BuilderLabels.Role)).ToList();
-        var marker = await CurrentMarkerAsync(id, containers, servers, ct);
+        var marker = await CurrentMarkerAsync(id, servers, ct);
+        if (marker is null)
+        {
+            ProtectUnmarked(server, servers);
+        }
+
         var active = marker?.Labels[BuilderLabels.ActiveContainer];
         var retiring = (marker?.Labels.GetValueOrDefault(BuilderLabels.RetiringContainers) ?? "")
             .Split(BuilderLabels.ListSeparator, StringSplitOptions.RemoveEmptyEntries)
@@ -118,16 +123,42 @@ public sealed class Reconciler(
         }
     }
 
-    private async Task<BuilderContainer?> CurrentMarkerAsync(Guid id, IReadOnlyList<BuilderContainer> containers, IReadOnlyList<BuilderContainer> servers, CancellationToken ct)
+    private void ProtectUnmarked(ServerRecord server, IReadOnlyList<BuilderContainer> servers)
     {
-        var markers = containers
-            .Where(container => container.Labels.GetValueOrDefault(BuilderLabels.Role) == BuilderLabels.ActivationRole)
+        var running = servers.Where(container => container.Running).Select(container => container.Name).ToList();
+        if (running.Count == 0)
+        {
+            return;
+        }
+
+        lock (server.Sync)
+        {
+            server.Unmarked.UnionWith(running);
+        }
+
+        logger.LogError(
+            "Server {Server} has {Count} running containers and no activation marker, so its active route cannot be restored. They are kept running until a release is activated.",
+            server.Id,
+            running.Count);
+    }
+
+    private async Task<BuilderVolume?> CurrentMarkerAsync(Guid id, IReadOnlyList<BuilderContainer> servers, CancellationToken ct)
+    {
+        var markers = (await engine.ListVolumesAsync(id, ct))
+            .Where(volume => volume.IsActivationMarker)
             .OrderByDescending(marker => int.Parse(marker.Labels[BuilderLabels.Activation], CultureInfo.InvariantCulture))
             .ToList();
         var current = markers.FirstOrDefault(marker => servers.Any(container => container.Name == marker.Labels[BuilderLabels.ActiveContainer]));
-        foreach (var stale in markers.Where(marker => marker != current && current is not null))
+        foreach (var stale in markers.Where(marker => marker != current))
         {
-            await engine.RemoveContainerAsync(id, stale.Name, ct);
+            try
+            {
+                await engine.RemoveVolumeAsync(id, stale.Name, ct);
+            }
+            catch (Exception failure) when (failure is not OperationCanceledException)
+            {
+                logger.LogWarning("Removing the stale activation marker {Marker} failed: {Reason}", stale.Name, failure.Message);
+            }
         }
 
         return current;

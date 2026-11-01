@@ -270,13 +270,13 @@ public sealed class ReleaseFlowTests
     {
         await using var harness = await RunnerHarness.StartAsync();
         await harness.PutSpecAsync();
-        harness.Docker.FailCreateVolume = new IOException("disk full");
+        harness.Docker.BeforeCreate = _ => new IOException("disk full");
 
         using var posted = await harness.PostArchiveAsync(1);
         var status = await harness.WaitForStateAsync(1, ReleaseState.Failed);
 
         Assert.Contains("disk full", status.Error, StringComparison.Ordinal);
-        harness.Docker.FailCreateVolume = null;
+        harness.Docker.BeforeCreate = null;
         await harness.BuildAsync(2);
     }
 
@@ -707,6 +707,276 @@ public sealed class ReleaseFlowTests
         await restarted.PutSpecAsync();
         using var unknownStart = await restarted.PostStartAsync(2);
         Assert.Equal(HttpStatusCode.NotFound, unknownStart.StatusCode);
+    }
+
+    private static bool IsMarker(string name) => name.Contains("-active-", StringComparison.Ordinal);
+
+    private static async Task<(FakeDockerEngine Docker, FakeServerProbe Probe, FakeTimeProvider Time)> FirstRunAsync(Func<RunnerHarness, Task> run)
+    {
+        var docker = new FakeDockerEngine();
+        var probe = new FakeServerProbe();
+        var time = new FakeTimeProvider(DateTimeOffset.UnixEpoch.AddYears(50));
+        await using var first = await RunnerHarness.StartAsync(docker, probe, time);
+        await first.PutSpecAsync();
+        await run(first);
+        return (docker, probe, time);
+    }
+
+    [Fact]
+    public async Task Lost_marker_keeps_the_running_release_until_a_new_one_is_activated()
+    {
+        var (docker, probe, time) = await FirstRunAsync(first => first.PublishAsync(1));
+        docker.LoseActivationMarkers();
+
+        await using var restarted = await RunnerHarness.StartAsync(docker, probe, time);
+
+        Assert.True(docker.Find(Server(1))!.Running);
+        Assert.Null((await restarted.StateAsync()).ActiveRelease);
+
+        await restarted.PutSpecAsync();
+        await restarted.BuildAsync(2);
+        await restarted.StartCandidateAsync(2);
+
+        Assert.True(docker.Find(Server(1))!.Running);
+        await using var two = await FakeUpstream.StartAsync("two");
+
+        using var activated = await restarted.ActivateAsync(2);
+
+        Assert.Equal(HttpStatusCode.OK, activated.StatusCode);
+        Assert.Equal(2, (await restarted.StateAsync()).ActiveRelease);
+        Assert.True(docker.Find(Server(1))!.Running);
+        restarted.Time.Advance(TimeSpan.FromSeconds(30));
+        await Eventually.TrueAsync(() => docker.Find(Server(1))?.Running == false);
+        Assert.Equal(ReleaseState.Retired, (await restarted.StatusAsync(1)).State);
+    }
+
+    [Fact]
+    public async Task Lost_marker_lets_the_running_release_be_activated_again()
+    {
+        var (docker, probe, time) = await FirstRunAsync(first => first.PublishAsync(1));
+        docker.LoseActivationMarkers();
+
+        await using var restarted = await RunnerHarness.StartAsync(docker, probe, time);
+        using var activated = await restarted.ActivateAsync(1);
+
+        Assert.Equal(HttpStatusCode.OK, activated.StatusCode);
+        Assert.Equal(1, (await restarted.StateAsync()).ActiveRelease);
+        Assert.Single(docker.ActivationMarkers);
+        restarted.Time.Advance(TimeSpan.FromSeconds(30));
+        await Task.Delay(50);
+        Assert.True(docker.Find(Server(1))!.Running);
+    }
+
+    [Fact]
+    public async Task Same_release_candidate_does_not_replace_a_running_release_without_a_marker()
+    {
+        var (docker, probe, time) = await FirstRunAsync(first => first.PublishAsync(1));
+        docker.LoseActivationMarkers();
+
+        await using var restarted = await RunnerHarness.StartAsync(docker, probe, time);
+        await restarted.PutSpecAsync();
+        await restarted.StartCandidateAsync(1);
+
+        Assert.True(docker.Find(Server(1))!.Running);
+        Assert.Equal(2, docker.Containers.Count(container => container.Release == 1 && container.Role is null));
+    }
+
+    [Fact]
+    public async Task Marker_naming_a_missing_container_is_removed_and_the_running_release_stays()
+    {
+        var (docker, probe, time) = await FirstRunAsync(async first =>
+        {
+            await first.PublishAsync(1);
+            await first.BuildAsync(2);
+            await first.StartCandidateAsync(2);
+        });
+        await docker.RemoveContainerAsync(Id, Server(1), CancellationToken.None);
+
+        await using var restarted = await RunnerHarness.StartAsync(docker, probe, time);
+
+        Assert.Empty(docker.ActivationMarkers);
+        Assert.Null((await restarted.StateAsync()).ActiveRelease);
+        Assert.True(docker.Find(Server(2))!.Running);
+    }
+
+    [Fact]
+    public async Task Marker_that_cannot_be_written_leaves_the_old_release_active_also_after_a_restart()
+    {
+        var (docker, probe, time) = await FirstRunAsync(async first =>
+        {
+            await first.PublishAsync(1);
+            await first.BuildAsync(2);
+            await first.StartCandidateAsync(2);
+            first.Docker.BeforeCreate = name => IsMarker(name) ? new IOException("disk full") : null;
+
+            using var refused = await first.ActivateAsync(2);
+
+            Assert.False(refused.IsSuccessStatusCode);
+            Assert.Equal(1, (await first.StateAsync()).ActiveRelease);
+        });
+        docker.BeforeCreate = null;
+
+        await using var restarted = await RunnerHarness.StartAsync(docker, probe, time);
+
+        Assert.Equal(1, (await restarted.StateAsync()).ActiveRelease);
+    }
+
+    [Fact]
+    public async Task Marker_written_with_a_lost_reply_is_withdrawn_so_a_restart_stays_on_the_old_release()
+    {
+        var (docker, probe, time) = await FirstRunAsync(async first =>
+        {
+            await first.PublishAsync(1);
+            await first.BuildAsync(2);
+            await first.StartCandidateAsync(2);
+            first.Docker.AfterCreate = name => IsMarker(name) ? new IOException("connection lost") : null;
+
+            using var refused = await first.ActivateAsync(2);
+
+            Assert.False(refused.IsSuccessStatusCode);
+            Assert.Equal(1, (await first.StateAsync()).ActiveRelease);
+        });
+        docker.AfterCreate = null;
+
+        await using var restarted = await RunnerHarness.StartAsync(docker, probe, time);
+
+        Assert.Equal(1, (await restarted.StateAsync()).ActiveRelease);
+    }
+
+    [Fact]
+    public async Task Old_marker_that_cannot_be_removed_does_not_fail_the_activation()
+    {
+        var (docker, probe, time) = await FirstRunAsync(async first =>
+        {
+            await first.PublishAsync(1);
+            await first.BuildAsync(2);
+            await first.StartCandidateAsync(2);
+            first.Docker.BeforeRemove = name => IsMarker(name) ? new IOException("docker error") : null;
+
+            using var activated = await first.ActivateAsync(2);
+
+            Assert.Equal(HttpStatusCode.OK, activated.StatusCode);
+            Assert.Equal(2, (await first.StateAsync()).ActiveRelease);
+            Assert.Equal(2, first.Docker.ActivationMarkers.Count);
+        });
+        docker.BeforeRemove = null;
+
+        await using var restarted = await RunnerHarness.StartAsync(docker, probe, time);
+
+        Assert.Equal(2, (await restarted.StateAsync()).ActiveRelease);
+        Assert.Single(docker.ActivationMarkers);
+    }
+
+    [Fact]
+    public async Task Client_leaving_during_activation_cannot_split_memory_from_the_marker()
+    {
+        await using var harness = await RunnerHarness.StartAsync();
+        await harness.PutSpecAsync();
+        await harness.PublishAsync(1);
+        await harness.BuildAsync(2);
+        await harness.StartCandidateAsync(2);
+        var gate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        harness.Docker.AfterCreateGate = name => IsMarker(name) ? gate : null;
+
+        using var leaving = new CancellationTokenSource();
+        var request = harness.Control.PostAsync($"/v1/servers/{Id}/releases/2/activate", null, leaving.Token);
+        await Eventually.TrueAsync(() => harness.Docker.ActivationMarkers.Count == 2);
+        await leaving.CancelAsync();
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => request);
+        await Task.Delay(100);
+        gate.SetResult();
+
+        await Eventually.TrueAsync(async () => (await harness.StateAsync()).ActiveRelease == 2);
+        await Eventually.TrueAsync(() => harness.Docker.ActivationMarkers.Count == 1);
+    }
+
+    [Fact]
+    public async Task Delete_waits_for_activations_in_flight_and_leaves_no_route_or_marker()
+    {
+        await using var harness = await RunnerHarness.StartAsync();
+        await using var two = await FakeUpstream.StartAsync("two");
+        harness.Probe.Route(Server(2), two.Address);
+        await harness.PutSpecAsync();
+        await harness.PublishAsync(1);
+        await harness.BuildAsync(2);
+        await harness.StartCandidateAsync(2);
+
+        var gate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        harness.Probe.Gate = gate;
+        var probes = harness.Probe.Probes;
+        var inFlight = harness.ActivateAsync(2);
+        await Eventually.TrueAsync(() => harness.Probe.Probes > probes);
+        var queued = harness.Control.PostAsync($"/v1/servers/{Id}/releases/2/activate", null);
+        await Task.Delay(50);
+        var deleted = harness.Control.DeleteAsync($"/v1/servers/{Id}");
+        await Task.Delay(100);
+        Assert.False(deleted.IsCompleted);
+
+        gate.SetResult();
+        harness.Probe.Gate = null;
+        using var deletedResponse = await deleted;
+        using var inFlightResponse = await inFlight;
+        using var queuedResponse = await queued;
+
+        Assert.Equal(HttpStatusCode.NoContent, deletedResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, queuedResponse.StatusCode);
+        using var route = await harness.CallAsync($"/s/{Id}/mcp");
+        Assert.Equal(HttpStatusCode.Unauthorized, route.StatusCode);
+        Assert.Empty(harness.Docker.ActivationMarkers);
+        Assert.Empty(harness.Docker.Containers);
+        Assert.Empty(harness.Docker.Volumes);
+    }
+
+    [Fact]
+    public async Task Oversized_lock_file_fails_the_build_and_drops_the_environment()
+    {
+        await using var harness = await RunnerHarness.StartAsync();
+        await harness.PutSpecAsync();
+        var normal = harness.Docker.LockFile;
+        harness.Docker.LockFile = new string('x', 2 * 1024 * 1024);
+
+        using var posted = await harness.PostArchiveAsync(1);
+        var status = await harness.WaitForStateAsync(1, ReleaseState.Failed);
+
+        Assert.Contains("requirements.lock", status.Error, StringComparison.Ordinal);
+        Assert.Contains("limit", status.Error, StringComparison.Ordinal);
+        Assert.Null(status.LockFile);
+        Assert.DoesNotContain(harness.Docker.Volumes, volume => volume.Contains("-env-", StringComparison.Ordinal));
+
+        harness.Docker.LockFile = normal;
+        await harness.BuildAsync(2);
+        Assert.Contains($"{Prefix}-b2", harness.Docker.Created);
+    }
+
+    [Fact]
+    public async Task Oversized_lock_in_a_reused_environment_fails_and_drops_that_environment()
+    {
+        await using var harness = await RunnerHarness.StartAsync();
+        await harness.PutSpecAsync();
+        await harness.BuildAsync(1);
+        var normal = harness.Docker.LockFile;
+        harness.Docker.LockFile = new string('x', 2 * 1024 * 1024);
+
+        using var posted = await harness.PostArchiveAsync(2);
+        await harness.WaitForStateAsync(2, ReleaseState.Failed);
+
+        harness.Docker.LockFile = normal;
+        await harness.BuildAsync(3);
+        Assert.Contains($"{Prefix}-b3", harness.Docker.Created);
+    }
+
+    [Fact]
+    public async Task Build_log_flood_keeps_only_the_tail_in_the_status()
+    {
+        await using var harness = await RunnerHarness.StartAsync();
+        await harness.PutSpecAsync();
+        harness.Docker.BuildLog = new string('x', 2 * 1024 * 1024) + "last line\n";
+
+        await harness.BuildAsync(1);
+
+        var log = (await harness.StatusAsync(1)).Log;
+        Assert.True(log.Length <= ReleaseRecord.MaxLogCharacters);
+        Assert.EndsWith("last line\n", log, StringComparison.Ordinal);
     }
 
     [Fact]

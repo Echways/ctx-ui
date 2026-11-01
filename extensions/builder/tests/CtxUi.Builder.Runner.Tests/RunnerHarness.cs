@@ -53,6 +53,8 @@ internal sealed class FakeServerProbe : IServerProbe
 
     public int Probes;
 
+    public TaskCompletionSource? Gate { get; set; }
+
     public void Route(string container, string address) => _addresses[container] = address;
 
     public void SetHealthy(string container, bool healthy) => _healthy[container] = healthy;
@@ -60,10 +62,15 @@ internal sealed class FakeServerProbe : IServerProbe
     public string Address(string container) =>
         _addresses.TryGetValue(container, out var address) ? address : "http://127.0.0.1:9";
 
-    public Task<bool> IsHealthyAsync(string container, CancellationToken ct)
+    public async Task<bool> IsHealthyAsync(string container, CancellationToken ct)
     {
         Interlocked.Increment(ref Probes);
-        return Task.FromResult(_healthy.GetValueOrDefault(container, true));
+        if (Gate is { } gate)
+        {
+            await gate.Task;
+        }
+
+        return _healthy.GetValueOrDefault(container, true);
     }
 }
 

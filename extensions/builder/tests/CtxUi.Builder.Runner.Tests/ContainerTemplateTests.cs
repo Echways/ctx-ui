@@ -332,18 +332,17 @@ public sealed class ContainerTemplateTests
     }
 
     [Fact]
-    public void Activation_marker_records_the_active_and_retiring_containers_in_labels()
+    public void Activation_marker_is_a_named_volume_recording_the_active_and_retiring_containers()
     {
-        var created = ContainerTemplate.ActivationMarker(Id, 7, 3, "ctxb-a-r3", ["ctxb-a-r2", "ctxb-a-r1"], Options);
+        var created = ContainerTemplate.ActivationMarker(Id, 7, 3, "ctxb-a-r3", ["ctxb-a-r2", "ctxb-a-r1"]);
 
         Assert.Equal("ctxb-0f8fad5bd9cb469fa16570867728950e-active-7", created.Name);
-        Assert.Equal("none", created.HostConfig.NetworkMode);
+        Assert.Equal(Id.ToString(), created.Labels["ctx-ui.builder"]);
         Assert.Equal("activation", created.Labels["ctx-ui.builder.role"]);
         Assert.Equal("7", created.Labels["ctx-ui.builder.activation"]);
         Assert.Equal("3", created.Labels["ctx-ui.builder.release"]);
         Assert.Equal("ctxb-a-r3", created.Labels["ctx-ui.builder.active-container"]);
         Assert.Equal("ctxb-a-r2,ctxb-a-r1", created.Labels["ctx-ui.builder.retiring-containers"]);
-        Assert.Null(created.HostConfig.RestartPolicy);
     }
 
     [Fact]

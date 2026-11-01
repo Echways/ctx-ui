@@ -37,7 +37,10 @@ internal sealed class FakeDockerEngine : IDockerEngine
     public string ServerLog { get; set; } = "server started\n";
     public string LockFile { get; set; } = "fastmcp==4.1.4\n";
     public TaskCompletionSource? BuildGate { get; set; }
-    public Exception? FailCreateVolume { get; set; }
+    public Func<string, Exception?>? BeforeCreate { get; set; }
+    public Func<string, Exception?>? AfterCreate { get; set; }
+    public Func<string, Exception?>? BeforeRemove { get; set; }
+    public Func<string, TaskCompletionSource?>? AfterCreateGate { get; set; }
     public HashSet<string> SystemContainers { get; } = new(StringComparer.Ordinal) { "egress", "runner-self" };
     public IReadOnlyList<string> Subnets { get; set; } = [];
 
@@ -54,6 +57,35 @@ internal sealed class FakeDockerEngine : IDockerEngine
         lock (_sync)
         {
             return _containers.GetValueOrDefault(name);
+        }
+    }
+
+    public void LoseActivationMarkers()
+    {
+        lock (_sync)
+        {
+            foreach (var marker in _containers.Values.Where(container => container.Role == BuilderLabels.ActivationRole).ToList())
+            {
+                _containers.Remove(marker.Name);
+            }
+
+            foreach (var marker in _volumes.Where(volume => volume.Value.TryGetValue(BuilderLabels.Role, out var role) && role == BuilderLabels.ActivationRole).ToList())
+            {
+                _volumes.Remove(marker.Key);
+            }
+        }
+    }
+
+    public IReadOnlyList<string> ActivationMarkers
+    {
+        get
+        {
+            lock (_sync)
+            {
+                return _containers.Values.Where(container => container.Role == BuilderLabels.ActivationRole).Select(container => container.Name)
+                    .Concat(_volumes.Where(volume => volume.Value.TryGetValue(BuilderLabels.Role, out var role) && role == BuilderLabels.ActivationRole).Select(volume => volume.Key))
+                    .ToList();
+            }
         }
     }
 
@@ -83,8 +115,9 @@ internal sealed class FakeDockerEngine : IDockerEngine
         }
     }
 
-    public Task CreateContainerAsync(Guid server, CreateContainerParameters parameters, CancellationToken ct)
+    public async Task CreateContainerAsync(Guid server, CreateContainerParameters parameters, CancellationToken ct)
     {
+        ThrowIfInjected(BeforeCreate, parameters.Name);
         lock (_sync)
         {
             if (_containers.ContainsKey(parameters.Name))
@@ -96,7 +129,7 @@ internal sealed class FakeDockerEngine : IDockerEngine
             _created.Add(parameters.Name);
         }
 
-        return Task.CompletedTask;
+        await CompleteCreateAsync(parameters.Name, ct);
     }
 
     public Task StartContainerAsync(Guid server, string name, CancellationToken ct)
@@ -124,6 +157,7 @@ internal sealed class FakeDockerEngine : IDockerEngine
 
     public Task RemoveContainerAsync(Guid server, string name, CancellationToken ct)
     {
+        ThrowIfInjected(BeforeRemove, name);
         lock (_sync)
         {
             _containers.Remove(name);
@@ -162,12 +196,17 @@ internal sealed class FakeDockerEngine : IDockerEngine
         }
     }
 
-    public Task<string?> ReadFileAsync(Guid server, string name, string path, CancellationToken ct)
+    public Task<string?> ReadFileAsync(Guid server, string name, string path, long maxBytes, CancellationToken ct)
     {
         lock (_sync)
         {
             var environment = _containers[name].MountSource("/env");
             var complete = path == "/env/requirements.lock" && environment is not null && _completedEnvironments.Contains(environment);
+            if (complete && LockFile.Length > maxBytes)
+            {
+                throw new BuilderFileTooLargeException(path, maxBytes);
+            }
+
             return Task.FromResult(complete ? LockFile : null);
         }
     }
@@ -184,28 +223,24 @@ internal sealed class FakeDockerEngine : IDockerEngine
         yield return role == "build" ? BuildLog : ServerLog;
     }
 
-    public Task EnsureVolumeAsync(Guid server, VolumesCreateParameters parameters, CancellationToken ct)
+    public async Task EnsureVolumeAsync(Guid server, VolumesCreateParameters parameters, CancellationToken ct)
     {
-        if (FailCreateVolume is { } failure)
-        {
-            throw failure;
-        }
-
+        ThrowIfInjected(BeforeCreate, parameters.Name);
         lock (_sync)
         {
             _volumes.TryAdd(parameters.Name, parameters.Labels);
         }
 
-        return Task.CompletedTask;
+        await CompleteCreateAsync(parameters.Name, ct);
     }
 
-    public Task<IReadOnlyList<string>> ListVolumesAsync(Guid server, CancellationToken ct)
+    public Task<IReadOnlyList<BuilderVolume>> ListVolumesAsync(Guid server, CancellationToken ct)
     {
         lock (_sync)
         {
-            IReadOnlyList<string> listed = _volumes
+            IReadOnlyList<BuilderVolume> listed = _volumes
                 .Where(volume => volume.Value[BuilderLabels.Root] == server.ToString())
-                .Select(volume => volume.Key)
+                .Select(volume => new BuilderVolume(volume.Key, volume.Value.AsReadOnly()))
                 .ToList();
             return Task.FromResult(listed);
         }
@@ -213,6 +248,7 @@ internal sealed class FakeDockerEngine : IDockerEngine
 
     public Task RemoveVolumeAsync(Guid server, string name, CancellationToken ct)
     {
+        ThrowIfInjected(BeforeRemove, name);
         lock (_sync)
         {
             _volumes.Remove(name);
@@ -304,4 +340,21 @@ internal sealed class FakeDockerEngine : IDockerEngine
         SystemContainers.Contains(name)
             ? Task.FromResult(true)
             : throw new BuilderObjectRefusedException($"Container {name} is not a builder system container.");
+
+    private static void ThrowIfInjected(Func<string, Exception?>? injection, string name)
+    {
+        if (injection?.Invoke(name) is { } failure)
+        {
+            throw failure;
+        }
+    }
+
+    private async Task CompleteCreateAsync(string name, CancellationToken ct)
+    {
+        ThrowIfInjected(AfterCreate, name);
+        if (AfterCreateGate?.Invoke(name) is { } gate)
+        {
+            await gate.Task.WaitAsync(ct);
+        }
+    }
 }

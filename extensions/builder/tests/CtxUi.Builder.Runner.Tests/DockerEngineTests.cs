@@ -1,4 +1,6 @@
 using System.Collections.Concurrent;
+using System.Formats.Tar;
+using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Docker.DotNet.Models;
@@ -21,6 +23,10 @@ internal sealed partial class StubDockerApi : IAsyncDisposable
     public Dictionary<string, Dictionary<string, string>> Containers { get; } = [];
     public Dictionary<string, Dictionary<string, string>> Volumes { get; } = [];
     public Dictionary<string, Dictionary<string, string>> Networks { get; } = [];
+    public object[] ListedNetworks { get; set; } = [];
+    public object[] ListedVolumes { get; set; } = [];
+    public byte[] ArchiveContent { get; set; } = [];
+    public long ArchiveStatSize { get; set; }
 
     public IReadOnlyList<string> Calls => _calls.ToArray();
 
@@ -80,6 +86,25 @@ internal sealed partial class StubDockerApi : IAsyncDisposable
             return;
         }
 
+        var archive = ArchivePath().Match(path);
+        if (method == "GET" && archive.Success)
+        {
+            await WriteArchiveAsync(context);
+            return;
+        }
+
+        if (method == "GET" && path == "/networks")
+        {
+            await context.Response.WriteAsJsonAsync(ListedNetworks);
+            return;
+        }
+
+        if (method == "GET" && path == "/volumes")
+        {
+            await context.Response.WriteAsJsonAsync(new { Volumes = ListedVolumes });
+            return;
+        }
+
         var network = NetworkPath().Match(path);
         if (method == "GET" && network.Success)
         {
@@ -118,6 +143,23 @@ internal sealed partial class StubDockerApi : IAsyncDisposable
         context.Response.StatusCode = method == "DELETE" ? StatusCodes.Status204NoContent : StatusCodes.Status200OK;
     }
 
+    private async Task WriteArchiveAsync(HttpContext context)
+    {
+        var stat = JsonSerializer.Serialize(new { name = "requirements.lock", size = ArchiveStatSize });
+        context.Response.Headers["X-Docker-Container-Path-Stat"] = Convert.ToBase64String(Encoding.UTF8.GetBytes(stat));
+        context.Response.ContentType = "application/x-tar";
+        using var tarred = new MemoryStream();
+        await using (var tar = new TarWriter(tarred, TarEntryFormat.Ustar, leaveOpen: true))
+        {
+            await tar.WriteEntryAsync(new UstarTarEntry(TarEntryType.RegularFile, "requirements.lock")
+            {
+                DataStream = new MemoryStream(ArchiveContent)
+            });
+        }
+
+        await context.Response.Body.WriteAsync(tarred.ToArray());
+    }
+
     private static async Task WriteLabelled<T>(HttpContext context, Dictionary<string, Dictionary<string, string>> objects, string name, Func<Dictionary<string, string>, T> shape)
     {
         if (!objects.TryGetValue(name, out var labels))
@@ -143,6 +185,9 @@ internal sealed partial class StubDockerApi : IAsyncDisposable
 
     [GeneratedRegex(@"^/networks/(?<name>[^/]+)/connect$")]
     private static partial Regex ConnectPath();
+
+    [GeneratedRegex(@"^/containers/(?<name>[^/]+)/archive$")]
+    private static partial Regex ArchivePath();
 
     [GeneratedRegex(@"^/networks/(?<name>[^/]+)$")]
     private static partial Regex NetworkPath();
@@ -206,7 +251,7 @@ public sealed class DockerEngineTests : IAsyncLifetime
             () => _engine.RemoveContainerAsync(Server, name, ct),
             () => _engine.WaitContainerAsync(Server, name, ct),
             () => _engine.ExtractArchiveAsync(Server, name, "/code", new MemoryStream([1]), ct),
-            () => _engine.ReadFileAsync(Server, name, "/env/requirements.lock", ct),
+            () => _engine.ReadFileAsync(Server, name, "/env/requirements.lock", 1024, ct),
             () => _engine.RemoveVolumeAsync(Server, name, ct),
             () => _engine.RemoveNetworkAsync(Server, name, ct),
             () => _engine.NetworkExistsAsync(Server, name, ct),
@@ -316,6 +361,64 @@ public sealed class DockerEngineTests : IAsyncLifetime
 
         await _engine.EnsureVolumeAsync(Server, new VolumesCreateParameters { Name = "new", Labels = Owned(Server.ToString()) }, ct);
         Assert.Contains("POST /volumes/create", _api.Mutations);
+    }
+
+    [Fact]
+    public async Task Small_file_is_read_through_the_archive()
+    {
+        Seed();
+        _api.ArchiveContent = Encoding.UTF8.GetBytes("fastmcp==4.1.4\n");
+        _api.ArchiveStatSize = _api.ArchiveContent.Length;
+
+        var text = await _engine.ReadFileAsync(Server, "mine", "/env/requirements.lock", 1024, CancellationToken.None);
+
+        Assert.Equal("fastmcp==4.1.4\n", text);
+    }
+
+    [Theory]
+    [InlineData(32L * 1024 * 1024)]
+    [InlineData(0L)]
+    public async Task File_above_the_limit_is_refused_whatever_its_stat_header_says(long statSize)
+    {
+        Seed();
+        _api.ArchiveContent = new byte[32 * 1024 * 1024];
+        _api.ArchiveStatSize = statSize;
+
+        var failure = await Assert.ThrowsAsync<BuilderFileTooLargeException>(
+            () => _engine.ReadFileAsync(Server, "mine", "/env/requirements.lock", 1024 * 1024, CancellationToken.None));
+
+        Assert.Contains("/env/requirements.lock", failure.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Subnet_listing_reads_only_subnets_and_touches_nothing()
+    {
+        _api.ListedNetworks =
+        [
+            new { Name = "foreign", Id = "1", Labels = new Dictionary<string, string>(), Containers = new Dictionary<string, object> { ["c"] = new { Name = "secret-container" } }, IPAM = new { Config = new[] { new { Subnet = "10.1.0.0/16", Gateway = "10.1.0.1" } } } },
+            new { Name = "no-ipam", Id = "2", Labels = new Dictionary<string, string>(), Containers = new Dictionary<string, object>(), IPAM = new { Config = Array.Empty<object>() } }
+        ];
+
+        var subnets = await _engine.ListSubnetsAsync(CancellationToken.None);
+
+        Assert.Equal(["10.1.0.0/16"], subnets);
+        Assert.Equal(["GET /networks"], _api.Calls);
+    }
+
+    [Fact]
+    public async Task Volume_listing_returns_labels()
+    {
+        _api.ListedVolumes =
+        [
+            new { Name = "marker", Labels = new Dictionary<string, string> { [BuilderLabels.Role] = BuilderLabels.ActivationRole, [BuilderLabels.Activation] = "3" } },
+            new { Name = "plain", Labels = (Dictionary<string, string>?)null }
+        ];
+
+        var volumes = await _engine.ListVolumesAsync(Server, CancellationToken.None);
+
+        Assert.True(volumes.Single(volume => volume.Name == "marker").IsActivationMarker);
+        Assert.Equal("3", volumes.Single(volume => volume.Name == "marker").Labels[BuilderLabels.Activation]);
+        Assert.False(volumes.Single(volume => volume.Name == "plain").IsActivationMarker);
     }
 
     [Fact]

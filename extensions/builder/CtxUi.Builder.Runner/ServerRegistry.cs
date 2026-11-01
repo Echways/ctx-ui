@@ -15,7 +15,7 @@ public sealed class RunnerRequestException(int status, string message) : Excepti
 
 public sealed class ReleaseRecord(int number, ReleaseState state)
 {
-    private const int MaxLogCharacters = 256 * 1024;
+    public const int MaxLogCharacters = 256 * 1024;
 
     private readonly object _sync = new();
     private readonly StringBuilder _log = new();
@@ -107,6 +107,7 @@ public sealed class ServerRecord(Guid id, CancellationToken stopping)
     public Dictionary<int, ReleaseRecord> Releases { get; } = [];
     public Dictionary<int, string> Candidates { get; } = [];
     public HashSet<string> Retiring { get; } = new(StringComparer.Ordinal);
+    public HashSet<string> Unmarked { get; } = new(StringComparer.Ordinal);
     public int? ActiveRelease { get; set; }
     public string? ActiveContainer { get; set; }
     public int? BuildingRelease { get; set; }

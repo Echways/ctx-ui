@@ -10,7 +10,15 @@ namespace CtxUi.Builder.Runner;
 
 public sealed class BuilderObjectRefusedException(string message) : Exception(message);
 
+public sealed class BuilderFileTooLargeException(string path, long maxBytes)
+    : Exception($"The file {path} is larger than the limit of {maxBytes / 1024} KB.");
+
 public sealed record BuilderContainer(string Name, IReadOnlyDictionary<string, string> Labels, bool Running);
+
+public sealed record BuilderVolume(string Name, IReadOnlyDictionary<string, string> Labels)
+{
+    public bool IsActivationMarker => Labels.GetValueOrDefault(BuilderLabels.Role) == BuilderLabels.ActivationRole;
+}
 
 public interface IDockerEngine
 {
@@ -22,10 +30,10 @@ public interface IDockerEngine
     Task RemoveContainerAsync(Guid server, string name, CancellationToken ct);
     Task<long> WaitContainerAsync(Guid server, string name, CancellationToken ct);
     Task ExtractArchiveAsync(Guid server, string name, string path, Stream archive, CancellationToken ct);
-    Task<string?> ReadFileAsync(Guid server, string name, string path, CancellationToken ct);
+    Task<string?> ReadFileAsync(Guid server, string name, string path, long maxBytes, CancellationToken ct);
     IAsyncEnumerable<string> ReadLogsAsync(Guid server, string name, int? tail, bool follow, CancellationToken ct);
     Task EnsureVolumeAsync(Guid server, VolumesCreateParameters parameters, CancellationToken ct);
-    Task<IReadOnlyList<string>> ListVolumesAsync(Guid server, CancellationToken ct);
+    Task<IReadOnlyList<BuilderVolume>> ListVolumesAsync(Guid server, CancellationToken ct);
     Task RemoveVolumeAsync(Guid server, string name, CancellationToken ct);
     Task<IReadOnlyList<string>> ListSubnetsAsync(CancellationToken ct);
     Task<IReadOnlyList<string>> ListNetworksAsync(Guid server, CancellationToken ct);
@@ -41,6 +49,8 @@ public sealed class DockerEngine : IDockerEngine, IDisposable
 {
     private const uint StopGraceSeconds = 10;
     private const int LogBufferBytes = 8192;
+    private const int ArchiveReadBufferBytes = 81920;
+    private const int ArchiveOverheadBytes = 16 * 1024;
     private const int NoDefaultRoutePriority = -1000;
 
     private readonly DockerClient _client;
@@ -109,21 +119,26 @@ public sealed class DockerEngine : IDockerEngine, IDisposable
         await _client.Containers.ExtractArchiveToContainerAsync(name, new ContainerPathStatParameters { Path = path }, archive, ct);
     }
 
-    public async Task<string?> ReadFileAsync(Guid server, string name, string path, CancellationToken ct)
+    public async Task<string?> ReadFileAsync(Guid server, string name, string path, long maxBytes, CancellationToken ct)
     {
         await RequireContainerAsync(server, name, ct);
         try
         {
             var response = await _client.Containers.GetArchiveFromContainerAsync(name, new GetArchiveFromContainerParameters { Path = path }, false, ct);
-            using var buffered = new MemoryStream();
-            await using (response.Stream)
+            await using var archive = response.Stream;
+            if (response.Stat?.Size > maxBytes)
             {
-                await response.Stream.CopyToAsync(buffered, ct);
+                throw new BuilderFileTooLargeException(path, maxBytes);
             }
 
-            buffered.Position = 0;
+            using var buffered = await BufferBoundedAsync(archive, path, maxBytes, ct);
             await using var tar = new TarReader(buffered);
             var entry = await tar.GetNextEntryAsync(copyData: false, ct);
+            if (entry?.Length > maxBytes)
+            {
+                throw new BuilderFileTooLargeException(path, maxBytes);
+            }
+
             if (entry?.DataStream is not { } data)
             {
                 return null;
@@ -136,6 +151,26 @@ public sealed class DockerEngine : IDockerEngine, IDisposable
         {
             return null;
         }
+    }
+
+    private static async Task<MemoryStream> BufferBoundedAsync(Stream archive, string path, long maxBytes, CancellationToken ct)
+    {
+        var buffered = new MemoryStream();
+        var chunk = new byte[ArchiveReadBufferBytes];
+        int read;
+        while ((read = await archive.ReadAsync(chunk, ct)) > 0)
+        {
+            if (buffered.Length + read > maxBytes + ArchiveOverheadBytes)
+            {
+                await buffered.DisposeAsync();
+                throw new BuilderFileTooLargeException(path, maxBytes);
+            }
+
+            buffered.Write(chunk, 0, read);
+        }
+
+        buffered.Position = 0;
+        return buffered;
     }
 
     public async IAsyncEnumerable<string> ReadLogsAsync(Guid server, string name, int? tail, bool follow, [EnumeratorCancellation] CancellationToken ct)
@@ -180,10 +215,12 @@ public sealed class DockerEngine : IDockerEngine, IDisposable
         await _client.Volumes.CreateAsync(parameters, ct);
     }
 
-    public async Task<IReadOnlyList<string>> ListVolumesAsync(Guid server, CancellationToken ct)
+    public async Task<IReadOnlyList<BuilderVolume>> ListVolumesAsync(Guid server, CancellationToken ct)
     {
         var volumes = await _client.Volumes.ListAsync(new VolumesListParameters { Filters = LabelFilter(server) }, ct);
-        return (volumes.Volumes ?? []).Select(volume => volume.Name).ToList();
+        return (volumes.Volumes ?? [])
+            .Select(volume => new BuilderVolume(volume.Name, (volume.Labels ?? new Dictionary<string, string>()).AsReadOnly()))
+            .ToList();
     }
 
     public async Task RemoveVolumeAsync(Guid server, string name, CancellationToken ct)

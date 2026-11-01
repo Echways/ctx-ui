@@ -31,8 +31,11 @@ public class ExtensionSlotsTests
         await gateway.AddClientAsync("Петров", ["echo"]);
     }
 
-    private static Task OpenAsync(IPage page, string link) =>
-        page.GetByRole(AriaRole.Navigation).GetByRole(AriaRole.Link, new() { Name = link }).ClickAsync();
+    private static async Task OpenAsync(IPage page, string link)
+    {
+        await page.GetByRole(AriaRole.Navigation).GetByRole(AriaRole.Link, new() { Name = link }).ClickAsync();
+        await Expect(page.GetByRole(AriaRole.Heading, new() { Name = link })).ToBeVisibleAsync();
+    }
 
     private static async Task<string[]> MenuOfAsync(IPage page, ILocator row)
     {

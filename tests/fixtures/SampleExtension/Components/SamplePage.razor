@@ -4,6 +4,7 @@
 <p class="sample-note" data-testid="sample-note">@SampleText.Note</p>
 <p data-testid="sample-parser">UAParser @typeof(UAParser.Parser).Assembly.GetName().Version!.ToString(3)</p>
 <p data-testid="sample-context">@System.Runtime.Loader.AssemblyLoadContext.GetLoadContext(typeof(SamplePage).Assembly)?.Name</p>
+<p data-testid="sample-compliance">@System.Runtime.Loader.AssemblyLoadContext.GetLoadContext(typeof(Microsoft.Extensions.Compliance.Classification.DataClassification).Assembly)?.Name</p>
 <Button OnClick="@(() => _clicks++)">@SampleText.Press</Button>
 <p data-testid="sample-clicks">@_clicks</p>
 

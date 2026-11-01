@@ -1,11 +1,12 @@
 @page "/inbounds"
+@inject PanelLayout Layout
 @inject PanelBackend Backend
 @inject IDialogService Dialogs
 @inject PanelActions Actions
 @inject TimeProvider Clock
 @inject NavigationManager Navigation
 
-<PageHead Count="_rows?.Count" UpdatedAt="_loadedAt" OnRefresh="LoadAsync">
+<PageHead Title="@Layout.TitleOf(PanelSections.Inbounds)" Count="_rows?.Count" UpdatedAt="_loadedAt" OnRefresh="LoadAsync">
     <Summary>
         @if (_rows is { Count: > 0 })
         {

@@ -21,4 +21,7 @@
   <data name="Press" xml:space="preserve">
     <value>Нажать</value>
   </data>
+  <data name="Customers" xml:space="preserve">
+    <value>Заказчики</value>
+  </data>
 </root>

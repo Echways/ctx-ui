@@ -1,10 +1,11 @@
 @page "/clients"
+@inject PanelLayout Layout
 @inject PanelBackend Backend
 @inject IDialogService Dialogs
 @inject PanelActions Actions
 @inject TimeProvider Clock
 
-<PageHead Count="_clients?.Count" UpdatedAt="_clients is null ? null : _loadedAt" OnRefresh="LoadAsync">
+<PageHead Title="@Layout.TitleOf(PanelSections.Clients)" Count="_clients?.Count" UpdatedAt="_clients is null ? null : _loadedAt" OnRefresh="LoadAsync">
     <Summary>
         @if (_clients is { Count: > 0 })
         {

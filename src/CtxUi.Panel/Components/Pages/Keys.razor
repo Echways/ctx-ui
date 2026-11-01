@@ -1,10 +1,11 @@
 @page "/keys"
+@inject PanelLayout Layout
 @inject PanelBackend Backend
 @inject IDialogService Dialogs
 @inject PanelActions Actions
 @inject TimeProvider Clock
 
-<PageHead Count="_keys?.Count" UpdatedAt="_loadedAt" OnRefresh="LoadAsync">
+<PageHead Title="@Layout.TitleOf(PanelSections.ApiKeys)" Count="_keys?.Count" UpdatedAt="_loadedAt" OnRefresh="LoadAsync">
     <Summary>
         <span>@PanelText.KeysSummary</span>
     </Summary>

@@ -633,4 +633,25 @@
   <data name="DeviceApps" xml:space="preserve">
     <value>          приложения: {0}</value>
   </data>
+  <data name="ExtensionRouteOutside" xml:space="preserve">
+    <value>маршрут {0} вне {1}</value>
+  </data>
+  <data name="ExtensionInvalidId" xml:space="preserve">
+    <value>«{0}» не подходит как идентификатор расширения</value>
+  </data>
+  <data name="ExtensionFolderMismatch" xml:space="preserve">
+    <value>в папке «{0}» лежит расширение «{1}», имена должны совпадать</value>
+  </data>
+  <data name="ExtensionReservedId" xml:space="preserve">
+    <value>идентификатор «{0}» занят сервером</value>
+  </data>
+  <data name="ExtensionIncompatible" xml:space="preserve">
+    <value>собрано под API расширений {0}, этот сервер даёт {1}</value>
+  </data>
+  <data name="ExtensionEntryCount" xml:space="preserve">
+    <value>ожидался один класс IPanelExtension, найдено: {0}</value>
+  </data>
+  <data name="ExtensionStartFailed" xml:space="preserve">
+    <value>Расширение «{0}» не запустилось: {1}. Чтобы запустить сервер без него, задайте CtxUi__DisabledExtensions={0}</value>
+  </data>
 </root>

@@ -633,4 +633,25 @@
   <data name="DeviceApps" xml:space="preserve">
     <value>          apps: {0}</value>
   </data>
+  <data name="ExtensionRouteOutside" xml:space="preserve">
+    <value>route {0} is outside {1}</value>
+  </data>
+  <data name="ExtensionInvalidId" xml:space="preserve">
+    <value>“{0}” is not a valid extension id</value>
+  </data>
+  <data name="ExtensionFolderMismatch" xml:space="preserve">
+    <value>folder “{0}” holds extension “{1}”; the names must match</value>
+  </data>
+  <data name="ExtensionReservedId" xml:space="preserve">
+    <value>id “{0}” is reserved by the server</value>
+  </data>
+  <data name="ExtensionIncompatible" xml:space="preserve">
+    <value>built for extension API {0}, this server provides {1}</value>
+  </data>
+  <data name="ExtensionEntryCount" xml:space="preserve">
+    <value>expected one IPanelExtension class, found {0}</value>
+  </data>
+  <data name="ExtensionStartFailed" xml:space="preserve">
+    <value>Extension “{0}” failed to start: {1}. To start without it, set CtxUi__DisabledExtensions={0}</value>
+  </data>
 </root>

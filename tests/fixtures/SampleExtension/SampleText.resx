@@ -21,4 +21,7 @@
   <data name="Press" xml:space="preserve">
     <value>Press</value>
   </data>
+  <data name="Customers" xml:space="preserve">
+    <value>Customers</value>
+  </data>
 </root>

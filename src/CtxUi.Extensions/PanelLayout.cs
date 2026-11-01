@@ -78,6 +78,8 @@ public sealed class PanelLayout
         return id;
     }
 
+    internal string TitleOf(string id) => Find(id).Title();
+
     internal void Hide(string id) => Find(id).Hidden = true;
 
     internal void Rename(string id, Func<string> title) => Find(id).Title = title;

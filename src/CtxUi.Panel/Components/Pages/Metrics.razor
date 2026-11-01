@@ -1,10 +1,11 @@
 @page "/metrics"
 @using System.Globalization
+@inject PanelLayout Layout
 @inject PanelBackend Backend
 @inject TimeProvider Clock
 @inject NavigationManager Navigation
 
-<PageHead UpdatedAt="_loadedAt" OnRefresh="LoadAsync">
+<PageHead Title="@Layout.TitleOf(PanelSections.Metrics)" UpdatedAt="_loadedAt" OnRefresh="LoadAsync">
     <Actions>
         @if (_report is { } shown)
         {

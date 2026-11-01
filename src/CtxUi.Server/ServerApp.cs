@@ -5,10 +5,11 @@ using CtxUi.Core.Data;
 using CtxUi.Gateway;
 using CtxUi.Panel;
 using CtxUi.Server.Api;
+using CtxUi.Server.Extensions;
 
 namespace CtxUi.Server;
 
-public static class ServerApp
+public static partial class ServerApp
 {
     public static WebApplication Build(string[] args, Action<WebApplicationBuilder>? configure = null)
     {
@@ -22,7 +23,10 @@ public static class ServerApp
         builder.Logging.AddCtxUiFilters();
         builder.Services.AddCtxUi(builder.Configuration);
         builder.Services.AddCtxUiGateway(builder.Configuration.GetSection(CtxUiOptions.Section));
-        builder.Services.AddCtxUiPanel(builder.Configuration.GetSection(CtxUiOptions.Section));
+        var section = builder.Configuration.GetSection(CtxUiOptions.Section);
+        var extensions = ExtensionCatalog.Load(section.Get<CtxUiOptions>() ?? new CtxUiOptions());
+        builder.Services.AddSingleton(extensions);
+        builder.Services.AddCtxUiPanel(section, layout => ExtensionPipeline.Register(layout, builder.Services, extensions, section));
         builder.Services.AddCtxUiConnect(
             builder.Configuration.GetSection(CtxUiOptions.Section),
             ServiceRegistration.KeysPath(builder.Configuration));
@@ -42,6 +46,7 @@ public static class ServerApp
         app.UseCtxUiConnectGate();
         app.UseCtxUiPanelGate([GatewayServices.Path, HealthProbe.Path, .. ConnectServices.OpenPaths]);
         app.UseCtxUiPanelLanguage();
+        app.UseExtensionAssets(extensions);
         app.UseCtxUiApiDocs();
         app.UseRouting();
         app.UseRateLimiter();
@@ -57,6 +62,7 @@ public static class ServerApp
 
     public static async Task InitializeAsync(WebApplication app, CancellationToken ct = default)
     {
+        ReportRejectedExtensions(app);
         await using (var scope = app.Services.CreateAsyncScope())
             await scope.ServiceProvider.GetRequiredService<CtxUiDbContext>().PrepareAsync(ct);
 
@@ -64,6 +70,24 @@ public static class ServerApp
         app.Services.LoadCtxUiConnect();
         await app.Services.LoadCtxUiPanelAsync(ct);
     }
+
+    private static void ReportRejectedExtensions(WebApplication app)
+    {
+        var logger = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger(typeof(ExtensionCatalog));
+        foreach (var rejected in app.Services.GetRequiredService<ExtensionCatalog>().Rejected)
+        {
+            if (rejected.Reason == ExtensionCatalog.Disabled)
+                LogExtensionDisabled(logger, rejected.Name);
+            else
+                LogExtensionSkipped(logger, rejected.Name, rejected.Reason);
+        }
+    }
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Extension {Name} is disabled")]
+    private static partial void LogExtensionDisabled(ILogger logger, string name);
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "Extension {Name} skipped: {Reason}")]
+    private static partial void LogExtensionSkipped(ILogger logger, string name, string reason);
 
     private static ForwardedHeadersOptions ForwardedFor(string trustedProxies)
     {

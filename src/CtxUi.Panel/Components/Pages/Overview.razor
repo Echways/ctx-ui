@@ -1,12 +1,13 @@
 @page "/"
 @using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
 @using Microsoft.JSInterop
+@inject PanelLayout Layout
 @inject PanelBackend Backend
 @inject TimeProvider Clock
 @inject ProtectedSessionStorage Session
 @inject NavigationManager Navigation
 
-<PageHead UpdatedAt="_loadedAt" OnRefresh="LoadAsync" />
+<PageHead Title="@Layout.TitleOf(PanelSections.Overview)" UpdatedAt="_loadedAt" OnRefresh="LoadAsync" />
 <AutoRefresh OnTick="LoadAsync" />
 
 @if (_overview is null)

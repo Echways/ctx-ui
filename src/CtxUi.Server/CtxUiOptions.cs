@@ -13,4 +13,8 @@ public sealed class CtxUiOptions
     public string Language { get; set; } = Languages.Default;
 
     public string TrustedProxies { get; set; } = "";
+
+    public string? ExtensionsDir { get; set; }
+
+    public string DisabledExtensions { get; set; } = "";
 }

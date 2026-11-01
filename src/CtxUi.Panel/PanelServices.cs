@@ -79,6 +79,7 @@ public static partial class PanelServices
         var layout = CreateLayout();
         extend?.Invoke(layout);
         layout.Apply(services.AddEnfilade());
+        services.AddSingleton(layout);
         services.AddScoped<AuthenticationStateProvider, AdminSessionState>();
         return services;
     }

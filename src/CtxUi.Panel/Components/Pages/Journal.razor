@@ -1,9 +1,10 @@
 @page "/journal"
 @using System.Globalization
+@inject PanelLayout Layout
 @inject PanelBackend Backend
 @inject TimeProvider Clock
 
-<PageHead UpdatedAt="_loadedAt" OnRefresh="LoadAsync">
+<PageHead Title="@Layout.TitleOf(PanelSections.Journal)" UpdatedAt="_loadedAt" OnRefresh="LoadAsync">
     <Summary>
         @if (_lines is { Count: > 0 })
         {

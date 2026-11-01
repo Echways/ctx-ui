@@ -8,4 +8,6 @@
     <ProjectReference Include="..\..\src\CtxUi.Server\CtxUi.Server.csproj" />
   </ItemGroup>
 
+  <Import Project="..\fixtures\PublishTestExtensions.targets" />
+
 </Project>

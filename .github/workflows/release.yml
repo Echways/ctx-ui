@@ -117,9 +117,71 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+  packages:
+    name: Pack extension packages
+    needs: [version, checks]
+    runs-on: ubuntu-26.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out
+        uses: actions/checkout@v7
+
+      - name: Set up .NET
+        uses: ./.github/actions/dotnet
+
+      - name: Pack
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          for project in src/CtxUi.Extensions src/CtxUi.Extensions.Testing templates/CtxUi.Extensions.Templates; do
+            dotnet pack "$project" -c Release -p:Version="$VERSION" -p:ContinuousIntegrationBuild=true -o artifacts/packages
+          done
+
+      - name: Upload packages
+        uses: actions/upload-artifact@v7
+        with:
+          name: packages
+          path: artifacts/packages
+          retention-days: 90
+          if-no-files-found: error
+
+  nuget:
+    name: Publish to NuGet.org
+    needs: [version, packages]
+    runs-on: ubuntu-26.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      id-token: write
+    environment:
+      name: nuget
+      url: https://www.nuget.org/packages/CtxUi.Extensions/${{ needs.version.outputs.version }}
+    steps:
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Download packages
+        uses: actions/download-artifact@v8
+        with:
+          name: packages
+          path: artifacts/packages
+
+      - name: Log in to NuGet.org
+        id: login
+        uses: NuGet/login@v1
+        with:
+          user: ${{ secrets.NUGET_USER }}
+
+      - name: Push packages
+        env:
+          NUGET_API_KEY: ${{ steps.login.outputs.NUGET_API_KEY }}
+        run: dotnet nuget push "artifacts/packages/*.nupkg" --source https://api.nuget.org/v3/index.json --api-key "$NUGET_API_KEY" --skip-duplicate
+
   release:
     name: Publish release
-    needs: [version, assets, image]
+    needs: [version, assets, image, nuget]
     runs-on: ubuntu-26.04
     timeout-minutes: 5
     permissions:

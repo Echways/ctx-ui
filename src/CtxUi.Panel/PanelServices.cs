@@ -8,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Enfilade;
+using CtxUi.Extensions;
 using CtxUi.Core;
 using CtxUi.Core.Admins;
 using CtxUi.Core.Data;
@@ -27,13 +28,27 @@ public static partial class PanelServices
 
     private const string Favicon = "_content/CtxUi.Panel/favicon.svg";
 
-    public static IServiceCollection AddCtxUiPanel(this IServiceCollection services, IConfiguration section)
+    internal static PanelLayout CreateLayout() =>
+        new PanelLayout()
+            .AddBuiltIn<Overview>(PanelSections.Overview, () => PanelText.Overview)
+            .AddBuiltIn<Metrics>(PanelSections.Metrics, () => PanelText.Metrics)
+            .AddBuiltIn<Inbounds>(PanelSections.Inbounds, () => PanelText.Inbounds)
+            .AddBuiltIn<Clients>(PanelSections.Clients, () => PanelText.Clients)
+            .AddBuiltIn<Journal>(PanelSections.Journal, () => PanelText.Journal)
+            .AddBuiltInCaption(PanelSections.AccessCaption, () => PanelText.AccessSection)
+            .AddBuiltIn<OAuth>(PanelSections.OAuth, () => PanelText.OAuth)
+            .AddBuiltIn<Keys>(PanelSections.ApiKeys, () => PanelText.ApiKeys)
+            .AddBuiltInStylesheet("_content/CtxUi.Panel/panel.css");
+
+    internal static IServiceCollection AddCtxUiPanel(this IServiceCollection services, IConfiguration section, Action<PanelLayout> extend)
     {
         services.Configure<PanelOptions>(section);
         var sessionCheck = section.Get<PanelOptions>()?.SessionCheckInterval ?? new PanelOptions().SessionCheckInterval;
         services.AddSingleton<PanelGate>();
         services.AddSingleton<PanelBackend>();
+        services.AddSingleton<IPanelData, PanelData>();
         services.AddScoped<PanelActions>();
+        services.AddScoped<IBlockSheets, BlockSheets>();
         services.AddIdentityCore<Admin>(options =>
             {
                 options.Lockout.MaxFailedAccessAttempts = MaxFailedSignIns;
@@ -63,16 +78,10 @@ public static partial class PanelServices
             shell.SignOutPath = "logout";
             shell.AutoRefreshInterval = panel.Value.AutoRefreshInterval;
         });
-        services.AddEnfilade()
-            .AddSection<Overview>(() => PanelText.Overview)
-            .AddSection<Metrics>(() => PanelText.Metrics)
-            .AddSection<Inbounds>(() => PanelText.Inbounds)
-            .AddSection<Clients>(() => PanelText.Clients)
-            .AddSection<Journal>(() => PanelText.Journal)
-            .AddCaption(() => PanelText.AccessSection)
-            .AddSection<OAuth>(() => PanelText.OAuth)
-            .AddSection<Keys>(() => PanelText.ApiKeys)
-            .AddStylesheet("_content/CtxUi.Panel/panel.css");
+        var layout = CreateLayout();
+        extend(layout);
+        layout.Apply(services.AddEnfilade());
+        services.AddSingleton(layout);
         services.AddScoped<AuthenticationStateProvider, AdminSessionState>();
         return services;
     }

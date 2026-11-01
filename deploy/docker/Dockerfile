@@ -5,6 +5,7 @@ WORKDIR /source
 COPY Directory.Build.props Directory.Packages.props ./
 COPY src/CtxUi.Core/CtxUi.Core.csproj src/CtxUi.Core/
 COPY src/CtxUi.Connect/CtxUi.Connect.csproj src/CtxUi.Connect/
+COPY src/CtxUi.Extensions/CtxUi.Extensions.csproj src/CtxUi.Extensions/
 COPY src/CtxUi.Gateway/CtxUi.Gateway.csproj src/CtxUi.Gateway/
 COPY src/CtxUi.Panel/CtxUi.Panel.csproj src/CtxUi.Panel/
 COPY src/CtxUi.Server/CtxUi.Server.csproj src/CtxUi.Server/

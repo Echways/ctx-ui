@@ -13,12 +13,13 @@ using CtxUi.Core.Usage;
 using CtxUi.Panel;
 using CtxUi.Panel.Accounts;
 using CtxUi.Server.Api;
+using CtxUi.Server.Extensions;
 
 namespace CtxUi.Server;
 
 public static partial class Cli
 {
-    public static bool Handles(string[] args) => args.Length > 0 && args[0] is "inbound" or "client" or "usage" or "admin" or "apikey" or "backup" or "oauth";
+    public static bool Handles(string[] args) => args.Length > 0 && args[0] is "inbound" or "client" or "usage" or "admin" or "apikey" or "backup" or "oauth" or "extension";
 
     public static async Task<int> RunAsync(
         string[] args,
@@ -47,7 +48,7 @@ public static partial class Cli
 
         var root = new RootCommand(ServerText.RootDescription)
         {
-            InboundCommand(), ClientCommand(), UsageCommand(), AdminCommand(), ApiKeyCommand(), BackupCommand(), OAuthCommand(Leaf, output, input ?? Console.In),
+            InboundCommand(), ClientCommand(), UsageCommand(), AdminCommand(), ApiKeyCommand(), BackupCommand(), OAuthCommand(Leaf, output, input ?? Console.In), ExtensionCommand(Leaf, output),
         };
         return await root.Parse(args).InvokeAsync(new InvocationConfiguration { Output = output, Error = error });
 
@@ -399,8 +400,13 @@ public static partial class Cli
                 async (parse, services, ct) =>
                 {
                     var target = Path.GetFullPath(parse.GetValue(directory)!);
-                    var dataDir = Path.GetFullPath(services.GetRequiredService<IOptions<CtxUiOptions>>().Value.DataDir);
-                    await Backup.WriteAsync(services.GetRequiredService<CtxUiDbContext>(), dataDir, target, ct);
+                    var options = services.GetRequiredService<IOptions<CtxUiOptions>>().Value;
+                    await Backup.WriteAsync(
+                        services.GetRequiredService<CtxUiDbContext>(),
+                        Path.GetFullPath(options.DataDir),
+                        ExtensionCatalog.DirectoryOf(options),
+                        target,
+                        ct);
                     output.WriteLine(string.Format(ServerText.BackupWritten, target));
                 });
         }

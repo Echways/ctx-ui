@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <PackageId>CtxUi.Extensions.Templates</PackageId>
+    <PackageType>Template</PackageType>
+    <Description>dotnet new template for a ctx-ui panel extension.</Description>
+    <IncludeSymbols>false</IncludeSymbols>
+    <NoDefaultExcludes>true</NoDefaultExcludes>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <EnableDefaultItems>false</EnableDefaultItems>
+    <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
+    <NoWarn>$(NoWarn);NU5128</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="content/**/*" Exclude="content/**/MyExtension.csproj" Pack="true" PackagePath="content/" />
+  </ItemGroup>
+
+  <Target Name="StampExtensionVersion" BeforeTargets="_GetPackageFiles">
+    <PropertyGroup>
+      <StampedProject>$(IntermediateOutputPath)MyExtension.csproj</StampedProject>
+    </PropertyGroup>
+    <WriteLinesToFile File="$(StampedProject)" Overwrite="true"
+                      Lines="$([System.IO.File]::ReadAllText('content/ctxui-extension/MyExtension.csproj').Replace('CTXUI_EXTENSIONS_VERSION', '$(Version)'))" />
+    <ItemGroup>
+      <None Include="$(StampedProject)" Pack="true" PackagePath="content/ctxui-extension/MyExtension.csproj" />
+    </ItemGroup>
+  </Target>
+
+</Project>

@@ -1,0 +1,17 @@
+@typeparam TContext
+@inject PanelSlotRegistry Slots
+
+@foreach (var block in Slots.Blocks(Slot.Name))
+{
+    <div class="panel-block" @key="block">
+        <BlockFrame Block="block" Context="Context" />
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public PanelSlot<TContext> Slot { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public TContext Context { get; set; } = default!;
+}

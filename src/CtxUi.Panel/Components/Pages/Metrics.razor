@@ -1,11 +1,13 @@
 @page "/metrics"
 @using System.Globalization
+@inject PanelLayout Layout
 @inject PanelBackend Backend
 @inject TimeProvider Clock
 @inject NavigationManager Navigation
 
-<PageHead UpdatedAt="_loadedAt" OnRefresh="LoadAsync">
+<PageHead Title="@Layout.TitleOf(PanelSections.Metrics)" UpdatedAt="_loadedAt" OnRefresh="LoadAsync">
     <Actions>
+        <PageButtons Section="@PanelSections.Metrics" OnDone="LoadAsync" />
         @if (_report is { } shown)
         {
             <nav class="periods" aria-label="@PanelText.Period">
@@ -18,6 +20,7 @@
         }
     </Actions>
 </PageHead>
+<PageTopBlocks Section="@PanelSections.Metrics" />
 <AutoRefresh OnTick="LoadAsync" />
 
 @if (_report is not { } report)
@@ -189,6 +192,8 @@ else
         }
     }
 }
+
+<PageBottomBlocks Section="@PanelSections.Metrics" />
 
 @code {
     private MetricsReport? _report;

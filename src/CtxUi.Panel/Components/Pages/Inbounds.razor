@@ -1,11 +1,12 @@
 @page "/inbounds"
+@inject PanelLayout Layout
 @inject PanelBackend Backend
 @inject IDialogService Dialogs
 @inject PanelActions Actions
 @inject TimeProvider Clock
 @inject NavigationManager Navigation
 
-<PageHead Count="_rows?.Count" UpdatedAt="_loadedAt" OnRefresh="LoadAsync">
+<PageHead Title="@Layout.TitleOf(PanelSections.Inbounds)" Count="_rows?.Count" UpdatedAt="_loadedAt" OnRefresh="LoadAsync">
     <Summary>
         @if (_rows is { Count: > 0 })
         {
@@ -13,12 +14,14 @@
         }
     </Summary>
     <Actions>
+        <PageButtons Section="@PanelSections.Inbounds" OnDone="LoadAsync" />
         @if (_rows is { Count: > 0 })
         {
             <button type="button" class="btn-k pigment" @onclick="AddAsync">@PanelText.AddInbound</button>
         }
     </Actions>
 </PageHead>
+<PageTopBlocks Section="@PanelSections.Inbounds" />
 
 @if (_rows is null)
 {
@@ -59,6 +62,7 @@ else
                     <button type="button" class="link" @onclick="() => EditAsync(context.Inbound)">@PanelText.Edit</button>
                     <MudMenu Label="⋯" AriaLabel="@string.Format(PanelText.MoreActions, context.Inbound.Slug)" Class="more"
                              AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
+                        <SlotMenuItems Slot="PanelSlots.InboundActions" Context="() => PanelData.Summary(context.Inbound)" DividerAfter="true" OnDone="LoadAsync" />
                         <MudMenuItem Class="danger" OnClick="() => RemoveAsync(context)">@PanelText.Delete</MudMenuItem>
                     </MudMenu>
                 </span>
@@ -66,6 +70,8 @@ else
         </RowTemplate>
     </MudTable>
 }
+
+<PageBottomBlocks Section="@PanelSections.Inbounds" />
 
 @code {
     private List<Row>? _rows;

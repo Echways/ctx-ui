@@ -447,3 +447,12 @@ svg.hz:focus-visible {
     display: grid;
     gap: 8px;
 }
+
+.panel-block {
+    margin-block: 16px;
+}
+
+.panel-block-failed {
+    margin: 0;
+    color: var(--mist);
+}

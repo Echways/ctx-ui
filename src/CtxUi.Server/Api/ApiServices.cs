@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.OpenApi;
 
 namespace CtxUi.Server.Api;
@@ -10,6 +11,8 @@ public static class ApiServices
     public const string Prefix = "/api/v1";
     public const string SwaggerPath = "swagger";
 
+    public const string ExtensionsPolicy = "Extensions";
+
     private const string Policy = "api";
 
     public static IServiceCollection AddCtxUiApi(this IServiceCollection services)
@@ -17,6 +20,10 @@ public static class ApiServices
         services.AddAuthentication().AddScheme<AuthenticationSchemeOptions, ApiKeyAuthentication>(ApiKeyAuthentication.SchemeName, null);
         services.AddAuthorizationBuilder()
             .AddPolicy(Policy, policy => policy.AddAuthenticationSchemes(ApiKeyAuthentication.SchemeName).RequireAuthenticatedUser());
+        services.AddAuthorizationBuilder()
+            .AddPolicy(ExtensionsPolicy, policy => policy
+                .AddAuthenticationSchemes(IdentityConstants.ApplicationScheme, ApiKeyAuthentication.SchemeName)
+                .RequireAuthenticatedUser());
         services.AddProblemDetails();
         services.ConfigureHttpJsonOptions(options => options.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
         services.AddOpenApi(Document, options =>

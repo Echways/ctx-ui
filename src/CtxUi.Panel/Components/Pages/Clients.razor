@@ -1,10 +1,11 @@
 @page "/clients"
+@inject PanelLayout Layout
 @inject PanelBackend Backend
 @inject IDialogService Dialogs
 @inject PanelActions Actions
 @inject TimeProvider Clock
 
-<PageHead Count="_clients?.Count" UpdatedAt="_clients is null ? null : _loadedAt" OnRefresh="LoadAsync">
+<PageHead Title="@Layout.TitleOf(PanelSections.Clients)" Count="_clients?.Count" UpdatedAt="_clients is null ? null : _loadedAt" OnRefresh="LoadAsync">
     <Summary>
         @if (_clients is { Count: > 0 })
         {
@@ -12,6 +13,7 @@
         }
     </Summary>
     <Actions>
+        <PageButtons Section="@PanelSections.Clients" OnDone="LoadAsync" />
         @if (_clients is { Count: > 0 })
         {
             <input class="line search" type="search" placeholder="@PanelText.SearchByName" aria-label="@PanelText.SearchByName" autocomplete="off"
@@ -20,6 +22,7 @@
         }
     </Actions>
 </PageHead>
+<PageTopBlocks Section="@PanelSections.Clients" />
 
 @if (_clients is null)
 {
@@ -88,6 +91,7 @@ else
                         <MudMenuItem OnClick="() => DevicesAsync(context)">@PanelText.Devices</MudMenuItem>
                         <MudMenuItem OnClick="() => ResetAsync(context)">@PanelText.ResetQuota</MudMenuItem>
                         <MudMenuItem OnClick="() => ReissueAsync(context)">@PanelText.NewToken</MudMenuItem>
+                        <SlotMenuItems Slot="PanelSlots.ClientActions" Context="() => PanelData.Summary(context)" OnDone="LoadAsync" />
                         <MudDivider />
                         <MudMenuItem Class="danger" OnClick="() => RemoveAsync(context)">@PanelText.Delete</MudMenuItem>
                     </MudMenu>
@@ -96,6 +100,8 @@ else
         </RowTemplate>
     </MudTable>
 }
+
+<PageBottomBlocks Section="@PanelSections.Clients" />
 
 @code {
     private List<Client>? _clients;

@@ -633,4 +633,76 @@
   <data name="DeviceApps" xml:space="preserve">
     <value>          приложения: {0}</value>
   </data>
+  <data name="ExtensionRouteOutside" xml:space="preserve">
+    <value>маршрут {0} вне {1}</value>
+  </data>
+  <data name="ExtensionInvalidId" xml:space="preserve">
+    <value>«{0}» не подходит как идентификатор расширения</value>
+  </data>
+  <data name="ExtensionFolderMismatch" xml:space="preserve">
+    <value>в папке «{0}» лежит расширение «{1}», имена должны совпадать</value>
+  </data>
+  <data name="ExtensionReservedId" xml:space="preserve">
+    <value>идентификатор «{0}» занят сервером</value>
+  </data>
+  <data name="ExtensionIncompatible" xml:space="preserve">
+    <value>собрано под API расширений {0}, этот сервер даёт {1}</value>
+  </data>
+  <data name="ExtensionEntryCount" xml:space="preserve">
+    <value>ожидался один класс IPanelExtension, найдено: {0}</value>
+  </data>
+  <data name="ExtensionStartFailed" xml:space="preserve">
+    <value>Расширение «{0}» не запустилось: {1}. Чтобы запустить сервер без него, задайте CtxUi__DisabledExtensions={0}</value>
+  </data>
+  <data name="ExtensionCommand" xml:space="preserve">
+    <value>управление расширениями панели</value>
+  </data>
+  <data name="ExtensionInstallCommand" xml:space="preserve">
+    <value>установить расширение из zip-архива</value>
+  </data>
+  <data name="ExtensionListCommand" xml:space="preserve">
+    <value>показать установленные расширения и их состояние</value>
+  </data>
+  <data name="ExtensionRemoveCommand" xml:space="preserve">
+    <value>удалить расширение</value>
+  </data>
+  <data name="ExtensionFileArgument" xml:space="preserve">
+    <value>путь к zip-архиву расширения</value>
+  </data>
+  <data name="ExtensionIdArgument" xml:space="preserve">
+    <value>идентификатор расширения</value>
+  </data>
+  <data name="ExtensionPurgeOption" xml:space="preserve">
+    <value>удалить и данные расширения</value>
+  </data>
+  <data name="ExtensionInstalled" xml:space="preserve">
+    <value>Расширение {0} {1} установлено; перезапустите ctx-ui, чтобы оно заработало</value>
+  </data>
+  <data name="ExtensionRemoved" xml:space="preserve">
+    <value>Расширение {0} удалено; перезапустите ctx-ui, чтобы изменение вступило в силу</value>
+  </data>
+  <data name="ExtensionArchiveMissing" xml:space="preserve">
+    <value>файл {0} не найден или недоступен пользователю службы</value>
+  </data>
+  <data name="ExtensionArchiveBroken" xml:space="preserve">
+    <value>не удалось распаковать {0}: {1}</value>
+  </data>
+  <data name="ExtensionManifestBroken" xml:space="preserve">
+    <value>нет корректного extension.json</value>
+  </data>
+  <data name="ExtensionAssemblyMissing" xml:space="preserve">
+    <value>нет {0}.dll</value>
+  </data>
+  <data name="ExtensionUnknown" xml:space="preserve">
+    <value>расширение «{0}» не установлено</value>
+  </data>
+  <data name="ExtensionManifestIncomplete" xml:space="preserve">
+    <value>в extension.json должны быть id, name, version, api и assembly</value>
+  </data>
+  <data name="ExtensionManifestAssemblyOutside" xml:space="preserve">
+    <value>extension.json указывает на сборку вне папки: {0}</value>
+  </data>
+  <data name="ExtensionNone" xml:space="preserve">
+    <value>Расширения не установлены</value>
+  </data>
 </root>

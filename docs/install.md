@@ -237,6 +237,8 @@ docker compose exec ctx-ui rm -r /data/$backup
 
 Keep the settings file (`ctx-ui.env` or `.env`) next to the copy.
 
+The copy also holds installed [panel extensions](extensions.md) and their data.
+
 ### Restore
 
 Stop the service, replace everything in the data directory with the copy,

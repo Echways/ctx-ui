@@ -1,0 +1,5 @@
+@page "/sample/boom"
+
+@code {
+    protected override void OnInitialized() => throw new InvalidOperationException("Sample page failure");
+}

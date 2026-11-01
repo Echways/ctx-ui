@@ -24,6 +24,8 @@ install method.
 | `CtxUi__UsageRetentionDays` | `CtxUi:UsageRetentionDays` | `30` | call log retention; daily totals are kept forever. The Metrics page offers only periods that fit in it: 90 days needs at least `90` |
 | `CtxUi__ConcurrencyWait` | `CtxUi:ConcurrencyWait` | `00:00:01` | how long a request over the concurrency limit waits for a slot before 429 |
 | `CtxUi__TrustedProxies` | `CtxUi:TrustedProxies` | empty | addresses and subnets (comma separated) of reverse proxies whose `X-Forwarded-For` is trusted; loopback is always trusted. Needed for the sign-in IP of devices |
+| `CtxUi__ExtensionsDir` | `CtxUi:ExtensionsDir` | `<DataDir>/extensions` | folder of installed panel extensions, see [extensions](extensions.md) |
+| `CtxUi__DisabledExtensions` | `CtxUi:DisabledExtensions` | empty | extension ids (comma-separated) not to load |
 | `CtxUi__SessionCheckInterval` | `CtxUi:SessionCheckInterval` | `00:01:00` | how often an open panel rechecks the administrator's session |
 
 Use `Urls`, not `ASPNETCORE_URLS`: the latter is overridden by

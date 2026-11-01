@@ -82,11 +82,17 @@ health_becomes() {
 docker build -q -f "$root/deploy/docker/Dockerfile" --build-arg "VERSION=$version" \
     -t "ghcr.io/echways/ctx-ui:$version" "$root" > /dev/null
 
+dotnet publish "$root/tests/fixtures/SampleExtension" -c Release -o "$stack/extension/sample" > /dev/null
+chmod -R a+rX "$stack/extension"
+
 cp "$root/deploy/docker/compose.yaml" "$root/deploy/docker/Caddyfile" "$stack/"
 sed -e "s/^CTX_UI_VERSION=.*/CTX_UI_VERSION=$version/" -e "s/^CTX_UI_DOMAIN=.*/CTX_UI_DOMAIN=localhost/" \
     "$root/deploy/docker/.env.example" > "$stack/.env"
 cat > "$stack/compose.override.yaml" <<'YAML'
 services:
+  ctx-ui:
+    volumes:
+      - ./extension/sample:/data/extensions/sample:ro
   caddy:
     ports: !override
       - "18080:80"
@@ -109,6 +115,11 @@ echo "== container"
 check "runs without root" equals 1654 "$(compose exec -T ctx-ui id -u)"
 check "data directory is private" data_mode_becomes "700 1654"
 check "container reports itself healthy" health_becomes healthy
+
+echo "== extensions"
+check "mounted extension is working" contains "sample  1.2.3  ok" "$(compose exec -T ctx-ui ctx-ui extension list 2>&1)"
+output="$(compose logs ctx-ui 2>&1)"
+check "the log has no extension errors" equals "" "$(echo "$output" | grep "skipped" || true)"
 
 echo "== command line"
 output="$(compose exec -T ctx-ui ctx-ui inbound add echo --url http://upstream:9000/mcp 2>&1)" || true

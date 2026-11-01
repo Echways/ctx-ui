@@ -1,12 +1,18 @@
 @page "/"
 @using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
 @using Microsoft.JSInterop
+@inject PanelLayout Layout
 @inject PanelBackend Backend
 @inject TimeProvider Clock
 @inject ProtectedSessionStorage Session
 @inject NavigationManager Navigation
 
-<PageHead UpdatedAt="_loadedAt" OnRefresh="LoadAsync" />
+<PageHead Title="@Layout.TitleOf(PanelSections.Overview)" UpdatedAt="_loadedAt" OnRefresh="LoadAsync">
+    <Actions>
+        <PageButtons Section="@PanelSections.Overview" OnDone="LoadAsync" />
+    </Actions>
+</PageHead>
+<PageTopBlocks Section="@PanelSections.Overview" />
 <AutoRefresh OnTick="LoadAsync" />
 
 @if (_overview is null)
@@ -74,6 +80,8 @@ else
         }
     </div>
 }
+
+<PageBottomBlocks Section="@PanelSections.Overview" />
 
 @code {
     private const string HorizonSeen = "ctx-ui:horizon";

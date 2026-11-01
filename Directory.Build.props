@@ -8,4 +8,22 @@
     <NeutralLanguage>en</NeutralLanguage>
   </PropertyGroup>
 
+  <PropertyGroup Condition="$(MSBuildProjectName.StartsWith('CtxUi.Extensions'))">
+    <Authors>Echways</Authors>
+    <PackageLicenseExpression>GPL-3.0-only</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/Echways/ctx-ui/blob/main/docs/extensions.md</PackageProjectUrl>
+    <PackageTags>ctx-ui;mcp;panel;extensions;blazor</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RepositoryUrl>https://github.com/Echways/ctx-ui</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+  </PropertyGroup>
+
+  <ItemGroup Condition="$(MSBuildProjectName.StartsWith('CtxUi.Extensions'))">
+    <None Include="$(MSBuildThisFileDirectory)docs/extensions-package.md" Pack="true" PackagePath="README.md" />
+  </ItemGroup>
+
 </Project>

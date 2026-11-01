@@ -80,6 +80,7 @@ cp "$root/deploy/linux/install.sh" "$dist/install-unstamped.sh"
 mkdir "$dist/tampered"
 cp "$dist/SHA256SUMS" "$dist/$first" "$dist/tampered/"
 echo tampered >> "$dist/tampered/$first"
+dotnet publish "$root/tests/fixtures/SampleExtension" -c Release -o "$dist/extension/sample" > /dev/null
 chmod -R a+rX "$dist"
 
 docker build -q -t "$image" -f "$root/deploy/tests/systemd.Dockerfile" "$root/deploy/tests" > /dev/null
@@ -149,6 +150,29 @@ check "panel script is in the archive" equals 200 "$(panel_status "${path}_frame
 check "swagger ui is in the archive" equals 200 "$(panel_status "${path}swagger/index.html")"
 check "api asks for a key" equals 401 "$(panel_status "${path}api/v1/inbounds")"
 check "panel does not exist without the secret path" equals 404 "$(panel_status /login)"
+
+echo "== extensions"
+output="$(in_box sh -c 'cd / && ctx-ui extension install /dist/extension/sample-1.2.3.zip' 2>&1)" || true
+check "extension install reminds about the restart" contains "restart ctx-ui" "$output"
+in_box systemctl restart ctx-ui
+check "service is active with the extension" equals active "$(in_box systemctl is-active ctx-ui)"
+check "extension is listed as working" contains "sample  1.2.3  ok" "$(in_box sh -c 'cd / && ctx-ui extension list' 2>&1)"
+healthy() {
+    for _ in $(seq 1 20); do
+        if in_box /opt/ctx-ui/ctx-ui health > /dev/null 2>&1; then
+            return 0
+        fi
+        sleep 0.5
+    done
+    return 1
+}
+check "health is fine with the extension" healthy
+check "extension files belong to ctx-ui" equals "" "$(in_box find /var/lib/ctx-ui/extensions /var/lib/ctx-ui/extension-data ! -user ctx-ui)"
+check "extension styles are served" equals 200 "$(panel_status "${path}_content/SampleExtension/sample.css")"
+output="$(in_box sh -c 'cd / && ctx-ui extension remove sample --purge' 2>&1)" || true
+check "extension remove reminds about the restart" contains "restart ctx-ui" "$output"
+in_box systemctl restart ctx-ui
+check "health is fine after removal" healthy
 
 echo "== down and up"
 output="$(in_box runuser -u ctx-ui -- ctx-ui down 2>&1)" && code=0 || code=$?

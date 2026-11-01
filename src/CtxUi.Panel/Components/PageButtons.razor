@@ -1,0 +1,9 @@
+<SlotButtons Slot="PanelSlots.PageActions(Section)" Context="new PanelPage(Section)" OnDone="OnDone" />
+
+@code {
+    [Parameter, EditorRequired]
+    public string Section { get; set; } = "";
+
+    [Parameter]
+    public EventCallback OnDone { get; set; }
+}

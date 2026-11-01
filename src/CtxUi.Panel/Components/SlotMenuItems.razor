@@ -1,0 +1,34 @@
+@typeparam TContext
+@inject PanelSlotRegistry Slots
+@inject Act Act
+@inject IDialogService Dialogs
+@inject IServiceProvider Services
+
+@foreach (var action in Slots.Actions<TContext>(Slot.Name))
+{
+    <MudMenuItem OnClick="() => RunAsync(action)">@action.Title()</MudMenuItem>
+}
+@if (DividerAfter && Slots.Actions<TContext>(Slot.Name).Count > 0)
+{
+    <MudDivider />
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public PanelActionSlot<TContext> Slot { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public Func<TContext> Context { get; set; } = default!;
+
+    [Parameter]
+    public bool DividerAfter { get; set; }
+
+    [Parameter]
+    public EventCallback OnDone { get; set; }
+
+    private async Task RunAsync(SlotAction<TContext> action)
+    {
+        if (await Act.RunAsync(() => action.Run(new PanelActionArgs<TContext>(Context(), Dialogs, Services))))
+            await OnDone.InvokeAsync();
+    }
+}

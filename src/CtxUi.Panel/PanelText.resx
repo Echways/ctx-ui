@@ -984,4 +984,7 @@ Paste the issuer address, the client ID and the secret here.</value>
   <data name="LatencyAbove" xml:space="preserve">
     <value>{0} and more</value>
   </data>
+  <data name="ExtensionBlockFailed" xml:space="preserve">
+    <value>This extension block could not be shown</value>
+  </data>
 </root>

@@ -1,0 +1,12 @@
+<Project>
+
+  <ItemGroup>
+    <ProjectReference Include="$(MSBuildThisFileDirectory)SampleExtension\SampleExtension.csproj" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+  <Target Name="PublishTestExtensions" AfterTargets="Build">
+    <MSBuild Projects="$(MSBuildThisFileDirectory)SampleExtension\SampleExtension.csproj" Targets="Publish"
+             Properties="NoBuild=true;Configuration=$(Configuration);PublishDir=$(TargetDir)extensions/sample/" />
+  </Target>
+
+</Project>

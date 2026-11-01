@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <PackageId>CtxUi.Extensions.Testing</PackageId>
+    <Description>Starts a real ctx-ui server with your extension installed, for browser tests of ctx-ui panel extensions.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Playwright" />
+  </ItemGroup>
+
+</Project>

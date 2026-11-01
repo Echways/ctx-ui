@@ -1,16 +1,21 @@
 @page "/oauth"
 @using Microsoft.Extensions.Options
+@inject PanelLayout Layout
 @inject PanelBackend Backend
 @inject PanelActions Actions
 @inject IDialogService Dialogs
 @inject IOptions<PanelOptions> Options
 @inject TimeProvider Clock
 
-<PageHead UpdatedAt="_settings is null ? null : _loadedAt" OnRefresh="LoadAsync">
+<PageHead Title="@Layout.TitleOf(PanelSections.OAuth)" UpdatedAt="_settings is null ? null : _loadedAt" OnRefresh="LoadAsync">
     <Summary>
         <span>@PanelText.OAuthLead</span>
     </Summary>
+    <Actions>
+        <PageButtons Section="@PanelSections.OAuth" OnDone="LoadAsync" />
+    </Actions>
 </PageHead>
+<PageTopBlocks Section="@PanelSections.OAuth" />
 
 @if (_settings is null)
 {
@@ -64,6 +69,8 @@ else
         </section>
     </div>
 }
+
+<PageBottomBlocks Section="@PanelSections.OAuth" />
 
 @code {
     private SignInSettings? _settings;

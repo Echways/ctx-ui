@@ -633,4 +633,76 @@
   <data name="DeviceApps" xml:space="preserve">
     <value>          apps: {0}</value>
   </data>
+  <data name="ExtensionRouteOutside" xml:space="preserve">
+    <value>route {0} is outside {1}</value>
+  </data>
+  <data name="ExtensionInvalidId" xml:space="preserve">
+    <value>“{0}” is not a valid extension id</value>
+  </data>
+  <data name="ExtensionFolderMismatch" xml:space="preserve">
+    <value>folder “{0}” holds extension “{1}”; the names must match</value>
+  </data>
+  <data name="ExtensionReservedId" xml:space="preserve">
+    <value>id “{0}” is reserved by the server</value>
+  </data>
+  <data name="ExtensionIncompatible" xml:space="preserve">
+    <value>built for extension API {0}, this server provides {1}</value>
+  </data>
+  <data name="ExtensionEntryCount" xml:space="preserve">
+    <value>expected one IPanelExtension class, found {0}</value>
+  </data>
+  <data name="ExtensionStartFailed" xml:space="preserve">
+    <value>Extension “{0}” failed to start: {1}. To start without it, set CtxUi__DisabledExtensions={0}</value>
+  </data>
+  <data name="ExtensionCommand" xml:space="preserve">
+    <value>manage panel extensions</value>
+  </data>
+  <data name="ExtensionInstallCommand" xml:space="preserve">
+    <value>install an extension from a zip archive</value>
+  </data>
+  <data name="ExtensionListCommand" xml:space="preserve">
+    <value>list installed extensions and their state</value>
+  </data>
+  <data name="ExtensionRemoveCommand" xml:space="preserve">
+    <value>remove an extension</value>
+  </data>
+  <data name="ExtensionFileArgument" xml:space="preserve">
+    <value>path to the extension zip archive</value>
+  </data>
+  <data name="ExtensionIdArgument" xml:space="preserve">
+    <value>extension id</value>
+  </data>
+  <data name="ExtensionPurgeOption" xml:space="preserve">
+    <value>also delete the data of the extension</value>
+  </data>
+  <data name="ExtensionInstalled" xml:space="preserve">
+    <value>Extension {0} {1} installed; restart ctx-ui to apply it</value>
+  </data>
+  <data name="ExtensionRemoved" xml:space="preserve">
+    <value>Extension {0} removed; restart ctx-ui to apply it</value>
+  </data>
+  <data name="ExtensionArchiveMissing" xml:space="preserve">
+    <value>file {0} not found or not readable by the service user</value>
+  </data>
+  <data name="ExtensionArchiveBroken" xml:space="preserve">
+    <value>cannot unpack {0}: {1}</value>
+  </data>
+  <data name="ExtensionManifestBroken" xml:space="preserve">
+    <value>no valid extension.json</value>
+  </data>
+  <data name="ExtensionAssemblyMissing" xml:space="preserve">
+    <value>no {0}.dll</value>
+  </data>
+  <data name="ExtensionUnknown" xml:space="preserve">
+    <value>extension “{0}” is not installed</value>
+  </data>
+  <data name="ExtensionManifestIncomplete" xml:space="preserve">
+    <value>extension.json must set id, name, version, api and assembly</value>
+  </data>
+  <data name="ExtensionManifestAssemblyOutside" xml:space="preserve">
+    <value>extension.json names an assembly outside the folder: {0}</value>
+  </data>
+  <data name="ExtensionNone" xml:space="preserve">
+    <value>No extensions installed</value>
+  </data>
 </root>

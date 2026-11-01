@@ -1,0 +1,65 @@
+#nullable enable
+const CtxUi.Extensions.PanelSections.AccessCaption = "access" -> string!
+const CtxUi.Extensions.PanelSections.ApiKeys = "keys" -> string!
+const CtxUi.Extensions.PanelSections.Clients = "clients" -> string!
+const CtxUi.Extensions.PanelSections.Inbounds = "inbounds" -> string!
+const CtxUi.Extensions.PanelSections.Journal = "journal" -> string!
+const CtxUi.Extensions.PanelSections.Metrics = "metrics" -> string!
+const CtxUi.Extensions.PanelSections.OAuth = "oauth" -> string!
+const CtxUi.Extensions.PanelSections.Overview = "overview" -> string!
+CtxUi.Extensions.ExtensionApi
+CtxUi.Extensions.ExtensionContext
+CtxUi.Extensions.ExtensionContext.Configuration.get -> Microsoft.Extensions.Configuration.IConfiguration!
+CtxUi.Extensions.ExtensionContext.DataDirectory.get -> string!
+CtxUi.Extensions.ExtensionContext.ExtensionContext(string! id, CtxUi.Extensions.PanelEditor! panel, Microsoft.Extensions.DependencyInjection.IServiceCollection! services, Microsoft.Extensions.Configuration.IConfiguration! configuration, string! dataDirectory) -> void
+CtxUi.Extensions.ExtensionContext.Id.get -> string!
+CtxUi.Extensions.ExtensionContext.Panel.get -> CtxUi.Extensions.PanelEditor!
+CtxUi.Extensions.ExtensionContext.Services.get -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+CtxUi.Extensions.IExtensionInitializer
+CtxUi.Extensions.IExtensionInitializer.InitializeAsync(System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task!
+CtxUi.Extensions.IPanelExtension
+CtxUi.Extensions.IPanelExtension.MapEndpoints(Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints) -> void
+CtxUi.Extensions.IPanelExtension.Register(CtxUi.Extensions.ExtensionContext! context) -> void
+CtxUi.Extensions.PanelEditor
+CtxUi.Extensions.PanelEditor.AddAccountLink(System.Func<string!>! title, string! href) -> CtxUi.Extensions.PanelEditor!
+CtxUi.Extensions.PanelEditor.AddCaption(System.Func<string!>! title, CtxUi.Extensions.PanelPosition? at = null) -> CtxUi.Extensions.PanelEditor!
+CtxUi.Extensions.PanelEditor.AddPages(System.Reflection.Assembly! assembly) -> CtxUi.Extensions.PanelEditor!
+CtxUi.Extensions.PanelEditor.AddSection<TPage>(System.Func<string!>! title, CtxUi.Extensions.PanelPosition? at = null, System.Action<Enfilade.SectionSetup!>? setup = null) -> CtxUi.Extensions.PanelEditor!
+CtxUi.Extensions.PanelEditor.AddStylesheet(string! path) -> CtxUi.Extensions.PanelEditor!
+CtxUi.Extensions.PanelEditor.Customize(System.Action<CtxUi.Extensions.PanelLook!>! look) -> CtxUi.Extensions.PanelEditor!
+CtxUi.Extensions.PanelEditor.Hide(string! entry) -> CtxUi.Extensions.PanelEditor!
+CtxUi.Extensions.PanelEditor.Move(string! entry, CtxUi.Extensions.PanelPosition! at) -> CtxUi.Extensions.PanelEditor!
+CtxUi.Extensions.PanelEditor.Rename(string! entry, System.Func<string!>! title) -> CtxUi.Extensions.PanelEditor!
+CtxUi.Extensions.PanelLayout
+CtxUi.Extensions.PanelLayout.Apply(Enfilade.EnfiladeBuilder! shell) -> void
+CtxUi.Extensions.PanelLayout.EditorFor(string! assemblyName) -> CtxUi.Extensions.PanelEditor!
+CtxUi.Extensions.PanelLayout.VisibleEntries.get -> System.Collections.Generic.IReadOnlyList<string!>!
+CtxUi.Extensions.PanelLook
+CtxUi.Extensions.PanelLook.Accent.get -> string?
+CtxUi.Extensions.PanelLook.Accent.set -> void
+CtxUi.Extensions.PanelLook.Appearance.get -> Enfilade.Appearance?
+CtxUi.Extensions.PanelLook.Appearance.set -> void
+CtxUi.Extensions.PanelLook.Brand.get -> string?
+CtxUi.Extensions.PanelLook.Brand.set -> void
+CtxUi.Extensions.PanelLook.Favicon.get -> string?
+CtxUi.Extensions.PanelLook.Favicon.set -> void
+CtxUi.Extensions.PanelLook.PanelLook() -> void
+CtxUi.Extensions.PanelPosition
+CtxUi.Extensions.PanelPosition.<Clone>$() -> CtxUi.Extensions.PanelPosition!
+CtxUi.Extensions.PanelPosition.AfterEntry.get -> string?
+CtxUi.Extensions.PanelPosition.AfterEntry.init -> void
+CtxUi.Extensions.PanelPosition.BeforeEntry.get -> string?
+CtxUi.Extensions.PanelPosition.BeforeEntry.init -> void
+CtxUi.Extensions.PanelPosition.Deconstruct(out string? BeforeEntry, out string? AfterEntry) -> void
+CtxUi.Extensions.PanelPosition.Equals(CtxUi.Extensions.PanelPosition? other) -> bool
+CtxUi.Extensions.PanelPosition.PanelPosition(string? BeforeEntry, string? AfterEntry) -> void
+CtxUi.Extensions.PanelSections
+override CtxUi.Extensions.PanelPosition.Equals(object? obj) -> bool
+override CtxUi.Extensions.PanelPosition.GetHashCode() -> int
+override CtxUi.Extensions.PanelPosition.ToString() -> string!
+static CtxUi.Extensions.PanelPosition.After(string! entry) -> CtxUi.Extensions.PanelPosition!
+static CtxUi.Extensions.PanelPosition.Before(string! entry) -> CtxUi.Extensions.PanelPosition!
+static CtxUi.Extensions.PanelPosition.operator !=(CtxUi.Extensions.PanelPosition? left, CtxUi.Extensions.PanelPosition? right) -> bool
+static CtxUi.Extensions.PanelPosition.operator ==(CtxUi.Extensions.PanelPosition? left, CtxUi.Extensions.PanelPosition? right) -> bool
+static CtxUi.Extensions.PanelSections.Of<TPage>() -> string!
+static readonly CtxUi.Extensions.ExtensionApi.Version -> System.Version!

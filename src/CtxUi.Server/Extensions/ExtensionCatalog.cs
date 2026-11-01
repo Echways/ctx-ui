@@ -12,7 +12,7 @@ public sealed class ExtensionCatalog
 
     public const string DataFolder = "extension-data";
 
-    private const string DefaultFolder = "extensions";
+    public const string DefaultFolder = "extensions";
 
     private ExtensionCatalog(IReadOnlyList<LoadedExtension> loaded, IReadOnlyList<RejectedExtension> rejected)
     {

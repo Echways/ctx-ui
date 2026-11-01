@@ -1,9 +1,14 @@
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Routing;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using MudBlazor;
 using CtxUi.Extensions;
 using SampleExtension.Components;
 using SampleExtension.Components.Blocks;
+using SampleExtension.Data;
 
 namespace SampleExtension;
 
@@ -15,10 +20,22 @@ public sealed class SampleExtensionEntry : IPanelExtension
         PanelSections.Journal, PanelSections.OAuth, PanelSections.ApiKeys,
     ];
 
+    private bool _database;
+    private bool _hosted;
+
     public void Register(ExtensionContext context)
     {
         if (context.Configuration.GetValue<bool>("Fail"))
             throw new InvalidOperationException("Sample register failure");
+
+        _database = context.Configuration.GetValue<bool>("Database");
+        _hosted = context.Configuration.GetValue<bool>("Hosted");
+        if (_database)
+            context.AddDatabase<SampleDatabase>();
+        if (_hosted)
+            context.Services.AddSingleton<SampleStatus>().AddHostedService<SampleHostedService>();
+        if (context.Configuration.GetValue<bool>("FailInitializer"))
+            context.Services.AddScoped<IExtensionInitializer, FailingInitializer>();
 
         context.Panel.AddStylesheet("sample.css");
         if (context.Configuration.GetValue<bool>("Reshape"))
@@ -32,6 +49,22 @@ public sealed class SampleExtensionEntry : IPanelExtension
             context.Panel.In(PanelSlots.PageTop(PanelSections.Clients)).AddBlock<BoomBlock>();
         if (context.Configuration.GetValue<bool>("BoomAction"))
             context.Panel.In(PanelSlots.ClientActions).AddAction(() => "Boom", _ => throw new InvalidOperationException("Sample action failure"));
+    }
+
+    public void MapEndpoints(IEndpointRouteBuilder endpoints)
+    {
+        endpoints.MapGet("/ping", () => "pong");
+        if (_hosted)
+            endpoints.MapGet("/hosted", (SampleStatus status) => status.Value);
+        if (_database)
+        {
+            endpoints.MapPost("/notes", async ([FromBody] string text, SampleDatabase database) =>
+            {
+                database.Notes.Add(new SampleNote { Text = text });
+                await database.SaveChangesAsync();
+            });
+            endpoints.MapGet("/notes", async (SampleDatabase database) => (await database.Notes.SingleAsync()).Text);
+        }
     }
 
     private static void Reshape(PanelEditor panel) =>

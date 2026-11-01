@@ -41,6 +41,7 @@ CtxUi.Extensions.ClientSummary.UsedCalls.get -> long
 CtxUi.Extensions.ClientSummary.UsedCalls.init -> void
 CtxUi.Extensions.ExtensionApi
 CtxUi.Extensions.ExtensionContext
+CtxUi.Extensions.ExtensionContext.AddDatabase<TContext>() -> CtxUi.Extensions.ExtensionContext!
 CtxUi.Extensions.ExtensionContext.Configuration.get -> Microsoft.Extensions.Configuration.IConfiguration!
 CtxUi.Extensions.ExtensionContext.DataDirectory.get -> string!
 CtxUi.Extensions.ExtensionContext.ExtensionContext(string! id, CtxUi.Extensions.PanelEditor! panel, Microsoft.Extensions.DependencyInjection.IServiceCollection! services, Microsoft.Extensions.Configuration.IConfiguration! configuration, string! dataDirectory) -> void

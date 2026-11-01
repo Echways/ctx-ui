@@ -1,5 +1,7 @@
+using System.Runtime.Loader;
 using Microsoft.Extensions.FileProviders;
 using CtxUi.Extensions;
+using CtxUi.Server.Api;
 
 namespace CtxUi.Server.Extensions;
 
@@ -47,6 +49,54 @@ public static class ExtensionPipeline
         }
 
         return app;
+    }
+
+    public static WebApplication MapExtensionEndpoints(this WebApplication app, ExtensionCatalog catalog)
+    {
+        foreach (var extension in catalog.Loaded)
+        {
+            var group = app.MapGroup($"/extensions/{extension.Manifest.Id}").RequireAuthorization(ApiServices.ExtensionsPolicy);
+            try
+            {
+                extension.Entry.MapEndpoints(group);
+            }
+            catch (Exception failure)
+            {
+                throw Failed(extension.Manifest.Id, failure);
+            }
+        }
+
+        return app;
+    }
+
+    public static async Task InitializeExtensionsAsync(IServiceProvider services, CancellationToken ct)
+    {
+        int count;
+        await using (var counting = services.CreateAsyncScope())
+            count = counting.ServiceProvider.GetServices<IExtensionInitializer>().Count();
+
+        for (var index = 0; index < count; index++)
+        {
+            await using var scope = services.CreateAsyncScope();
+            var initializer = scope.ServiceProvider.GetServices<IExtensionInitializer>().ElementAt(index);
+            try
+            {
+                await initializer.InitializeAsync(ct);
+            }
+            catch (Exception failure) when (failure is not OperationCanceledException)
+            {
+                throw Failed(OwnerOf(initializer), failure);
+            }
+        }
+    }
+
+    private static string OwnerOf(IExtensionInitializer initializer)
+    {
+        var type = initializer.GetType();
+        return type.GetGenericArguments().Prepend(type)
+            .Select(candidate => AssemblyLoadContext.GetLoadContext(candidate.Assembly))
+            .OfType<ExtensionLoadContext>()
+            .FirstOrDefault()?.Name ?? type.FullName!;
     }
 
     internal static InvalidOperationException Failed(string id, Exception failure) =>

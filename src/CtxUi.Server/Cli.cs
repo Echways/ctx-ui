@@ -13,6 +13,7 @@ using CtxUi.Core.Usage;
 using CtxUi.Panel;
 using CtxUi.Panel.Accounts;
 using CtxUi.Server.Api;
+using CtxUi.Server.Extensions;
 
 namespace CtxUi.Server;
 
@@ -399,8 +400,13 @@ public static partial class Cli
                 async (parse, services, ct) =>
                 {
                     var target = Path.GetFullPath(parse.GetValue(directory)!);
-                    var dataDir = Path.GetFullPath(services.GetRequiredService<IOptions<CtxUiOptions>>().Value.DataDir);
-                    await Backup.WriteAsync(services.GetRequiredService<CtxUiDbContext>(), dataDir, target, ct);
+                    var options = services.GetRequiredService<IOptions<CtxUiOptions>>().Value;
+                    await Backup.WriteAsync(
+                        services.GetRequiredService<CtxUiDbContext>(),
+                        Path.GetFullPath(options.DataDir),
+                        ExtensionCatalog.DirectoryOf(options),
+                        target,
+                        ct);
                     output.WriteLine(string.Format(ServerText.BackupWritten, target));
                 });
         }

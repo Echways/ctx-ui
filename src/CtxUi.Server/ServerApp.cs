@@ -55,6 +55,7 @@ public static partial class ServerApp
         app.MapCtxUiGateway();
         app.MapCtxUiApi();
         app.MapCtxUiConnect();
+        app.MapExtensionEndpoints(extensions);
         app.MapCtxUiPanel();
         app.MapHealthChecks(HealthProbe.Path);
         return app;
@@ -69,6 +70,7 @@ public static partial class ServerApp
         await app.Services.LoadCtxUiGatewayAsync(ct);
         app.Services.LoadCtxUiConnect();
         await app.Services.LoadCtxUiPanelAsync(ct);
+        await ExtensionPipeline.InitializeExtensionsAsync(app.Services, ct);
     }
 
     private static void ReportRejectedExtensions(WebApplication app)

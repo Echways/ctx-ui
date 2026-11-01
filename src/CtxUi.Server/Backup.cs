@@ -10,6 +10,8 @@ public static class Backup
 {
     private const int NotADatabase = 26;
 
+    private static readonly string[] DatabaseSidecars = [".db-wal", ".db-shm", ".db-journal"];
+
     public static async Task WriteAsync(CtxUiDbContext db, string dataDir, string extensionsDir, string target, CancellationToken ct)
     {
         if (File.Exists(target) || (Directory.Exists(target) && Directory.EnumerateFileSystemEntries(target).Any()))
@@ -46,7 +48,7 @@ public static class Backup
         foreach (var file in Directory.EnumerateFiles(from))
         {
             var copy = Path.Combine(to, Path.GetFileName(file));
-            if (file.EndsWith(".db-wal", StringComparison.Ordinal) || file.EndsWith(".db-shm", StringComparison.Ordinal))
+            if (DatabaseSidecars.Any(sidecar => file.EndsWith(sidecar, StringComparison.Ordinal)))
                 continue;
             if (file.EndsWith(".db", StringComparison.Ordinal))
                 await CopyDatabaseAsync(file, copy, ct);

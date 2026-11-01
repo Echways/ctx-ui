@@ -682,7 +682,7 @@
     <value>Extension {0} removed; restart ctx-ui to apply it</value>
   </data>
   <data name="ExtensionArchiveMissing" xml:space="preserve">
-    <value>file {0} not found</value>
+    <value>file {0} not found or not readable by the service user</value>
   </data>
   <data name="ExtensionArchiveBroken" xml:space="preserve">
     <value>cannot unpack {0}: {1}</value>

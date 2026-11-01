@@ -682,7 +682,7 @@
     <value>Расширение {0} удалено; перезапустите ctx-ui, чтобы изменение вступило в силу</value>
   </data>
   <data name="ExtensionArchiveMissing" xml:space="preserve">
-    <value>файл {0} не найден</value>
+    <value>файл {0} не найден или недоступен пользователю службы</value>
   </data>
   <data name="ExtensionArchiveBroken" xml:space="preserve">
     <value>не удалось распаковать {0}: {1}</value>

@@ -273,6 +273,8 @@ sudo systemctl restart ctx-ui
 ctx-ui extension list
 ```
 
+The command runs as the service user, so keep the archive where that user can read it, for example in `/tmp`, not in a private home folder.
+
 `list` shows one of `ok`, `disabled`, `incompatible`, `invalid`. Installing a new
 version replaces the old one and keeps its data. A broken archive leaves the
 installed version intact.

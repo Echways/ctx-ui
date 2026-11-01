@@ -136,6 +136,20 @@ public sealed partial class CliBackupTests : IDisposable
     }
 
     [Fact]
+    public async Task A_backup_leaves_out_the_journal_of_a_database_in_rollback_mode()
+    {
+        await CliRunner.RunAsync(_dataDir, "inbound", "list");
+        Directory.CreateDirectory(ExtensionData());
+        await File.WriteAllTextAsync(ExtensionData("data.db-journal"), "unfinished transaction");
+        var target = Path.Combine(_backupRoot, "copy");
+
+        var backup = await CliRunner.RunAsync(_dataDir, "backup", target);
+
+        Assert.Equal((0, ""), (backup.Code, backup.Error));
+        Assert.False(File.Exists(Path.Combine(target, "extension-data", "sample", "data.db-journal")));
+    }
+
+    [Fact]
     public async Task A_db_file_that_is_not_a_database_is_copied_as_it_is()
     {
         await CliRunner.RunAsync(_dataDir, "inbound", "list");

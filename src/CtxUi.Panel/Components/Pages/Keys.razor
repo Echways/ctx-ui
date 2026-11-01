@@ -10,6 +10,7 @@
         <span>@PanelText.KeysSummary</span>
     </Summary>
     <Actions>
+        <SlotButtons Slot="PanelSlots.PageActions(PanelSections.ApiKeys)" Context="new PanelPage(PanelSections.ApiKeys)" />
         <a class="link" href="swagger/" target="_blank">@PanelText.ApiDocs</a>
         @if (_keys is { Count: > 0 })
         {
@@ -17,6 +18,7 @@
         }
     </Actions>
 </PageHead>
+<SlotBlocks Slot="PanelSlots.PageTop(PanelSections.ApiKeys)" Context="new PanelPage(PanelSections.ApiKeys)" />
 
 @if (_keys is null)
 {
@@ -45,12 +47,15 @@ else
             <MudTd Class="acts">
                 <MudMenu Label="⋯" AriaLabel="@string.Format(PanelText.MoreActions, context.Name)" Class="more"
                          AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
+                    <SlotMenuItems Slot="PanelSlots.ApiKeyActions" Context="() => PanelData.Summary(context)" />
                     <MudMenuItem Class="danger" OnClick="() => RemoveAsync(context)">@PanelText.Revoke</MudMenuItem>
                 </MudMenu>
             </MudTd>
         </RowTemplate>
     </MudTable>
 }
+
+<SlotBlocks Slot="PanelSlots.PageBottom(PanelSections.ApiKeys)" Context="new PanelPage(PanelSections.ApiKeys)" />
 
 @code {
     private List<ApiKey>? _keys;

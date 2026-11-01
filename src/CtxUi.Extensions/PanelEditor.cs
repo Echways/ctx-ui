@@ -66,6 +66,10 @@ public sealed class PanelEditor
         return this;
     }
 
+    public PanelBlockSlotEditor<TContext> In<TContext>(PanelSlot<TContext> slot) => new(this, _layout.Slots, slot.Name);
+
+    public PanelActionSlotEditor<TContext> In<TContext>(PanelActionSlot<TContext> slot) => new(this, _layout.Slots, slot.Name);
+
     public PanelEditor Customize(Action<PanelLook> look)
     {
         _layout.Customize(look);

@@ -447,3 +447,7 @@ svg.hz:focus-visible {
     display: grid;
     gap: 8px;
 }
+
+.panel-block {
+    margin-block: 16px;
+}

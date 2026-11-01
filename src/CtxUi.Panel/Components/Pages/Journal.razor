@@ -12,6 +12,7 @@
         }
     </Summary>
     <Actions>
+        <SlotButtons Slot="PanelSlots.PageActions(PanelSections.Journal)" Context="new PanelPage(PanelSections.Journal)" />
         <MudSelect T="Guid?" Value="_clientId" ValueChanged="FilterAsync" Label="@PanelText.Client" Class="filter" Dense="true">
             <MudSelectItem T="Guid?" Value="@((Guid?)null)">@PanelText.AllClients</MudSelectItem>
             @foreach (var (id, name) in _clients.OrderBy(pair => pair.Value, StringComparer.CurrentCultureIgnoreCase))
@@ -21,6 +22,7 @@
         </MudSelect>
     </Actions>
 </PageHead>
+<SlotBlocks Slot="PanelSlots.PageTop(PanelSections.Journal)" Context="new PanelPage(PanelSections.Journal)" />
 <AutoRefresh OnTick="LoadAsync" />
 
 @if (_lines is null)
@@ -69,6 +71,8 @@ else
         <p class="tail">@Words.Count(PanelText.JournalLimit, Shown)</p>
     }
 }
+
+<SlotBlocks Slot="PanelSlots.PageBottom(PanelSections.Journal)" Context="new PanelPage(PanelSections.Journal)" />
 
 @code {
     private const int Shown = 200;

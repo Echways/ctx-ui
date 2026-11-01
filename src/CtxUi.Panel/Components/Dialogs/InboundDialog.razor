@@ -34,6 +34,10 @@
                                  Min="1" Max="Inbound.MaxBodyBytesCeiling / 1024" HideSpinButtons="true" />
             </div>
         </section>
+        @if (_summary is not null)
+        {
+            <SlotBlocks Slot="PanelSlots.InboundSheet" Context="_summary" />
+        }
     </ChildContent>
     <Actions>
         <button type="button" class="link" @onclick="() => MudDialog.Cancel()">@PanelText.Cancel</button>
@@ -52,6 +56,8 @@
     private bool _forwardIdentity;
     private int _timeoutSeconds = Inbound.DefaultRequestTimeoutSeconds;
     private int _bodyKilobytes = Inbound.DefaultMaxBodyBytes / 1024;
+
+    private InboundSummary? _summary;
 
     [CascadingParameter]
     private IMudDialogInstance MudDialog { get; set; } = default!;
@@ -73,6 +79,7 @@
             var stored = await inbounds.GetAsync(Slug);
             return (stored, inbounds.HeaderNames(stored));
         });
+        _summary = PanelData.Summary(inbound);
         _slug = inbound.Slug;
         _name = inbound.Name;
         _url = inbound.Url ?? "";

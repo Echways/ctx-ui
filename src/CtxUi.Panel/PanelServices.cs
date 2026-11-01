@@ -46,6 +46,7 @@ public static partial class PanelServices
         var sessionCheck = section.Get<PanelOptions>()?.SessionCheckInterval ?? new PanelOptions().SessionCheckInterval;
         services.AddSingleton<PanelGate>();
         services.AddSingleton<PanelBackend>();
+        services.AddSingleton<IPanelData, PanelData>();
         services.AddScoped<PanelActions>();
         services.AddIdentityCore<Admin>(options =>
             {

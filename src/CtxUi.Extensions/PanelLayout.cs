@@ -30,6 +30,8 @@ public sealed class PanelLayout
     {
     }
 
+    internal PanelSlotRegistry Slots { get; } = new();
+
     public IReadOnlyList<string> VisibleEntries => [.. Visible().Select(entry => entry.Id)];
 
     public PanelEditor EditorFor(string assemblyName) => new(this, assemblyName);
@@ -45,6 +47,8 @@ public sealed class PanelLayout
         foreach (var stylesheet in _stylesheets)
             shell.AddStylesheet(stylesheet);
         shell.Services.PostConfigure<EnfiladeOptions>(ApplyLook);
+        Slots.Freeze();
+        shell.Services.AddSingleton(Slots);
     }
 
     internal PanelLayout AddBuiltIn<TPage>(string id, Func<string> title) where TPage : IComponent

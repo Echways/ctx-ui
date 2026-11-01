@@ -51,6 +51,15 @@ public sealed class UsageStore(CtxUiDbContext db)
         return events.OrderByDescending(usage => usage.Id).Take(limit).ToListAsync(ct);
     }
 
+    public Task<List<UsageDaily>> DaysAsync(DateOnly from, DateOnly to, Guid? clientId, CancellationToken ct = default)
+    {
+        var days = db.UsageDays.AsNoTracking().Where(daily => daily.Day >= from && daily.Day <= to);
+        if (clientId is { } id)
+            days = days.Where(daily => daily.ClientId == id);
+
+        return days.OrderBy(daily => daily.Day).ToListAsync(ct);
+    }
+
     public Task<List<DailyTotal>> DailyAsync(Guid? clientId, DateOnly from, CancellationToken ct = default)
     {
         var days = db.UsageDays.AsNoTracking().Where(daily => daily.Day >= from);

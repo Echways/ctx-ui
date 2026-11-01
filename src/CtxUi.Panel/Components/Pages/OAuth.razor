@@ -11,7 +11,11 @@
     <Summary>
         <span>@PanelText.OAuthLead</span>
     </Summary>
+    <Actions>
+        <SlotButtons Slot="PanelSlots.PageActions(PanelSections.OAuth)" Context="new PanelPage(PanelSections.OAuth)" />
+    </Actions>
 </PageHead>
+<SlotBlocks Slot="PanelSlots.PageTop(PanelSections.OAuth)" Context="new PanelPage(PanelSections.OAuth)" />
 
 @if (_settings is null)
 {
@@ -65,6 +69,8 @@ else
         </section>
     </div>
 }
+
+<SlotBlocks Slot="PanelSlots.PageBottom(PanelSections.OAuth)" Context="new PanelPage(PanelSections.OAuth)" />
 
 @code {
     private SignInSettings? _settings;

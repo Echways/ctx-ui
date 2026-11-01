@@ -19,4 +19,13 @@ public class ExtensionApiTests
         Assert.Equal((0, 1), MajorMinor(typeof(EnfiladeBuilder)));
         Assert.Equal(9, typeof(MudButton).Assembly.GetName().Version!.Major);
     }
+
+    [Fact]
+    public void Summaries_carry_no_secrets()
+    {
+        string[] forbidden = ["Token", "Hash", "Sealed", "Secret", "Headers", "Url"];
+        var names = new[] { typeof(ClientSummary), typeof(InboundSummary), typeof(ApiKeySummary) }
+            .SelectMany(type => type.GetProperties()).Select(property => property.Name);
+        Assert.DoesNotContain(names, name => forbidden.Any(word => name.Contains(word, StringComparison.OrdinalIgnoreCase)));
+    }
 }

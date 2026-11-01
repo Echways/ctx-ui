@@ -984,4 +984,7 @@
   <data name="LatencyAbove" xml:space="preserve">
     <value>от {0}</value>
   </data>
+  <data name="ExtensionBlockFailed" xml:space="preserve">
+    <value>Этот блок расширения не удалось показать</value>
+  </data>
 </root>

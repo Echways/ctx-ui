@@ -14,12 +14,14 @@
         }
     </Summary>
     <Actions>
+        <SlotButtons Slot="PanelSlots.PageActions(PanelSections.Inbounds)" Context="new PanelPage(PanelSections.Inbounds)" />
         @if (_rows is { Count: > 0 })
         {
             <button type="button" class="btn-k pigment" @onclick="AddAsync">@PanelText.AddInbound</button>
         }
     </Actions>
 </PageHead>
+<SlotBlocks Slot="PanelSlots.PageTop(PanelSections.Inbounds)" Context="new PanelPage(PanelSections.Inbounds)" />
 
 @if (_rows is null)
 {
@@ -60,6 +62,7 @@ else
                     <button type="button" class="link" @onclick="() => EditAsync(context.Inbound)">@PanelText.Edit</button>
                     <MudMenu Label="⋯" AriaLabel="@string.Format(PanelText.MoreActions, context.Inbound.Slug)" Class="more"
                              AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
+                        <SlotMenuItems Slot="PanelSlots.InboundActions" Context="() => PanelData.Summary(context.Inbound)" />
                         <MudMenuItem Class="danger" OnClick="() => RemoveAsync(context)">@PanelText.Delete</MudMenuItem>
                     </MudMenu>
                 </span>
@@ -67,6 +70,8 @@ else
         </RowTemplate>
     </MudTable>
 }
+
+<SlotBlocks Slot="PanelSlots.PageBottom(PanelSections.Inbounds)" Context="new PanelPage(PanelSections.Inbounds)" />
 
 @code {
     private List<Row>? _rows;

@@ -1,0 +1,29 @@
+@typeparam TContext
+@inject PanelSlotRegistry Slots
+
+@foreach (var block in Slots.Blocks(Slot.Name))
+{
+    <div class="panel-block" @key="block">
+        <ErrorBoundary>
+            <ChildContent>
+                <DynamicComponent Type="block" Parameters="_parameters" />
+            </ChildContent>
+            <ErrorContent Context="failure">
+                <EmptyState Title="@PanelText.ExtensionBlockFailed" />
+            </ErrorContent>
+        </ErrorBoundary>
+    </div>
+}
+
+@code {
+    private Dictionary<string, object?> _parameters = [];
+
+    [Parameter, EditorRequired]
+    public PanelSlot<TContext> Slot { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public TContext Context { get; set; } = default!;
+
+    protected override void OnParametersSet() =>
+        _parameters = new() { [nameof(PanelBlock<TContext>.Context)] = Context };
+}

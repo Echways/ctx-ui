@@ -15,6 +15,13 @@
 }
 else
 {
+    @if (_blockedAction is not null)
+    {
+        <div class="builder-conflict" role="alert" data-testid="switch-blocked">
+            <p class="warn-t">@BuilderText.UnsavedBlocked</p>
+            <button type="button" class="link" data-testid="discard-mine" @onclick="DiscardAsync">@BuilderText.DiscardMine</button>
+        </div>
+    }
     <div class="builder-workspace">
         <ToolList Files="_files.Select(file => file.Path).ToList()" Selected="_selected" SettingsOpen="_settingsOpen"
                   OnSelect="SelectAsync" OnSettings="OpenSettingsAsync" OnCreate="CreateToolAsync" />
@@ -57,39 +64,51 @@ else
         _files = [.. (await Catalog.DraftAsync(Id, CancellationToken.None)).Files];
     }
 
-    private async Task FlushAsync()
+    private Func<Task>? _blockedAction;
+
+    private async Task<bool> FlushAsync() => _editor is null || await _editor.TryFlushAsync();
+
+    private async Task GuardedAsync(Func<Task> action)
     {
-        if (_editor is not null)
-            await _editor.FlushAsync();
+        if (!await FlushAsync())
+        {
+            _blockedAction = action;
+            return;
+        }
+
+        _blockedAction = null;
+        await action();
     }
 
-    private async Task SelectAsync(string path)
+    private async Task DiscardAsync()
     {
-        await FlushAsync();
+        var action = _blockedAction;
+        _blockedAction = null;
+        if (action is not null)
+            await action();
+    }
+
+    private Task SelectAsync(string path) => GuardedAsync(async () =>
+    {
         await LoadAsync();
         _settingsOpen = false;
         _selected = path;
-    }
+    });
 
-    private async Task OpenSettingsAsync()
+    private Task OpenSettingsAsync() => GuardedAsync(async () =>
     {
-        await FlushAsync();
         await LoadAsync();
         _settingsOpen = true;
-    }
+    });
 
     private async Task ReloadAsync() => await LoadAsync();
 
     private async Task CreateToolAsync(string name)
     {
-        await FlushAsync();
-        var path = $"mcp/{ProjectFiles.ToolFunctionName(name)}.py";
-        await LoadAsync();
-        if (_files.Any(file => file.Path == path))
-            throw new PanelException(BuilderText.ToolExists);
-        await Catalog.SaveFileAsync(Id, path, ProjectFiles.NewToolTemplate(name), 0, CancellationToken.None);
+        if (!await FlushAsync())
+            throw new PanelException(BuilderText.UnsavedBlocked);
+        _selected = await Catalog.CreateToolAsync(Id, name, CancellationToken.None);
         await LoadAsync();
         _settingsOpen = false;
-        _selected = path;
     }
 }

@@ -180,24 +180,27 @@ public sealed partial class ServerCatalog(BuilderDatabase database, SecretBox bo
             auth?.Username,
             auth is not null,
             draft.Dependencies ?? string.Empty,
+            draft.SettingsRevision,
             names);
     }
 
-    public async Task SetApiAsync(Guid id, string? baseUrl, ApiAuthInput auth, CancellationToken ct)
+    public async Task<long> SetApiAsync(Guid id, string? baseUrl, ApiAuthInput auth, long expectedRevision, CancellationToken ct)
     {
         var uri = ParseBaseUrl(baseUrl);
         await RequireServerAsync(id, ct);
         var sealedAuth = SealAuth(auth, OpenAuth((await database.Drafts.AsNoTracking().SingleAsync(draft => draft.ServerId == id, ct)).ApiAuthSealed));
         var address = uri?.ToString().TrimEnd('/');
         var now = clock.GetUtcNow();
-        await database.Drafts.Where(draft => draft.ServerId == id).ExecuteUpdateAsync(setters => setters
+        var updated = await database.Drafts.Where(draft => draft.ServerId == id && draft.SettingsRevision == expectedRevision).ExecuteUpdateAsync(setters => setters
             .SetProperty(draft => draft.BaseUrl, address)
             .SetProperty(draft => draft.ApiAuthSealed, sealedAuth)
+            .SetProperty(draft => draft.SettingsRevision, expectedRevision + 1)
             .SetProperty(draft => draft.Revision, draft => draft.Revision + 1)
             .SetProperty(draft => draft.UpdatedAt, now), ct);
+        return updated == 0 ? throw new DraftConflictException(BuilderText.SettingsChangedElsewhere) : expectedRevision + 1;
     }
 
-    public async Task SetDependenciesAsync(Guid id, string? text, CancellationToken ct)
+    public async Task<long> SetDependenciesAsync(Guid id, string? text, long expectedRevision, CancellationToken ct)
     {
         IReadOnlyList<string> lines;
         try
@@ -212,10 +215,27 @@ public sealed partial class ServerCatalog(BuilderDatabase database, SecretBox bo
         await RequireServerAsync(id, ct);
         var joined = lines.Count == 0 ? null : string.Join('\n', lines);
         var now = clock.GetUtcNow();
-        await database.Drafts.Where(draft => draft.ServerId == id).ExecuteUpdateAsync(setters => setters
+        var updated = await database.Drafts.Where(draft => draft.ServerId == id && draft.SettingsRevision == expectedRevision).ExecuteUpdateAsync(setters => setters
             .SetProperty(draft => draft.Dependencies, joined)
+            .SetProperty(draft => draft.SettingsRevision, expectedRevision + 1)
             .SetProperty(draft => draft.Revision, draft => draft.Revision + 1)
             .SetProperty(draft => draft.UpdatedAt, now), ct);
+        return updated == 0 ? throw new DraftConflictException(BuilderText.SettingsChangedElsewhere) : expectedRevision + 1;
+    }
+
+    public async Task<string> CreateToolAsync(Guid id, string name, CancellationToken ct)
+    {
+        var path = $"{ProjectRoot}{ProjectFiles.ToolFunctionName(name)}.py";
+        try
+        {
+            await SaveFileAsync(id, path, ProjectFiles.NewToolTemplate(name), 0, ct);
+        }
+        catch (DraftConflictException)
+        {
+            throw new PanelException(BuilderText.ToolExists);
+        }
+
+        return path;
     }
 
     public async Task<ProjectExport> ExportAsync(Guid id, CancellationToken ct)

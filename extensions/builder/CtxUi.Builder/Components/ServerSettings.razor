@@ -81,7 +81,8 @@
     private AccessForm _access = new();
     private bool _confirming;
     private bool _confirmed;
-    private ServerSettingsView? _loaded;
+    private Guid _loadedServer;
+    private long _settingsRevision;
 
     private static IReadOnlyList<Option<ApiAuthKind>> AuthKinds =>
     [
@@ -99,9 +100,10 @@
 
     protected override void OnParametersSet()
     {
-        if (ReferenceEquals(_loaded, Settings))
+        if (_loadedServer == Settings.ServerId)
             return;
-        _loaded = Settings;
+        _loadedServer = Settings.ServerId;
+        _settingsRevision = Settings.SettingsRevision;
         _api = new ApiForm { BaseUrl = Settings.BaseUrl, Kind = Settings.AuthKind, HeaderName = Settings.AuthHeaderName, Username = Settings.AuthUsername };
         _dependencies = new DependenciesForm { Text = Settings.Dependencies };
         _secret = new SecretForm();
@@ -112,14 +114,27 @@
 
     private async Task SaveApiAsync()
     {
-        await Catalog.SetApiAsync(Settings.ServerId, _api.BaseUrl, new ApiAuthInput(_api.Kind, _api.HeaderName, _api.Username, _api.Secret), CancellationToken.None);
+        _settingsRevision = await SavedAsync(() => Catalog.SetApiAsync(Settings.ServerId, _api.BaseUrl, new ApiAuthInput(_api.Kind, _api.HeaderName, _api.Username, _api.Secret), _settingsRevision, CancellationToken.None));
+        _api.Secret = null;
         await OnChanged.InvokeAsync();
     }
 
     private async Task SaveDependenciesAsync()
     {
-        await Catalog.SetDependenciesAsync(Settings.ServerId, _dependencies.Text, CancellationToken.None);
+        _settingsRevision = await SavedAsync(() => Catalog.SetDependenciesAsync(Settings.ServerId, _dependencies.Text, _settingsRevision, CancellationToken.None));
         await OnChanged.InvokeAsync();
+    }
+
+    private static async Task<long> SavedAsync(Func<Task<long>> save)
+    {
+        try
+        {
+            return await save();
+        }
+        catch (DraftConflictException failure)
+        {
+            throw new PanelException(failure.Message);
+        }
     }
 
     private async Task SaveSecretAsync()

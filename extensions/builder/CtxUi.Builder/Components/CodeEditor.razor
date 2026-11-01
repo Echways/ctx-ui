@@ -88,10 +88,11 @@
         StateHasChanged();
     });
 
-    public async Task FlushAsync()
+    public async Task<bool> TryFlushAsync()
     {
         _quiet?.Cancel();
         await SaveAsync();
+        return _disposed || !_dirty;
     }
 
     private async Task SaveAfterQuietAsync(CancellationToken token)

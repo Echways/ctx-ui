@@ -19,7 +19,7 @@ public sealed class ServerSettingsTests : IClassFixture<CatalogHarness>
     public async Task Api_settings_are_stored_and_the_secret_never_comes_back()
     {
         var server = await Catalog.CreateAsync(Slug(), "Api", default);
-        await Catalog.SetApiAsync(server.Id, "https://api.example.com/v1", new ApiAuthInput(ApiAuthKind.Bearer, Secret: "tkn-123"), default);
+        await Catalog.SetApiAsync(server.Id, "https://api.example.com/v1", new ApiAuthInput(ApiAuthKind.Bearer, Secret: "tkn-123"), 0, default);
 
         var settings = await Catalog.SettingsAsync(server.Id, default);
 
@@ -37,10 +37,10 @@ public sealed class ServerSettingsTests : IClassFixture<CatalogHarness>
     public async Task Blank_secret_keeps_the_stored_one_when_the_kind_is_unchanged()
     {
         var server = await Catalog.CreateAsync(Slug(), "Keep", default);
-        await Catalog.SetApiAsync(server.Id, "https://api.example.com", new ApiAuthInput(ApiAuthKind.Header, "X-Api-Key", Secret: "first"), default);
+        var revision = await Catalog.SetApiAsync(server.Id, "https://api.example.com", new ApiAuthInput(ApiAuthKind.Header, "X-Api-Key", Secret: "first"), 0, default);
         var before = (await _harness.Inspect().Drafts.AsNoTracking().SingleAsync(draft => draft.ServerId == server.Id)).ApiAuthSealed!;
 
-        await Catalog.SetApiAsync(server.Id, "https://api.example.com", new ApiAuthInput(ApiAuthKind.Header, "X-Api-Key", Secret: ""), default);
+        await Catalog.SetApiAsync(server.Id, "https://api.example.com", new ApiAuthInput(ApiAuthKind.Header, "X-Api-Key", Secret: ""), revision, default);
 
         var after = (await _harness.Inspect().Drafts.AsNoTracking().SingleAsync(draft => draft.ServerId == server.Id)).ApiAuthSealed!;
         Assert.Equal(_harness.Box.Open(before), _harness.Box.Open(after));
@@ -50,15 +50,15 @@ public sealed class ServerSettingsTests : IClassFixture<CatalogHarness>
     public async Task Changing_the_kind_without_a_secret_is_refused()
     {
         var server = await Catalog.CreateAsync(Slug(), "Kind", default);
-        await Assert.ThrowsAsync<PanelException>(() => Catalog.SetApiAsync(server.Id, null, new ApiAuthInput(ApiAuthKind.Bearer), default));
+        await Assert.ThrowsAsync<PanelException>(() => Catalog.SetApiAsync(server.Id, null, new ApiAuthInput(ApiAuthKind.Bearer), 0, default));
     }
 
     [Fact]
     public async Task No_auth_clears_the_stored_secret()
     {
         var server = await Catalog.CreateAsync(Slug(), "Clear", default);
-        await Catalog.SetApiAsync(server.Id, null, new ApiAuthInput(ApiAuthKind.Bearer, Secret: "x"), default);
-        await Catalog.SetApiAsync(server.Id, null, new ApiAuthInput(ApiAuthKind.None), default);
+        var revision = await Catalog.SetApiAsync(server.Id, null, new ApiAuthInput(ApiAuthKind.Bearer, Secret: "x"), 0, default);
+        await Catalog.SetApiAsync(server.Id, null, new ApiAuthInput(ApiAuthKind.None), revision, default);
 
         var settings = await Catalog.SettingsAsync(server.Id, default);
         Assert.False(settings.AuthHasSecret);
@@ -72,7 +72,7 @@ public sealed class ServerSettingsTests : IClassFixture<CatalogHarness>
     public async Task Base_url_must_be_an_absolute_http_address(string url)
     {
         var server = await Catalog.CreateAsync(Slug(), "Url", default);
-        await Assert.ThrowsAsync<PanelException>(() => Catalog.SetApiAsync(server.Id, url, new ApiAuthInput(ApiAuthKind.None), default));
+        await Assert.ThrowsAsync<PanelException>(() => Catalog.SetApiAsync(server.Id, url, new ApiAuthInput(ApiAuthKind.None), 0, default));
     }
 
     [Theory]
@@ -81,17 +81,17 @@ public sealed class ServerSettingsTests : IClassFixture<CatalogHarness>
     public async Task Header_name_must_be_a_token(string header, string secret)
     {
         var server = await Catalog.CreateAsync(Slug(), "Header", default);
-        await Assert.ThrowsAsync<PanelException>(() => Catalog.SetApiAsync(server.Id, null, new ApiAuthInput(ApiAuthKind.Header, header, Secret: secret), default));
+        await Assert.ThrowsAsync<PanelException>(() => Catalog.SetApiAsync(server.Id, null, new ApiAuthInput(ApiAuthKind.Header, header, Secret: secret), 0, default));
     }
 
     [Fact]
     public async Task Dependencies_are_normalised_and_installer_options_refused()
     {
         var server = await Catalog.CreateAsync(Slug(), "Deps", default);
-        await Catalog.SetDependenciesAsync(server.Id, "httpx>=0.28\n\n fastmcp==1.0 \npydantic\nhttpx>=0.28", default);
+        await Catalog.SetDependenciesAsync(server.Id, "httpx>=0.28\n\n fastmcp==1.0 \npydantic\nhttpx>=0.28", 0, default);
 
         Assert.Equal("httpx>=0.28\npydantic", (await Catalog.SettingsAsync(server.Id, default)).Dependencies);
-        await Assert.ThrowsAsync<PanelException>(() => Catalog.SetDependenciesAsync(server.Id, "--index-url https://x", default));
+        await Assert.ThrowsAsync<PanelException>(() => Catalog.SetDependenciesAsync(server.Id, "--index-url https://x", 1, default));
     }
 
     [Fact]

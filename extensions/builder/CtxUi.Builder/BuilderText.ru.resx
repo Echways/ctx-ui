@@ -342,4 +342,13 @@
   <data name="ImportArchiveHint" xml:space="preserve">
     <value>Необязательно. Архив tar.gz или zip с mcp/, openapi.json и builder.json.</value>
   </data>
+  <data name="SettingsChangedElsewhere" xml:space="preserve">
+    <value>Эти настройки изменены в другом месте. Ваш ввод сохранён здесь; перезагрузите страницу, чтобы увидеть новые значения, прежде чем сохранять.</value>
+  </data>
+  <data name="UnsavedBlocked" xml:space="preserve">
+    <value>Ваш текст в этом файле не сохранён. Сначала загрузите новую версию или оставьте свой текст, либо явно отбросьте его.</value>
+  </data>
+  <data name="DiscardMine" xml:space="preserve">
+    <value>Отбросить мой текст и продолжить</value>
+  </data>
 </root>

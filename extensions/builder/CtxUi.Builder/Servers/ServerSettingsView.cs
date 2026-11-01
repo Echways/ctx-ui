@@ -18,6 +18,7 @@ public sealed record ServerSettingsView(
     string? AuthUsername,
     bool AuthHasSecret,
     string Dependencies,
+    long SettingsRevision,
     IReadOnlyList<string> SecretNames);
 
 public sealed record ProjectExport(string FileName, byte[] Content);

@@ -45,6 +45,8 @@ public sealed class ServerDraft
 
     public long Revision { get; set; }
 
+    public long SettingsRevision { get; set; }
+
     public List<DraftFile> Files { get; set; } = [];
 }
 

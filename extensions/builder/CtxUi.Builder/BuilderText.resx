@@ -342,4 +342,13 @@
   <data name="ImportArchiveHint" xml:space="preserve">
     <value>Optional. A tar.gz or zip with mcp/, openapi.json and builder.json.</value>
   </data>
+  <data name="SettingsChangedElsewhere" xml:space="preserve">
+    <value>These settings were changed elsewhere. Your input is kept here; reload the page to see the new values before saving.</value>
+  </data>
+  <data name="UnsavedBlocked" xml:space="preserve">
+    <value>Your text in this file is not saved. Load the new version or keep your text first, or discard it explicitly.</value>
+  </data>
+  <data name="DiscardMine" xml:space="preserve">
+    <value>Discard my text and continue</value>
+  </data>
 </root>

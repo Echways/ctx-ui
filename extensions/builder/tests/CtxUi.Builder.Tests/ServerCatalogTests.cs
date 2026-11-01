@@ -223,4 +223,54 @@ public sealed class ServerCatalogTests : IClassFixture<CatalogHarness>
         await Assert.ThrowsAsync<Enfilade.PanelException>(() =>
             Catalog.SetAccessAsync(server.Id, NetworkAccess.InternetOnly, new ServerLimits(memory, cpus, pids), default));
     }
+
+    [Fact]
+    public async Task Dependencies_saved_from_a_stale_view_conflict_and_keep_the_newer_value()
+    {
+        var server = await Catalog.CreateAsync(Slug(), "StaleDeps", default);
+        var first = await Catalog.SetDependenciesAsync(server.Id, "httpx", 0, default);
+        await Catalog.SetDependenciesAsync(server.Id, "pydantic", first, default);
+
+        await Assert.ThrowsAsync<DraftConflictException>(() => Catalog.SetDependenciesAsync(server.Id, "overwrite", first, default));
+
+        Assert.Equal("pydantic", (await Catalog.SettingsAsync(server.Id, default)).Dependencies);
+    }
+
+    [Fact]
+    public async Task Api_settings_saved_from_a_stale_view_conflict_and_keep_the_newer_value()
+    {
+        var server = await Catalog.CreateAsync(Slug(), "StaleApi", default);
+        var first = await Catalog.SetApiAsync(server.Id, "https://one.example.com", new ApiAuthInput(ApiAuthKind.None), 0, default);
+        await Catalog.SetApiAsync(server.Id, "https://two.example.com", new ApiAuthInput(ApiAuthKind.None), first, default);
+
+        await Assert.ThrowsAsync<DraftConflictException>(() => Catalog.SetApiAsync(server.Id, "https://three.example.com", new ApiAuthInput(ApiAuthKind.None), first, default));
+
+        Assert.Equal("https://two.example.com", (await Catalog.SettingsAsync(server.Id, default)).BaseUrl);
+    }
+
+    [Fact]
+    public async Task Api_and_dependencies_share_one_settings_revision_and_files_do_not()
+    {
+        var server = await Catalog.CreateAsync(Slug(), "Shared", default);
+        var file = await Catalog.SaveFileAsync(server.Id, "mcp/a.py", "a", 0, default);
+        var afterApi = await Catalog.SetApiAsync(server.Id, null, new ApiAuthInput(ApiAuthKind.None), 0, default);
+        await Catalog.SaveFileAsync(server.Id, "mcp/a.py", "b", file, default);
+
+        await Catalog.SetDependenciesAsync(server.Id, "httpx", afterApi, default);
+
+        Assert.Equal("httpx", (await Catalog.SettingsAsync(server.Id, default)).Dependencies);
+        Assert.Equal(afterApi + 1, (await Catalog.SettingsAsync(server.Id, default)).SettingsRevision);
+    }
+
+    [Fact]
+    public async Task Creating_a_tool_twice_reports_that_it_exists()
+    {
+        var server = await Catalog.CreateAsync(Slug(), "Twice", default);
+        var path = await Catalog.CreateToolAsync(server.Id, "get-data", default);
+
+        Assert.Equal("mcp/get_data.py", path);
+        var failure = await Assert.ThrowsAsync<Enfilade.PanelException>(() => Catalog.CreateToolAsync(server.Id, "Get Data", default));
+        Assert.NotEmpty(failure.Message);
+        Assert.Contains("def get_data(", (await Catalog.DraftAsync(server.Id, default)).Files.Single().Content);
+    }
 }

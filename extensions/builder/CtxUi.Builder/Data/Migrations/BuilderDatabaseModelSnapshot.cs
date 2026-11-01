@@ -165,6 +165,9 @@ namespace CtxUi.Builder.Data.Migrations
                     b.Property<long>("Revision")
                         .HasColumnType("INTEGER");
 
+                    b.Property<long>("SettingsRevision")
+                        .HasColumnType("INTEGER");
+
                     b.Property<long>("UpdatedAt")
                         .HasColumnType("INTEGER");
 

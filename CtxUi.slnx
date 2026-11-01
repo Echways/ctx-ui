@@ -15,4 +15,7 @@
     <Project Path="tests/CtxUi.Panel.Tests/CtxUi.Panel.Tests.csproj" />
     <Project Path="tests/CtxUi.Server.Tests/CtxUi.Server.Tests.csproj" />
   </Folder>
+  <Folder Name="/tests/fixtures/">
+    <Project Path="tests/fixtures/SampleExtension/SampleExtension.csproj" />
+  </Folder>
 </Solution>

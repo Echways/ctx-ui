@@ -1,0 +1,29 @@
+<Project>
+
+  <Target Name="CtxUiCheckExtension" BeforeTargets="CoreCompile;Publish">
+    <Error Condition="'$(CtxUiExtensionId)' == ''" Text="Set CtxUiExtensionId in the extension project, for example &lt;CtxUiExtensionId&gt;my-extension&lt;/CtxUiExtensionId&gt;." />
+  </Target>
+
+  <Target Name="CtxUiPruneShared" AfterTargets="ComputeResolvedFilesToPublishList">
+    <ItemGroup>
+      <ResolvedFileToPublish Remove="@(ResolvedFileToPublish)" Condition="$([System.Text.RegularExpressions.Regex]::IsMatch('%(ResolvedFileToPublish.RelativePath)', '^(runtimes/|([a-zA-Z-]+/)?(CtxUi\.Extensions\.|Enfilade|MudBlazor|Jeffijoe\.MessageFormat|Microsoft\.Extensions\.DependencyModel|Microsoft\.EntityFrameworkCore|Microsoft\.Data\.Sqlite|SQLitePCLRaw))'))" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="CtxUiPackExtension" AfterTargets="Publish">
+    <PropertyGroup>
+      <CtxUiExtensionName Condition="'$(CtxUiExtensionName)' == ''">$(AssemblyName)</CtxUiExtensionName>
+      <CtxUiArchive>$([System.IO.Path]::GetFullPath('$(PublishDir)../$(CtxUiExtensionId)-$(Version).zip'))</CtxUiArchive>
+    </PropertyGroup>
+    <RemoveDir Directories="$(PublishDir)wwwroot/_content" />
+    <ItemGroup>
+      <CtxUiHostOnlyFile Include="$(PublishDir)*.staticwebassets.endpoints.json;$(PublishDir)*.runtimeconfig.json" />
+    </ItemGroup>
+    <Delete Files="@(CtxUiHostOnlyFile)" />
+    <WriteLinesToFile File="$(PublishDir)extension.json" Overwrite="true"
+                      Lines="{ &quot;id&quot;: &quot;$(CtxUiExtensionId)&quot;, &quot;name&quot;: &quot;$(CtxUiExtensionName)&quot;, &quot;version&quot;: &quot;$(Version)&quot;, &quot;api&quot;: &quot;$(CtxUiExtensionApi)&quot;, &quot;assembly&quot;: &quot;$(AssemblyName)&quot; }" />
+    <ZipDirectory SourceDirectory="$(PublishDir)" DestinationFile="$(CtxUiArchive)" Overwrite="true" />
+    <Message Importance="high" Text="$(CtxUiExtensionId): $(CtxUiArchive)" />
+  </Target>
+
+</Project>

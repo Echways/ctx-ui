@@ -3,7 +3,6 @@
   <PropertyGroup>
     <PackageId>CtxUi.Extensions.Testing</PackageId>
     <Description>Starts a real ctx-ui server with your extension installed, for browser tests of ctx-ui panel extensions.</Description>
-    <PackageLicenseExpression>GPL-3.0-only</PackageLicenseExpression>
   </PropertyGroup>
 
   <ItemGroup>

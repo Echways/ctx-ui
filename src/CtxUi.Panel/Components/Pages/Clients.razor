@@ -13,7 +13,7 @@
         }
     </Summary>
     <Actions>
-        <SlotButtons Slot="PanelSlots.PageActions(PanelSections.Clients)" Context="new PanelPage(PanelSections.Clients)" />
+        <PageButtons Section="@PanelSections.Clients" OnDone="LoadAsync" />
         @if (_clients is { Count: > 0 })
         {
             <input class="line search" type="search" placeholder="@PanelText.SearchByName" aria-label="@PanelText.SearchByName" autocomplete="off"
@@ -22,7 +22,7 @@
         }
     </Actions>
 </PageHead>
-<SlotBlocks Slot="PanelSlots.PageTop(PanelSections.Clients)" Context="new PanelPage(PanelSections.Clients)" />
+<PageTopBlocks Section="@PanelSections.Clients" />
 
 @if (_clients is null)
 {
@@ -91,7 +91,7 @@ else
                         <MudMenuItem OnClick="() => DevicesAsync(context)">@PanelText.Devices</MudMenuItem>
                         <MudMenuItem OnClick="() => ResetAsync(context)">@PanelText.ResetQuota</MudMenuItem>
                         <MudMenuItem OnClick="() => ReissueAsync(context)">@PanelText.NewToken</MudMenuItem>
-                        <SlotMenuItems Slot="PanelSlots.ClientActions" Context="() => PanelData.Summary(context)" />
+                        <SlotMenuItems Slot="PanelSlots.ClientActions" Context="() => PanelData.Summary(context)" OnDone="LoadAsync" />
                         <MudDivider />
                         <MudMenuItem Class="danger" OnClick="() => RemoveAsync(context)">@PanelText.Delete</MudMenuItem>
                     </MudMenu>
@@ -101,7 +101,7 @@ else
     </MudTable>
 }
 
-<SlotBlocks Slot="PanelSlots.PageBottom(PanelSections.Clients)" Context="new PanelPage(PanelSections.Clients)" />
+<PageBottomBlocks Section="@PanelSections.Clients" />
 
 @code {
     private List<Client>? _clients;

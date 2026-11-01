@@ -688,12 +688,21 @@
     <value>не удалось распаковать {0}: {1}</value>
   </data>
   <data name="ExtensionManifestBroken" xml:space="preserve">
-    <value>в архиве нет корректного extension.json</value>
+    <value>нет корректного extension.json</value>
   </data>
   <data name="ExtensionAssemblyMissing" xml:space="preserve">
-    <value>в архиве нет {0}.dll</value>
+    <value>нет {0}.dll</value>
   </data>
   <data name="ExtensionUnknown" xml:space="preserve">
     <value>расширение «{0}» не установлено</value>
+  </data>
+  <data name="ExtensionManifestIncomplete" xml:space="preserve">
+    <value>в extension.json должны быть id, name, version, api и assembly</value>
+  </data>
+  <data name="ExtensionManifestAssemblyOutside" xml:space="preserve">
+    <value>extension.json указывает на сборку вне папки: {0}</value>
+  </data>
+  <data name="ExtensionNone" xml:space="preserve">
+    <value>Расширения не установлены</value>
   </data>
 </root>

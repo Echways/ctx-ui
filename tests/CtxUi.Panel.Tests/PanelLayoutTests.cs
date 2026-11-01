@@ -162,4 +162,14 @@ public class PanelLayoutTests
         Assert.Equal("#112233", options.Accent);
         Assert.Null(options.Favicon);
     }
+
+    [Theory]
+    [InlineData("nothing")]
+    [InlineData(PanelSections.AccessCaption)]
+    public void A_page_slot_of_something_that_is_not_a_built_in_page_is_refused(string section)
+    {
+        var failure = Assert.Throws<ArgumentException>(() => PanelSlots.PageTop(section));
+
+        Assert.Contains(section, failure.Message, StringComparison.Ordinal);
+    }
 }

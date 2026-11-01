@@ -688,12 +688,21 @@
     <value>cannot unpack {0}: {1}</value>
   </data>
   <data name="ExtensionManifestBroken" xml:space="preserve">
-    <value>the archive has no valid extension.json</value>
+    <value>no valid extension.json</value>
   </data>
   <data name="ExtensionAssemblyMissing" xml:space="preserve">
-    <value>the archive has no {0}.dll</value>
+    <value>no {0}.dll</value>
   </data>
   <data name="ExtensionUnknown" xml:space="preserve">
     <value>extension “{0}” is not installed</value>
+  </data>
+  <data name="ExtensionManifestIncomplete" xml:space="preserve">
+    <value>extension.json must set id, name, version, api and assembly</value>
+  </data>
+  <data name="ExtensionManifestAssemblyOutside" xml:space="preserve">
+    <value>extension.json names an assembly outside the folder: {0}</value>
+  </data>
+  <data name="ExtensionNone" xml:space="preserve">
+    <value>No extensions installed</value>
   </data>
 </root>

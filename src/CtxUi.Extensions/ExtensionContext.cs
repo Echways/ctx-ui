@@ -5,24 +5,28 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace CtxUi.Extensions;
 
-public sealed class ExtensionContext(
-    string id,
-    PanelEditor panel,
-    IServiceCollection services,
-    IConfiguration configuration,
-    string dataDirectory)
+public sealed class ExtensionContext
 {
     private const string DatabaseFile = "data.db";
 
-    public string Id { get; } = id;
+    internal ExtensionContext(string id, PanelEditor panel, IServiceCollection services, IConfiguration configuration, string dataDirectory)
+    {
+        Id = id;
+        Panel = panel;
+        Services = services;
+        Configuration = configuration;
+        DataDirectory = dataDirectory;
+    }
 
-    public PanelEditor Panel { get; } = panel;
+    public string Id { get; }
 
-    public IServiceCollection Services { get; } = services;
+    public PanelEditor Panel { get; }
 
-    public IConfiguration Configuration { get; } = configuration;
+    public IServiceCollection Services { get; }
 
-    public string DataDirectory { get; } = dataDirectory;
+    public IConfiguration Configuration { get; }
+
+    public string DataDirectory { get; }
 
     public ExtensionContext AddDatabase<TContext>() where TContext : DbContext
     {

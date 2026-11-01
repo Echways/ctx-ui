@@ -16,6 +16,8 @@ public sealed class ExtensionInstallerTests : IDisposable
 
     public void Dispose() => Directory.Delete(_root, recursive: true);
 
+    private static string SampleFolder => Path.Combine(AppContext.BaseDirectory, "extensions", "sample");
+
     private static string Manifest(string id = "sample", string version = "1.0.0", string api = "1.0") =>
         $$"""{ "id": "{{id}}", "name": "Sample", "version": "{{version}}", "api": "{{api}}", "assembly": "SampleExtension" }""";
 
@@ -32,12 +34,45 @@ public sealed class ExtensionInstallerTests : IDisposable
         return path;
     }
 
-    private string GoodArchive(string version = "1.0.0") =>
-        Archive(("extension.json", Manifest(version: version)), ("SampleExtension.dll", version), ("wwwroot/sample.css", "a{}"));
+    private string SampleArchive(string manifest, params (string Name, string Text)[] extra)
+    {
+        var path = Path.Combine(_root, $"{Guid.NewGuid():N}.zip");
+        using var zip = ZipFile.Open(path, ZipArchiveMode.Create);
+        foreach (var file in Directory.EnumerateFiles(SampleFolder, "*", SearchOption.AllDirectories))
+        {
+            var name = Path.GetRelativePath(SampleFolder, file).Replace('\\', '/');
+            if (name != ExtensionManifest.FileName)
+                zip.CreateEntryFromFile(file, name);
+        }
+
+        foreach (var (name, text) in extra.Append((ExtensionManifest.FileName, manifest)))
+        {
+            using var writer = new StreamWriter(zip.CreateEntry(name).Open());
+            writer.Write(text);
+        }
+
+        return path;
+    }
+
+    private string GoodArchive(string version = "1.0.0") => SampleArchive(Manifest(version: version), ("installed.txt", version));
+
+    private void InstallFolder(string name, string? manifest = null)
+    {
+        var folder = Path.Combine(Extensions, name);
+        foreach (var file in Directory.EnumerateFiles(SampleFolder, "*", SearchOption.AllDirectories))
+        {
+            var copy = Path.Combine(folder, Path.GetRelativePath(SampleFolder, file));
+            Directory.CreateDirectory(Path.GetDirectoryName(copy)!);
+            File.Copy(file, copy);
+        }
+
+        if (manifest is not null)
+            File.WriteAllText(Path.Combine(folder, ExtensionManifest.FileName), manifest);
+    }
 
     private void AssertOnlyTheFirstVersionIsThere()
     {
-        Assert.Equal("1.0.0", File.ReadAllText(Path.Combine(Extensions, "sample", "SampleExtension.dll")));
+        Assert.Equal("1.0.0", File.ReadAllText(Path.Combine(Extensions, "sample", "installed.txt")));
         Assert.Equal(["sample"], Directory.GetDirectories(Extensions).Select(Path.GetFileName));
     }
 
@@ -63,7 +98,7 @@ public sealed class ExtensionInstallerTests : IDisposable
 
         Installer.Install(GoodArchive("2.0.0"));
 
-        Assert.Equal("2.0.0", File.ReadAllText(Path.Combine(Extensions, "sample", "SampleExtension.dll")));
+        Assert.Equal("2.0.0", File.ReadAllText(Path.Combine(Extensions, "sample", "installed.txt")));
         Assert.False(File.Exists(Path.Combine(Extensions, "sample", "stale.dll")));
         Assert.Equal("kept", File.ReadAllText(Path.Combine(data, "data.db")));
         Assert.Equal(["sample"], Directory.GetDirectories(Extensions).Select(Path.GetFileName));
@@ -82,6 +117,8 @@ public sealed class ExtensionInstallerTests : IDisposable
             Archive(("extension.json", Manifest(id: "login")), ("SampleExtension.dll", "x")),
             Archive(("extension.json", Manifest(api: "2.0")), ("SampleExtension.dll", "x")),
             Archive(("extension.json", Manifest())),
+            Archive(("extension.json", Manifest()), ("SampleExtension.dll", "not an assembly")),
+            SampleArchive(Manifest(id: "other")),
             Archive(("extension.json", "not json")),
             corrupt,
             Path.Combine(_root, "missing.zip"),
@@ -98,7 +135,7 @@ public sealed class ExtensionInstallerTests : IDisposable
     public void An_archive_with_a_path_outside_the_folder_is_refused()
     {
         Installer.Install(GoodArchive());
-        var archive = Archive(("extension.json", Manifest()), ("SampleExtension.dll", "x"), ("../../evil.txt", "evil"));
+        var archive = SampleArchive(Manifest(), ("../../evil.txt", "evil"));
 
         Assert.Throws<DomainException>(() => Installer.Install(archive));
 
@@ -139,38 +176,36 @@ public sealed class ExtensionInstallerTests : IDisposable
     }
 
     [Fact]
-    public void List_reports_every_state()
+    public void Scan_reports_what_the_server_will_do_with_every_folder()
     {
-        void Folder(string name, string? manifest)
-        {
-            var folder = Path.Combine(Extensions, name);
-            Directory.CreateDirectory(folder);
-            if (manifest is not null)
-                File.WriteAllText(Path.Combine(folder, "extension.json"), manifest);
-        }
+        InstallFolder("sample");
+        InstallFolder("off", Manifest("off"));
+        InstallFolder("old", Manifest("old", api: "2.0"));
+        InstallFolder("routes", Manifest("routes"));
+        InstallFolder("mismatch", Manifest("other"));
+        InstallFolder("login", Manifest("login"));
+        Directory.CreateDirectory(Path.Combine(Extensions, "empty"));
+        Directory.CreateDirectory(Path.Combine(Extensions, ".install-1"));
 
-        Folder("fine", Manifest("fine"));
-        Folder("off", Manifest("off"));
-        Folder("old", Manifest("old", api: "2.0"));
-        Folder("empty", null);
-        Folder("mismatch", Manifest("other"));
-        Folder(".install-1", null);
-
-        var states = Installer.List(new HashSet<string> { "off" })
-            .ToDictionary(status => Path.GetFileName(status.Directory), status => status.State);
+        var statuses = ExtensionCatalog.Scan(new CtxUiOptions { DataDir = Data, DisabledExtensions = "off" })
+            .ToDictionary(status => status.Name);
 
         Assert.Equal(
-            new Dictionary<string, string>
+            new Dictionary<string, ExtensionState>
             {
-                ["empty"] = ExtensionInstaller.Invalid,
-                ["fine"] = ExtensionInstaller.Ok,
-                ["mismatch"] = ExtensionInstaller.Invalid,
-                ["off"] = ExtensionInstaller.Disabled,
-                ["old"] = ExtensionInstaller.Incompatible,
+                ["empty"] = ExtensionState.Invalid,
+                ["login"] = ExtensionState.Invalid,
+                ["mismatch"] = ExtensionState.Invalid,
+                ["off"] = ExtensionState.Disabled,
+                ["old"] = ExtensionState.Incompatible,
+                ["routes"] = ExtensionState.Invalid,
+                ["sample"] = ExtensionState.Ok,
             },
-            states);
+            statuses.ToDictionary(pair => pair.Key, pair => pair.Value.State));
+        Assert.Contains("/sample", statuses["routes"].Problem, StringComparison.Ordinal);
+        Assert.Contains("2.0", statuses["old"].Problem, StringComparison.Ordinal);
     }
 
     [Fact]
-    public void List_of_a_missing_folder_is_empty() => Assert.Empty(Installer.List(new HashSet<string>()));
+    public void Scan_of_a_missing_folder_is_empty() => Assert.Empty(ExtensionCatalog.Scan(new CtxUiOptions { DataDir = Data }));
 }

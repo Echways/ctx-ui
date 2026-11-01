@@ -1,5 +1,4 @@
-using Enfilade;
-using MudBlazor;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace CtxUi.Extensions;
 
@@ -46,8 +45,6 @@ public sealed class PanelActionSlotEditor<TContext>
         where TSheet : PanelBlock<TContext> =>
         AddAction(
             title,
-            args => args.Dialogs.ShowSheetAsync(
-                sheetTitle(args.Context),
-                new DialogParameters<TSheet> { { sheet => sheet.Context, args.Context } }),
+            args => args.Services.GetRequiredService<IBlockSheets>().ShowAsync(sheetTitle(args.Context), typeof(TSheet), args.Context),
             order);
 }

@@ -1,9 +1,10 @@
 {
-  "$schema": "http://json.schemastore.org/template",
+  "$schema": "https://json.schemastore.org/template",
   "author": "Echways",
   "classifications": ["Web", "Blazor", "ctx-ui"],
   "identity": "CtxUi.Extensions.Templates.Extension",
   "name": "ctx-ui panel extension",
+  "description": "A panel extension for ctx-ui: a section, a block on a built-in page and a row action, in English and Russian.",
   "shortName": "ctxui-extension",
   "sourceName": "MyExtension",
   "preferNameDirectory": true,

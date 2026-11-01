@@ -8,6 +8,10 @@
 {
     <MudMenuItem OnClick="() => RunAsync(action)">@action.Title()</MudMenuItem>
 }
+@if (DividerAfter && Slots.Actions<TContext>(Slot.Name).Count > 0)
+{
+    <MudDivider />
+}
 
 @code {
     [Parameter, EditorRequired]
@@ -16,6 +20,15 @@
     [Parameter, EditorRequired]
     public Func<TContext> Context { get; set; } = default!;
 
-    private Task RunAsync(SlotAction<TContext> action) =>
-        Act.RunAsync(() => action.Run(new PanelActionArgs<TContext>(Context(), Dialogs, Services)));
+    [Parameter]
+    public bool DividerAfter { get; set; }
+
+    [Parameter]
+    public EventCallback OnDone { get; set; }
+
+    private async Task RunAsync(SlotAction<TContext> action)
+    {
+        if (await Act.RunAsync(() => action.Run(new PanelActionArgs<TContext>(Context(), Dialogs, Services))))
+            await OnDone.InvokeAsync();
+    }
 }

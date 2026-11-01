@@ -1,12 +1,11 @@
 @typeparam TContext
 @inject PanelSlotRegistry Slots
-@inject Act Act
 @inject IDialogService Dialogs
 @inject IServiceProvider Services
 
 @foreach (var action in Slots.Actions<TContext>(Slot.Name))
 {
-    <Button OnClick="() => RunAsync(action)">@action.Title()</Button>
+    <Button Kind="ButtonKind.Quiet" OnClick="() => RunAsync(action)">@action.Title()</Button>
 }
 
 @code {
@@ -16,6 +15,12 @@
     [Parameter, EditorRequired]
     public TContext Context { get; set; } = default!;
 
-    private Task RunAsync(SlotAction<TContext> action) =>
-        Act.RunAsync(() => action.Run(new PanelActionArgs<TContext>(Context, Dialogs, Services)));
+    [Parameter]
+    public EventCallback OnDone { get; set; }
+
+    private async Task RunAsync(SlotAction<TContext> action)
+    {
+        await action.Run(new PanelActionArgs<TContext>(Context, Dialogs, Services));
+        await OnDone.InvokeAsync();
+    }
 }

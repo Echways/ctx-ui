@@ -168,6 +168,67 @@ public class ExtensionSlotsTests
         await Expect(ClientPages.Dialog(page).GetByTestId("action-sheet")).ToHaveTextAsync("Петров");
     }
 
+    [Fact]
+    public async Task A_sheet_action_closes_with_the_close_word_and_with_escape()
+    {
+        await using var gateway = await StartAsync();
+        await ArrangeTwoClientsAsync(gateway);
+        await using var session = await PanelSession.SignInAsync(gateway);
+        var page = await ClientPages.OpenClientsAsync(session);
+
+        await RowMenu.ChooseAsync(ClientPages.Row(page, "Петров"), "Open sheet");
+        await ClientPages.Dialog(page).GetByRole(AriaRole.Button, new() { Name = "Закрыть" }).ClickAsync();
+        await Expect(ClientPages.Dialog(page)).ToHaveCountAsync(0);
+
+        await RowMenu.ChooseAsync(ClientPages.Row(page, "Петров"), "Open sheet");
+        await ClientPages.Dialog(page).GetByRole(AriaRole.Button, new() { Name = "Закрыть" }).FocusAsync();
+        await page.Keyboard.PressAsync("Escape");
+        await Expect(ClientPages.Dialog(page)).ToHaveCountAsync(0);
+    }
+
+    [Fact]
+    public async Task A_throwing_sheet_stays_in_its_frame_and_closes()
+    {
+        await using var gateway = await StartAsync();
+        await ArrangeTwoClientsAsync(gateway);
+        await using var session = await PanelSession.SignInAsync(gateway);
+        var page = await ClientPages.OpenClientsAsync(session);
+
+        await RowMenu.ChooseAsync(ClientPages.Row(page, "Петров"), "Open broken sheet");
+
+        await Expect(ClientPages.Dialog(page).Locator(".panel-block-failed")).ToBeVisibleAsync();
+        await ClientPages.Dialog(page).GetByRole(AriaRole.Button, new() { Name = "Закрыть" }).ClickAsync();
+        await RowMenu.ChooseAsync(ClientPages.Row(page, "Петров"), "Изменить");
+        await Expect(ClientPages.Dialog(page)).ToBeVisibleAsync();
+    }
+
+    [Fact]
+    public async Task A_row_action_that_changes_data_refreshes_the_table()
+    {
+        await using var gateway = await StartAsync();
+        await ArrangeTwoClientsAsync(gateway);
+        await using var session = await PanelSession.SignInAsync(gateway);
+        var page = await ClientPages.OpenClientsAsync(session);
+        await Expect(ClientPages.Row(page, "Петров")).Not.ToContainTextAsync("отключён");
+
+        await RowMenu.ChooseAsync(ClientPages.Row(page, "Петров"), "Turn off");
+
+        await Expect(ClientPages.Row(page, "Петров")).ToContainTextAsync("отключён");
+    }
+
+    [Fact]
+    public async Task Extension_actions_stand_apart_from_the_dangerous_one()
+    {
+        await using var gateway = await StartAsync();
+        await ArrangeTwoClientsAsync(gateway);
+        await using var session = await PanelSession.SignInAsync(gateway);
+        await OpenAsync(session.Page, "Inbound'ы");
+
+        await MenuOfAsync(session.Page, ClientPages.Row(session.Page, "/mcp/second"));
+
+        await Expect(session.Page.Locator(".mud-menu-list hr, .mud-list hr").First).ToBeAttachedAsync();
+    }
+
     [Theory]
     [InlineData("Обзор", "overview")]
     [InlineData("OAuth", "oauth")]
@@ -203,7 +264,7 @@ public class ExtensionSlotsTests
 
         var page = await ClientPages.OpenClientsAsync(session);
 
-        await Expect(page.Locator(".panel-block .empty")).ToBeVisibleAsync();
+        await Expect(page.Locator(".panel-block-failed")).ToBeVisibleAsync();
         await Expect(ClientPages.Row(page, "Петров")).ToBeVisibleAsync();
         await RowMenu.ChooseAsync(ClientPages.Row(page, "Петров"), "Изменить");
         await Expect(ClientPages.Dialog(page)).ToBeVisibleAsync();

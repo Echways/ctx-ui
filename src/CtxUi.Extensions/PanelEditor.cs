@@ -1,4 +1,3 @@
-using System.Reflection;
 using Microsoft.AspNetCore.Components;
 using Enfilade;
 
@@ -51,12 +50,6 @@ public sealed class PanelEditor
     public PanelEditor AddAccountLink(Func<string> title, string href)
     {
         _layout.AddAccountLink(title, href);
-        return this;
-    }
-
-    public PanelEditor AddPages(Assembly assembly)
-    {
-        _layout.AddPages(assembly);
         return this;
     }
 

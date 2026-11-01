@@ -119,6 +119,8 @@ public sealed partial class CliBackupTests : IDisposable
         Directory.CreateDirectory(Path.Combine(extension, "wwwroot"));
         await File.WriteAllTextAsync(Path.Combine(extension, "extension.json"), "{}");
         await File.WriteAllTextAsync(Path.Combine(extension, "wwwroot", "sample.css"), "a{}");
+        Directory.CreateDirectory(Path.Combine(extension, "wwwroot", ".well-known"));
+        await File.WriteAllTextAsync(Path.Combine(extension, "wwwroot", ".well-known", "file.txt"), "a");
         Directory.CreateDirectory(Path.Combine(_dataDir, "extensions", ".install-leftover"));
         Directory.CreateDirectory(ExtensionData("nested"));
         await File.WriteAllTextAsync(ExtensionData("notes.txt"), "keep");
@@ -130,6 +132,7 @@ public sealed partial class CliBackupTests : IDisposable
         Assert.Equal((0, ""), (backup.Code, backup.Error));
         Assert.True(File.Exists(Path.Combine(target, "extensions", "sample", "extension.json")));
         Assert.True(File.Exists(Path.Combine(target, "extensions", "sample", "wwwroot", "sample.css")));
+        Assert.True(File.Exists(Path.Combine(target, "extensions", "sample", "wwwroot", ".well-known", "file.txt")));
         Assert.False(Directory.Exists(Path.Combine(target, "extensions", ".install-leftover")));
         Assert.Equal("keep", await File.ReadAllTextAsync(Path.Combine(target, "extension-data", "sample", "notes.txt")));
         Assert.Equal("keep too", await File.ReadAllTextAsync(Path.Combine(target, "extension-data", "sample", "nested", "other.txt")));

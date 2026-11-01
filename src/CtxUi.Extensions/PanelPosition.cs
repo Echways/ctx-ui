@@ -1,8 +1,18 @@
 namespace CtxUi.Extensions;
 
-public sealed record PanelPosition(string? BeforeEntry, string? AfterEntry)
+public sealed class PanelPosition
 {
-    public static PanelPosition Before(string entry) => new(entry, null);
+    private PanelPosition(string entry, bool isAfter)
+    {
+        Entry = entry;
+        IsAfter = isAfter;
+    }
 
-    public static PanelPosition After(string entry) => new(null, entry);
+    internal string Entry { get; }
+
+    internal bool IsAfter { get; }
+
+    public static PanelPosition Before(string entry) => new(entry, isAfter: false);
+
+    public static PanelPosition After(string entry) => new(entry, isAfter: true);
 }

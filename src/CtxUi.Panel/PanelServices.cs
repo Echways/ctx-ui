@@ -28,7 +28,7 @@ public static partial class PanelServices
 
     private const string Favicon = "_content/CtxUi.Panel/favicon.svg";
 
-    public static PanelLayout CreateLayout() =>
+    internal static PanelLayout CreateLayout() =>
         new PanelLayout()
             .AddBuiltIn<Overview>(PanelSections.Overview, () => PanelText.Overview)
             .AddBuiltIn<Metrics>(PanelSections.Metrics, () => PanelText.Metrics)
@@ -40,7 +40,7 @@ public static partial class PanelServices
             .AddBuiltIn<Keys>(PanelSections.ApiKeys, () => PanelText.ApiKeys)
             .AddBuiltInStylesheet("_content/CtxUi.Panel/panel.css");
 
-    public static IServiceCollection AddCtxUiPanel(this IServiceCollection services, IConfiguration section, Action<PanelLayout>? extend = null)
+    internal static IServiceCollection AddCtxUiPanel(this IServiceCollection services, IConfiguration section, Action<PanelLayout> extend)
     {
         services.Configure<PanelOptions>(section);
         var sessionCheck = section.Get<PanelOptions>()?.SessionCheckInterval ?? new PanelOptions().SessionCheckInterval;
@@ -48,6 +48,7 @@ public static partial class PanelServices
         services.AddSingleton<PanelBackend>();
         services.AddSingleton<IPanelData, PanelData>();
         services.AddScoped<PanelActions>();
+        services.AddScoped<IBlockSheets, BlockSheets>();
         services.AddIdentityCore<Admin>(options =>
             {
                 options.Lockout.MaxFailedAccessAttempts = MaxFailedSignIns;
@@ -78,7 +79,7 @@ public static partial class PanelServices
             shell.AutoRefreshInterval = panel.Value.AutoRefreshInterval;
         });
         var layout = CreateLayout();
-        extend?.Invoke(layout);
+        extend(layout);
         layout.Apply(services.AddEnfilade());
         services.AddSingleton(layout);
         services.AddScoped<AuthenticationStateProvider, AdminSessionState>();

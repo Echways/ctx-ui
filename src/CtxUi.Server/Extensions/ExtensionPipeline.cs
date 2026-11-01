@@ -9,13 +9,14 @@ public static class ExtensionPipeline
 {
     private const string Assets = "wwwroot";
 
-    public static void Register(PanelLayout layout, IServiceCollection services, ExtensionCatalog catalog, IConfiguration section)
+    internal static void Register(PanelLayout layout, IServiceCollection services, ExtensionCatalog catalog, IConfiguration section)
     {
         foreach (var extension in catalog.Loaded)
         {
             var manifest = extension.Manifest;
             ServiceRegistration.CreatePrivateDirectory(extension.DataDirectory);
             var editor = layout.EditorFor(manifest.Assembly);
+            layout.AddPages(extension.Entry.GetType().Assembly);
             try
             {
                 extension.Entry.Register(new ExtensionContext(

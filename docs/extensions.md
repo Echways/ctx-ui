@@ -20,10 +20,11 @@ export CTXUI_BINARY=/opt/ctx-ui/ctx-ui
 dotnet build -t:CtxUiPreview
 ```
 
-`CtxUiPreview` runs the server from its own folder, so keep the files of the server archive next to the binary. It publishes the extension into `obj/ctxui-preview/`, starts the panel
+`CtxUiPreview` publishes the extension into `obj/ctxui-preview/`, starts the panel
 with it on `http://127.0.0.1:5199` and prints the panel address, login and
 password. Data stays between runs. Stop it with Ctrl+C, change the code, run it again.
-Another port: `-p:CtxUiPreviewPort=5200`.
+Another port: `-p:CtxUiPreviewPort=5200`. The server runs from its own folder, so
+keep the files of the server archive next to the binary.
 
 Build the archive when it is ready:
 
@@ -65,8 +66,9 @@ context.Panel
 ```
 
 Pages are Razor components with `@page`. Every page requires an administrator
-sign-in. `PanelSections.Of<TPage>()` names your own section so you can pass it
-to `Hide`, `Move` or `Rename`.
+sign-in. A page does not need a section: a details page opens by its address.
+`PanelSections.Of<TPage>()` names your own section so you can pass it to `Hide`,
+`Move` or `Rename`.
 
 ### Move, rename, hide
 
@@ -98,7 +100,8 @@ matches the context of its slot.
 | `PanelSlots.InboundSheet` | block | `InboundSummary` | end of the inbound form, existing inbounds only |
 | `PanelSlots.ApiKeyActions` | action | `ApiKeySummary` | API key row menu, before "Revoke" |
 
-`section` is one of the `PanelSections` constants except `AccessCaption`.
+`section` is one of the `PanelSections` constants except `AccessCaption`. Anything
+else stops the start with an error naming it.
 
 ### Blocks
 
@@ -114,7 +117,8 @@ context.Panel.In(PanelSlots.ClientSheet).AddBlock<UsageBlock>();
 ```
 
 Blocks are sorted by `order`, then by extension id, then by registration order.
-A block that throws shows an error inside its own frame; the page keeps working.
+A block that throws shows an error inside its own frame and is logged; the page
+keeps working.
 Load data when the block is shown, not in `Register`.
 
 ### Actions
@@ -127,10 +131,11 @@ context.Panel
 ```
 
 `AddAction` receives `PanelActionArgs<TContext>`: `Context`, `Dialogs` and
-`Services`. An exception shows an error message and is logged. To show your own
-message, throw `Enfilade.PanelException`. `AddSheet` opens a block in a side
-sheet and passes the row as `Context`. A row context is built only on click, so
-the menu costs nothing until it is used.
+`Services`. When it finishes, the page reloads its data, so a change shows at once.
+An exception shows an error message and is logged. To show your own message, throw
+`Enfilade.PanelException`. `AddSheet` opens a block in a side sheet and passes the
+row as `Context`; the sheet closes with its close word, Escape or a click outside.
+A row context is built only on click, so the menu costs nothing until it is used.
 
 ### Look and styles
 
@@ -143,13 +148,15 @@ context.Panel
         look.Favicon = "_content/Acme.Reports/favicon.svg";
         look.Appearance = Appearance.Light;
     })
-    .AddStylesheet("acme.css");
+    .AddStylesheet("acme.css")
+    .AddAccountLink(() => Text.Help, "https://help.example.com");
 ```
 
 `AddStylesheet` takes a path inside `wwwroot` of the extension. Your stylesheets
 load after `panel.css`, so they can override it and the Enfilade design tokens.
 `.razor.css` files work as usual and are connected automatically. Only these four
 look settings can be changed: the sign-in settings of the panel stay out of reach.
+`AddAccountLink` adds a link next to the sign-out link.
 
 ### Panel data
 
@@ -223,8 +230,8 @@ Keep other files of the extension in `context.DataDirectory`.
 
 ## Rules
 
-- The id matches `^[a-z][a-z0-9-]{0,31}$`, does not repeat a path of the server
-  (`login`, `clients`, `api` and so on) and equals the folder name.
+- The id matches `^[a-z][a-z0-9-]{0,31}$`, which the build checks, does not repeat a
+  path of the server (`login`, `clients`, `api` and so on) and equals the folder name.
 - All `@page` routes stand under `/<id>`. An extension that breaks this is not loaded.
 - Exactly one class implements `IPanelExtension`, with a public constructor
   without parameters.
@@ -248,10 +255,11 @@ officially supported, nor are static files of private Razor libraries.
 ## Testing
 
 `CtxUi.Extensions.Testing` starts a real server as a separate process with your
-extension installed. Point `CTXUI_BINARY` at a server binary.
+extension installed. Point `CTXUI_BINARY` at a server binary and install the browser
+once with `pwsh bin/Debug/net10.0/playwright.ps1 install chromium`.
 
 ```csharp
-await using var panel = await TestPanel.StartAsync(new TestPanelOptions(extensionsDir));
+await using var panel = await TestPanel.StartAsync(new TestPanelOptions(extensionsDir, Language: "en"));
 using var playwright = await Playwright.CreateAsync();
 await using var browser = await playwright.Chromium.LaunchAsync();
 var page = await browser.NewPageAsync();
@@ -261,9 +269,11 @@ await page.GetByRole(AriaRole.Link, new() { Name = "Reports" }).ClickAsync();
 Assert.DoesNotContain("fail:", panel.Log);
 ```
 
-`extensionsDir` holds a folder `<id>` with the published extension. `Settings` pass
-configuration, `CliAsync` runs ctx-ui commands against the same data. Data lives in
-a temporary folder, the port is free, an administrator is created for you.
+`extensionsDir` holds a folder `<id>` with the published extension, for example from
+`dotnet publish -o extensions/acme-reports`. `Settings` pass configuration, `CliAsync`
+runs ctx-ui commands against the same data. The panel speaks Russian unless `Language`
+says otherwise. Data lives in a temporary folder, the port is free, an administrator is
+created for you.
 
 ## Install, update, remove
 
@@ -275,9 +285,12 @@ ctx-ui extension list
 
 The command runs as the service user, so keep the archive where that user can read it, for example in `/tmp`, not in a private home folder.
 
-`list` shows one of `ok`, `disabled`, `incompatible`, `invalid`. Installing a new
-version replaces the old one and keeps its data. A broken archive leaves the
-installed version intact.
+`install` checks the archive by the same rules as the server: an archive the server
+would skip is refused with the reason, and the installed version stays intact.
+Installing a new version replaces the old one and keeps its data.
+
+`list` shows one of `ok`, `disabled`, `incompatible`, `invalid`, and the reason when
+the server will not load the extension.
 
 ```bash
 sudo ctx-ui extension remove acme-reports

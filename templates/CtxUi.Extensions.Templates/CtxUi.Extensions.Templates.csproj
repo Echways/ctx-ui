@@ -4,7 +4,8 @@
     <PackageId>CtxUi.Extensions.Templates</PackageId>
     <PackageType>Template</PackageType>
     <Description>dotnet new template for a ctx-ui panel extension.</Description>
-    <PackageLicenseExpression>GPL-3.0-only</PackageLicenseExpression>
+    <IncludeSymbols>false</IncludeSymbols>
+    <NoDefaultExcludes>true</NoDefaultExcludes>
     <IncludeBuildOutput>false</IncludeBuildOutput>
     <EnableDefaultItems>false</EnableDefaultItems>
     <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
@@ -12,7 +13,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="content/**/*" Exclude="content/**/MyExtension.csproj" Pack="true" PackagePath="content/%(RecursiveDir)%(Filename)%(Extension)" />
+    <None Include="content/**/*" Exclude="content/**/MyExtension.csproj" Pack="true" PackagePath="content/" />
   </ItemGroup>
 
   <Target Name="StampExtensionVersion" BeforeTargets="_GetPackageFiles">

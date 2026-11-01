@@ -9,6 +9,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="CtxUi.Panel.Tests" />
+    <InternalsVisibleTo Include="ctx-ui" />
+  </ItemGroup>
+
+  <ItemGroup>
     <EmbeddedResource Update="PanelText.resx" StronglyTypedLanguage="CSharp" StronglyTypedClassName="PanelText"
                       StronglyTypedNamespace="CtxUi.Panel" StronglyTypedFileName="$(IntermediateOutputPath)PanelText.Designer.cs" />
   </ItemGroup>

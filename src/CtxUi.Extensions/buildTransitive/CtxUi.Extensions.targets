@@ -1,18 +1,20 @@
 <Project>
 
-  <Target Name="CtxUiCheckExtension" BeforeTargets="CoreCompile;Publish">
+  <Target Name="CtxUiCheckExtension" BeforeTargets="PrepareForPublish;CtxUiPreview">
     <Error Condition="'$(CtxUiExtensionId)' == ''" Text="Set CtxUiExtensionId in the extension project, for example &lt;CtxUiExtensionId&gt;my-extension&lt;/CtxUiExtensionId&gt;." />
+    <Error Condition="!$([System.Text.RegularExpressions.Regex]::IsMatch('$(CtxUiExtensionId)', '^[a-z][a-z0-9-]{0,31}$'))" Text="CtxUiExtensionId '$(CtxUiExtensionId)' must start with a lowercase letter and hold lowercase letters, digits and dashes, 32 characters at most." />
   </Target>
 
   <Target Name="CtxUiPruneShared" AfterTargets="ComputeResolvedFilesToPublishList">
     <ItemGroup>
-      <ResolvedFileToPublish Remove="@(ResolvedFileToPublish)" Condition="$([System.Text.RegularExpressions.Regex]::IsMatch('%(ResolvedFileToPublish.RelativePath)', '^(runtimes/|([a-zA-Z-]+/)?(CtxUi\.Extensions\.|Enfilade|MudBlazor|Jeffijoe\.MessageFormat|Microsoft\.Extensions\.DependencyModel|Microsoft\.EntityFrameworkCore|Microsoft\.Data\.Sqlite|SQLitePCLRaw))'))" />
+      <ResolvedFileToPublish Remove="@(ResolvedFileToPublish)" Condition="$([System.Text.RegularExpressions.Regex]::IsMatch('%(ResolvedFileToPublish.RelativePath)', '^(runtimes/|([a-zA-Z-]+/)?((CtxUi\.Extensions|Enfilade|MudBlazor|Jeffijoe\.MessageFormat)(\.resources)?\.[a-z]+$|Microsoft\.Extensions\.DependencyModel|Microsoft\.EntityFrameworkCore|Microsoft\.Data\.Sqlite|SQLitePCLRaw))'))" />
     </ItemGroup>
   </Target>
 
   <Target Name="CtxUiPackExtension" AfterTargets="Publish">
     <PropertyGroup>
       <CtxUiExtensionName Condition="'$(CtxUiExtensionName)' == ''">$(AssemblyName)</CtxUiExtensionName>
+      <CtxUiManifestName>$(CtxUiExtensionName.Replace('\', '\\').Replace('&quot;', '\&quot;'))</CtxUiManifestName>
       <CtxUiArchive>$([System.IO.Path]::GetFullPath('$(PublishDir)../$(CtxUiExtensionId)-$(Version).zip'))</CtxUiArchive>
     </PropertyGroup>
     <RemoveDir Directories="$(PublishDir)wwwroot/_content" />
@@ -21,7 +23,7 @@
     </ItemGroup>
     <Delete Files="@(CtxUiHostOnlyFile)" />
     <WriteLinesToFile File="$(PublishDir)extension.json" Overwrite="true"
-                      Lines="{ &quot;id&quot;: &quot;$(CtxUiExtensionId)&quot;, &quot;name&quot;: &quot;$(CtxUiExtensionName)&quot;, &quot;version&quot;: &quot;$(Version)&quot;, &quot;api&quot;: &quot;$(CtxUiExtensionApi)&quot;, &quot;assembly&quot;: &quot;$(AssemblyName)&quot; }" />
+                      Lines="{ &quot;id&quot;: &quot;$(CtxUiExtensionId)&quot;, &quot;name&quot;: &quot;$(CtxUiManifestName)&quot;, &quot;version&quot;: &quot;$(Version)&quot;, &quot;api&quot;: &quot;$(CtxUiExtensionApi)&quot;, &quot;assembly&quot;: &quot;$(AssemblyName)&quot; }" />
     <ZipDirectory SourceDirectory="$(PublishDir)" DestinationFile="$(CtxUiArchive)" Overwrite="true" />
     <Message Importance="high" Text="$(CtxUiExtensionId): $(CtxUiArchive)" />
   </Target>

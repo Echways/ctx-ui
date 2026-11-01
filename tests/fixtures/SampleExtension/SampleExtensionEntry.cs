@@ -40,7 +40,7 @@ public sealed class SampleExtensionEntry : IPanelExtension
         context.Panel.AddStylesheet("sample.css");
         if (context.Configuration.GetValue<bool>("Reshape"))
             Reshape(context.Panel);
-        else
+        else if (!context.Configuration.GetValue<bool>("Headless"))
             context.Panel.AddSection<SamplePage>(() => SampleText.Section);
 
         if (context.Configuration.GetValue<bool>("Slots"))
@@ -95,6 +95,8 @@ public sealed class SampleExtensionEntry : IPanelExtension
             .In(PanelSlots.InboundSheet).AddBlock<InboundSheetBlock>()
             .In(PanelSlots.ClientActions).AddAction(() => "Show client", args => Say(args.Services, $"client:{args.Context.Name}"))
             .In(PanelSlots.ClientActions).AddSheet<ActionSheet>(() => "Open sheet", client => $"Sheet of {client.Name}")
+            .In(PanelSlots.ClientActions).AddSheet<BoomSheet>(() => "Open broken sheet", client => $"Broken sheet of {client.Name}")
+            .In(PanelSlots.ClientActions).AddAction(() => "Turn off", args => args.Services.GetRequiredService<IPanelData>().SetClientEnabledAsync(args.Context.Id, false))
             .In(PanelSlots.InboundActions).AddAction(() => "Show inbound", args => Say(args.Services, $"inbound:{args.Context.Slug}"))
             .In(PanelSlots.ApiKeyActions).AddAction(() => "Show key", args => Say(args.Services, $"key:{args.Context.Name}"));
     }

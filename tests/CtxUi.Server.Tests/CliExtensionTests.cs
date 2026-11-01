@@ -41,10 +41,22 @@ public sealed class CliExtensionTests : IDisposable
         Assert.Equal(0, listed.Code);
         Assert.Contains("sample", listed.Output, StringComparison.Ordinal);
         Assert.Contains("1.2.3", listed.Output, StringComparison.Ordinal);
-        Assert.Contains("ok", listed.Output, StringComparison.Ordinal);
+        Assert.Contains("sample  1.2.3  ok", listed.Output, StringComparison.Ordinal);
         Assert.Equal(0, removed.Code);
         Assert.Contains("перезапустите", removed.Output, StringComparison.Ordinal);
-        Assert.DoesNotContain("sample", empty.Output, StringComparison.Ordinal);
+        Assert.Contains("Расширения не установлены", empty.Output, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task List_explains_why_an_extension_will_not_load()
+    {
+        await RunAsync("extension", "install", SampleArchive);
+        File.WriteAllText(Path.Combine(_dataDir, "extensions", "sample", "SampleExtension.dll"), "not an assembly");
+
+        var listed = await RunAsync("extension", "list");
+
+        Assert.Equal(0, listed.Code);
+        Assert.Contains("sample  1.2.3  invalid  ", listed.Output, StringComparison.Ordinal);
     }
 
     [Fact]

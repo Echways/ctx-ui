@@ -36,10 +36,17 @@ public static class Backup
     private static void CopyExtensions(string from, string to)
     {
         ServiceRegistration.CreatePrivateDirectory(to);
+        foreach (var extension in Directory.EnumerateDirectories(from).Where(directory => !Path.GetFileName(directory).StartsWith('.')))
+            CopyTree(extension, Path.Combine(to, Path.GetFileName(extension)));
+    }
+
+    private static void CopyTree(string from, string to)
+    {
+        ServiceRegistration.CreatePrivateDirectory(to);
         foreach (var file in Directory.EnumerateFiles(from))
             File.Copy(file, Path.Combine(to, Path.GetFileName(file)));
-        foreach (var directory in Directory.EnumerateDirectories(from).Where(directory => !Path.GetFileName(directory).StartsWith('.')))
-            CopyExtensions(directory, Path.Combine(to, Path.GetFileName(directory)));
+        foreach (var directory in Directory.EnumerateDirectories(from))
+            CopyTree(directory, Path.Combine(to, Path.GetFileName(directory)));
     }
 
     private static async Task CopyDataAsync(string from, string to, CancellationToken ct)

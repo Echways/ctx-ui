@@ -12,7 +12,7 @@
         }
     </Summary>
     <Actions>
-        <SlotButtons Slot="PanelSlots.PageActions(PanelSections.Journal)" Context="new PanelPage(PanelSections.Journal)" />
+        <PageButtons Section="@PanelSections.Journal" OnDone="LoadAsync" />
         <MudSelect T="Guid?" Value="_clientId" ValueChanged="FilterAsync" Label="@PanelText.Client" Class="filter" Dense="true">
             <MudSelectItem T="Guid?" Value="@((Guid?)null)">@PanelText.AllClients</MudSelectItem>
             @foreach (var (id, name) in _clients.OrderBy(pair => pair.Value, StringComparer.CurrentCultureIgnoreCase))
@@ -22,7 +22,7 @@
         </MudSelect>
     </Actions>
 </PageHead>
-<SlotBlocks Slot="PanelSlots.PageTop(PanelSections.Journal)" Context="new PanelPage(PanelSections.Journal)" />
+<PageTopBlocks Section="@PanelSections.Journal" />
 <AutoRefresh OnTick="LoadAsync" />
 
 @if (_lines is null)
@@ -72,7 +72,7 @@ else
     }
 }
 
-<SlotBlocks Slot="PanelSlots.PageBottom(PanelSections.Journal)" Context="new PanelPage(PanelSections.Journal)" />
+<PageBottomBlocks Section="@PanelSections.Journal" />
 
 @code {
     private const int Shown = 200;

@@ -96,9 +96,13 @@ XML
 (cd "$work/foo" && dotnet new ctxui-extension -n Foo --id foo --debug:custom-hive "$hive" > /dev/null)
 export NUGET_PACKAGES="$work/nuget"
 dotnet publish "$work/foo/Foo" -c Release > "$work/publish.log" || { cat "$work/publish.log"; exit 1; }
+check "the license stands at the project root" [ -f "$work/foo/Foo/LICENSE" ]
+check "the project ignores build output" [ -f "$work/foo/Foo/.gitignore" ]
 archive="$(find "$work/foo/Foo/bin/Release" -name 'foo-1.0.0.zip')"
 check "the template builds into an archive" [ -n "$archive" ]
 check "the manifest names the id" contains '"id": "foo"' "$(unzip -p "$archive" extension.json)"
+output="$(dotnet publish "$work/foo/Foo" -c Release -p:CtxUiExtensionId=Bad_Id 2>&1)" || true
+check "the build refuses a bad id" contains "CtxUiExtensionId 'Bad_Id'" "$output"
 unset NUGET_PACKAGES
 
 echo "== installed server"

@@ -7,7 +7,7 @@
 
 <PageHead Title="@Layout.TitleOf(PanelSections.Metrics)" UpdatedAt="_loadedAt" OnRefresh="LoadAsync">
     <Actions>
-        <SlotButtons Slot="PanelSlots.PageActions(PanelSections.Metrics)" Context="new PanelPage(PanelSections.Metrics)" />
+        <PageButtons Section="@PanelSections.Metrics" OnDone="LoadAsync" />
         @if (_report is { } shown)
         {
             <nav class="periods" aria-label="@PanelText.Period">
@@ -20,7 +20,7 @@
         }
     </Actions>
 </PageHead>
-<SlotBlocks Slot="PanelSlots.PageTop(PanelSections.Metrics)" Context="new PanelPage(PanelSections.Metrics)" />
+<PageTopBlocks Section="@PanelSections.Metrics" />
 <AutoRefresh OnTick="LoadAsync" />
 
 @if (_report is not { } report)
@@ -193,7 +193,7 @@ else
     }
 }
 
-<SlotBlocks Slot="PanelSlots.PageBottom(PanelSections.Metrics)" Context="new PanelPage(PanelSections.Metrics)" />
+<PageBottomBlocks Section="@PanelSections.Metrics" />
 
 @code {
     private MetricsReport? _report;

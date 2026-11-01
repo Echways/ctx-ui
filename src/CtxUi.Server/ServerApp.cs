@@ -76,13 +76,11 @@ public static partial class ServerApp
     private static void ReportRejectedExtensions(WebApplication app)
     {
         var logger = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger(typeof(ExtensionCatalog));
-        foreach (var rejected in app.Services.GetRequiredService<ExtensionCatalog>().Rejected)
-        {
-            if (rejected.Reason == ExtensionCatalog.Disabled)
-                LogExtensionDisabled(logger, rejected.Name);
-            else
-                LogExtensionSkipped(logger, rejected.Name, rejected.Reason);
-        }
+        var catalog = app.Services.GetRequiredService<ExtensionCatalog>();
+        foreach (var name in catalog.Disabled)
+            LogExtensionDisabled(logger, name);
+        foreach (var rejected in catalog.Rejected)
+            LogExtensionSkipped(logger, rejected.Name, rejected.Reason);
     }
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Extension {Name} is disabled")]

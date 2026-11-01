@@ -10,13 +10,25 @@ public sealed record ExtensionManifest(string Id, string Name, string Version, s
 
     public static ExtensionManifest Read(string directory)
     {
-        var manifest = JsonSerializer.Deserialize<ExtensionManifest>(File.ReadAllText(Path.Combine(directory, FileName)), Json)
-            ?? throw new InvalidDataException($"{FileName} is empty");
+        var manifest = Parse(Path.Combine(directory, FileName));
         string?[] fields = [manifest.Id, manifest.Name, manifest.Version, manifest.Api, manifest.Assembly];
         if (fields.Any(string.IsNullOrWhiteSpace))
-            throw new InvalidDataException($"{FileName} must set id, name, version, api and assembly");
+            throw new InvalidDataException(ServerText.ExtensionManifestIncomplete);
         if (Path.GetFileName(manifest.Assembly) != manifest.Assembly)
-            throw new InvalidDataException($"{FileName} names an assembly outside the folder: {manifest.Assembly}");
+            throw new InvalidDataException(string.Format(ServerText.ExtensionManifestAssemblyOutside, manifest.Assembly));
         return manifest;
+    }
+
+    private static ExtensionManifest Parse(string path)
+    {
+        try
+        {
+            return JsonSerializer.Deserialize<ExtensionManifest>(File.ReadAllText(path), Json)
+                ?? throw new InvalidDataException(ServerText.ExtensionManifestBroken);
+        }
+        catch (Exception failure) when (failure is IOException or JsonException)
+        {
+            throw new InvalidDataException(ServerText.ExtensionManifestBroken, failure);
+        }
     }
 }

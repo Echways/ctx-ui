@@ -22,9 +22,11 @@ public static partial class Cli
             }),
             leaf("list", ServerText.ExtensionListCommand, [], (_, services, _) =>
             {
-                var disabled = ExtensionCatalog.DisabledOf(services.GetRequiredService<IOptions<CtxUiOptions>>().Value);
-                foreach (var status in InstallerOf(services).List(disabled))
-                    output.WriteLine($"{Path.GetFileName(status.Directory)}  {status.Manifest?.Version ?? "-"}  {status.State}");
+                var statuses = ExtensionCatalog.Scan(services.GetRequiredService<IOptions<CtxUiOptions>>().Value);
+                if (statuses.Count == 0)
+                    output.WriteLine(ServerText.ExtensionNone);
+                foreach (var status in statuses)
+                    output.WriteLine($"{status.Name}  {status.Manifest?.Version ?? "-"}  {status.State.ToString().ToLowerInvariant()}{(status.Problem is null ? "" : $"  {status.Problem}")}");
                 return Task.CompletedTask;
             }),
             leaf("remove", ServerText.ExtensionRemoveCommand, [id, purge], (parse, services, _) =>

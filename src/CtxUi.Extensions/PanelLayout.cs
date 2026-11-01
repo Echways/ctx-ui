@@ -5,7 +5,7 @@ using Enfilade;
 
 namespace CtxUi.Extensions;
 
-public sealed class PanelLayout
+internal sealed class PanelLayout
 {
     private sealed class Entry(string id, Func<string> title, bool isCaption, Action<EnfiladeBuilder, Func<string>> add)
     {
@@ -26,11 +26,7 @@ public sealed class PanelLayout
     private readonly HashSet<Assembly> _pages = [];
     private readonly PanelLook _look = new();
 
-    internal PanelLayout()
-    {
-    }
-
-    internal PanelSlotRegistry Slots { get; } = new();
+    public PanelSlotRegistry Slots { get; } = new();
 
     public IReadOnlyList<string> VisibleEntries => [.. Visible().Select(entry => entry.Id)];
 
@@ -51,44 +47,44 @@ public sealed class PanelLayout
         shell.Services.AddSingleton(Slots);
     }
 
-    internal PanelLayout AddBuiltIn<TPage>(string id, Func<string> title) where TPage : IComponent
+    public PanelLayout AddBuiltIn<TPage>(string id, Func<string> title) where TPage : IComponent
     {
         _entries.Add(SectionEntry<TPage>(id, title, null));
         return this;
     }
 
-    internal PanelLayout AddBuiltInCaption(string id, Func<string> title)
+    public PanelLayout AddBuiltInCaption(string id, Func<string> title)
     {
         _entries.Add(CaptionEntry(id, title));
         return this;
     }
 
-    internal PanelLayout AddBuiltInStylesheet(string path)
+    public PanelLayout AddBuiltInStylesheet(string path)
     {
         _stylesheets.Add(path);
         return this;
     }
 
-    internal string InsertSection<TPage>(string id, Func<string> title, Action<SectionSetup>? setup, PanelPosition? at, string? previous)
+    public string InsertSection<TPage>(string id, Func<string> title, Action<SectionSetup>? setup, PanelPosition? at, string? previous)
         where TPage : IComponent
     {
         Insert(SectionEntry<TPage>(id, title, setup), at, previous);
         return id;
     }
 
-    internal string InsertCaption(string id, Func<string> title, PanelPosition? at, string? previous)
+    public string InsertCaption(string id, Func<string> title, PanelPosition? at, string? previous)
     {
         Insert(CaptionEntry(id, title), at, previous);
         return id;
     }
 
-    internal string TitleOf(string id) => Find(id).Title();
+    public string TitleOf(string id) => Find(id).Title();
 
-    internal void Hide(string id) => Find(id).Hidden = true;
+    public void Hide(string id) => Find(id).Hidden = true;
 
-    internal void Rename(string id, Func<string> title) => Find(id).Title = title;
+    public void Rename(string id, Func<string> title) => Find(id).Title = title;
 
-    internal void Move(string id, PanelPosition at)
+    public void Move(string id, PanelPosition at)
     {
         var entry = Find(id);
         var index = IndexFor(at);
@@ -97,13 +93,13 @@ public sealed class PanelLayout
         _entries.Insert(current < index ? index - 1 : index, entry);
     }
 
-    internal void AddAccountLink(Func<string> title, string href) => _accountLinks.Add((title, href));
+    public void AddAccountLink(Func<string> title, string href) => _accountLinks.Add((title, href));
 
-    internal void AddPages(Assembly assembly) => _pages.Add(assembly);
+    public void AddPages(Assembly assembly) => _pages.Add(assembly);
 
-    internal void AddStylesheet(string path) => _stylesheets.Add(path);
+    public void AddStylesheet(string path) => _stylesheets.Add(path);
 
-    internal void Customize(Action<PanelLook> look) => look(_look);
+    public void Customize(Action<PanelLook> look) => look(_look);
 
     private Entry SectionEntry<TPage>(string id, Func<string> title, Action<SectionSetup>? setup) where TPage : IComponent
     {
@@ -127,11 +123,8 @@ public sealed class PanelLayout
 
     private int IndexFor(PanelPosition at)
     {
-        if (at.BeforeEntry is { } before)
-            return _entries.IndexOf(Find(before));
-        if (at.AfterEntry is { } after)
-            return _entries.IndexOf(Find(after)) + 1;
-        throw new InvalidOperationException("A panel position names no entry");
+        var index = _entries.IndexOf(Find(at.Entry));
+        return at.IsAfter ? index + 1 : index;
     }
 
     private Entry Find(string id) =>

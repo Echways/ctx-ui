@@ -1,12 +1,4 @@
 #nullable enable
-const CtxUi.Extensions.PanelSections.AccessCaption = "access" -> string!
-const CtxUi.Extensions.PanelSections.ApiKeys = "keys" -> string!
-const CtxUi.Extensions.PanelSections.Clients = "clients" -> string!
-const CtxUi.Extensions.PanelSections.Inbounds = "inbounds" -> string!
-const CtxUi.Extensions.PanelSections.Journal = "journal" -> string!
-const CtxUi.Extensions.PanelSections.Metrics = "metrics" -> string!
-const CtxUi.Extensions.PanelSections.OAuth = "oauth" -> string!
-const CtxUi.Extensions.PanelSections.Overview = "overview" -> string!
 CtxUi.Extensions.ApiKeySummary
 CtxUi.Extensions.ApiKeySummary.<Clone>$() -> CtxUi.Extensions.ApiKeySummary!
 CtxUi.Extensions.ApiKeySummary.ApiKeySummary(System.Guid Id, string! Name) -> void
@@ -44,12 +36,22 @@ CtxUi.Extensions.ExtensionContext
 CtxUi.Extensions.ExtensionContext.AddDatabase<TContext>() -> CtxUi.Extensions.ExtensionContext!
 CtxUi.Extensions.ExtensionContext.Configuration.get -> Microsoft.Extensions.Configuration.IConfiguration!
 CtxUi.Extensions.ExtensionContext.DataDirectory.get -> string!
-CtxUi.Extensions.ExtensionContext.ExtensionContext(string! id, CtxUi.Extensions.PanelEditor! panel, Microsoft.Extensions.DependencyInjection.IServiceCollection! services, Microsoft.Extensions.Configuration.IConfiguration! configuration, string! dataDirectory) -> void
 CtxUi.Extensions.ExtensionContext.Id.get -> string!
 CtxUi.Extensions.ExtensionContext.Panel.get -> CtxUi.Extensions.PanelEditor!
 CtxUi.Extensions.ExtensionContext.Services.get -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
 CtxUi.Extensions.IExtensionInitializer
 CtxUi.Extensions.IExtensionInitializer.InitializeAsync(System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task!
+CtxUi.Extensions.IPanelData
+CtxUi.Extensions.IPanelData.ClientAsync(System.Guid id, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<CtxUi.Extensions.ClientSummary!>!
+CtxUi.Extensions.IPanelData.ClientsAsync(System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<CtxUi.Extensions.ClientSummary!>!>!
+CtxUi.Extensions.IPanelData.InboundsAsync(System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<CtxUi.Extensions.InboundSummary!>!>!
+CtxUi.Extensions.IPanelData.ResetClientQuotaAsync(System.Guid id, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+CtxUi.Extensions.IPanelData.SetClientEnabledAsync(System.Guid id, bool enabled, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+CtxUi.Extensions.IPanelData.SetInboundEnabledAsync(string! slug, bool enabled, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+CtxUi.Extensions.IPanelData.UsageDaysAsync(System.DateOnly from, System.DateOnly to, System.Guid? clientId = null, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<CtxUi.Extensions.UsageDay!>!>!
+CtxUi.Extensions.IPanelExtension
+CtxUi.Extensions.IPanelExtension.MapEndpoints(Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints) -> void
+CtxUi.Extensions.IPanelExtension.Register(CtxUi.Extensions.ExtensionContext! context) -> void
 CtxUi.Extensions.InboundSummary
 CtxUi.Extensions.InboundSummary.<Clone>$() -> CtxUi.Extensions.InboundSummary!
 CtxUi.Extensions.InboundSummary.CreatedAt.get -> System.DateTimeOffset
@@ -65,17 +67,6 @@ CtxUi.Extensions.InboundSummary.Name.get -> string!
 CtxUi.Extensions.InboundSummary.Name.init -> void
 CtxUi.Extensions.InboundSummary.Slug.get -> string!
 CtxUi.Extensions.InboundSummary.Slug.init -> void
-CtxUi.Extensions.IPanelData
-CtxUi.Extensions.IPanelData.ClientAsync(System.Guid id, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<CtxUi.Extensions.ClientSummary!>!
-CtxUi.Extensions.IPanelData.ClientsAsync(System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<CtxUi.Extensions.ClientSummary!>!>!
-CtxUi.Extensions.IPanelData.InboundsAsync(System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<CtxUi.Extensions.InboundSummary!>!>!
-CtxUi.Extensions.IPanelData.ResetClientQuotaAsync(System.Guid id, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
-CtxUi.Extensions.IPanelData.SetClientEnabledAsync(System.Guid id, bool enabled, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
-CtxUi.Extensions.IPanelData.SetInboundEnabledAsync(string! slug, bool enabled, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
-CtxUi.Extensions.IPanelData.UsageDaysAsync(System.DateOnly from, System.DateOnly to, System.Guid? clientId = null, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<CtxUi.Extensions.UsageDay!>!>!
-CtxUi.Extensions.IPanelExtension
-CtxUi.Extensions.IPanelExtension.MapEndpoints(Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints) -> void
-CtxUi.Extensions.IPanelExtension.Register(CtxUi.Extensions.ExtensionContext! context) -> void
 CtxUi.Extensions.PanelActionArgs<TContext>
 CtxUi.Extensions.PanelActionArgs<TContext>.<Clone>$() -> CtxUi.Extensions.PanelActionArgs<TContext>!
 CtxUi.Extensions.PanelActionArgs<TContext>.Context.get -> TContext
@@ -88,12 +79,6 @@ CtxUi.Extensions.PanelActionArgs<TContext>.PanelActionArgs(TContext Context, Mud
 CtxUi.Extensions.PanelActionArgs<TContext>.Services.get -> System.IServiceProvider!
 CtxUi.Extensions.PanelActionArgs<TContext>.Services.init -> void
 CtxUi.Extensions.PanelActionSlot<TContext>
-CtxUi.Extensions.PanelActionSlot<TContext>.<Clone>$() -> CtxUi.Extensions.PanelActionSlot<TContext>!
-CtxUi.Extensions.PanelActionSlot<TContext>.Deconstruct(out string! Name) -> void
-CtxUi.Extensions.PanelActionSlot<TContext>.Equals(CtxUi.Extensions.PanelActionSlot<TContext>? other) -> bool
-CtxUi.Extensions.PanelActionSlot<TContext>.Name.get -> string!
-CtxUi.Extensions.PanelActionSlot<TContext>.Name.init -> void
-CtxUi.Extensions.PanelActionSlot<TContext>.PanelActionSlot(string! Name) -> void
 CtxUi.Extensions.PanelActionSlotEditor<TContext>
 CtxUi.Extensions.PanelActionSlotEditor<TContext>.AddAction(System.Func<string!>! title, System.Func<CtxUi.Extensions.PanelActionArgs<TContext>!, System.Threading.Tasks.Task!>! run, int order = 0) -> CtxUi.Extensions.PanelEditor!
 CtxUi.Extensions.PanelActionSlotEditor<TContext>.AddSheet<TSheet>(System.Func<string!>! title, System.Func<TContext, string!>! sheetTitle, int order = 0) -> CtxUi.Extensions.PanelEditor!
@@ -106,7 +91,6 @@ CtxUi.Extensions.PanelBlockSlotEditor<TContext>.AddBlock<TBlock>(int order = 0) 
 CtxUi.Extensions.PanelEditor
 CtxUi.Extensions.PanelEditor.AddAccountLink(System.Func<string!>! title, string! href) -> CtxUi.Extensions.PanelEditor!
 CtxUi.Extensions.PanelEditor.AddCaption(System.Func<string!>! title, CtxUi.Extensions.PanelPosition? at = null) -> CtxUi.Extensions.PanelEditor!
-CtxUi.Extensions.PanelEditor.AddPages(System.Reflection.Assembly! assembly) -> CtxUi.Extensions.PanelEditor!
 CtxUi.Extensions.PanelEditor.AddSection<TPage>(System.Func<string!>! title, CtxUi.Extensions.PanelPosition? at = null, System.Action<Enfilade.SectionSetup!>? setup = null) -> CtxUi.Extensions.PanelEditor!
 CtxUi.Extensions.PanelEditor.AddStylesheet(string! path) -> CtxUi.Extensions.PanelEditor!
 CtxUi.Extensions.PanelEditor.Customize(System.Action<CtxUi.Extensions.PanelLook!>! look) -> CtxUi.Extensions.PanelEditor!
@@ -115,10 +99,6 @@ CtxUi.Extensions.PanelEditor.In<TContext>(CtxUi.Extensions.PanelActionSlot<TCont
 CtxUi.Extensions.PanelEditor.In<TContext>(CtxUi.Extensions.PanelSlot<TContext>! slot) -> CtxUi.Extensions.PanelBlockSlotEditor<TContext>!
 CtxUi.Extensions.PanelEditor.Move(string! entry, CtxUi.Extensions.PanelPosition! at) -> CtxUi.Extensions.PanelEditor!
 CtxUi.Extensions.PanelEditor.Rename(string! entry, System.Func<string!>! title) -> CtxUi.Extensions.PanelEditor!
-CtxUi.Extensions.PanelLayout
-CtxUi.Extensions.PanelLayout.Apply(Enfilade.EnfiladeBuilder! shell) -> void
-CtxUi.Extensions.PanelLayout.EditorFor(string! assemblyName) -> CtxUi.Extensions.PanelEditor!
-CtxUi.Extensions.PanelLayout.VisibleEntries.get -> System.Collections.Generic.IReadOnlyList<string!>!
 CtxUi.Extensions.PanelLook
 CtxUi.Extensions.PanelLook.Accent.get -> string?
 CtxUi.Extensions.PanelLook.Accent.set -> void
@@ -137,22 +117,8 @@ CtxUi.Extensions.PanelPage.PanelPage(string! Section) -> void
 CtxUi.Extensions.PanelPage.Section.get -> string!
 CtxUi.Extensions.PanelPage.Section.init -> void
 CtxUi.Extensions.PanelPosition
-CtxUi.Extensions.PanelPosition.<Clone>$() -> CtxUi.Extensions.PanelPosition!
-CtxUi.Extensions.PanelPosition.AfterEntry.get -> string?
-CtxUi.Extensions.PanelPosition.AfterEntry.init -> void
-CtxUi.Extensions.PanelPosition.BeforeEntry.get -> string?
-CtxUi.Extensions.PanelPosition.BeforeEntry.init -> void
-CtxUi.Extensions.PanelPosition.Deconstruct(out string? BeforeEntry, out string? AfterEntry) -> void
-CtxUi.Extensions.PanelPosition.Equals(CtxUi.Extensions.PanelPosition? other) -> bool
-CtxUi.Extensions.PanelPosition.PanelPosition(string? BeforeEntry, string? AfterEntry) -> void
 CtxUi.Extensions.PanelSections
 CtxUi.Extensions.PanelSlot<TContext>
-CtxUi.Extensions.PanelSlot<TContext>.<Clone>$() -> CtxUi.Extensions.PanelSlot<TContext>!
-CtxUi.Extensions.PanelSlot<TContext>.Deconstruct(out string! Name) -> void
-CtxUi.Extensions.PanelSlot<TContext>.Equals(CtxUi.Extensions.PanelSlot<TContext>? other) -> bool
-CtxUi.Extensions.PanelSlot<TContext>.Name.get -> string!
-CtxUi.Extensions.PanelSlot<TContext>.Name.init -> void
-CtxUi.Extensions.PanelSlot<TContext>.PanelSlot(string! Name) -> void
 CtxUi.Extensions.PanelSlots
 CtxUi.Extensions.UsageDay
 CtxUi.Extensions.UsageDay.<Clone>$() -> CtxUi.Extensions.UsageDay!
@@ -175,6 +141,14 @@ CtxUi.Extensions.UsageDay.Refused.init -> void
 CtxUi.Extensions.UsageDay.ToolCalls.get -> int
 CtxUi.Extensions.UsageDay.ToolCalls.init -> void
 CtxUi.Extensions.UsageDay.UsageDay(System.DateOnly Day, System.Guid ClientId, System.Guid InboundId, int Calls, int ToolCalls, int Errors, int Refused, long DurationMs) -> void
+const CtxUi.Extensions.PanelSections.AccessCaption = "access" -> string!
+const CtxUi.Extensions.PanelSections.ApiKeys = "keys" -> string!
+const CtxUi.Extensions.PanelSections.Clients = "clients" -> string!
+const CtxUi.Extensions.PanelSections.Inbounds = "inbounds" -> string!
+const CtxUi.Extensions.PanelSections.Journal = "journal" -> string!
+const CtxUi.Extensions.PanelSections.Metrics = "metrics" -> string!
+const CtxUi.Extensions.PanelSections.OAuth = "oauth" -> string!
+const CtxUi.Extensions.PanelSections.Overview = "overview" -> string!
 override CtxUi.Extensions.ApiKeySummary.Equals(object? obj) -> bool
 override CtxUi.Extensions.ApiKeySummary.GetHashCode() -> int
 override CtxUi.Extensions.ApiKeySummary.ToString() -> string!
@@ -187,18 +161,9 @@ override CtxUi.Extensions.InboundSummary.ToString() -> string!
 override CtxUi.Extensions.PanelActionArgs<TContext>.Equals(object? obj) -> bool
 override CtxUi.Extensions.PanelActionArgs<TContext>.GetHashCode() -> int
 override CtxUi.Extensions.PanelActionArgs<TContext>.ToString() -> string!
-override CtxUi.Extensions.PanelActionSlot<TContext>.Equals(object? obj) -> bool
-override CtxUi.Extensions.PanelActionSlot<TContext>.GetHashCode() -> int
-override CtxUi.Extensions.PanelActionSlot<TContext>.ToString() -> string!
 override CtxUi.Extensions.PanelPage.Equals(object? obj) -> bool
 override CtxUi.Extensions.PanelPage.GetHashCode() -> int
 override CtxUi.Extensions.PanelPage.ToString() -> string!
-override CtxUi.Extensions.PanelPosition.Equals(object? obj) -> bool
-override CtxUi.Extensions.PanelPosition.GetHashCode() -> int
-override CtxUi.Extensions.PanelPosition.ToString() -> string!
-override CtxUi.Extensions.PanelSlot<TContext>.Equals(object? obj) -> bool
-override CtxUi.Extensions.PanelSlot<TContext>.GetHashCode() -> int
-override CtxUi.Extensions.PanelSlot<TContext>.ToString() -> string!
 override CtxUi.Extensions.UsageDay.Equals(object? obj) -> bool
 override CtxUi.Extensions.UsageDay.GetHashCode() -> int
 override CtxUi.Extensions.UsageDay.ToString() -> string!
@@ -210,17 +175,11 @@ static CtxUi.Extensions.InboundSummary.operator !=(CtxUi.Extensions.InboundSumma
 static CtxUi.Extensions.InboundSummary.operator ==(CtxUi.Extensions.InboundSummary? left, CtxUi.Extensions.InboundSummary? right) -> bool
 static CtxUi.Extensions.PanelActionArgs<TContext>.operator !=(CtxUi.Extensions.PanelActionArgs<TContext>? left, CtxUi.Extensions.PanelActionArgs<TContext>? right) -> bool
 static CtxUi.Extensions.PanelActionArgs<TContext>.operator ==(CtxUi.Extensions.PanelActionArgs<TContext>? left, CtxUi.Extensions.PanelActionArgs<TContext>? right) -> bool
-static CtxUi.Extensions.PanelActionSlot<TContext>.operator !=(CtxUi.Extensions.PanelActionSlot<TContext>? left, CtxUi.Extensions.PanelActionSlot<TContext>? right) -> bool
-static CtxUi.Extensions.PanelActionSlot<TContext>.operator ==(CtxUi.Extensions.PanelActionSlot<TContext>? left, CtxUi.Extensions.PanelActionSlot<TContext>? right) -> bool
 static CtxUi.Extensions.PanelPage.operator !=(CtxUi.Extensions.PanelPage? left, CtxUi.Extensions.PanelPage? right) -> bool
 static CtxUi.Extensions.PanelPage.operator ==(CtxUi.Extensions.PanelPage? left, CtxUi.Extensions.PanelPage? right) -> bool
 static CtxUi.Extensions.PanelPosition.After(string! entry) -> CtxUi.Extensions.PanelPosition!
 static CtxUi.Extensions.PanelPosition.Before(string! entry) -> CtxUi.Extensions.PanelPosition!
-static CtxUi.Extensions.PanelPosition.operator !=(CtxUi.Extensions.PanelPosition? left, CtxUi.Extensions.PanelPosition? right) -> bool
-static CtxUi.Extensions.PanelPosition.operator ==(CtxUi.Extensions.PanelPosition? left, CtxUi.Extensions.PanelPosition? right) -> bool
 static CtxUi.Extensions.PanelSections.Of<TPage>() -> string!
-static CtxUi.Extensions.PanelSlot<TContext>.operator !=(CtxUi.Extensions.PanelSlot<TContext>? left, CtxUi.Extensions.PanelSlot<TContext>? right) -> bool
-static CtxUi.Extensions.PanelSlot<TContext>.operator ==(CtxUi.Extensions.PanelSlot<TContext>? left, CtxUi.Extensions.PanelSlot<TContext>? right) -> bool
 static CtxUi.Extensions.PanelSlots.PageActions(string! section) -> CtxUi.Extensions.PanelActionSlot<CtxUi.Extensions.PanelPage!>!
 static CtxUi.Extensions.PanelSlots.PageBottom(string! section) -> CtxUi.Extensions.PanelSlot<CtxUi.Extensions.PanelPage!>!
 static CtxUi.Extensions.PanelSlots.PageTop(string! section) -> CtxUi.Extensions.PanelSlot<CtxUi.Extensions.PanelPage!>!

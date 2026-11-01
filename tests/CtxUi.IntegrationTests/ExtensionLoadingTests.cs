@@ -204,9 +204,23 @@ public class ExtensionLoadingTests
         var catalog = gateway.App.Services.GetRequiredService<ExtensionCatalog>();
 
         Assert.Empty(catalog.Loaded);
-        Assert.Equal(ExtensionCatalog.Disabled, Assert.Single(catalog.Rejected).Reason);
+        Assert.Equal("sample", Assert.Single(catalog.Disabled));
+        Assert.Empty(catalog.Rejected);
         Assert.DoesNotContain(logs.Lines, line => line.StartsWith("Error", StringComparison.Ordinal));
         await AssertPanelWorksWithoutSampleAsync(gateway);
+    }
+
+    [Fact]
+    public async Task A_page_without_a_section_opens_by_its_address()
+    {
+        await using var gateway = await SampleExtensionHost.StartAsync(
+            new Dictionary<string, string> { ["CtxUi:Extensions:sample:Headless"] = "true" });
+        await using var session = await PanelSession.SignInAsync(gateway);
+        Assert.Equal(BuiltIn, await LinksAsync(session.Page));
+
+        await session.Page.GotoAsync("sample");
+
+        await Expect(session.Page.GetByTestId("sample-note")).ToBeVisibleAsync();
     }
 
     [Fact]

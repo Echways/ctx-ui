@@ -19,7 +19,7 @@ namespace CtxUi.Server;
 
 public static partial class Cli
 {
-    public static bool Handles(string[] args) => args.Length > 0 && args[0] is "inbound" or "client" or "usage" or "admin" or "apikey" or "backup" or "oauth";
+    public static bool Handles(string[] args) => args.Length > 0 && args[0] is "inbound" or "client" or "usage" or "admin" or "apikey" or "backup" or "oauth" or "extension";
 
     public static async Task<int> RunAsync(
         string[] args,
@@ -48,7 +48,7 @@ public static partial class Cli
 
         var root = new RootCommand(ServerText.RootDescription)
         {
-            InboundCommand(), ClientCommand(), UsageCommand(), AdminCommand(), ApiKeyCommand(), BackupCommand(), OAuthCommand(Leaf, output, input ?? Console.In),
+            InboundCommand(), ClientCommand(), UsageCommand(), AdminCommand(), ApiKeyCommand(), BackupCommand(), OAuthCommand(Leaf, output, input ?? Console.In), ExtensionCommand(Leaf, output),
         };
         return await root.Parse(args).InvokeAsync(new InvocationConfiguration { Output = output, Error = error });
 

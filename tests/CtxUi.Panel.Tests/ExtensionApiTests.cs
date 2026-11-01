@@ -21,6 +21,15 @@ public class ExtensionApiTests
     }
 
     [Fact]
+    public void The_contract_assembly_version_follows_the_api_version_and_not_the_release()
+    {
+        var version = typeof(ExtensionApi).Assembly.GetName().Version!;
+
+        Assert.Equal(ExtensionApi.Version, new Version(version.Major, version.Minor));
+        Assert.Equal((0, 0), (version.Build, version.Revision));
+    }
+
+    [Fact]
     public void Summaries_carry_no_secrets()
     {
         string[] forbidden = ["Token", "Hash", "Sealed", "Secret", "Headers", "Url"];

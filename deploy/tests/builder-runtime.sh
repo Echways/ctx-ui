@@ -271,7 +271,8 @@ check "a mail port is refused" equals "403" "$(via_proxy_status http://pypi.org:
 check "a direct connection to the internet fails" fails reaches 1.1.1.1 443
 check "a host service through the gateway fails" fails reaches "$gateway" 18899
 check "the proxy runs on a read-only root" equals "true" "$(docker inspect -f '{{.HostConfig.ReadonlyRootfs}}' "$egress")"
-check "the proxy runs as non-root" fails docker exec --user squid "$egress" sh -c 'test "$(id -u)" = 0'
+check "the proxy runs as non-root" equals "squid" "$(docker inspect -f '{{.Config.User}}' "$egress")"
+check "the proxy process is not uid 0" fails equals "0" "$(docker exec "$egress" id -u)"
 docker rm -f "$server" > /dev/null
 
 echo "== name conflict"
@@ -291,8 +292,8 @@ code=0
 timeout 60 docker run --rm --label "$label" --network "$network" "${hardened[@]}" "${proxied[@]}" --env BUILDER_BASE_URL=https://pypi.org \
     -v conflict-code:/code:ro -v conflict-env:/env:ro "$runtime_image" \
     /env/.venv/bin/fastmcp run /code/fastmcp.json --skip-env --no-banner > "$work/conflict.log" 2>&1 || code=$?
-check "a tool name from two providers stops the server" [ "$code" -ne 0 ]
-check "the failure names the tool" contains "get_package" "$(cat "$work/conflict.log")"
+check "a tool name from two providers stops the server with code 1" equals "1" "$code"
+check "the failure names the tool" contains "tool name defined more than once: get_package" "$(cat "$work/conflict.log")"
 
 echo "== openapi without a base url"
 docker run --rm --label "$label" --network "$network" "${hardened[@]}" -v hello-code:/code:ro -v hello-env:/env:ro \

@@ -236,8 +236,61 @@ public sealed class ContainerTemplateTests
     [Fact]
     public void Volumes_and_networks_carry_the_server_label()
     {
-        var volume = ContainerTemplate.Volume(Id, "data");
+        var volume = ContainerTemplate.Volume(Id, ContainerTemplate.DataVolume(Id));
         Assert.Equal("ctxb-0f8fad5bd9cb469fa16570867728950e-data", volume.Name);
         Assert.Equal(Id.ToString(), volume.Labels["ctx-ui.builder"]);
+    }
+
+    [Fact]
+    public void Every_volume_mount_carries_the_server_label_and_a_known_name()
+    {
+        var server = ContainerTemplate.Server(Id, 3, Hash, Spec(NetworkAccess.InternetOnly), NoEnvironment, Options);
+        var build = ContainerTemplate.Build(Id, 3, Hash, Spec(NetworkAccess.InternetOnly), Options);
+        var known = new[]
+        {
+            ContainerTemplate.CodeVolume(Id, 3),
+            ContainerTemplate.EnvironmentVolume(Id, Hash),
+            ContainerTemplate.CacheVolume(Id),
+            ContainerTemplate.DataVolume(Id)
+        };
+
+        foreach (var created in new[] { server, build })
+        {
+            var volumes = created.HostConfig.Mounts.Where(mount => mount.Type == "volume").ToList();
+            Assert.NotEmpty(volumes);
+            Assert.All(volumes, mount =>
+            {
+                Assert.Equal(Id.ToString(), mount.VolumeOptions.Labels["ctx-ui.builder"]);
+                Assert.Contains(mount.Source, known);
+            });
+        }
+    }
+
+    [Theory]
+    [InlineData(0, 1.0, 256)]
+    [InlineData(5, 1.0, 256)]
+    [InlineData(512, 0.0, 256)]
+    [InlineData(512, 0.005, 256)]
+    [InlineData(512, double.NaN, 256)]
+    [InlineData(512, double.PositiveInfinity, 256)]
+    [InlineData(512, 1.0, 0)]
+    [InlineData(512, 1.0, -1)]
+    public void Limits_that_remove_or_break_a_limit_are_rejected(int memoryMb, double cpus, int pids)
+    {
+        var spec = new ServerSpec(NetworkAccess.InternetOnly, new ServerLimits(memoryMb, cpus, pids), Secret);
+
+        Assert.Throws<ArgumentOutOfRangeException>(() => ContainerTemplate.Server(Id, 1, Hash, spec, NoEnvironment, Options));
+        Assert.Throws<ArgumentOutOfRangeException>(() => ContainerTemplate.Build(Id, 1, Hash, spec, Options));
+    }
+
+    [Fact]
+    public void Minimum_limits_are_accepted()
+    {
+        var spec = new ServerSpec(NetworkAccess.InternetOnly, new ServerLimits(6, 0.01, 1), Secret);
+        var created = ContainerTemplate.Server(Id, 1, Hash, spec, NoEnvironment, Options);
+
+        Assert.Equal(6L * 1024 * 1024, created.HostConfig.Memory);
+        Assert.Equal(10_000_000L, created.HostConfig.NanoCPUs);
+        Assert.Equal(1, created.HostConfig.PidsLimit);
     }
 }

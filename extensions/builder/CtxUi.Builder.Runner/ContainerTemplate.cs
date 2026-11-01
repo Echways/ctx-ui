@@ -15,6 +15,8 @@ public static class ContainerTemplate
     private const string CacheDirectory = "/uv-cache";
     private const string GatewayModeOption = "com.docker.network.bridge.gateway_mode_ipv4";
     private const int EnvironmentHashLength = 12;
+    private const int MinimumMemoryMb = 6;
+    private const double MinimumCpus = 0.01;
 
     private static readonly string[] ServerCommand = ["/env/.venv/bin/fastmcp", "run", "/code/fastmcp.json", "--skip-env", "--no-banner"];
     private static readonly string[] BuildCommand = ["python", "/opt/builder/prepare.py"];
@@ -68,9 +70,9 @@ public static class ContainerTemplate
             variables,
             ServerCommand,
             [
-                VolumeMount($"{Prefix(id)}-code-{release}", "/code", readOnly: true),
-                VolumeMount(EnvironmentVolume(id, environmentHash), "/env", readOnly: true),
-                VolumeMount($"{Prefix(id)}-data", "/data", readOnly: false),
+                VolumeMount(id, CodeVolume(id, release), "/code", readOnly: true),
+                VolumeMount(id, EnvironmentVolume(id, environmentHash), "/env", readOnly: true),
+                VolumeMount(id, DataVolume(id), "/data", readOnly: false),
                 TmpfsMount()
             ]);
     }
@@ -94,9 +96,9 @@ public static class ContainerTemplate
             variables,
             BuildCommand,
             [
-                VolumeMount($"{Prefix(id)}-code-{release}", "/code", readOnly: true),
-                VolumeMount(EnvironmentVolume(id, environmentHash), "/env", readOnly: false),
-                VolumeMount($"{Prefix(id)}-uvcache", CacheDirectory, readOnly: false),
+                VolumeMount(id, CodeVolume(id, release), "/code", readOnly: true),
+                VolumeMount(id, EnvironmentVolume(id, environmentHash), "/env", readOnly: false),
+                VolumeMount(id, CacheVolume(id), CacheDirectory, readOnly: false),
                 TmpfsMount()
             ]);
     }
@@ -120,12 +122,21 @@ public static class ContainerTemplate
         return parameters;
     }
 
-    public static VolumesCreateParameters Volume(Guid id, string suffix) =>
-        new() { Name = $"{Prefix(id)}-{suffix}", Labels = Labels(id) };
+    public static string CodeVolume(Guid id, int release) => $"{Prefix(id)}-code-{release}";
+
+    public static string EnvironmentVolume(Guid id, string environmentHash) =>
+        $"{Prefix(id)}-env-{environmentHash[..Math.Min(EnvironmentHashLength, environmentHash.Length)]}";
+
+    public static string CacheVolume(Guid id) => $"{Prefix(id)}-uvcache";
+
+    public static string DataVolume(Guid id) => $"{Prefix(id)}-data";
+
+    public static VolumesCreateParameters Volume(Guid id, string name) =>
+        new() { Name = name, Labels = Labels(id) };
 
     private static CreateContainerParameters Create(string name, Guid id, ServerSpec spec, RunnerOptions options,
         Dictionary<string, string> labels, Dictionary<string, string> variables, IList<string> command, IList<Mount> mounts) =>
-        new()
+        Validated(spec.Limits, new CreateContainerParameters
         {
             Name = name,
             Image = options.RuntimeImage,
@@ -146,7 +157,27 @@ public static class ContainerTemplate
                 Runtime = options.ContainerRuntime,
                 Mounts = mounts
             }
-        };
+        });
+
+    private static CreateContainerParameters Validated(ServerLimits limits, CreateContainerParameters parameters)
+    {
+        if (limits.MemoryMb < MinimumMemoryMb)
+        {
+            throw new ArgumentOutOfRangeException(nameof(limits), limits.MemoryMb, $"Memory limit must be at least {MinimumMemoryMb} MB.");
+        }
+
+        if (!double.IsFinite(limits.Cpus) || limits.Cpus < MinimumCpus)
+        {
+            throw new ArgumentOutOfRangeException(nameof(limits), limits.Cpus, $"CPU limit must be a finite number of at least {MinimumCpus.ToString(CultureInfo.InvariantCulture)}.");
+        }
+
+        if (limits.Pids < 1)
+        {
+            throw new ArgumentOutOfRangeException(nameof(limits), limits.Pids, "Process limit must be at least 1.");
+        }
+
+        return parameters;
+    }
 
     private static void AddProxy(Dictionary<string, string> variables, NetworkAccess access, RunnerOptions options)
     {
@@ -167,11 +198,15 @@ public static class ContainerTemplate
 
     private static Dictionary<string, string> Labels(Guid id) => new() { [LabelRoot] = id.ToString() };
 
-    private static string EnvironmentVolume(Guid id, string environmentHash) =>
-        $"{Prefix(id)}-env-{environmentHash[..Math.Min(EnvironmentHashLength, environmentHash.Length)]}";
-
-    private static Mount VolumeMount(string source, string target, bool readOnly) =>
-        new() { Type = "volume", Source = source, Target = target, ReadOnly = readOnly };
+    private static Mount VolumeMount(Guid id, string source, string target, bool readOnly) =>
+        new()
+        {
+            Type = "volume",
+            Source = source,
+            Target = target,
+            ReadOnly = readOnly,
+            VolumeOptions = new VolumeOptions { Labels = Labels(id) }
+        };
 
     private static Mount TmpfsMount() => new() { Type = "tmpfs", Target = "/tmp" };
 }

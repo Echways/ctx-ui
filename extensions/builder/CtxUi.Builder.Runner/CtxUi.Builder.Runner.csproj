@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <PackageReference Include="Docker.DotNet" />
+    <ProjectReference Include="..\CtxUi.Builder.Contracts\CtxUi.Builder.Contracts.csproj" />
+  </ItemGroup>
+
+</Project>

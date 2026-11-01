@@ -1,0 +1,9 @@
+*
+!Directory.Build.props
+!Directory.Packages.props
+!global.json
+!extensions/builder/Directory.Build.props
+!extensions/builder/CtxUi.Builder.Contracts/
+!extensions/builder/CtxUi.Builder.Runner/
+**/bin/
+**/obj/

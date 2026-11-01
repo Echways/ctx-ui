@@ -6,9 +6,27 @@ using Docker.DotNet.Models;
 
 namespace CtxUi.Builder.Runner;
 
+public static class BuilderLabels
+{
+    public const string Root = "ctx-ui.builder";
+    public const string SystemValue = "system";
+    public const string Release = $"{Root}.release";
+    public const string EnvironmentHash = $"{Root}.environment-hash";
+    public const string Network = $"{Root}.network";
+    public const string RouteSecretHash = $"{Root}.route-secret-sha256";
+    public const string Role = $"{Root}.role";
+    public const string Activation = $"{Root}.activation";
+    public const string ActiveContainer = $"{Root}.active-container";
+    public const string RetiringContainers = $"{Root}.retiring-containers";
+    public const char ListSeparator = ',';
+    public const string BuildRole = "build";
+    public const string UnpackRole = "unpack";
+    public const string ActivationRole = "activation";
+}
+
 public static class ContainerTemplate
 {
-    private const string LabelRoot = "ctx-ui.builder";
+    private const string LabelRoot = BuilderLabels.Root;
     private const string User = "10001";
     private const int ProxyPort = 3128;
     private const string NoProxy = "127.0.0.1,localhost";
@@ -17,6 +35,8 @@ public static class ContainerTemplate
     private const int EnvironmentHashLength = 12;
     private const int MinimumMemoryMb = 6;
     private const double MinimumCpus = 0.01;
+    private const string NoNetwork = "none";
+    private const long BytesInMegabyte = 1024L * 1024L;
 
     private static readonly string[] ServerCommand = ["/env/.venv/bin/fastmcp", "run", "/code/fastmcp.json", "--skip-env", "--no-banner"];
     private static readonly string[] BuildCommand = ["python", "/opt/builder/prepare.py"];
@@ -30,6 +50,8 @@ public static class ContainerTemplate
         "PATH",
         "LD_PRELOAD"
     };
+
+    public static string RouteSecretHash(string secret) => Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(secret)));
 
     public static string Prefix(Guid id) => $"ctxb-{id:N}";
 
@@ -46,7 +68,7 @@ public static class ContainerTemplate
         labels[$"{LabelRoot}.memory-mb"] = spec.Limits.MemoryMb.ToString(CultureInfo.InvariantCulture);
         labels[$"{LabelRoot}.cpus"] = spec.Limits.Cpus.ToString(CultureInfo.InvariantCulture);
         labels[$"{LabelRoot}.pids"] = spec.Limits.Pids.ToString(CultureInfo.InvariantCulture);
-        labels[$"{LabelRoot}.route-secret-sha256"] = Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(spec.RouteSecret)));
+        labels[BuilderLabels.RouteSecretHash] = RouteSecretHash(spec.RouteSecret);
 
         var variables = new Dictionary<string, string>(StringComparer.Ordinal);
         foreach (var (key, value) in environment)
@@ -61,7 +83,7 @@ public static class ContainerTemplate
         variables["UV_CACHE_DIR"] = CacheDirectory;
         AddProxy(variables, spec.Network, options);
 
-        return Create(
+        var parameters = Create(
             $"{Prefix(id)}-r{release}",
             id,
             spec,
@@ -75,6 +97,8 @@ public static class ContainerTemplate
                 VolumeMount(id, DataVolume(id), "/data", readOnly: false),
                 TmpfsMount()
             ]);
+        parameters.HostConfig.RestartPolicy = new RestartPolicy { Name = RestartPolicyKind.UnlessStopped };
+        return parameters;
     }
 
     public static CreateContainerParameters Build(Guid id, int release, string environmentHash, ServerSpec spec, RunnerOptions options)
@@ -82,13 +106,13 @@ public static class ContainerTemplate
         var labels = Labels(id);
         labels[$"{LabelRoot}.release"] = release.ToString(CultureInfo.InvariantCulture);
         labels[$"{LabelRoot}.environment-hash"] = environmentHash;
-        labels[$"{LabelRoot}.role"] = "build";
+        labels[BuilderLabels.Role] = BuilderLabels.BuildRole;
 
         var variables = new Dictionary<string, string>(StringComparer.Ordinal) { ["UV_CACHE_DIR"] = CacheDirectory };
         AddProxy(variables, spec.Network, options);
 
         return Create(
-            $"{Prefix(id)}-b{release}",
+            BuildContainerName(id, release),
             id,
             spec,
             options,
@@ -101,6 +125,53 @@ public static class ContainerTemplate
                 VolumeMount(id, CacheVolume(id), CacheDirectory, readOnly: false),
                 TmpfsMount()
             ]);
+    }
+
+    public static CreateContainerParameters Unpack(Guid id, int release, string environmentHash, RunnerOptions options)
+    {
+        var labels = Labels(id);
+        labels[BuilderLabels.Release] = release.ToString(CultureInfo.InvariantCulture);
+        labels[BuilderLabels.EnvironmentHash] = environmentHash;
+        labels[BuilderLabels.Role] = BuilderLabels.UnpackRole;
+        return NeverStarted(
+            $"{Prefix(id)}-u{release}",
+            labels,
+            options,
+            [
+                VolumeMount(id, CodeVolume(id, release), "/code", readOnly: false),
+                VolumeMount(id, EnvironmentVolume(id, environmentHash), "/env", readOnly: true)
+            ]);
+    }
+
+    public static CreateContainerParameters ActivationMarker(Guid id, int activation, int release, string activeContainer,
+        IReadOnlyCollection<string> retiringContainers, RunnerOptions options)
+    {
+        var labels = Labels(id);
+        labels[BuilderLabels.Role] = BuilderLabels.ActivationRole;
+        labels[BuilderLabels.Activation] = activation.ToString(CultureInfo.InvariantCulture);
+        labels[BuilderLabels.Release] = release.ToString(CultureInfo.InvariantCulture);
+        labels[BuilderLabels.ActiveContainer] = activeContainer;
+        labels[BuilderLabels.RetiringContainers] = string.Join(BuilderLabels.ListSeparator, retiringContainers);
+
+        return NeverStarted($"{Prefix(id)}-active-{activation}", labels, options, []);
+    }
+
+    public static void EnsureSafeLimits(ServerLimits limits)
+    {
+        if (limits.MemoryMb < MinimumMemoryMb)
+        {
+            throw new ArgumentOutOfRangeException(nameof(limits), limits.MemoryMb, $"Memory limit must be at least {MinimumMemoryMb} MB.");
+        }
+
+        if (!double.IsFinite(limits.Cpus) || limits.Cpus < MinimumCpus)
+        {
+            throw new ArgumentOutOfRangeException(nameof(limits), limits.Cpus, $"CPU limit must be a finite number of at least {MinimumCpus.ToString(CultureInfo.InvariantCulture)}.");
+        }
+
+        if (limits.Pids < 1)
+        {
+            throw new ArgumentOutOfRangeException(nameof(limits), limits.Pids, "Process limit must be at least 1.");
+        }
     }
 
     public static NetworksCreateParameters Network(Guid id, NetworkAccess access, string subnet)
@@ -122,6 +193,8 @@ public static class ContainerTemplate
         return parameters;
     }
 
+    public static string BuildContainerName(Guid id, int release) => $"{Prefix(id)}-b{release}";
+
     public static string CodeVolume(Guid id, int release) => $"{Prefix(id)}-code-{release}";
 
     public static string EnvironmentVolume(Guid id, string environmentHash) =>
@@ -135,8 +208,11 @@ public static class ContainerTemplate
         new() { Name = name, Labels = Labels(id) };
 
     private static CreateContainerParameters Create(string name, Guid id, ServerSpec spec, RunnerOptions options,
-        Dictionary<string, string> labels, Dictionary<string, string> variables, IList<string> command, IList<Mount> mounts) =>
-        Validated(spec.Limits, new CreateContainerParameters
+        Dictionary<string, string> labels, Dictionary<string, string> variables, IList<string> command, IList<Mount> mounts)
+    {
+        EnsureSafeLimits(spec.Limits);
+        var memory = spec.Limits.MemoryMb * BytesInMegabyte;
+        return new CreateContainerParameters
         {
             Name = name,
             Image = options.RuntimeImage,
@@ -150,34 +226,39 @@ public static class ContainerTemplate
                 ReadonlyRootfs = true,
                 CapDrop = ["ALL"],
                 SecurityOpt = ["no-new-privileges"],
-                Memory = spec.Limits.MemoryMb * 1024L * 1024L,
+                Memory = memory,
+                MemorySwap = memory,
+                LogConfig = new LogConfig
+                {
+                    Type = "json-file",
+                    Config = new Dictionary<string, string> { ["max-size"] = "10m", ["max-file"] = "3" }
+                },
                 NanoCPUs = (long)Math.Round(spec.Limits.Cpus * 1_000_000_000d),
                 PidsLimit = spec.Limits.Pids,
                 NetworkMode = NetworkName(id, spec.Network),
                 Runtime = options.ContainerRuntime,
                 Mounts = mounts
             }
-        });
-
-    private static CreateContainerParameters Validated(ServerLimits limits, CreateContainerParameters parameters)
-    {
-        if (limits.MemoryMb < MinimumMemoryMb)
-        {
-            throw new ArgumentOutOfRangeException(nameof(limits), limits.MemoryMb, $"Memory limit must be at least {MinimumMemoryMb} MB.");
-        }
-
-        if (!double.IsFinite(limits.Cpus) || limits.Cpus < MinimumCpus)
-        {
-            throw new ArgumentOutOfRangeException(nameof(limits), limits.Cpus, $"CPU limit must be a finite number of at least {MinimumCpus.ToString(CultureInfo.InvariantCulture)}.");
-        }
-
-        if (limits.Pids < 1)
-        {
-            throw new ArgumentOutOfRangeException(nameof(limits), limits.Pids, "Process limit must be at least 1.");
-        }
-
-        return parameters;
+        };
     }
+
+    private static CreateContainerParameters NeverStarted(string name, Dictionary<string, string> labels, RunnerOptions options, IList<Mount> mounts) =>
+        new()
+        {
+            Name = name,
+            Image = options.RuntimeImage,
+            User = User,
+            Labels = labels,
+            HostConfig = new HostConfig
+            {
+                Privileged = false,
+                ReadonlyRootfs = true,
+                CapDrop = ["ALL"],
+                SecurityOpt = ["no-new-privileges"],
+                NetworkMode = NoNetwork,
+                Mounts = mounts
+            }
+        };
 
     private static void AddProxy(Dictionary<string, string> variables, NetworkAccess access, RunnerOptions options)
     {

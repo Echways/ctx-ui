@@ -284,6 +284,69 @@ public sealed class ContainerTemplateTests
     }
 
     [Fact]
+    public void Server_restarts_unless_stopped_and_cannot_swap_past_its_memory()
+    {
+        var created = ContainerTemplate.Server(Id, 1, Hash, Spec(NetworkAccess.InternetOnly), NoEnvironment, Options);
+
+        Assert.Equal(RestartPolicyKind.UnlessStopped, created.HostConfig.RestartPolicy.Name);
+        Assert.Equal(created.HostConfig.Memory, created.HostConfig.MemorySwap);
+    }
+
+    [Fact]
+    public void Build_has_no_restart_policy_and_cannot_swap_past_its_memory()
+    {
+        var created = ContainerTemplate.Build(Id, 1, Hash, Spec(NetworkAccess.InternetOnly), Options);
+
+        Assert.Null(created.HostConfig.RestartPolicy);
+        Assert.Equal(created.HostConfig.Memory, created.HostConfig.MemorySwap);
+    }
+
+    [Fact]
+    public void Server_and_build_logs_are_capped()
+    {
+        var server = ContainerTemplate.Server(Id, 1, Hash, Spec(NetworkAccess.InternetOnly), NoEnvironment, Options);
+        var build = ContainerTemplate.Build(Id, 1, Hash, Spec(NetworkAccess.InternetOnly), Options);
+
+        foreach (var created in new[] { server, build })
+        {
+            Assert.Equal("json-file", created.HostConfig.LogConfig.Type);
+            Assert.Equal("10m", created.HostConfig.LogConfig.Config["max-size"]);
+            Assert.Equal("3", created.HostConfig.LogConfig.Config["max-file"]);
+        }
+    }
+
+    [Fact]
+    public void Unpack_container_has_no_network_and_a_writable_code_volume_only()
+    {
+        var created = ContainerTemplate.Unpack(Id, 3, Hash, Options);
+        var mounts = created.HostConfig.Mounts.ToDictionary(mount => mount.Target);
+
+        Assert.Equal("ctxb-0f8fad5bd9cb469fa16570867728950e-u3", created.Name);
+        Assert.Equal("none", created.HostConfig.NetworkMode);
+        Assert.False(mounts["/code"].ReadOnly);
+        Assert.True(mounts["/env"].ReadOnly);
+        Assert.Equal(["ALL"], created.HostConfig.CapDrop);
+        Assert.True(created.HostConfig.ReadonlyRootfs);
+        Assert.Equal("unpack", created.Labels["ctx-ui.builder.role"]);
+        Assert.Equal(Id.ToString(), created.Labels["ctx-ui.builder"]);
+    }
+
+    [Fact]
+    public void Activation_marker_records_the_active_and_retiring_containers_in_labels()
+    {
+        var created = ContainerTemplate.ActivationMarker(Id, 7, 3, "ctxb-a-r3", ["ctxb-a-r2", "ctxb-a-r1"], Options);
+
+        Assert.Equal("ctxb-0f8fad5bd9cb469fa16570867728950e-active-7", created.Name);
+        Assert.Equal("none", created.HostConfig.NetworkMode);
+        Assert.Equal("activation", created.Labels["ctx-ui.builder.role"]);
+        Assert.Equal("7", created.Labels["ctx-ui.builder.activation"]);
+        Assert.Equal("3", created.Labels["ctx-ui.builder.release"]);
+        Assert.Equal("ctxb-a-r3", created.Labels["ctx-ui.builder.active-container"]);
+        Assert.Equal("ctxb-a-r2,ctxb-a-r1", created.Labels["ctx-ui.builder.retiring-containers"]);
+        Assert.Null(created.HostConfig.RestartPolicy);
+    }
+
+    [Fact]
     public void Minimum_limits_are_accepted()
     {
         var spec = new ServerSpec(NetworkAccess.InternetOnly, new ServerLimits(6, 0.01, 1), Secret);

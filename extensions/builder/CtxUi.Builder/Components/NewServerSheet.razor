@@ -1,0 +1,14 @@
+@inject ServerCatalog Catalog
+
+<Sheet>
+    <Form Model="_draft" OnSubmit="SaveAsync" Submit="@BuilderText.Create" Done="@BuilderText.ServerCreated">
+        <Field For="() => _draft.Name" Label="@BuilderText.Name" />
+        <Field For="() => _draft.Slug" Label="@BuilderText.Slug" Hint="@BuilderText.SlugHint" />
+    </Form>
+</Sheet>
+
+@code {
+    private readonly NewServerDraft _draft = new();
+
+    private Task SaveAsync() => Catalog.CreateAsync(_draft.Slug, _draft.Name, CancellationToken.None);
+}

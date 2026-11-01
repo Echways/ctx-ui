@@ -1,0 +1,20 @@
+@inject RunnerAvailability Availability
+
+@if (_report is { Problem: not RunnerProblem.None })
+{
+    <div class="builder-runner" role="alert" data-testid="runner-problem">
+        <p class="bad-t">@_report.Reason</p>
+        <p class="hint">@BuilderText.RunnerCommandHint</p>
+        <CopyLine Value="@RunnerAvailability.InstallCommand" Label="@BuilderText.RunnerCommand" CopyLabel="@BuilderText.CopyCommand" />
+    </div>
+}
+else if (_report?.Health is { EgressReachable: false })
+{
+    <p class="warn-t" data-testid="runner-egress">@BuilderText.RunnerEgressDown</p>
+}
+
+@code {
+    private RunnerReport? _report;
+
+    protected override async Task OnInitializedAsync() => _report = await Availability.CheckAsync(CancellationToken.None);
+}

@@ -1,10 +1,12 @@
 <Solution>
   <Folder Name="/extensions/">
+    <Project Path="extensions/builder/CtxUi.Builder/CtxUi.Builder.csproj" />
     <Project Path="extensions/builder/CtxUi.Builder.Contracts/CtxUi.Builder.Contracts.csproj" />
     <Project Path="extensions/builder/CtxUi.Builder.Runner/CtxUi.Builder.Runner.csproj" />
   </Folder>
   <Folder Name="/extensions/tests/">
     <Project Path="extensions/builder/tests/CtxUi.Builder.Runner.Tests/CtxUi.Builder.Runner.Tests.csproj" />
+    <Project Path="extensions/builder/tests/CtxUi.Builder.Tests/CtxUi.Builder.Tests.csproj" />
   </Folder>
   <Folder Name="/src/">
     <Project Path="src/CtxUi.Connect/CtxUi.Connect.csproj" />

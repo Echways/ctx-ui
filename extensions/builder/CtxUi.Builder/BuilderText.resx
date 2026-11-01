@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Caption" xml:space="preserve">
+    <value>Builder</value>
+  </data>
+  <data name="Servers" xml:space="preserve">
+    <value>Servers</value>
+  </data>
+  <data name="ServersSummary" xml:space="preserve">
+    <value>MCP servers built here and run by the runner.</value>
+  </data>
+  <data name="NewServer" xml:space="preserve">
+    <value>New server</value>
+  </data>
+  <data name="Name" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="Slug" xml:space="preserve">
+    <value>Slug</value>
+  </data>
+  <data name="SlugHint" xml:space="preserve">
+    <value>Lowercase letters, digits and dashes. It cannot be changed later.</value>
+  </data>
+  <data name="Create" xml:space="preserve">
+    <value>Create</value>
+  </data>
+  <data name="ServerCreated" xml:space="preserve">
+    <value>Server created</value>
+  </data>
+  <data name="Access" xml:space="preserve">
+    <value>Network</value>
+  </data>
+  <data name="AccessInternetOnly" xml:space="preserve">
+    <value>Internet only</value>
+  </data>
+  <data name="AccessFullNetwork" xml:space="preserve">
+    <value>Full network</value>
+  </data>
+  <data name="Inbound" xml:space="preserve">
+    <value>Inbound</value>
+  </data>
+  <data name="InboundConnected" xml:space="preserve">
+    <value>Connected</value>
+  </data>
+  <data name="InboundNone" xml:space="preserve">
+    <value>Not connected</value>
+  </data>
+  <data name="Created" xml:space="preserve">
+    <value>Created</value>
+  </data>
+  <data name="NoServers" xml:space="preserve">
+    <value>No servers yet</value>
+  </data>
+  <data name="NoServersHint" xml:space="preserve">
+    <value>Create the first server to build and run an MCP server.</value>
+  </data>
+  <data name="SlugInvalid" xml:space="preserve">
+    <value>The slug starts with a lowercase letter and holds lowercase letters, digits and dashes, 32 characters at most.</value>
+  </data>
+  <data name="NameRequired" xml:space="preserve">
+    <value>Enter a name.</value>
+  </data>
+  <data name="SlugTaken" xml:space="preserve">
+    <value>This slug is already taken.</value>
+  </data>
+  <data name="ServerNotFound" xml:space="preserve">
+    <value>The server was not found.</value>
+  </data>
+  <data name="PathInvalid" xml:space="preserve">
+    <value>A file path is relative, starts with mcp/ and has no empty segments, dots or backslashes.</value>
+  </data>
+  <data name="ProjectTooLarge" xml:space="preserve">
+    <value>The project is larger than 16 MB.</value>
+  </data>
+  <data name="DraftChangedElsewhere" xml:space="preserve">
+    <value>The draft was changed elsewhere. Reload it before saving.</value>
+  </data>
+  <data name="SecretNameInvalid" xml:space="preserve">
+    <value>A secret name is an environment variable name: letters, digits and underscores, not starting with a digit.</value>
+  </data>
+  <data name="SecretValueRequired" xml:space="preserve">
+    <value>Enter a secret value.</value>
+  </data>
+  <data name="AccessInvalid" xml:space="preserve">
+    <value>Unknown network access.</value>
+  </data>
+  <data name="LimitsInvalid" xml:space="preserve">
+    <value>Limits are too low: at least 6 MB of memory, 0.01 CPU and 1 process.</value>
+  </data>
+  <data name="RunnerNotConfigured" xml:space="preserve">
+    <value>The runner is not configured. Missing settings: {0}.</value>
+  </data>
+  <data name="RunnerUnreachable" xml:space="preserve">
+    <value>The runner at {0} did not answer: {1}</value>
+  </data>
+  <data name="RunnerRefused" xml:space="preserve">
+    <value>The runner at {0} refused the token. Check RunnerToken.</value>
+  </data>
+  <data name="RunnerVersionMismatch" xml:space="preserve">
+    <value>The runner is version {0}, the extension is version {1}.</value>
+  </data>
+  <data name="RunnerCommandHint" xml:space="preserve">
+    <value>Run this command on the server:</value>
+  </data>
+  <data name="RunnerReady" xml:space="preserve">
+    <value>Runner {0}, Docker {1}</value>
+  </data>
+  <data name="RunnerEgressDown" xml:space="preserve">
+    <value>The egress proxy is unreachable, so servers with internet access cannot call out.</value>
+  </data>
+  <data name="RunnerCommand" xml:space="preserve">
+    <value>Command</value>
+  </data>
+  <data name="CopyCommand" xml:space="preserve">
+    <value>Copy the command</value>
+  </data>
+</root>

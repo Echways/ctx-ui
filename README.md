@@ -280,6 +280,7 @@ these names are stripped.
 - [Installation](docs/install.md)
 - [Configuration](docs/configuration.md)
 - [Browser sign-in (OAuth)](docs/oauth.md)
+- [Panel extensions](docs/extensions.md)
 
 ## License
 

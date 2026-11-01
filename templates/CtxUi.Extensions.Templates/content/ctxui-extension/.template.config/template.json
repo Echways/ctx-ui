@@ -1,0 +1,20 @@
+{
+  "$schema": "http://json.schemastore.org/template",
+  "author": "Echways",
+  "classifications": ["Web", "Blazor", "ctx-ui"],
+  "identity": "CtxUi.Extensions.Templates.Extension",
+  "name": "ctx-ui panel extension",
+  "shortName": "ctxui-extension",
+  "sourceName": "MyExtension",
+  "preferNameDirectory": true,
+  "tags": { "language": "C#", "type": "project" },
+  "symbols": {
+    "id": {
+      "type": "parameter",
+      "datatype": "string",
+      "description": "Extension id: lowercase letters, digits and dashes, 32 characters at most",
+      "defaultValue": "my-extension",
+      "replaces": "my-extension"
+    }
+  }
+}

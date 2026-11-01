@@ -24,6 +24,8 @@
 | `CtxUi__UsageRetentionDays` | `CtxUi:UsageRetentionDays` | `30` | срок хранения журнала; итоги по дням хранятся всегда. «Метрики» предлагают только периоды, которые в него укладываются: для 90 дней нужно не меньше `90` |
 | `CtxUi__ConcurrencyWait` | `CtxUi:ConcurrencyWait` | `00:00:01` | сколько запрос сверх лимита одновременных ждёт слот до ответа 429 |
 | `CtxUi__TrustedProxies` | `CtxUi:TrustedProxies` | пусто | адреса и подсети (через запятую) обратных прокси, чьему `X-Forwarded-For` можно верить; loopback доверен всегда. Нужен для IP входа устройств |
+| `CtxUi__ExtensionsDir` | `CtxUi:ExtensionsDir` | `<DataDir>/extensions` | каталог установленных расширений панели, см. [расширения](extensions.md) |
+| `CtxUi__DisabledExtensions` | `CtxUi:DisabledExtensions` | пусто | идентификаторы расширений через запятую, которые не загружать |
 | `CtxUi__SessionCheckInterval` | `CtxUi:SessionCheckInterval` | `00:01:00` | как часто открытая панель перепроверяет сеанс администратора |
 
 Адрес прослушивания задаётся через `Urls`, не `ASPNETCORE_URLS`: второй

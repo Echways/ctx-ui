@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <NeutralLanguage>en</NeutralLanguage>
+    <Version>1.0.0</Version>
+    <CtxUiExtensionId>my-extension</CtxUiExtensionId>
+    <CtxUiExtensionName>MyExtension</CtxUiExtensionName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CtxUi.Extensions" Version="CTXUI_EXTENSIONS_VERSION" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="Text.resx" StronglyTypedLanguage="CSharp" StronglyTypedClassName="Text"
+                      StronglyTypedNamespace="MyExtension" StronglyTypedFileName="$(IntermediateOutputPath)Text.Designer.cs" />
+  </ItemGroup>
+
+</Project>

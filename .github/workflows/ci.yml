@@ -131,6 +131,9 @@ jobs:
       - name: Check out
         uses: actions/checkout@v7
 
+      - name: Set up .NET
+        uses: ./.github/actions/dotnet
+
       - name: Run compose stack checks
         run: deploy/tests/docker.sh
 
@@ -147,3 +150,29 @@ jobs:
 
       - name: Run installer checks
         run: deploy/tests/linux.sh
+
+  extension:
+    name: "Extensions: package to panel"
+    runs-on: ubuntu-26.04
+    timeout-minutes: 20
+    steps:
+      - name: Check out
+        uses: actions/checkout@v7
+
+      - name: Set up .NET
+        uses: ./.github/actions/dotnet
+
+      - name: Build test package
+        run: dotnet build tests/fixtures/SampleExtension.BlackBoxTests -c Release
+
+      - name: Restore Chromium cache
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('Directory.Packages.props') }}
+
+      - name: Install Chromium
+        run: pwsh tests/fixtures/SampleExtension.BlackBoxTests/bin/Release/net10.0/playwright.ps1 install --with-deps chromium
+
+      - name: Run extension checks
+        run: deploy/tests/extension.sh

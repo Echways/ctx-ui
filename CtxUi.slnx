@@ -3,9 +3,13 @@
     <Project Path="src/CtxUi.Connect/CtxUi.Connect.csproj" />
     <Project Path="src/CtxUi.Core/CtxUi.Core.csproj" />
     <Project Path="src/CtxUi.Extensions/CtxUi.Extensions.csproj" />
+    <Project Path="src/CtxUi.Extensions.Testing/CtxUi.Extensions.Testing.csproj" />
     <Project Path="src/CtxUi.Gateway/CtxUi.Gateway.csproj" />
     <Project Path="src/CtxUi.Panel/CtxUi.Panel.csproj" />
     <Project Path="src/CtxUi.Server/CtxUi.Server.csproj" />
+  </Folder>
+  <Folder Name="/templates/">
+    <Project Path="templates/CtxUi.Extensions.Templates/CtxUi.Extensions.Templates.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/CtxUi.Connect.Tests/CtxUi.Connect.Tests.csproj" />
@@ -17,5 +21,6 @@
   </Folder>
   <Folder Name="/tests/fixtures/">
     <Project Path="tests/fixtures/SampleExtension/SampleExtension.csproj" />
+    <Project Path="tests/fixtures/SampleExtension.BlackBoxTests/SampleExtension.BlackBoxTests.csproj" />
   </Folder>
 </Solution>

@@ -26,4 +26,26 @@
     <Message Importance="high" Text="$(CtxUiExtensionId): $(CtxUiArchive)" />
   </Target>
 
+  <Target Name="CtxUiPreview">
+    <Error Condition="'$(CTXUI_BINARY)' == ''" Text="Set the CTXUI_BINARY environment variable to the path of a ctx-ui server binary to preview the extension." />
+    <PropertyGroup>
+      <CtxUiPreviewBinary>$([System.IO.Path]::GetFullPath('$(CTXUI_BINARY)'))</CtxUiPreviewBinary>
+      <CtxUiPreviewPort Condition="'$(CtxUiPreviewPort)' == ''">5199</CtxUiPreviewPort>
+      <CtxUiPreviewRoot>$(MSBuildProjectDirectory)/obj/ctxui-preview/</CtxUiPreviewRoot>
+      <CtxUiPreviewCredentials>$(CtxUiPreviewRoot)administrator.txt</CtxUiPreviewCredentials>
+      <CtxUiPreviewEnvironment>CtxUi__DataDir=$(CtxUiPreviewRoot)data;CtxUi__ExtensionsDir=$(CtxUiPreviewRoot)extensions;CtxUi__PublicUrl=http://127.0.0.1:$(CtxUiPreviewPort);Urls=http://127.0.0.1:$(CtxUiPreviewPort)</CtxUiPreviewEnvironment>
+    </PropertyGroup>
+    <RemoveDir Directories="$(CtxUiPreviewRoot)extensions" />
+    <MSBuild Projects="$(MSBuildProjectFullPath)" Targets="Publish" Properties="PublishDir=$(CtxUiPreviewRoot)extensions/$(CtxUiExtensionId)/" />
+    <Exec Condition="!Exists('$(CtxUiPreviewCredentials)')" Command="&quot;$(CtxUiPreviewBinary)&quot; admin add preview" EnvironmentVariables="$(CtxUiPreviewEnvironment)" ConsoleToMSBuild="true" StandardOutputImportance="low">
+      <Output TaskParameter="ConsoleOutput" ItemName="CtxUiPreviewAdministrator" />
+    </Exec>
+    <WriteLinesToFile Condition="!Exists('$(CtxUiPreviewCredentials)')" File="$(CtxUiPreviewCredentials)" Lines="@(CtxUiPreviewAdministrator)" />
+    <ReadLinesFromFile File="$(CtxUiPreviewCredentials)">
+      <Output TaskParameter="Lines" ItemName="CtxUiPreviewShown" />
+    </ReadLinesFromFile>
+    <Message Importance="high" Text="%(CtxUiPreviewShown.Identity)" />
+    <Exec Command="&quot;$(CtxUiPreviewBinary)&quot;" WorkingDirectory="$([System.IO.Path]::GetDirectoryName('$(CtxUiPreviewBinary)'))" EnvironmentVariables="$(CtxUiPreviewEnvironment)" StandardOutputImportance="high" />
+  </Target>
+
 </Project>

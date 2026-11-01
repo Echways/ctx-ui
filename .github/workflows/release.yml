@@ -117,9 +117,34 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+  nuget:
+    name: Publish extension packages
+    needs: [version, checks]
+    runs-on: ubuntu-26.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out
+        uses: actions/checkout@v7
+
+      - name: Set up .NET
+        uses: ./.github/actions/dotnet
+
+      - name: Pack
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          for project in src/CtxUi.Extensions src/CtxUi.Extensions.Testing templates/CtxUi.Extensions.Templates; do
+            dotnet pack "$project" -c Release -p:Version="$VERSION" -p:ContinuousIntegrationBuild=true -o artifacts/packages
+          done
+
+      - name: Push to NuGet
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+        run: dotnet nuget push "artifacts/packages/*.nupkg" --source https://api.nuget.org/v3/index.json --api-key "$NUGET_API_KEY" --skip-duplicate
+
   release:
     name: Publish release
-    needs: [version, assets, image]
+    needs: [version, assets, image, nuget]
     runs-on: ubuntu-26.04
     timeout-minutes: 5
     permissions:

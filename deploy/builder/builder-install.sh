@@ -12,6 +12,7 @@ control_subnet="10.212.0.0/29"
 control_network="ctxb-control"
 default_project="ctx-ui"
 runner_container="ctxb-runner"
+runtime_image="ghcr.io/echways/ctx-ui-builder-runtime"
 unit="/etc/systemd/system/ctx-ui.service"
 env_file="/etc/ctx-ui/ctx-ui.env"
 builder_home="/opt/ctx-ui-builder"
@@ -116,20 +117,28 @@ check_docker() {
     docker compose version > /dev/null 2>&1 || fail "the Docker Compose plugin is required"
 }
 
+panel_candidates() {
+    docker ps "$@" --filter label=com.docker.compose.service=ctx-ui --format '{{.ID}} {{.Image}}' | grep -E -- "$panel_image_pattern" || true
+}
+
 detect_install() {
-    local candidates files panel_container
+    local candidates files panel_container state=running
     if [ -f "$unit" ]; then
         mode=systemd
         return 0
     fi
-    candidates="$(docker ps --filter label=com.docker.compose.service=ctx-ui --format '{{.ID}} {{.Image}}' | grep -E -- "$panel_image_pattern" || true)"
+    candidates="$(panel_candidates)"
+    if [ -z "$candidates" ] && [ "$1" -eq 1 ]; then
+        state=stopped
+        candidates="$(panel_candidates -a)"
+    fi
     if [ -z "$candidates" ]; then
         mode=""
         return 0
     fi
     if [ "$(wc -l <<< "$candidates")" -ne 1 ]; then
         echo "$candidates" >&2
-        fail "more than one running ctx-ui container found (listed above), stop the extra ones and run the command again"
+        fail "more than one $state ctx-ui container found (listed above), stop or remove the extra ones and run the command again"
     fi
     panel_container="${candidates%% *}"
     mode=docker
@@ -138,7 +147,7 @@ detect_install() {
     files="$(docker inspect -f '{{index .Config.Labels "com.docker.compose.project.config_files"}}' "$panel_container")"
     IFS=, read -r -a stack_files <<< "$files"
     if [ -z "$stack_project" ] || [ ! -d "$stack_dir" ] || [ "${#stack_files[@]}" -eq 0 ]; then
-        fail "cannot read where the ctx-ui compose files are from the running container"
+        fail "cannot read where the ctx-ui compose files are from the ctx-ui container"
     fi
 }
 
@@ -200,8 +209,12 @@ check_subnet() {
 }
 
 pull_images() {
+    local failure="the images of builder $1 could not be pulled, nothing was changed"
     echo "Pulling the images" >&2
-    CTXB_VERSION="$1" CTXB_RUNNER_TOKEN=pull docker compose -f "$work/$compose_asset" pull --policy missing --quiet || fail "the images of builder $1 could not be pulled, nothing was changed"
+    CTXB_VERSION="$1" CTXB_RUNNER_TOKEN=pull docker compose -f "$work/$compose_asset" pull --policy missing --quiet || fail "$failure"
+    if ! docker image inspect "$runtime_image:$1" > /dev/null 2>&1; then
+        docker pull --quiet "$runtime_image:$1" > /dev/null || fail "$failure"
+    fi
 }
 
 extension_listed() {
@@ -233,6 +246,23 @@ install_extension() {
     fi
     if [ "$listed" -eq 0 ]; then
         undo+=(undo_extension)
+    fi
+}
+
+drop_extension() {
+    if panel_cli extension list 2> /dev/null | extension_listed; then
+        panel_cli extension remove "$extension_id" > /dev/null
+        return 0
+    fi
+    return 1
+}
+
+protect_env() {
+    if [ "$(stat -c %U "$1")" = root ] && getent group docker > /dev/null; then
+        chgrp docker "$1"
+        chmod 640 "$1"
+    else
+        chmod 600 "$1"
     fi
 }
 
@@ -338,6 +368,9 @@ compose_file_value() {
 undo_systemd() {
     builder_compose down > /dev/null 2>&1
     rm -rf "${builder_home:?}"
+    delete_value "$env_file" "${setting_prefix}RunnerUrl"
+    delete_value "$env_file" "${setting_prefix}RunnerIngressUrl"
+    delete_value "$env_file" "${setting_prefix}RunnerToken"
 }
 
 install_systemd() {
@@ -414,7 +447,7 @@ install_docker() {
         cat "$stack_dir/.env" > "$work/env.backup"
         stat -c %a "$stack_dir/.env" > "$work/env.mode"
     fi
-    undo+=(undo_docker)
+    undo=(undo_docker "${undo[@]}")
 
     install -m 644 "$work/$compose_asset" "$stack_dir/$compose_asset"
     install -m 644 "$work/$overlay_asset" "$stack_dir/$overlay_asset"
@@ -422,7 +455,7 @@ install_docker() {
         umask 077
         touch "$stack_dir/.env"
     )
-    chmod 600 "$stack_dir/.env"
+    protect_env "$stack_dir/.env"
     write_value "$stack_dir/.env" CTXB_VERSION "$version"
     write_value "$stack_dir/.env" CTXB_RUNNER_TOKEN "$token"
     stack_compose 1 up -d > /dev/null
@@ -476,10 +509,10 @@ remove_systemd() {
 }
 
 remove_docker() {
-    local container remaining
-    container="$(stack_container 0 | head -n 1)"
-    if [ -n "$container" ] && docker exec "$container" ctx-ui extension list 2> /dev/null | extension_listed; then
-        docker exec "$container" ctx-ui extension remove "$extension_id" > /dev/null
+    local container remaining running=0
+    if [ -n "$(stack_container 0)" ]; then
+        running=1
+        drop_extension || true
     fi
     remove_containers
     remaining="$(compose_file_value 0)"
@@ -494,6 +527,10 @@ remove_docker() {
     stack_compose 0 up -d --no-deps ctx-ui > /dev/null
     container="$(stack_container 0)"
     wait_for 60 stack_healthy "$container" || fail "ctx-ui did not become healthy within 60 seconds"
+    if [ "$running" -eq 0 ] && drop_extension; then
+        docker restart "$container" > /dev/null
+        wait_for 60 stack_healthy "$container" || fail "ctx-ui did not become healthy within 60 seconds"
+    fi
 }
 
 main() {
@@ -527,7 +564,7 @@ main() {
     fi
     check_tools
     check_docker "$((1 - remove))"
-    detect_install
+    detect_install "$remove"
 
     if [ "$remove" -eq 1 ]; then
         case "$mode" in

@@ -24,17 +24,25 @@ The installer finds how ctx-ui is installed (systemd if the service
 `ghcr.io/echways/ctx-ui` from a Docker compose project with a `ctx-ui` service; with
 several candidates it stops and lists them), checks that Docker Engine is 29 or
 newer and verifies the downloaded assets against the release `SHA256SUMS`. Before it
-starts anything it checks that the subnet `10.212.0.0/29` and, with systemd, the
-ports 8090 and 8091 on 127.0.0.1 are free, pulls the three images and has ctx-ui
-check that the extension fits its extension API. If one of these fails it stops with
-a message: the Runner is not started, the settings of ctx-ui and `.env` are not
-touched, and an extension installed for the check is removed again. Then it
-generates the Runner token, starts the containers
+starts a container it checks that the subnet `10.212.0.0/29` and, with systemd, the
+ports 8090 and 8091 on 127.0.0.1 are free, pulls the images
+`ghcr.io/echways/ctx-ui-builder-runner`, `-egress` and `-runtime` of the release and
+installs the extension (ctx-ui refuses one that does not fit its extension API and
+then nothing has changed). If one of these fails it stops with a message and the
+Runner is not started. Then it generates the Runner token, starts the containers
 `ctxb-runner` and `ctxb-egress`, waits until the Runner reports the version of the
-release, installs the extension, writes the settings
+release, writes the settings
 `CtxUi__Extensions__builder__RunnerUrl`, `CtxUi__Extensions__builder__RunnerIngressUrl`
 and `CtxUi__Extensions__builder__RunnerToken` and restarts ctx-ui. The token and the
 address are not set by hand.
+
+If a step fails after the Runner has started, a first install is rolled back: the
+containers, the builder files, the settings, `.env` and the extension are removed
+again. An update is not rolled back: the new extension and the builder compose files
+stay and, with Docker, `.env` returns to the previous `CTXB_VERSION`. Run the
+installer again then; a plain `docker compose up -d` before that would move the
+Runner back to the old version, and the Builder section would report a version
+mismatch.
 
 - **systemd.** The compose project `ctx-ui-builder` lives in `/opt/ctx-ui-builder`
   (`builder-compose.yaml` and a private `.env` with the token). The Runner listens on
@@ -72,7 +80,9 @@ reachable, the section shows the reason and this command.
 
 After `--remove` the inbounds of built servers stay and point at the stopped Runner.
 After a new install the servers show as active but have no containers until you
-press "Start again" on each of them. `--remove` works on a host whose Docker Engine
+press "Start again" on each of them. If ctx-ui is stopped under Docker, `--remove`
+works with the single stopped ctx-ui container and starts ctx-ui again; with several
+it stops and lists them. `--remove` works on a host whose Docker Engine
 has fallen below 29.
 
 The installer pulls three images for the architecture of the host (`amd64` and

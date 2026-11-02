@@ -20,6 +20,7 @@ runner="ctxb-runner"
 egress="ctxb-egress"
 label="ctx-ui.builder"
 missing_version="0.0.0-install-missing"
+norun_version="0.0.0-install-norun"
 clash_network="ctxb-install-clash"
 decoy="ctxb-install-decoy"
 stopped_decoy="ctxb-install-stopped-decoy"
@@ -95,7 +96,7 @@ cleanup() {
         kill "$listener_pid" 2> /dev/null || true
     fi
     remove_builder_objects
-    docker rmi -f "$runner_image" "$runtime_image" "$egress_image" "$panel_image" "$box_image" > /dev/null 2>&1 || true
+    docker rmi -f "$runner_image" "$runtime_image" "$egress_image" "$panel_image" "$box_image" "ghcr.io/echways/ctx-ui-builder-runner:$norun_version" "ghcr.io/echways/ctx-ui-builder-egress:$norun_version" > /dev/null 2>&1 || true
     rm -rf "$dist" "$stack"
 }
 trap cleanup EXIT
@@ -272,6 +273,10 @@ mkdir "$dist/missing"
 cp "$dist/release/"* "$dist/missing/"
 mv "$dist/missing/builder-$version.zip" "$dist/missing/builder-$missing_version.zip"
 sed -i "s/builder-$version.zip/builder-$missing_version.zip/" "$dist/missing/SHA256SUMS"
+mkdir "$dist/norun"
+cp "$dist/release/"* "$dist/norun/"
+mv "$dist/norun/builder-$version.zip" "$dist/norun/builder-$norun_version.zip"
+sed -i "s/builder-$version.zip/builder-$norun_version.zip/" "$dist/norun/SHA256SUMS"
 mkdir "$dist/incompatible" "$dist/unpacked"
 cp "$dist/release/"* "$dist/incompatible/"
 unzip -q "$dist/release/builder-$version.zip" -d "$dist/unpacked"
@@ -312,6 +317,8 @@ FROM $base_image
 COPY --from=docker:cli /usr/local/bin/docker /usr/local/bin/docker
 COPY --from=docker:cli /usr/local/libexec/docker/cli-plugins/docker-compose /usr/local/libexec/docker/cli-plugins/docker-compose
 EOF
+docker tag "$runner_image" "ghcr.io/echways/ctx-ui-builder-runner:$norun_version"
+docker tag "$egress_image" "ghcr.io/echways/ctx-ui-builder-egress:$norun_version"
 echo "ok    the release assets, the images and the test machine are built"
 
 docker run -d --name "$box" --privileged --cgroupns private --network host \
@@ -372,6 +379,10 @@ output="$(installer missing bash /dist/release/builder-install.sh --version "$mi
 check "images that cannot be pulled are refused" equals 1 "$code"
 check "the refusal names the pull" contains "could not be pulled" "$output"
 check "the failed pull changed nothing" equals "$before" "$(box_snapshot)"
+output="$(installer norun bash /dist/release/builder-install.sh --version "$norun_version" 2>&1)" && code=0 || code=$?
+check "a missing runtime image is refused" equals 1 "$code"
+check "the refusal names the pull" contains "could not be pulled" "$output"
+check "the missing runtime image changed nothing" equals "$before" "$(box_snapshot)"
 output="$(installer incompatible bash /dist/release/builder-install.sh 2>&1)" && code=0 || code=$?
 check "an extension newer than ctx-ui is refused" equals 1 "$code"
 check "the refusal comes from ctx-ui" contains "did not accept the extension" "$output"
@@ -488,6 +499,9 @@ docker rm -f "$decoy" > /dev/null
 output="$(installer missing bash /dist/release/builder-install.sh --version "$missing_version" 2>&1)" && code=0 || code=$?
 check "images that cannot be pulled are refused" equals 1 "$code"
 check "the failed pull changed nothing" equals "$before" "$(stack_snapshot)"
+output="$(installer norun bash /dist/release/builder-install.sh --version "$norun_version" 2>&1)" && code=0 || code=$?
+check "a missing runtime image is refused" equals 1 "$code"
+check "the missing runtime image changed nothing" equals "$before" "$(stack_snapshot)"
 output="$(installer incompatible bash /dist/release/builder-install.sh 2>&1)" && code=0 || code=$?
 check "an extension newer than ctx-ui is refused" equals 1 "$code"
 check "the incompatible extension changed nothing" equals "$before" "$(stack_snapshot)"
@@ -548,6 +562,26 @@ panel_container="$(stack_compose ps -q ctx-ui)"
 check "ctx-ui is healthy after the second run" becomes healthy 90 panel_healthy
 check "the server still answers" server_answers http://10.212.0.2:8090
 check "the extension is still working" contains "builder  $version  ok" "$(docker exec "$panel_container" ctx-ui extension list 2>&1)"
+
+echo "== docker: root-owned token file"
+in_box groupadd docker
+in_box chown root "$stack/.env"
+output="$(installer release bash /dist/release/builder-install.sh 2>&1)" && code=0 || code=$?
+check "the run with a root-owned .env succeeds" equals 0 "$code"
+check "the token file is readable for the docker group" equals "640 root:docker" "$(in_box stat -c '%a %U:%G' "$stack/.env")"
+in_box chown "$(id -u):$(id -g)" "$stack/.env"
+in_box chmod 600 "$stack/.env"
+
+echo "== docker: remove with ctx-ui stopped"
+panel_container="$(stack_compose ps -q ctx-ui)"
+docker stop "$panel_container" > /dev/null
+before="$(stack_snapshot)"
+output="$(in_box bash /dist/release/builder-install.sh --remove 2>&1)" && code=0 || code=$?
+check "two stopped ctx-ui containers are refused" equals 1 "$code"
+check "the refusal says stopped" contains "more than one stopped ctx-ui container" "$output"
+check "the refused remove changed nothing" equals "$before" "$(stack_snapshot)"
+check "the refused remove kept the compose list" contains builder-compose.yaml "$(sed -n 's/^COMPOSE_FILE=//p' "$stack/.env")"
+docker rm -f "$stopped_decoy" > /dev/null
 
 echo "== docker: remove"
 output="$(in_box bash /dist/release/builder-install.sh --remove 2>&1)" && code=0 || code=$?

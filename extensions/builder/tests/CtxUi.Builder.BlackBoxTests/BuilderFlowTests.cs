@@ -74,6 +74,13 @@ public sealed class BuilderFlowTests(RunnerFixture runner) : IClassFixture<Runne
         await session.Page.GetByTestId("new-resource").ClickAsync();
         await session.Page.GetByTestId("open-releases").ClickAsync();
         await Expect(session.Page.GetByTestId("switch-blocked")).ToHaveCountAsync(0);
+
+        await session.Page.GetByTestId("new-resource").ClickAsync();
+        var uri = session.Page.GetByTestId("resource-form").GetByLabel("Address (URI)", new() { Exact = true }).First;
+        await uri.FillAsync("data://typed");
+        await session.Page.GetByTestId("new-resource").ClickAsync();
+        await session.Page.GetByTestId("discard-mine").ClickAsync();
+        await Expect(session.Page.GetByTestId("resource-form").GetByLabel("Address (URI)", new() { Exact = true }).First).ToHaveValueAsync("");
         Assert.DoesNotContain("fail:", session.Panel.Log, StringComparison.Ordinal);
     }
 

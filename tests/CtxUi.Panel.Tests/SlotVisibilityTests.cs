@@ -1,3 +1,4 @@
+using System.Reflection;
 using CtxUi.Extensions;
 
 namespace CtxUi.Panel.Tests;
@@ -67,5 +68,43 @@ public class SlotVisibilityTests
 
         Assert.Equal(["always"], Titles(visible));
         Assert.Single(failures);
+    }
+
+    [Fact]
+    public void When_scopes_the_registered_action_to_its_predicate()
+    {
+        var registry = new PanelSlotRegistry();
+        var editor = new PanelActionSlotEditor<string>(null!, registry, Slot);
+        editor.AddAction(() => "always", _ => Task.CompletedTask);
+        editor.When(row => row == "built").AddAction(() => "built only", _ => Task.CompletedTask);
+        editor.When(row => row == "built").AddSheet<Sheet>(() => "sheet", row => row);
+        registry.Freeze();
+
+        Assert.Equal(["always", "built only", "sheet"], Titles(registry.VisibleActions<string>(Slot, () => "built", _ => { })));
+        Assert.Equal(["always"], Titles(registry.VisibleActions<string>(Slot, () => "other", _ => { })));
+    }
+
+    [Fact]
+    public void The_shipped_action_and_sheet_signatures_stay_binary_compatible()
+    {
+        var editor = typeof(PanelActionSlotEditor<>);
+        var action = editor.GetMethods().Where(method => method.Name == "AddAction").Select(Parameters);
+        var sheet = editor.GetMethods().Where(method => method.Name == "AddSheet").Select(Parameters);
+
+        Assert.Contains(["Func`1", "Func`2", "Int32"], action, new SequenceComparer());
+        Assert.Contains(["Func`1", "Func`2", "Int32"], sheet, new SequenceComparer());
+    }
+
+    private static string[] Parameters(MethodInfo method) => [.. method.GetParameters().Select(parameter => parameter.ParameterType.Name)];
+
+    private sealed class SequenceComparer : IEqualityComparer<string[]>
+    {
+        public bool Equals(string[]? x, string[]? y) => x is not null && y is not null && x.SequenceEqual(y);
+
+        public int GetHashCode(string[] value) => value.Length;
+    }
+
+    private sealed class Sheet : PanelBlock<string>
+    {
     }
 }

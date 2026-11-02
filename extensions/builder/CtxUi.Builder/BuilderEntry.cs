@@ -43,7 +43,7 @@ public sealed class BuilderEntry : IPanelExtension
         context.Panel
             .AddCaption(() => BuilderText.Caption)
             .AddSection<ServersPage>(() => BuilderText.Servers)
-            .In(PanelSlots.InboundActions).AddAction(() => BuilderText.OpenInBuilder, OpenInBuilderAsync, visible: inbound => connected.Contains(inbound.Id))
+            .In(PanelSlots.InboundActions).When(inbound => connected.Contains(inbound.Id)).AddAction(() => BuilderText.OpenInBuilder, OpenInBuilderAsync)
             .In(PanelSlots.InboundSheet).AddBlock<InboundBuilderBlock>()
             .AddStylesheet("builder.css");
     }

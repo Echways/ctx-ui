@@ -136,16 +136,17 @@ An exception shows an error message and is logged. To show your own message, thr
 `Enfilade.PanelException`. `AddSheet` opens a block in a side sheet and passes the
 row as `Context`; the sheet closes with its close word, Escape or a click outside.
 A row context is built only on click, so the menu costs nothing until it is used,
-unless the action has a `visible` predicate.
+unless the action has a `When` predicate.
 
-`AddAction` and `AddSheet` take an optional `visible` parameter, a synchronous
-`Func<TContext, bool>`. The row menu and the page buttons show the action only when
-`visible` is null or returns true for the row. Keep it fast and in memory: it runs on
+`When` scopes the next `AddAction` or `AddSheet` to a synchronous
+`Func<TContext, bool>` predicate. The row menu and the page buttons show such an action
+only when the predicate returns true for the row. Keep it fast and in memory: it runs on
 every render. A predicate that throws hides its action and is logged.
 
 ```csharp
 context.Panel.In(PanelSlots.InboundActions)
-    .AddAction(() => Text.Open, Open, visible: inbound => known.Contains(inbound.Id));
+    .When(inbound => known.Contains(inbound.Id))
+    .AddAction(() => Text.Open, Open);
 ```
 
 ### Look and styles

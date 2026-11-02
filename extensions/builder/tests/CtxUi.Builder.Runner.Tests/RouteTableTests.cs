@@ -1,3 +1,4 @@
+using CtxUi.Builder.Contracts;
 using Microsoft.Extensions.Primitives;
 
 namespace CtxUi.Builder.Runner.Tests;
@@ -28,7 +29,7 @@ public sealed class RouteTableTests
         Assert.Equal("abc", route.Metadata![RouteTable.SecretHashKey]);
         Assert.Equal("http://one:8000", cluster.Destinations!.Values.Single().Address);
         Assert.Contains(route.Transforms!, transform => transform.TryGetValue("PathSet", out var path) && path == "/mcp");
-        Assert.Contains(route.Transforms!, transform => transform.TryGetValue("RequestHeaderRemove", out var header) && header == "X-Builder-Route-Secret");
+        Assert.Contains(route.Transforms!, transform => transform.TryGetValue("RequestHeaderRemove", out var header) && header == RouteSecret.Header);
     }
 
     [Fact]

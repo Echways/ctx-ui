@@ -20,6 +20,12 @@ public sealed class ReleaseArchives(string dataDirectory)
         File.Move(temporary, PathOf(releaseId), true);
     }
 
+    public void Remove(Guid releaseId)
+    {
+        File.Delete(PathOf(releaseId));
+        File.Delete(PathOf(releaseId) + TemporarySuffix);
+    }
+
     public void RemoveInterrupted()
     {
         if (!Directory.Exists(_directory))

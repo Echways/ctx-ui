@@ -39,6 +39,8 @@ public sealed class PublishQueue : BackgroundService, IExtensionInitializer
 
     public event Action<Guid>? Changed;
 
+    public event Action<Guid>? FirstActivated;
+
     public bool IsBusy(Guid serverId)
     {
         lock (_gate)
@@ -57,7 +59,7 @@ public sealed class PublishQueue : BackgroundService, IExtensionInitializer
         try
         {
             var number = await _pipeline.PrepareAsync(serverId, ct);
-            Enqueue(serverId, token => _pipeline.PublishAsync(serverId, number, mode, token));
+            Enqueue(serverId, token => PublishAnnouncingAsync(serverId, number, mode, token));
             return number;
         }
         finally
@@ -138,6 +140,24 @@ public sealed class PublishQueue : BackgroundService, IExtensionInitializer
         }
     }
 
+    private async Task PublishAnnouncingAsync(Guid serverId, int number, PublishMode mode, CancellationToken ct)
+    {
+        var hadActive = (await ConnectionStateAsync(serverId, ct)).Active;
+        await _pipeline.PublishAsync(serverId, number, mode, ct);
+        var after = await ConnectionStateAsync(serverId, ct);
+        if (!hadActive && after.Active && !after.Connected)
+            RaiseFirstActivated(serverId);
+    }
+
+    private async Task<(bool Active, bool Connected)> ConnectionStateAsync(Guid serverId, CancellationToken ct)
+    {
+        await using var scope = _scopes.CreateAsyncScope();
+        var database = scope.ServiceProvider.GetRequiredService<BuilderDatabase>();
+        var state = await database.Servers.AsNoTracking().Where(server => server.Id == serverId)
+            .Select(server => new { server.ActiveReleaseId, server.InboundId }).SingleOrDefaultAsync(ct);
+        return (state?.ActiveReleaseId is not null, state?.InboundId is not null);
+    }
+
     private void RequireConfigured()
     {
         if (!_settings.IsComplete)
@@ -212,6 +232,18 @@ public sealed class PublishQueue : BackgroundService, IExtensionInitializer
             }
 
             Raise(job.ServerId);
+        }
+    }
+
+    private void RaiseFirstActivated(Guid serverId)
+    {
+        try
+        {
+            FirstActivated?.Invoke(serverId);
+        }
+        catch (Exception failure)
+        {
+            _log.LogWarning(failure, "A listener of first activations failed.");
         }
     }
 

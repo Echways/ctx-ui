@@ -1,0 +1,61 @@
+@inject ConnectionService Connections
+@inject IPanelData Data
+
+<Sheet>
+    <Form Model="_draft" OnSubmit="ConnectAsync" Submit="@BuilderText.Connect" Done="@BuilderText.ServerConnected">
+        <p class="hint">@BuilderText.ConnectLead</p>
+        <Field For="() => _draft.Slug" Label="@BuilderText.InboundSlug" Hint="@BuilderText.InboundSlugHint" />
+        <Field For="() => _draft.Name" Label="@BuilderText.Name" />
+        <MudCheckBox T="bool" Value="_draft.ForwardIdentity" ValueChanged="forward => _draft.ForwardIdentity = forward" Label="@BuilderText.ForwardIdentity" Dense="true" data-testid="forward-identity" />
+        <div class="builder-clients" data-testid="connect-clients">
+            <p class="hint">@BuilderText.ConnectClientsHint</p>
+            @if (_clients is null)
+            {
+                <Placeholder />
+            }
+            else if (_clients.Count == 0)
+            {
+                <p class="note">@BuilderText.NoClients</p>
+            }
+            else
+            {
+                @foreach (var client in _clients)
+                {
+                    <MudCheckBox T="bool" Value="_draft.Clients.Contains(client.Id)" ValueChanged="chosen => Choose(client.Id, chosen)" Label="@client.Name" Dense="true" @key="client.Id" />
+                }
+            }
+        </div>
+    </Form>
+</Sheet>
+
+@code {
+    private readonly ConnectDraft _draft = new();
+    private IReadOnlyList<ClientSummary>? _clients;
+
+    [Parameter, EditorRequired]
+    public Guid ServerId { get; set; }
+
+    [Parameter, EditorRequired]
+    public string Slug { get; set; } = "";
+
+    [Parameter, EditorRequired]
+    public string ServerName { get; set; } = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        _draft.Slug = Slug;
+        _draft.Name = ServerName;
+        _clients = await Data.ClientsAsync();
+    }
+
+    private void Choose(Guid id, bool chosen)
+    {
+        if (chosen)
+            _draft.Clients.Add(id);
+        else
+            _draft.Clients.Remove(id);
+    }
+
+    private Task ConnectAsync() =>
+        Connections.ConnectAsync(ServerId, _draft.Slug, _draft.Name, _draft.ForwardIdentity, _draft.Clients, CancellationToken.None);
+}

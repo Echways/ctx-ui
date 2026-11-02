@@ -267,7 +267,7 @@ internal sealed class RunnerHarness : IAsyncDisposable
         using var request = new HttpRequestMessage(HttpMethod.Post, path) { Content = new StringContent("{}") };
         if (secret is not null)
         {
-            request.Headers.Add("X-Builder-Route-Secret", secret);
+            request.Headers.Add(RouteSecret.Header, secret);
         }
 
         return await Ingress.SendAsync(request);

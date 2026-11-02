@@ -492,4 +492,82 @@
   <data name="BaseUrlAppliesOnPublish" xml:space="preserve">
     <value>Новый базовый адрес вступит в силу при следующей публикации. Запущенные версии сохраняют свой.</value>
   </data>
+  <data name="ConnectionAlreadyConnected" xml:space="preserve">
+    <value>Этот сервер уже подключён как инбаунд.</value>
+  </data>
+  <data name="InboundSlugTaken" xml:space="preserve">
+    <value>Инбаунд с таким слагом уже есть. Выберите другой слаг.</value>
+  </data>
+  <data name="InboundRejected" xml:space="preserve">
+    <value>Панель отклонила инбаунд: {0}</value>
+  </data>
+  <data name="RunnerDeleteFailed" xml:space="preserve">
+    <value>Раннер не смог удалить сервер, ничего не удалено: {0}</value>
+  </data>
+  <data name="Connect" xml:space="preserve">
+    <value>Подключить</value>
+  </data>
+  <data name="ConnectTitle" xml:space="preserve">
+    <value>Подключение {0}</value>
+  </data>
+  <data name="ConnectLead" xml:space="preserve">
+    <value>Сервер станет инбаундом панели. Клиенты, привязанные к нему, смогут вызывать его инструменты.</value>
+  </data>
+  <data name="InboundSlug" xml:space="preserve">
+    <value>Слаг инбаунда</value>
+  </data>
+  <data name="InboundSlugHint" xml:space="preserve">
+    <value>Строчные буквы, цифры и дефисы.</value>
+  </data>
+  <data name="ForwardIdentity" xml:space="preserve">
+    <value>Передавать серверу личность клиента</value>
+  </data>
+  <data name="ConnectClients" xml:space="preserve">
+    <value>Клиенты</value>
+  </data>
+  <data name="ConnectClientsHint" xml:space="preserve">
+    <value>Доступ к серверу получат только выбранные клиенты.</value>
+  </data>
+  <data name="NoClients" xml:space="preserve">
+    <value>Клиентов пока нет. Добавьте их позже на странице клиентов.</value>
+  </data>
+  <data name="ServerConnected" xml:space="preserve">
+    <value>Сервер подключён</value>
+  </data>
+  <data name="ConnectedAddress" xml:space="preserve">
+    <value>Адрес инбаунда: {0}</value>
+  </data>
+  <data name="OpenInbound" xml:space="preserve">
+    <value>Открыть инбаунд {0}</value>
+  </data>
+  <data name="ConnectedTo" xml:space="preserve">
+    <value>Подключён как</value>
+  </data>
+  <data name="DeleteServer" xml:space="preserve">
+    <value>Удалить сервер</value>
+  </data>
+  <data name="DeleteServerQuestion" xml:space="preserve">
+    <value>Удалить сервер {0}?</value>
+  </data>
+  <data name="DeleteServerWarning" xml:space="preserve">
+    <value>Работающий сервер, все его версии и проект будут удалены. Это нельзя отменить.</value>
+  </data>
+  <data name="DeleteServerInbound" xml:space="preserve">
+    <value>Инбаунд {0} и его связи с клиентами ({1}) тоже будут удалены.</value>
+  </data>
+  <data name="DeleteServerYes" xml:space="preserve">
+    <value>Удалить</value>
+  </data>
+  <data name="ServerDeleted" xml:space="preserve">
+    <value>Сервер удалён</value>
+  </data>
+  <data name="OpenInBuilder" xml:space="preserve">
+    <value>Открыть в конструкторе</value>
+  </data>
+  <data name="InboundNotBuilt" xml:space="preserve">
+    <value>Этот инбаунд собран не в конструкторе.</value>
+  </data>
+  <data name="BuiltServer" xml:space="preserve">
+    <value>Собранный сервер</value>
+  </data>
 </root>

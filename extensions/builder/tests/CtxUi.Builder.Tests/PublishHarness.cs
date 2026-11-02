@@ -5,6 +5,7 @@ using CtxUi.Builder.Data;
 using CtxUi.Builder.Publishing;
 using CtxUi.Builder.Runner;
 using CtxUi.Builder.Servers;
+using CtxUi.Extensions;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -53,6 +54,8 @@ public sealed class PublishHarness : IAsyncDisposable
     public FakeRunner Runner { get; } = new();
 
     public FakeInspector Inspector { get; } = new();
+
+    public FakePanelData Data { get; } = new();
 
     public SecretBox Box { get; } = new(new EphemeralDataProtectionProvider());
 
@@ -150,6 +153,22 @@ public sealed class PublishHarness : IAsyncDisposable
         _services.GetRequiredService<IHttpClientFactory>(),
         _services.GetRequiredService<IServiceScopeFactory>());
 
+    public Task<InboundSummary> ConnectAsync(Guid serverId, string slug, string name = "Weather", bool forwardIdentity = false, params Guid[] clients) =>
+        WithScopeAsync(services => services.GetRequiredService<ConnectionService>().ConnectAsync(serverId, slug, name, forwardIdentity, clients, default));
+
+    public Task<InboundSummary?> FindInboundAsync(Guid serverId) =>
+        WithScopeAsync(async services => await services.GetRequiredService<ConnectionService>().FindInboundAsync(await ServerAsync(serverId), default));
+
+    public Task DeleteServerAsync(Guid serverId) =>
+        WithScopeAsync(async services =>
+        {
+            await services.GetRequiredService<ConnectionService>().DeleteServerAsync(serverId, default);
+            return true;
+        });
+
+    public Task<bool> ServerExistsAsync(Guid serverId) =>
+        WithScopeAsync(services => services.GetRequiredService<BuilderDatabase>().Servers.AsNoTracking().AnyAsync(server => server.Id == serverId));
+
     public Task<string> RouteSecretAsync(Guid id) =>
         WithScopeAsync(services => services.GetRequiredService<ServerCatalog>().RouteSecretAsync(id, default));
 
@@ -171,6 +190,8 @@ public sealed class PublishHarness : IAsyncDisposable
         services.AddPublishing(_directory);
         services.AddSingleton(_ => new PublishTimings(TimeSpan.FromMilliseconds(5), TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(10), TimeSpan.FromMilliseconds(300), TimeSpan.FromMilliseconds(300), RepairInterval));
         services.AddSingleton<IToolInspector>(Inspector);
+        services.AddSingleton<IPanelData>(Data);
+        services.AddScoped<ConnectionService>();
         return services.BuildServiceProvider();
     }
 }

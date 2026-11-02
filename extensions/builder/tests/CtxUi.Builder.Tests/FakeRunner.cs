@@ -49,6 +49,10 @@ public sealed partial class FakeRunner : HttpMessageHandler
 
     public bool DropSpecOnce { get; set; }
 
+    public bool FailDeletes { get; set; }
+
+    public bool ServerDeleted { get; private set; }
+
     public bool KnowsSpec { get; private set; }
 
     public string[] CallsSnapshot()
@@ -146,6 +150,14 @@ public sealed partial class FakeRunner : HttpMessageHandler
         {
             Specs.Add(System.Text.Json.JsonSerializer.Deserialize<ServerSpec>(body, System.Text.Json.JsonSerializerOptions.Web)!);
             KnowsSpec = true;
+            return new HttpResponseMessage(HttpStatusCode.NoContent);
+        }
+
+        if (method == HttpMethod.Delete)
+        {
+            if (FailDeletes)
+                return Problem(HttpStatusCode.InternalServerError, "The runner could not remove the server.");
+            ServerDeleted = true;
             return new HttpResponseMessage(HttpStatusCode.NoContent);
         }
 

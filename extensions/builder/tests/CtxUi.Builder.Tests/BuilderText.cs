@@ -14,11 +14,19 @@ internal static class BuilderText
 
     public static string CheckTimedOut => Read();
 
+    public static string ConnectionAlreadyConnected => Read();
+
+    public static string InboundRejected => Read();
+
+    public static string InboundSlugTaken => Read();
+
     public static string PublishBaseUrlRequired => Read();
 
     public static string PublishBusy => Read();
 
     public static string PublishInterrupted => Read();
+
+    public static string RunnerDeleteFailed => Read();
 
     public static string RunnerForgotRelease => Read();
 

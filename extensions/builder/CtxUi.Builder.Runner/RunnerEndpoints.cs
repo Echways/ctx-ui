@@ -119,7 +119,7 @@ public static class RunnerEndpoints
     {
         var metadata = context.GetReverseProxyFeature().Route.Config.Metadata;
         var expected = metadata?.GetValueOrDefault(RouteTable.SecretHashKey);
-        var presented = context.Request.Headers[RouteTable.SecretHeader];
+        var presented = context.Request.Headers[RouteSecret.Header];
         if (expected is null || presented.Count != 1 || !Matches(presented.ToString(), Convert.FromHexString(expected)))
         {
             context.Response.StatusCode = StatusCodes.Status401Unauthorized;

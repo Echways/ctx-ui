@@ -1,5 +1,6 @@
 @page "/builder"
 @inject ServerCatalog Catalog
+@inject IPanelData Data
 @inject IDialogService Dialogs
 
 <PageHead Count="_servers?.Count">
@@ -30,7 +31,7 @@ else
                 <Tag Tone="@(context.NetworkAccess == NetworkAccess.FullNetwork ? Tone.Warn : Tone.Neutral)">@AccessName(context.NetworkAccess)</Tag>
             </Slot>
             <Slot Title="@BuilderText.Inbound">
-                @(context.InboundId is null ? BuilderText.InboundNone : BuilderText.InboundConnected)
+                @(IsConnected(context) ? BuilderText.InboundConnected : BuilderText.InboundNone)
             </Slot>
             <Cell Title="@BuilderText.Created" Value="server => server.CreatedAt" Sort />
         </Columns>
@@ -42,10 +43,17 @@ else
 
 @code {
     private List<BuilderServer>? _servers;
+    private HashSet<string> _inbounds = [];
 
     protected override Task OnInitializedAsync() => LoadAsync();
 
-    private async Task LoadAsync() => _servers = [.. await Catalog.ListAsync(CancellationToken.None)];
+    private async Task LoadAsync()
+    {
+        _inbounds = [.. (await Data.InboundsAsync()).Select(inbound => inbound.Id.ToString())];
+        _servers = [.. await Catalog.ListAsync(CancellationToken.None)];
+    }
+
+    private bool IsConnected(BuilderServer server) => server.InboundId is not null && _inbounds.Contains(server.InboundId);
 
     private async Task CreateAsync()
     {

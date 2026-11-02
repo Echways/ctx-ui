@@ -21,3 +21,8 @@ public sealed record StartRelease(IReadOnlyDictionary<string, string> Environmen
 public sealed record RunnerHealth(string Version, string DockerVersion, bool EgressReachable);
 
 public sealed record ServerState(Guid Id, int? ActiveRelease, IReadOnlyList<ReleaseStatus> Releases);
+
+public static class RouteSecret
+{
+    public const string Header = "X-Builder-Route-Secret";
+}

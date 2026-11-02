@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using CtxUi.Builder.Contracts;
 using CtxUi.Builder.Runner;
 using CtxUi.Builder.Servers;
 using Enfilade;
@@ -13,7 +14,6 @@ namespace CtxUi.Builder.Publishing;
 
 public sealed class ToolInspector(RunnerSettings settings, IHttpClientFactory http, IServiceScopeFactory scopes) : IToolInspector
 {
-    public const string SecretHeader = "X-Builder-Route-Secret";
 
     private static readonly string[] ProxyRefusalMarkers = ["ERR_ACCESS_DENIED", "ERR_ACL", "X-Squid-Error", "squid", "The requested URL could not be retrieved"];
 
@@ -60,7 +60,7 @@ public sealed class ToolInspector(RunnerSettings settings, IHttpClientFactory ht
         {
             Endpoint = new Uri(settings.IngressUrl!, path),
             TransportMode = HttpTransportMode.StreamableHttp,
-            AdditionalHeaders = new Dictionary<string, string> { [SecretHeader] = secret },
+            AdditionalHeaders = new Dictionary<string, string> { [RouteSecret.Header] = secret },
         };
         return await McpClient.CreateAsync(new HttpClientTransport(options, http.CreateClient(), null, true), cancellationToken: ct);
     }

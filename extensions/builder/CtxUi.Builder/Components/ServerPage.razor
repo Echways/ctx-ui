@@ -1,5 +1,11 @@
 @page "/builder/{Id:guid}"
+@implements IDisposable
 @inject ServerCatalog Catalog
+@inject ConnectionService Connections
+@inject PublishQueue Queue
+@inject IPanelData Data
+@inject IDialogService Dialogs
+@inject NavigationManager Navigation
 
 <PageHead>
     <Summary>
@@ -8,6 +14,17 @@
         <span>@_settings?.Name</span>
     </Summary>
     <Actions>
+        @if (_inbound is not null)
+        {
+            <span class="builder-connected" data-testid="connected" title="@Connections.AddressOf(Id)">
+                @BuilderText.ConnectedTo <a class="link" href="inbounds">@_inbound.Slug</a>
+            </span>
+        }
+        else if (_settings is not null)
+        {
+            <Button Kind="ButtonKind.Quiet" OnClick="ConnectAsync" Refresh="false" data-testid="connect">@BuilderText.Connect</Button>
+        }
+        <Button Kind="ButtonKind.Quiet" OnClick="DeleteAsync" Refresh="false" data-testid="delete-server">@BuilderText.DeleteServer</Button>
         <PublishButton ServerId="Id" Prepare="FlushAsync" />
     </Actions>
 </PageHead>
@@ -56,6 +73,7 @@ else
 @code {
     private List<DraftFile> _files = [];
     private ServerSettingsView? _settings;
+    private InboundSummary? _inbound;
     private CodeEditor? _editor;
     private string? _selected;
     private ServerView _view;
@@ -65,14 +83,52 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        Queue.FirstActivated += OnFirstActivated;
         await LoadAsync();
         _selected = _files.OrderBy(file => file.Path, StringComparer.Ordinal).FirstOrDefault()?.Path;
+    }
+
+    public void Dispose() => Queue.FirstActivated -= OnFirstActivated;
+
+    private void OnFirstActivated(Guid serverId)
+    {
+        if (serverId == Id)
+            _ = InvokeAsync(ConnectAsync);
     }
 
     private async Task LoadAsync()
     {
         _settings = await Catalog.SettingsAsync(Id, CancellationToken.None);
         _files = [.. (await Catalog.DraftAsync(Id, CancellationToken.None)).Files];
+        _inbound = await Connections.FindInboundAsync(Id, CancellationToken.None);
+    }
+
+    private async Task ConnectAsync()
+    {
+        if (_inbound is not null || _settings is null)
+            return;
+        var parameters = new DialogParameters<ConnectSheet>
+        {
+            { sheet => sheet.ServerId, Id },
+            { sheet => sheet.Slug, _settings.Slug },
+            { sheet => sheet.ServerName, _settings.Name },
+        };
+        var sheet = await Dialogs.ShowSheetAsync<ConnectSheet>(string.Format(BuilderText.ConnectTitle, _settings.Name), parameters);
+        await sheet.Result;
+        await LoadAsync();
+        StateHasChanged();
+    }
+
+    private async Task DeleteAsync()
+    {
+        var warning = BuilderText.DeleteServerWarning;
+        if (_inbound is not null)
+            warning += " " + string.Format(BuilderText.DeleteServerInbound, _inbound.Slug, (await Data.InboundClientsAsync(_inbound.Slug)).Count);
+        if (!await Dialogs.ConfirmAsync(string.Format(BuilderText.DeleteServerQuestion, _settings?.Name), warning, BuilderText.DeleteServerYes, danger: true))
+            return;
+
+        await Connections.DeleteServerAsync(Id, CancellationToken.None);
+        Navigation.NavigateTo("builder");
     }
 
     private Func<Task>? _blockedAction;

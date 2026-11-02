@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using CtxUi.Builder.Contracts;
 using Microsoft.Extensions.Primitives;
 using Yarp.ReverseProxy.Configuration;
 using Yarp.ReverseProxy.Forwarder;
@@ -7,7 +8,6 @@ namespace CtxUi.Builder.Runner;
 
 public sealed class RouteTable(IServerProbe probe) : IProxyConfigProvider
 {
-    public const string SecretHeader = "X-Builder-Route-Secret";
     public const string SecretHashKey = "route-secret-sha256";
 
     private const string DestinationName = "server";
@@ -64,7 +64,7 @@ public sealed class RouteTable(IServerProbe probe) : IProxyConfigProvider
                 Transforms =
                 [
                     new Dictionary<string, string> { ["PathSet"] = "/mcp" },
-                    new Dictionary<string, string> { ["RequestHeaderRemove"] = SecretHeader }
+                    new Dictionary<string, string> { ["RequestHeaderRemove"] = RouteSecret.Header }
                 ]
             });
             clusters.Add(new ClusterConfig

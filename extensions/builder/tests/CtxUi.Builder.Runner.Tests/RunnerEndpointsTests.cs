@@ -101,7 +101,7 @@ public sealed class RunnerEndpointsTests
 
         var seen = Assert.Single(upstream.Requests);
         Assert.Equal("/mcp", seen.Path);
-        Assert.DoesNotContain("X-Builder-Route-Secret", seen.Headers.Keys, StringComparer.OrdinalIgnoreCase);
+        Assert.DoesNotContain(RouteSecret.Header, seen.Headers.Keys, StringComparer.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -112,7 +112,7 @@ public sealed class RunnerEndpointsTests
         await using var __ = upstream;
 
         using var request = new HttpRequestMessage(HttpMethod.Post, $"/s/{Id}/mcp?stream=1");
-        request.Headers.Add("X-Builder-Route-Secret", RunnerHarness.Secret);
+        request.Headers.Add(RouteSecret.Header, RunnerHarness.Secret);
         using var response = await harness.Ingress.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
         await using var body = await response.Content.ReadAsStreamAsync();
         using var reader = new StreamReader(body);
@@ -135,7 +135,7 @@ public sealed class RunnerEndpointsTests
         using var refused = await harness.Ingress.SendAsync(controlOverIngress);
 
         using var routeOverControl = new HttpRequestMessage(HttpMethod.Post, $"/s/{Id}/mcp");
-        routeOverControl.Headers.Add("X-Builder-Route-Secret", RunnerHarness.Secret);
+        routeOverControl.Headers.Add(RouteSecret.Header, RunnerHarness.Secret);
         using var missing = await harness.Control.SendAsync(routeOverControl);
 
         Assert.Equal(HttpStatusCode.Unauthorized, refused.StatusCode);

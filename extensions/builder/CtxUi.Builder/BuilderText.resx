@@ -492,4 +492,82 @@
   <data name="BaseUrlAppliesOnPublish" xml:space="preserve">
     <value>The new base URL takes effect with the next publish. Running versions keep their own.</value>
   </data>
+  <data name="ConnectionAlreadyConnected" xml:space="preserve">
+    <value>This server is already connected as an inbound.</value>
+  </data>
+  <data name="InboundSlugTaken" xml:space="preserve">
+    <value>An inbound with this slug already exists. Choose another slug.</value>
+  </data>
+  <data name="InboundRejected" xml:space="preserve">
+    <value>The panel refused the inbound: {0}</value>
+  </data>
+  <data name="RunnerDeleteFailed" xml:space="preserve">
+    <value>The runner could not remove the server, nothing was deleted: {0}</value>
+  </data>
+  <data name="Connect" xml:space="preserve">
+    <value>Connect</value>
+  </data>
+  <data name="ConnectTitle" xml:space="preserve">
+    <value>Connect {0}</value>
+  </data>
+  <data name="ConnectLead" xml:space="preserve">
+    <value>The server becomes an inbound of the panel. Clients that are linked to it can call its tools.</value>
+  </data>
+  <data name="InboundSlug" xml:space="preserve">
+    <value>Inbound slug</value>
+  </data>
+  <data name="InboundSlugHint" xml:space="preserve">
+    <value>Lowercase letters, digits and dashes.</value>
+  </data>
+  <data name="ForwardIdentity" xml:space="preserve">
+    <value>Send the client identity to the server</value>
+  </data>
+  <data name="ConnectClients" xml:space="preserve">
+    <value>Clients</value>
+  </data>
+  <data name="ConnectClientsHint" xml:space="preserve">
+    <value>Only the chosen clients get access to this server.</value>
+  </data>
+  <data name="NoClients" xml:space="preserve">
+    <value>There are no clients yet. Add them later on the clients page.</value>
+  </data>
+  <data name="ServerConnected" xml:space="preserve">
+    <value>Server connected</value>
+  </data>
+  <data name="ConnectedAddress" xml:space="preserve">
+    <value>Address of the inbound: {0}</value>
+  </data>
+  <data name="OpenInbound" xml:space="preserve">
+    <value>Open inbound {0}</value>
+  </data>
+  <data name="ConnectedTo" xml:space="preserve">
+    <value>Connected as</value>
+  </data>
+  <data name="DeleteServer" xml:space="preserve">
+    <value>Delete server</value>
+  </data>
+  <data name="DeleteServerQuestion" xml:space="preserve">
+    <value>Delete server {0}?</value>
+  </data>
+  <data name="DeleteServerWarning" xml:space="preserve">
+    <value>The running server, all its versions and its project are deleted. This cannot be undone.</value>
+  </data>
+  <data name="DeleteServerInbound" xml:space="preserve">
+    <value>The inbound {0} and its links to {1} clients are deleted too.</value>
+  </data>
+  <data name="DeleteServerYes" xml:space="preserve">
+    <value>Delete</value>
+  </data>
+  <data name="ServerDeleted" xml:space="preserve">
+    <value>Server deleted</value>
+  </data>
+  <data name="OpenInBuilder" xml:space="preserve">
+    <value>Open in builder</value>
+  </data>
+  <data name="InboundNotBuilt" xml:space="preserve">
+    <value>This inbound was not built here.</value>
+  </data>
+  <data name="BuiltServer" xml:space="preserve">
+    <value>Built server</value>
+  </data>
 </root>

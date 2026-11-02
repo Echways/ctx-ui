@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Text.Json.Nodes;
+using CtxUi.Builder.Contracts;
 using CtxUi.Builder.Publishing;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -54,7 +55,7 @@ public sealed class ToolInspectorTests
             app.Use(async (context, next) =>
             {
                 paths.Add(context.Request.Path.Value!);
-                if (context.Request.Headers[ToolInspector.SecretHeader] != secret)
+                if (context.Request.Headers[RouteSecret.Header] != secret)
                 {
                     context.Response.StatusCode = StatusCodes.Status401Unauthorized;
                     return;

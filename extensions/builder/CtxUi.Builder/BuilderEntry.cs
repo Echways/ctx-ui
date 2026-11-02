@@ -6,6 +6,7 @@ using CtxUi.Builder.Servers;
 using CtxUi.Extensions;
 using Enfilade;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Net.Http.Headers;
@@ -48,6 +49,8 @@ public sealed class BuilderEntry : IPanelExtension
             .In(PanelSlots.InboundSheet).AddBlock<InboundBuilderBlock>()
             .AddStylesheet("builder.css");
     }
+
+    public void MapEndpoints(IEndpointRouteBuilder endpoints) => BuilderEndpoints.Map(endpoints);
 
     private static async Task OpenInBuilderAsync(PanelActionArgs<InboundSummary> args)
     {

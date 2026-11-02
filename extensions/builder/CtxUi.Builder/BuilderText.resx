@@ -331,7 +331,7 @@
     <value>Export</value>
   </data>
   <data name="ExportHint" xml:space="preserve">
-    <value>Download the project as a tar.gz archive that runs without the panel.</value>
+    <value>Download the project as a tar.gz archive that runs without the panel. Secret values are not included: set them as environment variables where you run it.</value>
   </data>
   <data name="Export" xml:space="preserve">
     <value>Download archive</value>
@@ -836,5 +836,173 @@
   </data>
   <data name="CodeToolNameTaken" xml:space="preserve">
     <value>The tool {0} already exists as a form tool. Choose another name or delete the form tool first.</value>
+  </data>
+  <data name="Resources" xml:space="preserve">
+    <value>Resources</value>
+  </data>
+  <data name="Prompts" xml:space="preserve">
+    <value>Prompts</value>
+  </data>
+  <data name="NewResource" xml:space="preserve">
+    <value>New resource</value>
+  </data>
+  <data name="NewPrompt" xml:space="preserve">
+    <value>New prompt</value>
+  </data>
+  <data name="ResourceUri" xml:space="preserve">
+    <value>Address (URI)</value>
+  </data>
+  <data name="ResourceName" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="ResourceMimeType" xml:space="preserve">
+    <value>Content type</value>
+  </data>
+  <data name="ResourceText" xml:space="preserve">
+    <value>Content</value>
+  </data>
+  <data name="SaveResource" xml:space="preserve">
+    <value>Save resource</value>
+  </data>
+  <data name="ResourceSaved" xml:space="preserve">
+    <value>Resource saved</value>
+  </data>
+  <data name="DeleteResource" xml:space="preserve">
+    <value>Delete resource</value>
+  </data>
+  <data name="ResourceDeleted" xml:space="preserve">
+    <value>Resource deleted</value>
+  </data>
+  <data name="DeleteResourceQuestion" xml:space="preserve">
+    <value>Delete the resource {0}?</value>
+  </data>
+  <data name="DeleteResourceWarning" xml:space="preserve">
+    <value>The resource is removed from the draft. Published versions keep it.</value>
+  </data>
+  <data name="PromptName" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="PromptDescription" xml:space="preserve">
+    <value>Description</value>
+  </data>
+  <data name="PromptTemplate" xml:space="preserve">
+    <value>Template</value>
+  </data>
+  <data name="PromptTemplateHint" xml:space="preserve">
+    <value>Write {name} where a value is inserted. Each such placeholder becomes a required argument.</value>
+  </data>
+  <data name="PromptArguments" xml:space="preserve">
+    <value>Arguments: {0}</value>
+  </data>
+  <data name="PromptArgumentsNone" xml:space="preserve">
+    <value>No arguments</value>
+  </data>
+  <data name="SavePrompt" xml:space="preserve">
+    <value>Save prompt</value>
+  </data>
+  <data name="PromptSaved" xml:space="preserve">
+    <value>Prompt saved</value>
+  </data>
+  <data name="DeletePrompt" xml:space="preserve">
+    <value>Delete prompt</value>
+  </data>
+  <data name="PromptDeleted" xml:space="preserve">
+    <value>Prompt deleted</value>
+  </data>
+  <data name="DeletePromptQuestion" xml:space="preserve">
+    <value>Delete the prompt {0}?</value>
+  </data>
+  <data name="DeletePromptWarning" xml:space="preserve">
+    <value>The prompt is removed from the draft. Published versions keep it.</value>
+  </data>
+  <data name="ResourceNotFound" xml:space="preserve">
+    <value>The resource {0} does not exist.</value>
+  </data>
+  <data name="ResourceUriTaken" xml:space="preserve">
+    <value>A resource with the address {0} already exists.</value>
+  </data>
+  <data name="ResourceUriInvalid" xml:space="preserve">
+    <value>The address {0} is not a valid URI such as data://cities.</value>
+  </data>
+  <data name="ResourceMimeTypeInvalid" xml:space="preserve">
+    <value>The content type {0} is not valid. Use a form such as text/plain.</value>
+  </data>
+  <data name="BuilderNameInvalid" xml:space="preserve">
+    <value>The name {0} must be 1 to 64 characters without spaces.</value>
+  </data>
+  <data name="PromptNotFound" xml:space="preserve">
+    <value>The prompt {0} does not exist.</value>
+  </data>
+  <data name="PromptNameTaken" xml:space="preserve">
+    <value>A prompt named {0} already exists.</value>
+  </data>
+  <data name="PromptTemplateRequired" xml:space="preserve">
+    <value>The prompt {0} needs a template.</value>
+  </data>
+  <data name="BuilderDocumentInvalid" xml:space="preserve">
+    <value>The resources and prompts file is not valid.</value>
+  </data>
+  <data name="ArchiveBuilderInvalid" xml:space="preserve">
+    <value>The builder.json in the archive cannot be used: {0}</value>
+  </data>
+  <data name="ToolTest" xml:space="preserve">
+    <value>Check</value>
+  </data>
+  <data name="ToolTestNoTargetTitle" xml:space="preserve">
+    <value>Nothing to check yet</value>
+  </data>
+  <data name="ToolTestNoTargetHint" xml:space="preserve">
+    <value>Publish the server or build a version without activating it, then call its tools here.</value>
+  </data>
+  <data name="ToolTestTargetCandidate" xml:space="preserve">
+    <value>Built version {0}, not yet active</value>
+  </data>
+  <data name="ToolTestTargetActive" xml:space="preserve">
+    <value>Active version {0}</value>
+  </data>
+  <data name="ToolTestTool" xml:space="preserve">
+    <value>Tool</value>
+  </data>
+  <data name="ToolTestNoTools" xml:space="preserve">
+    <value>This version has no tools.</value>
+  </data>
+  <data name="ToolTestCall" xml:space="preserve">
+    <value>Call</value>
+  </data>
+  <data name="ToolTestReload" xml:space="preserve">
+    <value>Refresh</value>
+  </data>
+  <data name="ToolTestOk" xml:space="preserve">
+    <value>Success</value>
+  </data>
+  <data name="ToolTestError" xml:space="preserve">
+    <value>Error</value>
+  </data>
+  <data name="ToolTestElapsed" xml:space="preserve">
+    <value>{0:N0} ms</value>
+  </data>
+  <data name="ToolTestNoOutput" xml:space="preserve">
+    <value>The tool returned nothing.</value>
+  </data>
+  <data name="ToolTestProxyRefused" xml:space="preserve">
+    <value>The egress proxy refused the request. The server is limited to public internet addresses, and this destination is outside them. If it is intended, allow the full network in the server settings.</value>
+  </data>
+  <data name="ToolTestOpenSettings" xml:space="preserve">
+    <value>Open settings</value>
+  </data>
+  <data name="ToolTestFailed" xml:space="preserve">
+    <value>The check could not reach the server: {0}</value>
+  </data>
+  <data name="ToolTestTimedOut" xml:space="preserve">
+    <value>The server did not answer within {0} seconds.</value>
+  </data>
+  <data name="ToolArgumentRequired" xml:space="preserve">
+    <value>The argument {0} is required.</value>
+  </data>
+  <data name="ToolArgumentInvalid" xml:space="preserve">
+    <value>The value of {0} does not fit its type.</value>
+  </data>
+  <data name="ToolArgumentJsonHint" xml:space="preserve">
+    <value>JSON</value>
   </data>
 </root>

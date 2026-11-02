@@ -47,11 +47,17 @@ else
     {
         <p class="bad-t" role="alert" data-testid="openapi-error">@_openApiError</p>
     }
+    @if (_documentError is not null)
+    {
+        <p class="bad-t" role="alert" data-testid="builder-document-error">@_documentError</p>
+    }
     <div class="builder-workspace">
         <ToolList Files="_files.Select(file => file.Path).ToList()" Selected="_selected" View="_view"
                   FormTools="_formTools.Select(tool => tool.Name).ToList()" SelectedForm="_formName"
                   OnSelect="SelectAsync" OnView="OpenViewAsync" OnCreate="CreateToolAsync"
-                  OnSelectForm="SelectFormAsync" OnNewForm="NewFormAsync" OnImport="ImportAsync" />
+                  OnSelectForm="SelectFormAsync" OnNewForm="NewFormAsync" OnImport="ImportAsync"
+                  Resources="_document.Resources" SelectedResource="_resourceUri" OnSelectResource="SelectResourceAsync" OnNewResource="NewResourceAsync"
+                  Prompts="_document.Prompts" SelectedPrompt="_promptName" OnSelectPrompt="SelectPromptAsync" OnNewPrompt="NewPromptAsync" />
         <div class="builder-main">
             @if (_view == ServerView.Settings)
             {
@@ -62,6 +68,20 @@ else
                 <ToolForm @key="@($"{_formName}:{_draftRevision}")" ServerId="Id" Tool="_formTools.FirstOrDefault(tool => tool.Name == _formName)"
                           Revision="_draftRevision"
                           OnSaved="FormSavedAsync" OnDeleted="FormDeletedAsync" OnConverted="FormConvertedAsync" OnReload="ReloadFormAsync" />
+            }
+            else if (_view == ServerView.Resource)
+            {
+                <ResourceForm @key="@($"{_resourceUri}:{_draftRevision}")" ServerId="Id" Resource="_document.Resources.FirstOrDefault(resource => resource.Uri == _resourceUri)"
+                              Revision="_draftRevision" OnSaved="ResourceSavedAsync" OnDeleted="BuilderEntryDeletedAsync" OnReload="ReloadFormAsync" />
+            }
+            else if (_view == ServerView.Prompt)
+            {
+                <PromptForm @key="@($"{_promptName}:{_draftRevision}")" ServerId="Id" Prompt="_document.Prompts.FirstOrDefault(prompt => prompt.Name == _promptName)"
+                            Revision="_draftRevision" OnSaved="PromptSavedAsync" OnDeleted="BuilderEntryDeletedAsync" OnReload="ReloadFormAsync" />
+            }
+            else if (_view == ServerView.Test)
+            {
+                <ToolTester ServerId="Id" OnOpenSettings="() => OpenViewAsync(ServerView.Settings)" />
             }
             else if (_view == ServerView.Releases)
             {
@@ -94,6 +114,10 @@ else
     private IReadOnlyList<FormTool> _formTools = [];
     private string _openApiJson = string.Empty;
     private string? _openApiError;
+    private BuilderDocumentModel _document = BuilderDocumentModel.Empty;
+    private string? _documentError;
+    private string? _resourceUri;
+    private string? _promptName;
     private string? _formName;
     private long _draftRevision;
     private bool _loaded;
@@ -134,6 +158,17 @@ else
         {
             _formTools = [];
             _openApiError = failure.Message;
+        }
+
+        try
+        {
+            _document = BuilderDocument.Read(draft.BuilderJson);
+            _documentError = null;
+        }
+        catch (PanelException failure)
+        {
+            _document = BuilderDocumentModel.Empty;
+            _documentError = failure.Message;
         }
 
         _inbound = await Connections.FindInboundAsync(Id, CancellationToken.None);
@@ -265,6 +300,44 @@ else
     }
 
     private async Task ReloadFormAsync() => await LoadAsync();
+
+    private Task SelectResourceAsync(string? uri) => GuardedAsync(async () =>
+    {
+        await LoadAsync();
+        _resourceUri = uri;
+        _view = ServerView.Resource;
+    });
+
+    private Task NewResourceAsync() => SelectResourceAsync(null);
+
+    private async Task ResourceSavedAsync(string uri)
+    {
+        await LoadAsync();
+        _resourceUri = uri;
+    }
+
+    private Task SelectPromptAsync(string? name) => GuardedAsync(async () =>
+    {
+        await LoadAsync();
+        _promptName = name;
+        _view = ServerView.Prompt;
+    });
+
+    private Task NewPromptAsync() => SelectPromptAsync(null);
+
+    private async Task PromptSavedAsync(string name)
+    {
+        await LoadAsync();
+        _promptName = name;
+    }
+
+    private async Task BuilderEntryDeletedAsync()
+    {
+        await LoadAsync();
+        _resourceUri = null;
+        _promptName = null;
+        _view = ServerView.Editor;
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {

@@ -43,6 +43,24 @@ public sealed class ReleaseCatalog(BuilderDatabase database, RunnerSettings sett
         return new ServerStatus(await RunnerRoutesAsync(serverId, active.Value, ct), active, null);
     }
 
+    public async Task<ToolTarget?> TestTargetAsync(Guid serverId, CancellationToken ct)
+    {
+        var candidate = await database.Releases.AsNoTracking()
+            .Where(release => release.ServerId == serverId && release.Status == ReleaseState.Candidate)
+            .OrderByDescending(release => release.Number)
+            .Select(release => (int?)release.Number)
+            .FirstOrDefaultAsync(ct);
+        if (candidate is not null)
+            return new ToolTarget(candidate.Value, candidate.Value, true);
+
+        var active = await database.Servers.AsNoTracking()
+            .Where(server => server.Id == serverId && server.ActiveReleaseId != null)
+            .SelectMany(server => database.Releases.Where(release => release.Id == server.ActiveReleaseId))
+            .Select(release => (int?)release.Number)
+            .FirstOrDefaultAsync(ct);
+        return active is null ? null : new ToolTarget(active.Value, null, false);
+    }
+
     public async Task<IReadOnlyList<ReleaseView>> ListAsync(Guid serverId, CancellationToken ct)
     {
         var activeId = await database.Servers.AsNoTracking().Where(server => server.Id == serverId).Select(server => server.ActiveReleaseId).SingleOrDefaultAsync(ct);

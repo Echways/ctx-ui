@@ -71,6 +71,18 @@ public sealed partial class ServerCatalog(BuilderDatabase database, SecretBox bo
             }
         }
 
+        if (import is not null && import.Files.FirstOrDefault(file => file.Path == "builder.json") is { Content: { } builder })
+        {
+            try
+            {
+                BuilderDocument.Read(builder);
+            }
+            catch (PanelException failure)
+            {
+                throw new PanelException(string.Format(BuilderText.ArchiveBuilderInvalid, failure.Message));
+            }
+        }
+
         var limits = new ServerLimits();
         var now = clock.GetUtcNow();
         var server = new BuilderServer
@@ -222,6 +234,18 @@ public sealed partial class ServerCatalog(BuilderDatabase database, SecretBox bo
         return await SaveOpenApiAsync(id, merged, expectedRevision, ct);
     }
 
+    public Task<long> SaveResourceAsync(Guid id, BuilderResource resource, string? replacing, long expectedRevision, CancellationToken ct) =>
+        ChangeBuilderDocumentAsync(id, model => BuilderDocument.WithResource(model, resource, replacing), expectedRevision, ct);
+
+    public Task<long> DeleteResourceAsync(Guid id, string uri, long expectedRevision, CancellationToken ct) =>
+        ChangeBuilderDocumentAsync(id, model => BuilderDocument.WithoutResource(model, uri), expectedRevision, ct);
+
+    public Task<long> SavePromptAsync(Guid id, BuilderPrompt prompt, string? replacing, long expectedRevision, CancellationToken ct) =>
+        ChangeBuilderDocumentAsync(id, model => BuilderDocument.WithPrompt(model, prompt, replacing), expectedRevision, ct);
+
+    public Task<long> DeletePromptAsync(Guid id, string name, long expectedRevision, CancellationToken ct) =>
+        ChangeBuilderDocumentAsync(id, model => BuilderDocument.WithoutPrompt(model, name), expectedRevision, ct);
+
     public async Task<long> ProposeBaseUrlAsync(Guid id, string baseUrl, CancellationToken ct)
     {
         var settings = await SettingsAsync(id, ct);
@@ -372,7 +396,14 @@ public sealed partial class ServerCatalog(BuilderDatabase database, SecretBox bo
         var server = await database.Servers.AsNoTracking().SingleOrDefaultAsync(server => server.Id == id, ct)
             ?? throw new PanelException(BuilderText.ServerNotFound);
         var draft = await DraftAsync(id, ct);
-        return new ProjectExport($"{server.Slug}.tar.gz", await ProjectFiles.SnapshotAsync(draft, draft.Files, ProjectFiles.FastMcpVersion, ct));
+        try
+        {
+            return new ProjectExport($"{server.Slug}.tar.gz", await ProjectFiles.SnapshotAsync(draft, draft.Files, ProjectFiles.FastMcpVersion, ct));
+        }
+        catch (ProjectFileException failure)
+        {
+            throw new PanelException(failure.Message);
+        }
     }
 
     private static string AuthValue(StoredAuth auth) => auth.Kind switch
@@ -400,6 +431,25 @@ public sealed partial class ServerCatalog(BuilderDatabase database, SecretBox bo
         {
             database.ChangeTracker.Clear();
         }
+    }
+
+    private async Task<long> ChangeBuilderDocumentAsync(Guid id, Func<BuilderDocumentModel, BuilderDocumentModel> change, long expectedRevision, CancellationToken ct)
+    {
+        await RequireServerAsync(id, ct);
+        var draft = await database.Drafts.AsNoTracking().SingleAsync(draft => draft.ServerId == id, ct);
+        if (draft.Revision != expectedRevision)
+            throw new DraftConflictException(BuilderText.DraftChangedElsewhere);
+
+        var model = change(BuilderDocument.Read(draft.BuilderJson));
+        var json = model.IsEmpty ? null : BuilderDocument.Write(model);
+        await RequireRoomAsync(id, null, Encoding.UTF8.GetByteCount(json ?? string.Empty) + Encoding.UTF8.GetByteCount(draft.OpenApiJson ?? string.Empty), ct);
+
+        var now = clock.GetUtcNow();
+        var updated = await database.Drafts.Where(candidate => candidate.ServerId == id && candidate.Revision == expectedRevision).ExecuteUpdateAsync(setters => setters
+            .SetProperty(candidate => candidate.BuilderJson, json)
+            .SetProperty(candidate => candidate.Revision, expectedRevision + 1)
+            .SetProperty(candidate => candidate.UpdatedAt, now), ct);
+        return updated == 0 ? throw new DraftConflictException(BuilderText.DraftChangedElsewhere) : expectedRevision + 1;
     }
 
     private async Task RequireNoFormToolClashAsync(Guid id, string path, string content, CancellationToken ct)

@@ -310,3 +310,10 @@
     max-height: 22rem;
     overflow-y: auto;
 }
+
+.builder-tester,
+.builder-test-result {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}

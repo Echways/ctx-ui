@@ -1,3 +1,3 @@
 namespace CtxUi.Builder.Components;
 
-public enum ServerView { Editor, Form, Settings, Releases, Logs }
+public enum ServerView { Editor, Form, Resource, Prompt, Test, Settings, Releases, Logs }

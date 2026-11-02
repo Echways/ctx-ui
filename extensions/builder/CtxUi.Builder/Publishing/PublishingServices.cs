@@ -19,6 +19,7 @@ public static class PublishingServices
         services.AddSingleton<IExtensionInitializer>(provider => provider.GetRequiredService<PublishQueue>());
         services.AddScoped<ReleaseCatalog>();
         services.AddSingleton<ReleaseReader>();
+        services.AddSingleton<ToolTestRunner>();
         return services;
     }
 }

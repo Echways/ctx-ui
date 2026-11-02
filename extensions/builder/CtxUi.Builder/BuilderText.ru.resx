@@ -331,7 +331,7 @@
     <value>Экспорт</value>
   </data>
   <data name="ExportHint" xml:space="preserve">
-    <value>Скачайте проект архивом tar.gz, который запускается без панели.</value>
+    <value>Скачайте проект архивом tar.gz, который запускается без панели. Значения секретов не входят в архив: задайте их переменными окружения там, где запускаете проект.</value>
   </data>
   <data name="Export" xml:space="preserve">
     <value>Скачать архив</value>
@@ -836,5 +836,173 @@
   </data>
   <data name="CodeToolNameTaken" xml:space="preserve">
     <value>Инструмент {0} уже есть как инструмент формой. Выберите другое имя или сначала удалите инструмент формой.</value>
+  </data>
+  <data name="Resources" xml:space="preserve">
+    <value>Ресурсы</value>
+  </data>
+  <data name="Prompts" xml:space="preserve">
+    <value>Промпты</value>
+  </data>
+  <data name="NewResource" xml:space="preserve">
+    <value>Новый ресурс</value>
+  </data>
+  <data name="NewPrompt" xml:space="preserve">
+    <value>Новый промпт</value>
+  </data>
+  <data name="ResourceUri" xml:space="preserve">
+    <value>Адрес (URI)</value>
+  </data>
+  <data name="ResourceName" xml:space="preserve">
+    <value>Имя</value>
+  </data>
+  <data name="ResourceMimeType" xml:space="preserve">
+    <value>Тип содержимого</value>
+  </data>
+  <data name="ResourceText" xml:space="preserve">
+    <value>Содержимое</value>
+  </data>
+  <data name="SaveResource" xml:space="preserve">
+    <value>Сохранить ресурс</value>
+  </data>
+  <data name="ResourceSaved" xml:space="preserve">
+    <value>Ресурс сохранён</value>
+  </data>
+  <data name="DeleteResource" xml:space="preserve">
+    <value>Удалить ресурс</value>
+  </data>
+  <data name="ResourceDeleted" xml:space="preserve">
+    <value>Ресурс удалён</value>
+  </data>
+  <data name="DeleteResourceQuestion" xml:space="preserve">
+    <value>Удалить ресурс {0}?</value>
+  </data>
+  <data name="DeleteResourceWarning" xml:space="preserve">
+    <value>Ресурс удаляется из черновика. Опубликованные версии его сохраняют.</value>
+  </data>
+  <data name="PromptName" xml:space="preserve">
+    <value>Имя</value>
+  </data>
+  <data name="PromptDescription" xml:space="preserve">
+    <value>Описание</value>
+  </data>
+  <data name="PromptTemplate" xml:space="preserve">
+    <value>Шаблон</value>
+  </data>
+  <data name="PromptTemplateHint" xml:space="preserve">
+    <value>Напишите {name} там, где подставляется значение. Каждая такая метка становится обязательным аргументом.</value>
+  </data>
+  <data name="PromptArguments" xml:space="preserve">
+    <value>Аргументы: {0}</value>
+  </data>
+  <data name="PromptArgumentsNone" xml:space="preserve">
+    <value>Аргументов нет</value>
+  </data>
+  <data name="SavePrompt" xml:space="preserve">
+    <value>Сохранить промпт</value>
+  </data>
+  <data name="PromptSaved" xml:space="preserve">
+    <value>Промпт сохранён</value>
+  </data>
+  <data name="DeletePrompt" xml:space="preserve">
+    <value>Удалить промпт</value>
+  </data>
+  <data name="PromptDeleted" xml:space="preserve">
+    <value>Промпт удалён</value>
+  </data>
+  <data name="DeletePromptQuestion" xml:space="preserve">
+    <value>Удалить промпт {0}?</value>
+  </data>
+  <data name="DeletePromptWarning" xml:space="preserve">
+    <value>Промпт удаляется из черновика. Опубликованные версии его сохраняют.</value>
+  </data>
+  <data name="ResourceNotFound" xml:space="preserve">
+    <value>Ресурса {0} нет.</value>
+  </data>
+  <data name="ResourceUriTaken" xml:space="preserve">
+    <value>Ресурс с адресом {0} уже есть.</value>
+  </data>
+  <data name="ResourceUriInvalid" xml:space="preserve">
+    <value>Адрес {0} не похож на URI вида data://cities.</value>
+  </data>
+  <data name="ResourceMimeTypeInvalid" xml:space="preserve">
+    <value>Тип содержимого {0} неверен. Нужен вид text/plain.</value>
+  </data>
+  <data name="BuilderNameInvalid" xml:space="preserve">
+    <value>Имя {0} должно быть от 1 до 64 символов без пробелов.</value>
+  </data>
+  <data name="PromptNotFound" xml:space="preserve">
+    <value>Промпта {0} нет.</value>
+  </data>
+  <data name="PromptNameTaken" xml:space="preserve">
+    <value>Промпт с именем {0} уже есть.</value>
+  </data>
+  <data name="PromptTemplateRequired" xml:space="preserve">
+    <value>У промпта {0} нет шаблона.</value>
+  </data>
+  <data name="BuilderDocumentInvalid" xml:space="preserve">
+    <value>Файл ресурсов и промптов неверен.</value>
+  </data>
+  <data name="ArchiveBuilderInvalid" xml:space="preserve">
+    <value>builder.json в архиве использовать нельзя: {0}</value>
+  </data>
+  <data name="ToolTest" xml:space="preserve">
+    <value>Проверка</value>
+  </data>
+  <data name="ToolTestNoTargetTitle" xml:space="preserve">
+    <value>Проверять пока нечего</value>
+  </data>
+  <data name="ToolTestNoTargetHint" xml:space="preserve">
+    <value>Опубликуйте сервер или соберите версию без активации, и здесь можно вызвать её инструменты.</value>
+  </data>
+  <data name="ToolTestTargetCandidate" xml:space="preserve">
+    <value>Собранная версия {0}, ещё не активна</value>
+  </data>
+  <data name="ToolTestTargetActive" xml:space="preserve">
+    <value>Активная версия {0}</value>
+  </data>
+  <data name="ToolTestTool" xml:space="preserve">
+    <value>Инструмент</value>
+  </data>
+  <data name="ToolTestNoTools" xml:space="preserve">
+    <value>В этой версии нет инструментов.</value>
+  </data>
+  <data name="ToolTestCall" xml:space="preserve">
+    <value>Вызвать</value>
+  </data>
+  <data name="ToolTestReload" xml:space="preserve">
+    <value>Обновить</value>
+  </data>
+  <data name="ToolTestOk" xml:space="preserve">
+    <value>Успех</value>
+  </data>
+  <data name="ToolTestError" xml:space="preserve">
+    <value>Ошибка</value>
+  </data>
+  <data name="ToolTestElapsed" xml:space="preserve">
+    <value>{0:N0} мс</value>
+  </data>
+  <data name="ToolTestNoOutput" xml:space="preserve">
+    <value>Инструмент ничего не вернул.</value>
+  </data>
+  <data name="ToolTestProxyRefused" xml:space="preserve">
+    <value>Прокси отказал в запросе. Сервер ограничен публичными адресами интернета, а этот адрес к ним не относится. Если так и задумано, включите «Вся сеть» в настройках сервера.</value>
+  </data>
+  <data name="ToolTestOpenSettings" xml:space="preserve">
+    <value>Открыть настройки</value>
+  </data>
+  <data name="ToolTestFailed" xml:space="preserve">
+    <value>Проверка не достучалась до сервера: {0}</value>
+  </data>
+  <data name="ToolTestTimedOut" xml:space="preserve">
+    <value>Сервер не ответил за {0} с.</value>
+  </data>
+  <data name="ToolArgumentRequired" xml:space="preserve">
+    <value>Аргумент {0} обязателен.</value>
+  </data>
+  <data name="ToolArgumentInvalid" xml:space="preserve">
+    <value>Значение {0} не подходит по типу.</value>
+  </data>
+  <data name="ToolArgumentJsonHint" xml:space="preserve">
+    <value>JSON</value>
   </data>
 </root>

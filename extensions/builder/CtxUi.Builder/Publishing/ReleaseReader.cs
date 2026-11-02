@@ -10,6 +10,12 @@ public sealed class ReleaseReader(IServiceScopeFactory scopes)
         return await scope.ServiceProvider.GetRequiredService<ReleaseCatalog>().StatusAsync(serverId, ct);
     }
 
+    public async Task<ToolTarget?> TestTargetAsync(Guid serverId, CancellationToken ct)
+    {
+        await using var scope = scopes.CreateAsyncScope();
+        return await scope.ServiceProvider.GetRequiredService<ReleaseCatalog>().TestTargetAsync(serverId, ct);
+    }
+
     public async Task<IReadOnlyList<ReleaseView>> ListAsync(Guid serverId, CancellationToken ct)
     {
         await using var scope = scopes.CreateAsyncScope();

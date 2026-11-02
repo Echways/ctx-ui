@@ -48,7 +48,32 @@
             }
         </ul>
     }
+    <div class="builder-tools-head">
+        <span class="builder-tools-title">@BuilderText.Resources</span>
+        <button type="button" class="link" aria-label="@BuilderText.NewResource" data-testid="new-resource" @onclick="() => OnNewResource.InvokeAsync()">+</button>
+    </div>
+    <ul class="builder-files" data-testid="resources">
+        @foreach (var resource in Resources)
+        {
+            <li>
+                <button type="button" class="builder-file" aria-current="@(View == ServerView.Resource && resource.Uri == SelectedResource ? "true" : null)" data-resource="@resource.Uri" title="@resource.Uri" @onclick="() => OnSelectResource.InvokeAsync(resource.Uri)">@resource.Name</button>
+            </li>
+        }
+    </ul>
+    <div class="builder-tools-head">
+        <span class="builder-tools-title">@BuilderText.Prompts</span>
+        <button type="button" class="link" aria-label="@BuilderText.NewPrompt" data-testid="new-prompt" @onclick="() => OnNewPrompt.InvokeAsync()">+</button>
+    </div>
+    <ul class="builder-files" data-testid="prompts">
+        @foreach (var prompt in Prompts)
+        {
+            <li>
+                <button type="button" class="builder-file" aria-current="@(View == ServerView.Prompt && prompt.Name == SelectedPrompt ? "true" : null)" data-prompt="@prompt.Name" @onclick="() => OnSelectPrompt.InvokeAsync(prompt.Name)">@prompt.Name</button>
+            </li>
+        }
+    </ul>
     <hr class="builder-rule" />
+    <button type="button" class="builder-file" aria-current="@(View == ServerView.Test ? "true" : null)" data-testid="open-test" @onclick="() => OnView.InvokeAsync(ServerView.Test)">@BuilderText.ToolTest</button>
     <button type="button" class="builder-file" aria-current="@(View == ServerView.Releases ? "true" : null)" data-testid="open-releases" @onclick="() => OnView.InvokeAsync(ServerView.Releases)">@BuilderText.Releases</button>
     <button type="button" class="builder-file" aria-current="@(View == ServerView.Logs ? "true" : null)" data-testid="open-logs" @onclick="() => OnView.InvokeAsync(ServerView.Logs)">@BuilderText.Logs</button>
     <button type="button" class="builder-file" aria-current="@(View == ServerView.Settings ? "true" : null)" data-testid="open-settings" @onclick="() => OnView.InvokeAsync(ServerView.Settings)">@BuilderText.Settings</button>
@@ -77,6 +102,30 @@
 
     [Parameter]
     public EventCallback OnImport { get; set; }
+
+    [Parameter]
+    public IReadOnlyList<BuilderResource> Resources { get; set; } = [];
+
+    [Parameter]
+    public string? SelectedResource { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnSelectResource { get; set; }
+
+    [Parameter]
+    public EventCallback OnNewResource { get; set; }
+
+    [Parameter]
+    public IReadOnlyList<BuilderPrompt> Prompts { get; set; } = [];
+
+    [Parameter]
+    public string? SelectedPrompt { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnSelectPrompt { get; set; }
+
+    [Parameter]
+    public EventCallback OnNewPrompt { get; set; }
 
     [Parameter]
     public string? Selected { get; set; }

@@ -23,6 +23,8 @@ public sealed class FakeInspector : IToolInspector
 
     public List<int?> Listed { get; } = [];
 
+    public List<int?> Called { get; } = [];
+
     public async Task<IReadOnlyList<ToolInfo>> ListAsync(Guid serverId, int? release, CancellationToken ct)
     {
         Listed.Add(release);
@@ -33,8 +35,11 @@ public sealed class FakeInspector : IToolInspector
         return [.. Names(release).Select(name => new ToolInfo(name, $"{name} tool", JsonDocument.Parse("{}").RootElement.Clone()))];
     }
 
-    public Task<ToolCallOutcome> CallAsync(Guid serverId, int? release, string tool, JsonObject arguments, CancellationToken ct) =>
-        Task.FromResult(new ToolCallOutcome(false, "ok", TimeSpan.Zero, false));
+    public Task<ToolCallOutcome> CallAsync(Guid serverId, int? release, string tool, JsonObject arguments, CancellationToken ct)
+    {
+        Called.Add(release);
+        return Failure is not null ? Task.FromException<ToolCallOutcome>(Failure) : Task.FromResult(new ToolCallOutcome(false, "ok", TimeSpan.Zero, false));
+    }
 }
 
 public sealed class PublishHarness : IAsyncDisposable
@@ -62,6 +67,8 @@ public sealed class PublishHarness : IAsyncDisposable
     public SecretBox Box { get; } = new(new EphemeralDataProtectionProvider());
 
     public string DataDirectory => _directory;
+
+    public IServiceProvider Services => _services;
 
     public TimeSpan RepairInterval { get; set; } = TimeSpan.FromHours(1);
 

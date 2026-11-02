@@ -20,10 +20,16 @@ curl -fsSL https://github.com/Echways/ctx-ui/releases/latest/download/builder-in
 ```
 
 The installer finds how ctx-ui is installed (systemd if the service
-`ctx-ui.service` exists, otherwise a running Docker compose project with a `ctx-ui`
-service), checks that Docker Engine is 29 or newer and verifies the downloaded
-assets against the release `SHA256SUMS`. If something is wrong it stops before
-changing anything. Then it generates the Runner token, starts the containers
+`ctx-ui.service` exists, otherwise exactly one running container of the image
+`ghcr.io/echways/ctx-ui` from a Docker compose project with a `ctx-ui` service; with
+several candidates it stops and lists them), checks that Docker Engine is 29 or
+newer and verifies the downloaded assets against the release `SHA256SUMS`. Before it
+starts anything it checks that the subnet `10.212.0.0/29` and, with systemd, the
+ports 8090 and 8091 on 127.0.0.1 are free, pulls the three images and has ctx-ui
+check that the extension fits its extension API. If one of these fails it stops with
+a message: the Runner is not started, the settings of ctx-ui and `.env` are not
+touched, and an extension installed for the check is removed again. Then it
+generates the Runner token, starts the containers
 `ctxb-runner` and `ctxb-egress`, waits until the Runner reports the version of the
 release, installs the extension, writes the settings
 `CtxUi__Extensions__builder__RunnerUrl`, `CtxUi__Extensions__builder__RunnerIngressUrl`
@@ -31,13 +37,15 @@ and `CtxUi__Extensions__builder__RunnerToken` and restarts ctx-ui. The token and
 address are not set by hand.
 
 - **systemd.** The compose project `ctx-ui-builder` lives in `/opt/ctx-ui-builder`
-  (`compose.yaml` and a private `.env` with the token). The Runner listens on
+  (`builder-compose.yaml` and a private `.env` with the token). The Runner listens on
   `127.0.0.1:8091` (control) and `127.0.0.1:8090` (servers). The settings are added
   to `/etc/ctx-ui/ctx-ui.env`.
 - **Docker.** The files `builder-compose.yaml` and `builder-compose.docker.yaml` are
   put next to the `compose.yaml` of ctx-ui and listed in `COMPOSE_FILE` in `.env`,
   together with `CTXB_VERSION` and `CTXB_RUNNER_TOKEN`, so a plain
-  `docker compose up -d` keeps the builder. The Runner is at `10.212.0.2` and
+  `docker compose up -d` keeps the builder; `.env` is made readable by its owner
+  only, because it holds the token, and `COMPOSE_PROJECT_NAME` is added when the
+  project is not named `ctx-ui`. The Runner is at `10.212.0.2` and
   ctx-ui at `10.212.0.3` on the network `ctxb-control` (8091 control, 8090 servers);
   the Runner publishes no host ports.
   The settings reach ctx-ui through the overlay file.
@@ -62,9 +70,14 @@ extension (`ctx-ui extension remove builder --purge` deletes it). The
 section "Builder" appears in the panel navigation. If the Runner is not
 reachable, the section shows the reason and this command.
 
-The installer pulls three images for `amd64` and `arm64`:
-`ghcr.io/echways/ctx-ui-builder-runner`, `ghcr.io/echways/ctx-ui-builder-runtime`
-and `ghcr.io/echways/ctx-ui-builder-egress`. Rootless Docker and Podman are not
+After `--remove` the inbounds of built servers stay and point at the stopped Runner.
+After a new install the servers show as active but have no containers until you
+press "Start again" on each of them. `--remove` works on a host whose Docker Engine
+has fallen below 29.
+
+The installer pulls three images for the architecture of the host (`amd64` and
+`arm64` are published): `ghcr.io/echways/ctx-ui-builder-runner`,
+`ghcr.io/echways/ctx-ui-builder-runtime` and `ghcr.io/echways/ctx-ui-builder-egress`. Rootless Docker and Podman are not
 supported.
 
 ## First server in five minutes
@@ -258,9 +271,11 @@ in `Authorization: Bearer ctxk_…`, as in the [REST API](../README.md#rest-api)
 
 `publish` takes the optional query parameter `mode`: `Activate` (default) or
 `BuildOnly`. The call returns at once; poll `GET servers/{id}` and read
-`releases[].status`. Errors are `application/problem+json`: 404 no such server or
-version, 409 a build is running, the server is being deleted or the version
-cannot be restored, 503 the Runner settings are incomplete.
+`releases[].status`. Errors are `application/problem+json`: 400 input that is
+refused (a name, a project file, a document), 404 no such server or version,
+409 a build is running, the server is being deleted or the version cannot be
+restored, 502 the Runner answered with an error, 503 the Runner settings are
+incomplete.
 
 ```bash
 curl -X POST -H "Authorization: Bearer ctxk_..." \

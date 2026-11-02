@@ -19,6 +19,11 @@ settings_prefix="CtxUi__Extensions__builder__"
 runner="ctxb-runner"
 egress="ctxb-egress"
 label="ctx-ui.builder"
+missing_version="0.0.0-install-missing"
+clash_network="ctxb-install-clash"
+decoy="ctxb-install-decoy"
+stopped_decoy="ctxb-install-stopped-decoy"
+control_subnet="10.212.0.0/29"
 built=1
 failed=2
 candidate=3
@@ -51,19 +56,31 @@ for name in ctxb-control ctx-ui-builder_outbound; do
         exit 1
     fi
 done
+if [ -n "$(docker ps -a -q --filter "label=$label")$(docker volume ls -q --filter "label=$label")$(docker network ls -q --filter "label=$label")" ]; then
+    echo "containers, volumes or networks labelled $label already exist on this host, they may belong to real builder servers, nothing was changed"
+    exit 1
+fi
+if docker network create --subnet "$control_subnet" "$clash_network" > /dev/null 2>&1; then
+    docker network rm "$clash_network" > /dev/null
+else
+    echo "the subnet $control_subnet is already in use on this host, nothing was changed"
+    exit 1
+fi
 
 dist="$(mktemp -d)"
 stack="$(mktemp -d)"
 failures=0
+listener_pid=""
 
 stack_compose() {
     docker compose --project-directory "$stack" -p "$stack_project" "$@"
 }
 
 remove_builder_objects() {
-    docker ps -a -q --filter "label=$label" | xargs -r docker rm -f > /dev/null 2>&1 || true
-    docker volume ls -q --filter "label=$label" | xargs -r docker volume rm -f > /dev/null 2>&1 || true
-    docker network ls -q --filter "label=$label" | xargs -r docker network rm > /dev/null 2>&1 || true
+    docker rm -f "$runner" "$egress" > /dev/null 2>&1 || true
+    docker ps -a -q --filter "label=$label=$server_id" | xargs -r docker rm -f > /dev/null 2>&1 || true
+    docker volume ls -q --filter "label=$label=$server_id" | xargs -r docker volume rm -f > /dev/null 2>&1 || true
+    docker network ls -q --filter "label=$label=$server_id" | xargs -r docker network rm > /dev/null 2>&1 || true
     docker network rm ctxb-control ctx-ui-builder_outbound > /dev/null 2>&1 || true
 }
 
@@ -72,7 +89,11 @@ cleanup() {
     docker ps -a -q --filter "label=com.docker.compose.project=$stack_project" | xargs -r docker rm -f > /dev/null 2>&1 || true
     docker network ls -q --filter "label=com.docker.compose.project=$stack_project" | xargs -r docker network rm > /dev/null 2>&1 || true
     docker volume ls -q --filter "label=com.docker.compose.project=$stack_project" | xargs -r docker volume rm -f > /dev/null 2>&1 || true
-    docker rm -f "$box" > /dev/null 2>&1 || true
+    docker rm -f "$box" "$decoy" "$stopped_decoy" > /dev/null 2>&1 || true
+    docker network rm "$clash_network" > /dev/null 2>&1 || true
+    if [ -n "$listener_pid" ]; then
+        kill "$listener_pid" 2> /dev/null || true
+    fi
     remove_builder_objects
     docker rmi -f "$runner_image" "$runtime_image" "$egress_image" "$panel_image" "$box_image" > /dev/null 2>&1 || true
     rm -rf "$dist" "$stack"
@@ -211,11 +232,14 @@ PY
 }
 
 builder_containers() {
-    docker ps -a --filter "label=$label" --format '{{.Names}}' | sort | paste -sd ' '
+    {
+        docker ps -a --filter "name=^$runner\$" --filter "name=^$egress\$" --format '{{.Names}}'
+        docker ps -a --filter "label=$label=$server_id" --format '{{.Names}}'
+    } | sort | paste -sd ' '
 }
 
 running_containers() {
-    docker ps --filter "label=$label" --format '{{.Names}}' | sort | paste -sd ' '
+    docker ps --filter "name=^$runner\$" --filter "name=^$egress\$" --format '{{.Names}}' | sort | paste -sd ' '
 }
 
 extension_line() {
@@ -244,6 +268,18 @@ echo "== build"
 mkdir "$dist/tampered"
 cp "$dist/release/"* "$dist/tampered/"
 echo tampered >> "$dist/tampered/builder-$version.zip"
+mkdir "$dist/missing"
+cp "$dist/release/"* "$dist/missing/"
+mv "$dist/missing/builder-$version.zip" "$dist/missing/builder-$missing_version.zip"
+sed -i "s/builder-$version.zip/builder-$missing_version.zip/" "$dist/missing/SHA256SUMS"
+mkdir "$dist/incompatible" "$dist/unpacked"
+cp "$dist/release/"* "$dist/incompatible/"
+unzip -q "$dist/release/builder-$version.zip" -d "$dist/unpacked"
+jq '.api = "9.0"' "$dist/unpacked/extension.json" > "$dist/extension.json"
+mv "$dist/extension.json" "$dist/unpacked/extension.json"
+rm "$dist/incompatible/builder-$version.zip"
+(cd "$dist/unpacked" && zip -q -r "$dist/incompatible/builder-$version.zip" .)
+(cd "$dist/incompatible" && sha256sum "builder-$version.zip" builder-compose.yaml builder-compose.docker.yaml builder-install.sh > SHA256SUMS)
 mkdir "$dist/unstamped"
 cp "$root/deploy/builder/builder-install.sh" "$dist/unstamped/"
 cp "$root/deploy/linux/install.sh" "$dist/install.sh"
@@ -327,6 +363,35 @@ check "the refusal asks for a version" contains "no version given" "$output"
 output="$(installer missing bash /dist/release/builder-install.sh 2>&1)" && code=0 || code=$?
 check "an unreachable release is refused" equals 1 "$code"
 check "the unreachable release changed nothing" equals "$before" "$(box_snapshot)"
+output="$(installer release bash /dist/release/builder-install.sh --version 'x; touch /tmp/not-allowed' 2>&1)" && code=0 || code=$?
+check "a malformed version is refused" equals 1 "$code"
+check "the refusal explains the version" contains "is not a version" "$output"
+check "nothing ran from the version" equals "" "$(in_box sh -c 'ls /tmp/not-allowed 2>/dev/null' || true)"
+check "the malformed version changed nothing" equals "$before" "$(box_snapshot)"
+output="$(installer missing bash /dist/release/builder-install.sh --version "$missing_version" 2>&1)" && code=0 || code=$?
+check "images that cannot be pulled are refused" equals 1 "$code"
+check "the refusal names the pull" contains "could not be pulled" "$output"
+check "the failed pull changed nothing" equals "$before" "$(box_snapshot)"
+output="$(installer incompatible bash /dist/release/builder-install.sh 2>&1)" && code=0 || code=$?
+check "an extension newer than ctx-ui is refused" equals 1 "$code"
+check "the refusal comes from ctx-ui" contains "did not accept the extension" "$output"
+check "the incompatible extension changed nothing" equals "$before" "$(box_snapshot)"
+python3 -m http.server 8091 --bind 127.0.0.1 --directory "$dist" > /dev/null 2>&1 &
+listener_pid=$!
+becomes up 10 bash -c "(exec 3<> /dev/tcp/127.0.0.1/8091) 2> /dev/null && echo up" > /dev/null
+output="$(installer release bash /dist/release/builder-install.sh 2>&1)" && code=0 || code=$?
+check "a busy port is refused" equals 1 "$code"
+check "the refusal names the port" contains "8091" "$output"
+check "the busy port changed nothing" equals "$before" "$(box_snapshot)"
+kill "$listener_pid" 2> /dev/null || true
+listener_pid=""
+docker network create --subnet 10.212.0.0/28 "$clash_network" > /dev/null
+output="$(installer release bash /dist/release/builder-install.sh 2>&1)" && code=0 || code=$?
+check "a clashing subnet is refused" equals 1 "$code"
+check "the refusal names the network" contains "$clash_network" "$output"
+check "the clashing subnet changed nothing" equals "$before" "$(box_snapshot)"
+docker network rm "$clash_network" > /dev/null
+check "the installer sends the token header through stdin" contains "-H @-" "$(cat "$dist/release/builder-install.sh")"
 
 echo "== systemd: install"
 output="$(installer release bash /dist/release/builder-install.sh 2>&1)" && code=0 || code=$?
@@ -370,8 +435,8 @@ check "the extension is still working" equals "builder  $version  ok" "$(extensi
 check "ctx-ui is active after the second run" equals active "$(in_box systemctl is-active ctx-ui)"
 
 echo "== systemd: remove"
-output="$(in_box bash /dist/release/builder-install.sh --remove 2>&1)" && code=0 || code=$?
-check "remove succeeds" equals 0 "$code"
+output="$(installer release env PATH=/dist:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin bash /dist/release/builder-install.sh --remove 2>&1)" && code=0 || code=$?
+check "remove works on Docker below 29" equals 0 "$code"
 check "remove says ctx-ui keeps running" contains "ctx-ui keeps running" "$output"
 check "no container with the label is left" equals "" "$(builder_containers)"
 check "the extension is gone" equals "" "$(extension_line)"
@@ -404,6 +469,8 @@ panel_healthy() {
     docker inspect -f '{{.State.Health.Status}}' "$panel_container"
 }
 check "ctx-ui runs in Docker" becomes healthy 90 panel_healthy
+docker run -d --name "$decoy" --entrypoint sleep --label com.docker.compose.service=ctx-ui --label com.docker.compose.project=ctxb-install-decoy "$panel_image" 600 > /dev/null
+docker create --name "$stopped_decoy" --entrypoint sleep --label com.docker.compose.service=ctx-ui --label com.docker.compose.project=ctxb-install-stopped "$panel_image" 600 > /dev/null
 
 echo "== docker: refusals"
 before="$(stack_snapshot)"
@@ -413,8 +480,24 @@ check "the refused Docker changed nothing" equals "$before" "$(stack_snapshot)"
 output="$(installer tampered bash /dist/release/builder-install.sh 2>&1)" && code=0 || code=$?
 check "a tampered archive is refused" equals 1 "$code"
 check "the tampered archive changed nothing" equals "$before" "$(stack_snapshot)"
+output="$(installer release bash /dist/release/builder-install.sh 2>&1)" && code=0 || code=$?
+check "two running ctx-ui containers are refused" equals 1 "$code"
+check "the refusal lists the candidates" contains "more than one running ctx-ui container" "$output"
+check "the two containers changed nothing" equals "$before" "$(stack_snapshot)"
+docker rm -f "$decoy" > /dev/null
+output="$(installer missing bash /dist/release/builder-install.sh --version "$missing_version" 2>&1)" && code=0 || code=$?
+check "images that cannot be pulled are refused" equals 1 "$code"
+check "the failed pull changed nothing" equals "$before" "$(stack_snapshot)"
+output="$(installer incompatible bash /dist/release/builder-install.sh 2>&1)" && code=0 || code=$?
+check "an extension newer than ctx-ui is refused" equals 1 "$code"
+check "the incompatible extension changed nothing" equals "$before" "$(stack_snapshot)"
+check "the incompatible extension was not installed" lacks builder "$(docker exec "$(stack_compose ps -q ctx-ui)" ctx-ui extension list 2>&1)"
+output="$(installer release bash /dist/release/builder-install.sh --version 'x; touch /tmp/not-allowed' 2>&1)" && code=0 || code=$?
+check "a malformed version is refused" equals 1 "$code"
+check "the malformed version changed nothing" equals "$before" "$(stack_snapshot)"
 
 echo "== docker: install"
+chmod 644 "$stack/.env"
 output="$(installer release bash /dist/release/builder-install.sh 2>&1)" && code=0 || code=$?
 check "the installer succeeds" equals 0 "$code"
 check "the installer reports the version" contains "Server builder $version is installed." "$output"
@@ -424,6 +507,8 @@ token="$(sed -n 's/^CTXB_RUNNER_TOKEN=//p' "$stack/.env")"
 check "the token is 64 hex digits" matches '^[0-9a-f]{64}$' "$token"
 check "the version is written" equals "$version" "$(sed -n 's/^CTXB_VERSION=//p' "$stack/.env")"
 check "the ctx-ui version is untouched" equals "$version" "$(sed -n 's/^CTX_UI_VERSION=//p' "$stack/.env")"
+check "the token file is private and keeps its owner" equals "600 $(id -un)" "$(stat -c '%a %U' "$stack/.env")"
+check "the project name is pinned in .env" equals "$stack_project" "$(sed -n 's/^COMPOSE_PROJECT_NAME=//p' "$stack/.env")"
 expected_files="$stack/compose.yaml:$stack/test.yaml:$stack/builder-compose.yaml:$stack/builder-compose.docker.yaml"
 check "the compose files are listed in .env" equals "$expected_files" "$(sed -n 's/^COMPOSE_FILE=//p' "$stack/.env")"
 check "the compose files are next to the stack" equals "builder-compose.docker.yaml builder-compose.yaml" "$(find "$stack" -name 'builder-*' -printf '%f\n' | sort | paste -sd ' ')"
@@ -445,7 +530,7 @@ check "the extension endpoint answers" equals 200 "$(curl -sk -o /dev/null -w '%
 check "a server builds and activates" build_server http://10.212.0.2:8091 "$token"
 check "the built server answers through the ingress" server_answers http://10.212.0.2:8090
 runner_id="$(docker inspect -f '{{.Id}}' "$runner")"
-check "a plain compose up keeps the builder" bash -c "cd '$stack' && docker compose -p '$stack_project' up -d > /dev/null 2>&1"
+check "a plain compose up keeps the builder" bash -c "cd '$stack' && docker compose up -d > /dev/null 2>&1"
 check "the plain compose up keeps ctx-ui" equals "$panel_container" "$(stack_compose ps -q ctx-ui)"
 check "the plain compose up keeps the Runner" equals "$runner_id" "$(docker inspect -f '{{.Id}}' "$runner")"
 
@@ -455,6 +540,8 @@ output="$(installer release bash /dist/release/builder-install.sh 2>&1)" && code
 check "the second run succeeds" equals 0 "$code"
 check "the token is kept" equals "$token" "$(sed -n 's/^CTXB_RUNNER_TOKEN=//p' "$stack/.env")"
 check "the compose list is not duplicated" equals "$expected_files" "$(sed -n 's/^COMPOSE_FILE=//p' "$stack/.env")"
+check "the project name is not duplicated" equals 1 "$(grep -c '^COMPOSE_PROJECT_NAME=' "$stack/.env")"
+check "the token file stays private" equals "600 $(id -un)" "$(stat -c '%a %U' "$stack/.env")"
 check "the Runner container is the same" equals "$runner_id" "$(docker inspect -f '{{.Id}}' "$runner")"
 check "the server container is the same" equals "$server_id_before" "$(docker inspect -f '{{.Id}}' "$server_container")"
 panel_container="$(stack_compose ps -q ctx-ui)"
@@ -476,6 +563,7 @@ check "the builder files are gone" equals "" "$(find "$stack" -name 'builder-*' 
 check "the token and the version are gone from .env" equals "" "$(grep -E '^(CTXB_|CtxUi__)' "$stack/.env" || true)"
 check "the compose list is back to the stack" equals "$stack/compose.yaml:$stack/test.yaml" "$(sed -n 's/^COMPOSE_FILE=//p' "$stack/.env")"
 check "the ctx-ui settings are kept" equals "localhost" "$(sed -n 's/^CTX_UI_DOMAIN=//p' "$stack/.env")"
+check "the project name stays pinned" equals "$stack_project" "$(sed -n 's/^COMPOSE_PROJECT_NAME=//p' "$stack/.env")"
 check "the extension endpoint is gone" equals 302 "$(curl -sk -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $key" "$panel_endpoint")"
 check "a second remove succeeds" in_box bash /dist/release/builder-install.sh --remove
 

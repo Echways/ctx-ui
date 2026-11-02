@@ -21,23 +21,29 @@ curl -fsSL https://github.com/Echways/ctx-ui/releases/latest/download/builder-in
 ```
 
 Установщик определяет способ установки ctx-ui (systemd, если есть служба
-`ctx-ui.service`, иначе работающий проект Docker compose со службой `ctx-ui`),
-проверяет, что Docker Engine версии 29 или новее, и сверяет скачанные файлы с
-`SHA256SUMS` релиза. Если что-то не так, он останавливается до любых изменений. Затем он
-генерирует токен Runner, поднимает контейнеры `ctxb-runner` и `ctxb-egress`, ждёт, пока
+`ctx-ui.service`, иначе ровно один работающий контейнер образа
+`ghcr.io/echways/ctx-ui` из проекта Docker compose со службой `ctx-ui`; если кандидатов
+несколько, он останавливается и перечисляет их), проверяет, что Docker Engine версии 29
+или новее, и сверяет скачанные файлы с `SHA256SUMS` релиза. До запуска чего-либо он
+проверяет, что подсеть `10.212.0.0/29` и (для systemd) порты 8090 и 8091 на 127.0.0.1
+свободны, скачивает три образа и просит ctx-ui проверить, что расширение подходит ему по
+версии API расширений. Если что-то из этого не получилось, он останавливается с
+сообщением: Runner не запущен, настройки ctx-ui и `.env` не тронуты, а расширение,
+установленное для проверки, снова удалено. Затем он генерирует токен Runner, поднимает контейнеры `ctxb-runner` и `ctxb-egress`, ждёт, пока
 Runner сообщит версию релиза, ставит расширение, записывает настройки
 `CtxUi__Extensions__builder__RunnerUrl`, `CtxUi__Extensions__builder__RunnerIngressUrl`
 и `CtxUi__Extensions__builder__RunnerToken` и перезапускает ctx-ui. Токен и адрес руками
 задавать не нужно.
 
 - **systemd.** Проект compose `ctx-ui-builder` лежит в `/opt/ctx-ui-builder`
-  (`compose.yaml` и закрытый `.env` с токеном). Runner слушает `127.0.0.1:8091`
+  (`builder-compose.yaml` и закрытый `.env` с токеном). Runner слушает `127.0.0.1:8091`
   (управление) и `127.0.0.1:8090` (серверы). Настройки добавляются в
   `/etc/ctx-ui/ctx-ui.env`.
 - **Docker.** Файлы `builder-compose.yaml` и `builder-compose.docker.yaml` кладутся рядом
   с `compose.yaml` ctx-ui и перечисляются в `COMPOSE_FILE` в `.env` вместе с
   `CTXB_VERSION` и `CTXB_RUNNER_TOKEN`, поэтому обычный `docker compose up -d` сохраняет
-  конструктор. Runner стоит на `10.212.0.2`, а ctx-ui на `10.212.0.3` в сети `ctxb-control` (8091
+  конструктор; `.env` доступен только владельцу, потому что хранит токен, а
+  `COMPOSE_PROJECT_NAME` добавляется, если проект называется не `ctx-ui`. Runner стоит на `10.212.0.2`, а ctx-ui на `10.212.0.3` в сети `ctxb-control` (8091
   управление, 8090 серверы); Runner не публикует портов на хосте. Настройки попадают в ctx-ui через файл-оверлей.
 
 | Параметр | Что делает |
@@ -60,9 +66,14 @@ curl -fsSL https://github.com/Echways/ctx-ui/releases/latest/download/builder-in
 навигации панели появляется раздел «Конструктор». Если Runner недоступен, раздел
 показывает причину и эту команду.
 
-Установщик скачивает три образа для `amd64` и `arm64`:
-`ghcr.io/echways/ctx-ui-builder-runner`, `ghcr.io/echways/ctx-ui-builder-runtime` и
-`ghcr.io/echways/ctx-ui-builder-egress`. Rootless Docker и Podman не поддерживаются.
+После `--remove` входящие подключения собранных серверов остаются и указывают на
+остановленный Runner. После новой установки серверы показываются как активные, но
+контейнеров у них нет, пока вы не нажмёте «Запустить снова» у каждого. `--remove`
+работает и на хосте, где Docker Engine стал ниже версии 29.
+
+Установщик скачивает три образа для архитектуры хоста (публикуются `amd64` и
+`arm64`): `ghcr.io/echways/ctx-ui-builder-runner`,
+`ghcr.io/echways/ctx-ui-builder-runtime` и `ghcr.io/echways/ctx-ui-builder-egress`. Rootless Docker и Podman не поддерживаются.
 
 ## Первый сервер за пять минут
 
@@ -247,9 +258,10 @@ docker compose restart ctx-ui
 
 У `publish` есть необязательный параметр запроса `mode`: `Activate` (по умолчанию) или
 `BuildOnly`. Вызов возвращается сразу; опрашивайте `GET servers/{id}` и читайте
-`releases[].status`. Ошибки приходят как `application/problem+json`: 404 нет такого
-сервера или версии, 409 идёт сборка, сервер удаляется или версию нельзя восстановить,
-503 настройки Runner заданы не полностью.
+`releases[].status`. Ошибки приходят как `application/problem+json`: 400 отклонённый
+ввод (имя, файл проекта, документ), 404 нет такого сервера или версии, 409 идёт сборка,
+сервер удаляется или версию нельзя восстановить, 502 Runner ответил ошибкой, 503
+настройки Runner заданы не полностью.
 
 ```bash
 curl -X POST -H "Authorization: Bearer ctxk_..." \

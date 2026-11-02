@@ -29,6 +29,19 @@ public sealed class BuilderDocumentTests
         Assert.Throws<PanelException>(() => BuilderDocument.WithResource(new BuilderDocumentModel([Cities(), Cities() with { Uri = "data://towns" }], []), Cities() with { Uri = "data://towns" }, "data://cities"));
     }
 
+    [Theory]
+    [InlineData("/cities")]
+    [InlineData("cities")]
+    [InlineData("1data://cities")]
+    [InlineData("://cities")]
+    [InlineData("data://my cities")]
+    public void Resource_uri_without_an_explicit_scheme_is_refused(string uri)
+    {
+        var model = new BuilderDocumentModel([Cities() with { Uri = uri }], []);
+
+        Assert.Throws<PanelException>(() => BuilderDocument.Write(model));
+    }
+
     [Fact]
     public void Duplicate_prompt_name_is_refused()
     {

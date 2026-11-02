@@ -33,6 +33,9 @@ public static partial class BuilderDocument
     [GeneratedRegex(@"^\S+$")]
     private static partial Regex PromptNamePattern();
 
+    [GeneratedRegex(@"^[A-Za-z][A-Za-z0-9+.-]*:")]
+    private static partial Regex UriSchemePattern();
+
     public static IReadOnlyList<string> Arguments(string template) =>
         [.. Placeholder().Matches(template).Select(match => match.Groups[1].Value).Distinct(StringComparer.Ordinal)];
 
@@ -144,7 +147,7 @@ public static partial class BuilderDocument
     {
         foreach (var resource in model.Resources)
         {
-            if (!System.Uri.TryCreate(resource.Uri, UriKind.Absolute, out var uri) || uri.Scheme.Length == 0 || resource.Uri.Any(char.IsWhiteSpace))
+            if (!UriSchemePattern().IsMatch(resource.Uri) || !System.Uri.TryCreate(resource.Uri, UriKind.Absolute, out _) || resource.Uri.Any(char.IsWhiteSpace))
                 throw new PanelException(string.Format(BuilderText.ResourceUriInvalid, resource.Uri));
             if (string.IsNullOrWhiteSpace(resource.Name) || resource.Name.Length > MaxNameLength)
                 throw new PanelException(string.Format(BuilderText.BuilderNameInvalid, resource.Name));

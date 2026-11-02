@@ -48,6 +48,7 @@ listener_pid=""
 load_pid=""
 events_pid=""
 slow_pid=""
+eat_pid=""
 
 compose() {
     CTX_UI_VERSION="$version" CTXB_RUNNER_TOKEN="$token" docker compose -p "$project" -f "$root/deploy/builder/compose.yaml" "$@"
@@ -58,7 +59,7 @@ api() {
 }
 
 cleanup() {
-    for pid in "$listener_pid" "$load_pid" "$events_pid" "$slow_pid"; do
+    for pid in "$listener_pid" "$load_pid" "$events_pid" "$slow_pid" "$eat_pid"; do
         if [ -n "$pid" ]; then
             kill "$pid" 2> /dev/null || true
         fi
@@ -255,6 +256,53 @@ connects_within() {
     return 1
 }
 
+not_connected() {
+    local answer
+    answer="$(outcome "$@")"
+    [ "$answer" != connected ] || { echo "      a connection to ${*:2} was established"; return 1; }
+}
+
+other_hosts_of() {
+    python3 -c "
+import ipaddress, sys
+excluded = set(sys.argv[2:])
+for host in ipaddress.ip_network(sys.argv[1]).hosts():
+    if str(host) not in excluded:
+        print(host)
+" "$(docker network inspect -f '{{(index .IPAM.Config 0).Subnet}}' "$1")" "${@:2}"
+}
+
+no_peer_answers() {
+    local network="$1" container="$2" port="$3" answer address
+    shift 3
+    for address in $(other_hosts_of "$network" "$@"); do
+        answer="$(outcome "$container" "$address" "$port")"
+        if [ "$answer" != EHOSTUNREACH ] && [ "$answer" != ENETUNREACH ]; then
+            echo "      $address answered '$answer'"
+            return 1
+        fi
+    done
+}
+
+bridge_of() {
+    echo "br-$(docker network inspect -f '{{printf "%.12s" .Id}}' "$1")"
+}
+
+bridge_has_no_address() {
+    local bridge
+    bridge="$(bridge_of "$1")"
+    ip link show dev "$bridge" > /dev/null || return 1
+    [ -z "$(ip -4 -o addr show dev "$bridge")" ] || { ip -4 -o addr show dev "$bridge"; return 1; }
+}
+
+host_listener_answers() {
+    [ "$(curl -s -o /dev/null -w '%{http_code}' -m 5 "http://127.0.0.1:$host_port/")" = 200 ]
+}
+
+compose_config() {
+    CTX_UI_VERSION="$version" CTX_UI_DOMAIN=panel.example.test CTXB_RUNNER_TOKEN="$token" docker compose "$@" config --format json
+}
+
 read -r -d '' http_script <<'PY' || true
 import sys
 import urllib.error
@@ -321,11 +369,6 @@ gateway_of() {
     docker network inspect -f '{{(index .IPAM.Config 0).Gateway}}' "$1"
 }
 
-first_address_of() {
-    python3 -c "import ipaddress, sys; print(next(ipaddress.ip_network(sys.argv[1]).hosts()))" \
-        "$(docker network inspect -f '{{(index .IPAM.Config 0).Subnet}}' "$1")"
-}
-
 write_project() {
     local dir="$1" label="$2"
     mkdir -p "$dir/mcp"
@@ -368,13 +411,30 @@ PY
     tar --owner=10001 --group=10001 --numeric-owner -C "$dir" -czf "$dir.tar.gz" fastmcp.json main.py mcp
 }
 
+echo "== compose files"
+standalone="$(compose_config -f "$root/deploy/builder/compose.yaml")"
+combined="$(compose_config -f "$root/deploy/docker/compose.yaml" -f "$root/deploy/builder/compose.yaml" -f "$root/deploy/builder/compose.docker.yaml")"
+check "the standalone project is named ctx-ui-builder" equals ctx-ui-builder "$(jq -r '.name' <<< "$standalone")"
+check "the standalone runner publishes both ports on loopback" equals "127.0.0.1:8090 127.0.0.1:8091" \
+    "$(jq -r '[.services.runner.ports[] | "\(.host_ip):\(.published)"] | sort | join(" ")' <<< "$standalone")"
+check "the combined project keeps the name ctx-ui" equals ctx-ui "$(jq -r '.name' <<< "$combined")"
+check "ctx-ui is attached to the control network" contains ctxb-control "$(jq -r '.services["ctx-ui"].networks | keys | join(" ")' <<< "$combined")"
+check "ctx-ui stays on its own default network" contains default "$(jq -r '.services["ctx-ui"].networks | keys | join(" ")' <<< "$combined")"
+check "the combined runner publishes no ports" equals 0 "$(jq -r '.services.runner.ports // [] | length' <<< "$combined")"
+check "the combined runner keeps its fixed address" equals "$runner_ip" "$(jq -r '.services.runner.networks["ctxb-control"].ipv4_address' <<< "$combined")"
+check "the runner binds to the address the extension uses" equals "http://$runner_ip:8091" \
+    "http://$(jq -r '.services.runner.environment.RUNNER_BIND' <<< "$combined"):$(jq -r '.services.runner.ports[] | select(.published == "8091") | .target' <<< "$standalone")"
+check "the control network is the planned one" equals 10.212.0.0/29 "$(jq -r '.networks["ctxb-control"].ipam.config[0].subnet' <<< "$combined")"
+check "the combined project holds ctx-ui, caddy, runner and egress" equals "caddy ctx-ui egress runner" "$(jq -r '.services | keys | join(" ")' <<< "$combined")"
+
 echo "== images"
 docker build -q -t "$runtime_image" "$root/extensions/builder/runtime" > /dev/null || { echo "FAIL  the runtime image builds"; exit 1; }
 docker build -q -t "$egress_image" "$root/extensions/builder/egress" > /dev/null || { echo "FAIL  the egress image builds"; exit 1; }
 docker build -q -t "$runner_image" -f "$root/extensions/builder/CtxUi.Builder.Runner/Dockerfile" "$root" > /dev/null || { echo "FAIL  the runner image builds"; exit 1; }
 echo "ok    the runner, runtime and egress images build"
 
-python3 -m http.server "$host_port" --bind 0.0.0.0 --directory "$work" > /dev/null 2>&1 &
+mkdir "$work/serve"
+python3 -m http.server "$host_port" --bind 0.0.0.0 --directory "$work/serve" > /dev/null 2>&1 &
 listener_pid=$!
 write_project "$work/v1" v1
 write_project "$work/v2" v2
@@ -445,7 +505,6 @@ ingress_call "$a_id" "$secret" slow '{"seconds":110}' 170 > "$work/slow.out" &
 slow_pid=$!
 
 echo "== isolation of server A"
-a_gateway="$(first_address_of "$a_net")"
 b_address="$(address_on "$b_container" "$b_net")"
 check "the probe reaches the proxy from A" equals connected "$(outcome "$a_container" "$egress" 3128)"
 check "the probe reaches A itself" equals connected "$(outcome "$a_container" 127.0.0.1 8000)"
@@ -454,11 +513,16 @@ check "a direct connection to the internet has no route" equals ENETUNREACH "$(o
 check "server B has no route from A" equals ENETUNREACH "$(outcome "$a_container" "$b_address" 8000)"
 check "the internal network is created with an isolated gateway" equals isolated "$(docker network inspect -f '{{index .Options "com.docker.network.bridge.gateway_mode_ipv4"}}' "$a_net")"
 check "the internal network is internal" equals true "$(docker network inspect -f '{{.Internal}}' "$a_net")"
-check "the host service through the gateway is not reachable" matches '^(EHOSTUNREACH|ENETUNREACH|refused|timeout)$' "$(outcome "$a_container" "$a_gateway" "$host_port")"
+check "the host service answers on the host" host_listener_answers
+a_address="$(address_on "$a_container" "$a_net")"
+egress_on_a="$(address_on "$egress" "$a_net")"
+runner_on_a="$(address_on "$runner" "$a_net")"
+check "the internal network has no gateway address" equals null "$(docker network inspect "$a_net" | jq -r '.[0].IPAM.Config[0].Gateway // "null"')"
+check "the host bridge of the internal network holds no address" bridge_has_no_address "$a_net"
+check "the host service reaches nobody else in the internal network" no_peer_answers "$a_net" "$a_container" "$host_port" "$a_address" "$egress_on_a" "$runner_on_a"
 check "runner ingress port has no route" equals ENETUNREACH "$(outcome "$a_container" "$runner_ip" 8090)"
 check "runner control port has no route" equals ENETUNREACH "$(outcome "$a_container" "$runner_ip" 8091)"
 check "A is attached to its own network only" equals "$a_net" "$(networks_of "$a_container")"
-egress_on_a="$(address_on "$egress" "$a_net")"
 check "the proxy refuses server B" equals 403 "$(via_proxy_status "$a_container" "http://$b_address:8000/")"
 check "the proxy refuses 10.0.0.1" equals 403 "$(via_proxy_status "$a_container" http://10.0.0.1/)"
 check "the proxy refuses 172.16.0.1" equals 403 "$(via_proxy_status "$a_container" http://172.16.0.1/)"
@@ -501,6 +565,7 @@ for _ in $(seq 1 600); do
     sleep 0.05
 done
 wait "$eat_pid" || true
+eat_pid=""
 kill "$events_pid" 2> /dev/null || true
 events_pid=""
 check "the memory event of B is an oom kill" contains oom "$(cat "$work/oom.events")"
@@ -569,10 +634,16 @@ full_gateway="$(gateway_of "$full_network")"
 b_address="$(address_on "$b_container" "$b_net")"
 check "the host service is reachable on the full network" equals connected "$(outcome "$full_container" "$full_gateway" "$host_port")"
 check "the http probe reaches the host service on the full network" equals http-200 "$(http_outcome "$full_container" "$full_gateway" "$host_port")"
-check "server B serves nothing to the full network" matches '^[A-Za-z]+$' "$(http_outcome "$full_container" "$b_address" 8000)"
-check "runner ingress port serves nothing to the full network" matches '^[A-Za-z]+$' "$(http_outcome "$full_container" "$runner_ip" 8090)"
-check "runner control port serves nothing to the full network" matches '^[A-Za-z]+$' "$(http_outcome "$full_container" "$runner_ip" 8091)"
-check "published runner ports serve nothing through the gateway" matches '^[A-Za-z]+$' "$(http_outcome "$full_container" "$full_gateway" 8091)"
+canary_address="$(python3 -c "import ipaddress; print(list(ipaddress.ip_network('10.213.0.0/16').hosts())[-1])")"
+if [ "$(outcome "$full_container" "$canary_address" 8000)" = connected ]; then
+    echo "skip  server B accepts no connection from the full network: this host answers for unallocated server pool addresses"
+else
+    check "server B accepts no connection from the full network" not_connected "$full_container" "$b_address" 8000
+fi
+check "runner ingress port accepts no connection from the full network" not_connected "$full_container" "$runner_ip" 8090
+check "runner control port accepts no connection from the full network" not_connected "$full_container" "$runner_ip" 8091
+check "published ingress port accepts no connection through the gateway" not_connected "$full_container" "$full_gateway" 8090
+check "published control port accepts no connection through the gateway" not_connected "$full_container" "$full_gateway" 8091
 check "the internet is reachable directly on the full network" connects_within 3 "$full_container" 1.1.1.1 443
 check "the full network container is still read-only" contains "Read-only file system" "$(docker exec "$full_container" touch /x 2>&1 || true)"
 check "the full network container still answers" ingress_becomes_ok "$a_id"

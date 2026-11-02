@@ -1,3 +1,4 @@
+@implements IUnsavedForm
 @inject ServerCatalog Catalog
 
 <div class="builder-tool-form" data-testid="prompt-form">
@@ -54,7 +55,15 @@
     [Parameter]
     public EventCallback OnReload { get; set; }
 
-    protected override void OnInitialized() => _draft = Prompt is null ? new PromptFormDraft() : PromptFormDraft.From(Prompt);
+    private string _baseline = string.Empty;
+
+    public bool HasUnsavedChanges => DraftSnapshot.Of(_draft) != _baseline;
+
+    protected override void OnInitialized()
+    {
+        _draft = Prompt is null ? new PromptFormDraft() : PromptFormDraft.From(Prompt);
+        _baseline = DraftSnapshot.Of(_draft);
+    }
 
     private async Task SaveAsync()
     {

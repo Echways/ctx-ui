@@ -346,10 +346,10 @@
     <value>These settings were changed elsewhere. Your input is kept here; reload the page to see the new values before saving.</value>
   </data>
   <data name="UnsavedBlocked" xml:space="preserve">
-    <value>Your text in this file is not saved. Load the new version or keep your text first, or discard it explicitly.</value>
+    <value>Your changes here are not saved. Save them or resolve the conflict first, or discard them explicitly.</value>
   </data>
   <data name="DiscardMine" xml:space="preserve">
-    <value>Discard my text and continue</value>
+    <value>Discard my changes and continue</value>
   </data>
   <data name="PublishBusy" xml:space="preserve">
     <value>A version of this server is still being built. Wait for it to finish.</value>

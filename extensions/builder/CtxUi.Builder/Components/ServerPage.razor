@@ -65,18 +65,18 @@ else
             }
             else if (_view == ServerView.Form)
             {
-                <ToolForm @key="@($"{_formName}:{_draftRevision}")" ServerId="Id" Tool="_formTools.FirstOrDefault(tool => tool.Name == _formName)"
+                <ToolForm @ref="_form" @key="@($"{_formName}:{_draftRevision}")" ServerId="Id" Tool="_formTools.FirstOrDefault(tool => tool.Name == _formName)"
                           Revision="_draftRevision"
                           OnSaved="FormSavedAsync" OnDeleted="FormDeletedAsync" OnConverted="FormConvertedAsync" OnReload="ReloadFormAsync" />
             }
             else if (_view == ServerView.Resource)
             {
-                <ResourceForm @key="@($"{_resourceUri}:{_draftRevision}")" ServerId="Id" Resource="_document.Resources.FirstOrDefault(resource => resource.Uri == _resourceUri)"
+                <ResourceForm @ref="_form" @key="@($"{_resourceUri}:{_draftRevision}")" ServerId="Id" Resource="_document.Resources.FirstOrDefault(resource => resource.Uri == _resourceUri)"
                               Revision="_draftRevision" OnSaved="ResourceSavedAsync" OnDeleted="BuilderEntryDeletedAsync" OnReload="ReloadFormAsync" />
             }
             else if (_view == ServerView.Prompt)
             {
-                <PromptForm @key="@($"{_promptName}:{_draftRevision}")" ServerId="Id" Prompt="_document.Prompts.FirstOrDefault(prompt => prompt.Name == _promptName)"
+                <PromptForm @ref="_form" @key="@($"{_promptName}:{_draftRevision}")" ServerId="Id" Prompt="_document.Prompts.FirstOrDefault(prompt => prompt.Name == _promptName)"
                             Revision="_draftRevision" OnSaved="PromptSavedAsync" OnDeleted="BuilderEntryDeletedAsync" OnReload="ReloadFormAsync" />
             }
             else if (_view == ServerView.Test)
@@ -218,7 +218,11 @@ else
 
     private Func<Task>? _blockedAction;
 
-    private async Task<bool> FlushAsync() => _editor is null || await _editor.TryFlushAsync();
+    private IUnsavedForm? _form;
+
+    private bool FormUnsaved => _view is ServerView.Form or ServerView.Resource or ServerView.Prompt && _form?.HasUnsavedChanges == true;
+
+    private async Task<bool> FlushAsync() => (_editor is null || await _editor.TryFlushAsync()) && !FormUnsaved;
 
     private async Task GuardedAsync(Func<Task> action)
     {

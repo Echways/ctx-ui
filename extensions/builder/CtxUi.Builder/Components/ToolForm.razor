@@ -1,3 +1,4 @@
+@implements IUnsavedForm
 @inject ServerCatalog Catalog
 
 <div class="builder-tool-form" data-testid="tool-form">
@@ -105,7 +106,15 @@
     [Parameter]
     public EventCallback OnReload { get; set; }
 
-    protected override void OnInitialized() => _draft = Tool is null ? new ToolFormDraft() : ToolFormDraft.From(Tool);
+    private string _baseline = string.Empty;
+
+    public bool HasUnsavedChanges => DraftSnapshot.Of(_draft) != _baseline;
+
+    protected override void OnInitialized()
+    {
+        _draft = Tool is null ? new ToolFormDraft() : ToolFormDraft.From(Tool);
+        _baseline = DraftSnapshot.Of(_draft);
+    }
 
     private void AddParameter() => _draft.Parameters.Add(new ParameterRow());
 

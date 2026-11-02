@@ -61,6 +61,35 @@ public sealed class BuilderFlowTests(RunnerFixture runner) : IClassFixture<Runne
         Assert.DoesNotContain("fail:", session.Panel.Log, StringComparison.Ordinal);
     }
 
+    [Fact(Skip = BuilderEnvironment.Requirements, SkipUnless = nameof(BuilderEnvironment.Ready), SkipType = typeof(BuilderEnvironment))]
+    public async Task Unsaved_form_text_blocks_switching_until_it_is_discarded()
+    {
+        await using var session = await BuilderSession.StartAsync(runner.Stack);
+        await session.CreateServerAsync("Notes", "notes");
+
+        await AssertBlocksAsync(session, "new-form-tool", "tool-form", "Tool name", "lookup");
+        await AssertBlocksAsync(session, "new-resource", "resource-form", "Address (URI)", "data://cities");
+        await AssertBlocksAsync(session, "new-prompt", "prompt-form", "Name", "report");
+
+        await session.Page.GetByTestId("new-resource").ClickAsync();
+        await session.Page.GetByTestId("open-releases").ClickAsync();
+        await Expect(session.Page.GetByTestId("switch-blocked")).ToHaveCountAsync(0);
+        Assert.DoesNotContain("fail:", session.Panel.Log, StringComparison.Ordinal);
+    }
+
+    private static async Task AssertBlocksAsync(BuilderSession session, string opener, string form, string label, string text)
+    {
+        await session.Page.GetByTestId(opener).ClickAsync();
+        var field = session.Page.GetByTestId(form).GetByLabel(label, new() { Exact = true }).First;
+        await field.FillAsync(text);
+        await session.Page.GetByTestId("open-releases").ClickAsync();
+        await Expect(session.Page.GetByTestId("switch-blocked")).ToBeVisibleAsync();
+        await Expect(field).ToHaveValueAsync(text);
+        await session.Page.GetByTestId("discard-mine").ClickAsync();
+        await Expect(session.Page.GetByTestId("switch-blocked")).ToHaveCountAsync(0);
+        await Expect(session.Page.GetByTestId(form)).ToHaveCountAsync(0);
+    }
+
     [Fact(Skip = "Set CTXUI_BINARY to a ctx-ui server binary to run the builder flow tests", SkipUnless = nameof(BuilderEnvironment.PanelBinaryIsSet), SkipType = typeof(BuilderEnvironment))]
     public async Task Panel_without_the_extension_shows_no_trace_of_it()
     {

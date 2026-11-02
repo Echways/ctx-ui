@@ -358,7 +358,7 @@ public static partial class ProjectFiles
                 name = name.TrimEnd('/');
             if (name.Length == 0)
                 return name;
-            if ( name.StartsWith('/')
+            if (name.StartsWith('/')
                 || name.Length > MaxPathLength
                 || name.Any(char.IsControl)
                 || name.Contains('\\')

@@ -195,7 +195,7 @@ public sealed class OpenApiDraftTests
     [Fact]
     public void Convert_to_code_puts_required_parameters_before_optional_ones()
     {
-        var tool = new FormTool("send", "POST", "/send",  null,
+        var tool = new FormTool("send", "POST", "/send", null,
         [
             new ToolParameter("note", "string", ParameterPlace.Body, false, null, null),
             new ToolParameter("text", "string", ParameterPlace.Body, true, null, null),

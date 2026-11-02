@@ -186,7 +186,9 @@ public static class RunnerEndpoints
     {
         var version = await docker.VersionAsync(ct);
         var egress = await IsEgressRunningAsync(docker, options, ct);
-        var runnerVersion = Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? "0.0.0";
+        var runnerVersion = ReleaseVersion.Of(Assembly.GetExecutingAssembly());
+        if (runnerVersion.Length == 0)
+            runnerVersion = "0.0.0";
         return Results.Ok(new RunnerHealth(runnerVersion, version, egress));
     }
 

@@ -40,10 +40,5 @@ public sealed class RunnerAvailability(RunnerSettings settings, RunnerClient cli
         }
     }
 
-    private static string ReadVersion()
-    {
-        var version = typeof(RunnerAvailability).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? "";
-        var plus = version.IndexOf('+');
-        return plus < 0 ? version : version[..plus];
-    }
+    private static string ReadVersion() => ReleaseVersion.Of(typeof(RunnerAvailability).Assembly);
 }

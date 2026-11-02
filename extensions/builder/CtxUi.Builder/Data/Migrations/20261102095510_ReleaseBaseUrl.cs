@@ -15,6 +15,8 @@ namespace CtxUi.Builder.Data.Migrations
                 table: "Releases",
                 type: "TEXT",
                 nullable: true);
+
+            migrationBuilder.Sql("UPDATE Releases SET BaseUrl = (SELECT BaseUrl FROM Drafts WHERE Drafts.ServerId = Releases.ServerId)");
         }
 
         /// <inheritdoc />

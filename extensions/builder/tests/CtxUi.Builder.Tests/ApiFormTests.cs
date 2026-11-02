@@ -31,4 +31,23 @@ public sealed class ApiFormTests
         Assert.True(new ApiForm { BaseUrl = "https://api.example.com", Kind = ApiAuthKind.None }.ChangesAuth(Saved()));
         Assert.True(new ApiForm { BaseUrl = "https://api.example.com", Kind = ApiAuthKind.Bearer }.ChangesAuth(Saved(ApiAuthKind.None)));
     }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("  ")]
+    public void An_empty_header_name_equals_a_missing_one(string? name)
+    {
+        var saved = Saved(ApiAuthKind.Header) with { AuthHeaderName = null };
+
+        Assert.False(new ApiForm { BaseUrl = "https://api.example.com", Kind = ApiAuthKind.Header, HeaderName = name }.ChangesAuth(saved));
+    }
+
+    [Fact]
+    public void A_padded_header_name_equals_the_stored_one()
+    {
+        var saved = Saved(ApiAuthKind.Header) with { AuthHeaderName = "X-Api-Key" };
+
+        Assert.False(new ApiForm { BaseUrl = "https://api.example.com", Kind = ApiAuthKind.Header, HeaderName = " X-Api-Key " }.ChangesAuth(saved));
+    }
 }

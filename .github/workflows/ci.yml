@@ -198,3 +198,34 @@ jobs:
       - name: Run isolation checks
         if: ${{ !cancelled() }}
         run: deploy/tests/builder-isolation.sh
+
+  builder-flow:
+    name: "Builder: end to end"
+    runs-on: ubuntu-26.04
+    timeout-minutes: 30
+    steps:
+      - name: Check out
+        uses: actions/checkout@v7
+
+      - name: Set up .NET
+        uses: ./.github/actions/dotnet
+
+      - name: Publish server
+        run: dotnet publish src/CtxUi.Server -c Release -r linux-x64 --self-contained -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=true -p:DebugType=none -p:Version=0.0.1 -o "$RUNNER_TEMP/server"
+
+      - name: Build flow tests
+        run: dotnet build extensions/builder/tests/CtxUi.Builder.BlackBoxTests -c Release
+
+      - name: Restore Chromium cache
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('Directory.Packages.props') }}
+
+      - name: Install Chromium
+        run: pwsh extensions/builder/tests/CtxUi.Builder.BlackBoxTests/bin/Release/net10.0/playwright.ps1 install --with-deps chromium
+
+      - name: Run flow tests
+        env:
+          CTXUI_BINARY: ${{ runner.temp }}/server/ctx-ui
+        run: dotnet test --project extensions/builder/tests/CtxUi.Builder.BlackBoxTests -c Release --no-build

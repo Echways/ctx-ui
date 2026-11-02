@@ -86,7 +86,10 @@ def assert_unique_tool_names(providers):
 def build_server():
     providers = []
     if (root / "mcp").is_dir():
-        providers.append(FileSystemProvider(root / "mcp"))
+        files = FileSystemProvider(root / "mcp")
+        if files.failed_files:
+            fail("tool files could not be loaded: " + "; ".join(f"{path.name}: {error}" for path, error in sorted(files.failed_files.items())))
+        providers.append(files)
     spec = read_json("openapi.json")
     if spec is not None:
         providers.append(build_openapi_provider(spec))

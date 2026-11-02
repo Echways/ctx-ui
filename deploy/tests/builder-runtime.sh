@@ -295,6 +295,19 @@ timeout 60 docker run --rm --label "$label" --network "$network" "${hardened[@]}
 check "a tool name from two providers stops the server with code 1" equals "1" "$code"
 check "the failure names the tool" contains "tool name defined more than once: get_package" "$(cat "$work/conflict.log")"
 
+echo "== broken code"
+broken="$work/broken"
+write_hello_project "$broken"
+printf 'def broken(:\n' > "$broken/mcp/broken.py"
+seed_project broken "$broken"
+prepare broken
+code=0
+timeout 60 docker run --rm --label "$label" --network "$network" "${hardened[@]}" "${proxied[@]}" --env BUILDER_BASE_URL=https://pypi.org \
+    -v broken-code:/code:ro -v broken-env:/env:ro "$runtime_image" \
+    /env/.venv/bin/fastmcp run /code/fastmcp.json --skip-env --no-banner > "$work/broken.log" 2>&1 || code=$?
+check "a file that does not import stops the server with code 1" equals "1" "$code"
+check "the failure names the file" contains "broken.py" "$(cat "$work/broken.log")"
+
 echo "== openapi without a base url"
 docker run --rm --label "$label" --network "$network" "${hardened[@]}" -v hello-code:/code:ro -v hello-env:/env:ro \
     "$runtime_image" /env/.venv/bin/fastmcp run /code/fastmcp.json --skip-env --no-banner > "$work/nobase.log" 2>&1 || true

@@ -5,6 +5,7 @@
     <Project Path="extensions/builder/CtxUi.Builder.Runner/CtxUi.Builder.Runner.csproj" />
   </Folder>
   <Folder Name="/extensions/tests/">
+    <Project Path="extensions/builder/tests/CtxUi.Builder.BlackBoxTests/CtxUi.Builder.BlackBoxTests.csproj" />
     <Project Path="extensions/builder/tests/CtxUi.Builder.Runner.Tests/CtxUi.Builder.Runner.Tests.csproj" />
     <Project Path="extensions/builder/tests/CtxUi.Builder.Tests/CtxUi.Builder.Tests.csproj" />
   </Folder>

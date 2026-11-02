@@ -16,6 +16,9 @@ public sealed record FormTool(string Name, string Method, string Path, string? D
 
 public static partial class OpenApiDraft
 {
+    public const string ComplexType = "complex";
+    public const int MaxNameLength = 56;
+
     public static readonly IReadOnlyList<string> Methods = ["get", "post", "put", "patch", "delete"];
 
     public static readonly IReadOnlyList<string> Types = ["string", "integer", "number", "boolean", "array", "object"];
@@ -24,17 +27,17 @@ public static partial class OpenApiDraft
     private const string ComponentsPrefix = "#/components/";
     private const string EmptyDocument = """{"openapi":"3.0.3","info":{"title":"API","version":"1.0.0"},"paths":{}}""";
 
+    private static readonly string[] Combinators = ["$ref", "anyOf", "oneOf", "allOf", "not"];
+
     private static readonly JsonSerializerOptions Output = new() { WriteIndented = true, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
 
-    [GeneratedRegex("^[A-Za-z0-9_-]{1,64}$")]
+    [GeneratedRegex("^(?=.{1,56}$)[A-Za-z0-9]+(?:_[A-Za-z0-9]+)*$")]
     private static partial Regex NamePattern();
 
     [GeneratedRegex(@"\{([^{}]+)\}")]
     private static partial Regex Placeholder();
 
     public static string ToolFilePath(string toolName) => $"mcp/{ProjectFiles.ToolFunctionName(toolName)}.py";
-
-    public static bool IsValidName(string name) => NamePattern().IsMatch(name);
 
     public static IReadOnlyList<FormTool> Read(string openApiJson)
     {
@@ -85,17 +88,31 @@ public static partial class OpenApiDraft
         return (Remove(openApiJson, toolName), PythonToolSource.Render(tool));
     }
 
-    public static string Merge(string existingJson, string additionsJson)
+    public static IReadOnlySet<string> Names(string openApiJson) =>
+        string.IsNullOrWhiteSpace(openApiJson) ? new HashSet<string>() : Operations(Parse(openApiJson)).Select(entry => entry.Name).ToHashSet(StringComparer.Ordinal);
+
+    public static string Merge(string existingJson, string additionsJson, IReadOnlySet<string> reserved)
     {
         var root = string.IsNullOrWhiteSpace(existingJson) ? JsonNode.Parse(EmptyDocument)!.AsObject() : Parse(existingJson);
         var additions = Parse(additionsJson);
-        var taken = Operations(root).Select(entry => entry.Name).ToHashSet(StringComparer.Ordinal);
-        var paths = root["paths"] as JsonObject ?? (JsonObject)(root["paths"] = new JsonObject());
+        var present = Operations(root).Select(entry => entry.Name).ToHashSet(StringComparer.Ordinal);
+        var incoming = Operations(additions).ToList();
 
-        foreach (var entry in Operations(additions))
+        var clashes = incoming.Select(entry => entry.Name).Where(name => present.Contains(name) || reserved.Contains(name)).ToList();
+        if (clashes.Count > 0)
+            throw new PanelException(string.Format(BuilderText.ImportNameTaken, string.Join(", ", clashes)));
+
+        if (present.Count == 0)
         {
-            if (taken.Contains(entry.Name))
-                throw new PanelException(string.Format(BuilderText.ImportNameTaken, entry.Name));
+            if (Str(additions["openapi"]) is { } version)
+                root["openapi"] = version;
+        }
+        else if (Family(Str(root["openapi"])) != Family(Str(additions["openapi"])))
+            throw new PanelException(string.Format(BuilderText.OpenApiVersionMismatch, Str(root["openapi"]), Str(additions["openapi"])));
+
+        var paths = root["paths"] as JsonObject ?? (JsonObject)(root["paths"] = new JsonObject());
+        foreach (var entry in incoming)
+        {
             var pathItem = paths[entry.Path] as JsonObject ?? (JsonObject)(paths[entry.Path] = new JsonObject());
             if (pathItem[entry.Method] is not null)
                 throw new PanelException(string.Format(BuilderText.ToolRouteTaken, entry.Method.ToUpperInvariant(), entry.Path));
@@ -104,16 +121,16 @@ public static partial class OpenApiDraft
                 pathItem[key] = value?.DeepClone();
         }
 
-        if (additions["components"] is JsonObject incoming)
+        if (additions["components"] is JsonObject components)
         {
-            var components = root["components"] as JsonObject ?? (JsonObject)(root["components"] = new JsonObject());
-            foreach (var (kind, group) in incoming)
+            var target = root["components"] as JsonObject ?? (JsonObject)(root["components"] = new JsonObject());
+            foreach (var (kind, group) in components)
             {
                 if (group is not JsonObject members)
                     continue;
-                var target = components[kind] as JsonObject ?? (JsonObject)(components[kind] = new JsonObject());
-                foreach (var (name, value) in members.Where(member => target[member.Key] is null))
-                    target[name] = value?.DeepClone();
+                var bucket = target[kind] as JsonObject ?? (JsonObject)(target[kind] = new JsonObject());
+                foreach (var (name, value) in members.Where(member => bucket[member.Key] is null))
+                    bucket[name] = value?.DeepClone();
             }
         }
 
@@ -121,6 +138,10 @@ public static partial class OpenApiDraft
     }
 
     public static string Serialize(JsonNode root) => root.ToJsonString(Output);
+
+    internal static string? Str(JsonNode? node) => node is JsonValue value && value.TryGetValue(out string? text) ? text : null;
+
+    internal static bool Flag(JsonNode? node) => node is JsonValue value && value.TryGetValue(out bool flag) && flag;
 
     internal static JsonObject Parse(string json)
     {
@@ -147,12 +168,12 @@ public static partial class OpenApiDraft
             {
                 if (pathItem[method] is not JsonObject operation)
                     continue;
-                var declared = operation["operationId"]?.GetValueKind() == JsonValueKind.String ? operation["operationId"]!.GetValue<string>() : null;
-                var name = OperationNames.Unique(declared, method, path, used);
-                yield return (name, path, method, operation, pathItem);
+                yield return (OperationNames.Unique(Str(operation["operationId"]), method, path, used), path, method, operation, pathItem);
             }
         }
     }
+
+    private static string? Family(string? version) => version is { Length: >= 3 } ? version[..3] : version;
 
     private static void Validate(FormTool tool)
     {
@@ -174,7 +195,7 @@ public static partial class OpenApiDraft
         {
             if (string.IsNullOrWhiteSpace(parameter.Name))
                 throw new PanelException(BuilderText.ParameterNameRequired);
-            if (!Types.Contains(parameter.Type))
+            if (!Types.Contains(parameter.Type) && parameter.Type != ComplexType)
                 throw new PanelException(string.Format(BuilderText.ParameterTypeInvalid, parameter.Name));
         }
 
@@ -183,15 +204,14 @@ public static partial class OpenApiDraft
             throw new PanelException(string.Format(BuilderText.ParameterDuplicate, duplicate.Key.Name));
     }
 
-    private static bool IsSameOperation(JsonObject operation, string name) =>
-        operation["operationId"]?.GetValueKind() == JsonValueKind.String && operation["operationId"]!.GetValue<string>() == name;
+    private static bool IsSameOperation(JsonObject operation, string name) => Str(operation["operationId"]) == name;
 
     private static void Detach(JsonObject paths, string path, string method)
     {
         if (paths[path] is not JsonObject item)
             return;
         item.Remove(method);
-        if (!Methods.Any(candidate => item[candidate] is not null) && item.All(pair => pair.Key is "parameters" or "summary" or "description" or "servers"))
+        if (item.Count == 0)
             paths.Remove(path);
     }
 
@@ -201,33 +221,33 @@ public static partial class OpenApiDraft
         foreach (var node in Merged(pathItem["parameters"], operation["parameters"]))
         {
             var resolved = Resolve(root, node);
-            if (resolved is null || !TryPlace(resolved["in"]?.GetValue<string>(), out var place) || resolved["name"] is not JsonValue parameterName)
+            if (resolved is null || !TryPlace(Str(resolved["in"]), out var place) || Str(resolved["name"]) is not { } parameterName)
                 continue;
-            var schema = Resolve(root, resolved["schema"]);
+            var raw = resolved["schema"] as JsonObject;
+            var complex = IsComplex(raw, resolved["content"] is not null);
             parameters.Add(new ToolParameter(
-                parameterName.GetValue<string>(),
-                TypeOf(schema),
+                parameterName,
+                complex ? ComplexType : TypeOf(raw),
                 place,
-                place == ParameterPlace.Path || resolved["required"]?.GetValue<bool>() == true,
-                schema?["default"]?.DeepClone(),
-                resolved["description"]?.GetValue<string>()));
+                place == ParameterPlace.Path || Flag(resolved["required"]),
+                complex ? null : raw?["default"]?.DeepClone(),
+                Str(resolved["description"])));
         }
 
-        if (BodySchema(root, operation) is { } body)
+        if (FormBody(root, operation) is { } body)
         {
-            var required = (body["required"] as JsonArray)?.Select(node => node?.GetValue<string>()).ToHashSet() ?? [];
+            var required = (body["required"] as JsonArray)?.Select(Str).OfType<string>().ToHashSet() ?? [];
             foreach (var (property, value) in body["properties"] as JsonObject ?? [])
             {
-                var schema = Resolve(root, value);
-                parameters.Add(new ToolParameter(property, TypeOf(schema), ParameterPlace.Body, required.Contains(property), schema?["default"]?.DeepClone(), schema?["description"]?.GetValue<string>()));
+                var raw = value as JsonObject;
+                var complex = IsComplex(raw, false);
+                parameters.Add(new ToolParameter(property, complex ? ComplexType : TypeOf(raw), ParameterPlace.Body, required.Contains(property), complex ? null : raw?["default"]?.DeepClone(), Str(raw?["description"])));
             }
         }
 
-        var description = Text(operation["description"]) ?? Text(operation["summary"]);
+        var description = Str(operation["description"]) ?? Str(operation["summary"]);
         return new FormTool(name, method.ToUpperInvariant(), path, description, parameters, ResponseOf(operation)?.DeepClone());
     }
-
-    private static string? Text(JsonNode? node) => node?.GetValueKind() == JsonValueKind.String ? node.GetValue<string>() : null;
 
     private static IEnumerable<JsonNode> Merged(JsonNode? inherited, JsonNode? own)
     {
@@ -264,29 +284,28 @@ public static partial class OpenApiDraft
         _ => "header",
     };
 
-    private static string TypeOf(JsonObject? schema)
+    private static bool IsComplex(JsonObject? schema, bool hasContent)
     {
-        var type = schema?["type"];
-        if (type is JsonArray array)
-            type = array.FirstOrDefault(node => node?.GetValue<string>() != "null");
-        var name = type?.GetValueKind() == JsonValueKind.String ? type.GetValue<string>() : null;
-        if (name is not null && Types.Contains(name))
-            return name;
-        return schema?["properties"] is not null ? "object" : "string";
+        if (schema is null)
+            return hasContent;
+        if (Combinators.Any(key => schema.ContainsKey(key)))
+            return true;
+        return Str(schema["type"]) is not { } type || !Types.Contains(type);
     }
+
+    private static string TypeOf(JsonObject? schema) => Str(schema?["type"]) is { } type && Types.Contains(type) ? type : "string";
 
     private static JsonObject? Resolve(JsonObject root, JsonNode? node)
     {
         for (var depth = 0; depth < 8 && node is JsonObject current; depth++)
         {
-            if (current["$ref"] is not JsonValue reference)
+            if (current["$ref"] is null)
                 return current;
-            var pointer = reference.GetValue<string>();
-            if (!pointer.StartsWith(ComponentsPrefix, StringComparison.Ordinal))
+            var pointer = Str(current["$ref"]);
+            if (pointer is null || !pointer.StartsWith(ComponentsPrefix, StringComparison.Ordinal))
                 return null;
-            var parts = pointer[ComponentsPrefix.Length..].Split('/');
             JsonNode? target = root["components"];
-            foreach (var part in parts)
+            foreach (var part in pointer[ComponentsPrefix.Length..].Split('/'))
                 target = (target as JsonObject)?[part.Replace("~1", "/").Replace("~0", "~")];
             node = target;
         }
@@ -294,16 +313,26 @@ public static partial class OpenApiDraft
         return null;
     }
 
-    private static JsonObject? BodySchema(JsonObject root, JsonObject operation)
+    private static bool IsFormBody(JsonObject schema) =>
+        schema["properties"] is JsonObject
+        && !schema.ContainsKey("allOf") && !schema.ContainsKey("anyOf") && !schema.ContainsKey("oneOf")
+        && (schema["type"] is null || Str(schema["type"]) == "object");
+
+    private static JsonObject? JsonSchemaOf(JsonObject root, JsonObject? operation)
     {
-        var body = Resolve(root, operation["requestBody"]);
-        return Resolve(root, (body?["content"] as JsonObject)?[JsonMedia]?["schema"]);
+        var body = Resolve(root, operation?["requestBody"]);
+        var media = (body?["content"] as JsonObject)?[JsonMedia] as JsonObject;
+        return Resolve(root, media?["schema"]);
     }
+
+    private static JsonObject? FormBody(JsonObject root, JsonObject operation) =>
+        JsonSchemaOf(root, operation) is { } schema && IsFormBody(schema) ? schema : null;
 
     private static JsonNode? ResponseOf(JsonObject operation)
     {
         var key = SuccessKey(operation);
-        return key is null ? null : (((operation["responses"] as JsonObject)?[key] as JsonObject)?["content"] as JsonObject)?[JsonMedia]?["schema"];
+        var response = key is null ? null : (operation["responses"] as JsonObject)?[key] as JsonObject;
+        return ((response?["content"] as JsonObject)?[JsonMedia] as JsonObject)?["schema"];
     }
 
     private static string? SuccessKey(JsonObject operation)
@@ -327,18 +356,24 @@ public static partial class OpenApiDraft
         foreach (var parameter in tool.Parameters.Where(parameter => parameter.Place != ParameterPlace.Body))
         {
             var place = PlaceName(parameter.Place);
-            var match = existing.FirstOrDefault(entry => entry.Resolved?["name"]?.ToString() == parameter.Name && entry.Resolved?["in"]?.ToString() == place).Resolved;
+            var match = existing.FirstOrDefault(entry => Str(entry.Resolved?["name"]) == parameter.Name && Str(entry.Resolved?["in"]) == place).Resolved;
             var node = match is null ? [] : (JsonObject)match.DeepClone();
             node.Remove("$ref");
             node["name"] = parameter.Name;
             node["in"] = place;
             node["required"] = parameter.Required || parameter.Place == ParameterPlace.Path;
             ApplyDescription(node, parameter.Description);
-            node["schema"] = SchemaOf(node["schema"] as JsonObject, parameter);
+            if (parameter.Type == ComplexType)
+            {
+                if (node["schema"] is null && node["content"] is null)
+                    node["schema"] = new JsonObject();
+            }
+            else
+                node["schema"] = SchemaOf(node["schema"] as JsonObject, parameter);
             parameters.Add(node);
         }
 
-        foreach (var entry in existing.Where(entry => entry.Node is not null && (entry.Resolved is null || !TryPlace(entry.Resolved["in"]?.ToString(), out _))))
+        foreach (var entry in existing.Where(entry => entry.Node is not null && (entry.Resolved is null || !TryPlace(Str(entry.Resolved["in"]), out _))))
             parameters.Add(entry.Node!.DeepClone());
         if (parameters.Count == 0)
             operation.Remove("parameters");
@@ -374,7 +409,16 @@ public static partial class OpenApiDraft
     {
         var bodyParameters = tool.Parameters.Where(parameter => parameter.Place == ParameterPlace.Body).ToList();
         var request = Resolve(root, previous?["requestBody"]);
-        var hasJson = (request?["content"] as JsonObject)?.ContainsKey(JsonMedia) == true;
+        var content = request?["content"] as JsonObject;
+        var hasJson = content?.ContainsKey(JsonMedia) == true;
+        var existingSchema = JsonSchemaOf(root, previous);
+
+        if (existingSchema is not null && !IsFormBody(existingSchema))
+        {
+            if (bodyParameters.Count > 0)
+                throw new PanelException(BuilderText.ToolBodyNotEditable);
+            return;
+        }
 
         if (bodyParameters.Count == 0)
         {
@@ -385,16 +429,16 @@ public static partial class OpenApiDraft
 
         var requestBody = request is null ? [] : (JsonObject)request.DeepClone();
         requestBody.Remove("$ref");
-        var content = requestBody["content"] as JsonObject ?? (JsonObject)(requestBody["content"] = new JsonObject());
-        var media = content[JsonMedia] as JsonObject ?? (JsonObject)(content[JsonMedia] = new JsonObject());
-        var schema = Resolve(root, media["schema"]) is { } resolved ? (JsonObject)resolved.DeepClone() : [];
+        var target = requestBody["content"] as JsonObject ?? (JsonObject)(requestBody["content"] = new JsonObject());
+        var media = target[JsonMedia] as JsonObject ?? (JsonObject)(target[JsonMedia] = new JsonObject());
+        var schema = existingSchema is null ? [] : (JsonObject)existingSchema.DeepClone();
         schema.Remove("$ref");
         schema["type"] = "object";
         var current = schema["properties"] as JsonObject ?? [];
         var properties = new JsonObject();
         foreach (var parameter in bodyParameters)
         {
-            var property = SchemaOf(current[parameter.Name] as JsonObject, parameter);
+            var property = current[parameter.Name] is JsonObject kept && parameter.Type == ComplexType ? (JsonObject)kept.DeepClone() : parameter.Type == ComplexType ? [] : SchemaOf(current[parameter.Name] as JsonObject, parameter);
             ApplyDescription(property, parameter.Description);
             properties[parameter.Name] = property;
         }
@@ -482,6 +526,8 @@ internal static class PythonToolSource
 
     private static string Signature(ToolParameter parameter, string identifier)
     {
+        if (parameter.Type == OpenApiDraft.ComplexType)
+            return parameter.Required ? identifier : $"{identifier}=None";
         var type = parameter.Type switch
         {
             "integer" => "int",
@@ -509,7 +555,8 @@ internal static class PythonToolSource
     private static void AppendMapping(StringBuilder builder, string variable, IReadOnlyList<ToolParameter> parameters, ParameterPlace place, Dictionary<ToolParameter, string> names)
     {
         var entries = string.Join(", ", parameters.Where(parameter => parameter.Place == place).Select(parameter => $"{Quote(parameter.Name)}: {names[parameter]}"));
-        builder.Append($"    {variable} = {{key: value for key, value in {{{entries}}}.items() if value is not None}}\n");
+        var value = place == ParameterPlace.Header ? "(str(value).lower() if isinstance(value, bool) else str(value))" : "value";
+        builder.Append($"    {variable} = {{key: {value} for key, value in {{{entries}}}.items() if value is not None}}\n");
     }
 
     private static string Quote(string value) => JsonSerializer.Serialize(value, Literal);

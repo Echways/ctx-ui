@@ -34,6 +34,7 @@ public sealed class BuilderEntry : IPanelExtension
         });
         context.Services.AddSingleton<SecretBox>();
         context.Services.AddScoped<ServerCatalog>();
+        context.Services.AddScoped<PendingImports>();
         context.Services.AddSingleton(connected);
         context.Services.AddSingleton<IExtensionInitializer, ConnectedInboundsLoader>();
         context.Services.AddScoped<ConnectionService>();

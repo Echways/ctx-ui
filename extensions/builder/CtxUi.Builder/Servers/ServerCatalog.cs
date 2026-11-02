@@ -59,6 +59,18 @@ public sealed partial class ServerCatalog(BuilderDatabase database, SecretBox bo
         if (await database.Servers.AnyAsync(server => server.Slug == slug, ct))
             throw new PanelException(BuilderText.SlugTaken);
 
+        if (import is not null && import.Files.FirstOrDefault(file => file.Path == "openapi.json") is { Content: { } document })
+        {
+            try
+            {
+                await OpenApiImport.ValidateStoredAsync(document, ct);
+            }
+            catch (PanelException failure)
+            {
+                throw new PanelException(string.Format(BuilderText.ArchiveOpenApiInvalid, failure.Message));
+            }
+        }
+
         var limits = new ServerLimits();
         var now = clock.GetUtcNow();
         var server = new BuilderServer
@@ -143,6 +155,26 @@ public sealed partial class ServerCatalog(BuilderDatabase database, SecretBox bo
         return updated == 0 ? throw new DraftConflictException(BuilderText.DraftChangedElsewhere) : expectedRevision + 1;
     }
 
+    public async Task<long> SaveFormToolAsync(Guid id, FormTool tool, bool isNew, long expectedRevision, CancellationToken ct)
+    {
+        var draft = await DraftAsync(id, ct);
+        if (draft.Revision != expectedRevision)
+            throw new DraftConflictException(BuilderText.DraftChangedElsewhere);
+
+        var document = draft.OpenApiJson ?? string.Empty;
+        if (isNew && (OpenApiDraft.Names(document).Contains(tool.Name) || CodeToolNames.From(draft.Files.Select(file => (file.Path, file.Content))).Contains(tool.Name)))
+            throw new PanelException(string.Format(BuilderText.ToolNameTaken, tool.Name));
+        return await SaveOpenApiAsync(id, OpenApiDraft.Upsert(document, tool), expectedRevision, ct);
+    }
+
+    public async Task<long> DeleteFormToolAsync(Guid id, string toolName, long expectedRevision, CancellationToken ct)
+    {
+        var draft = await DraftAsync(id, ct);
+        if (draft.Revision != expectedRevision)
+            throw new DraftConflictException(BuilderText.DraftChangedElsewhere);
+        return await SaveOpenApiAsync(id, OpenApiDraft.Remove(draft.OpenApiJson ?? string.Empty, toolName), expectedRevision, ct);
+    }
+
     public async Task<(string Path, long Revision)> ConvertToCodeAsync(Guid id, string toolName, long expectedRevision, CancellationToken ct)
     {
         await RequireServerAsync(id, ct);
@@ -180,12 +212,12 @@ public sealed partial class ServerCatalog(BuilderDatabase database, SecretBox bo
     {
         if (selected.Count == 0)
             throw new PanelException(BuilderText.ImportNothingSelected);
-        await RequireServerAsync(id, ct);
-        var draft = await database.Drafts.AsNoTracking().SingleAsync(draft => draft.ServerId == id, ct);
+        var draft = await DraftAsync(id, ct);
         if (draft.Revision != expectedRevision)
             throw new DraftConflictException(BuilderText.DraftChangedElsewhere);
 
-        var merged = OpenApiDraft.Merge(draft.OpenApiJson ?? string.Empty, OpenApiImport.Select(api, selected));
+        var reserved = CodeToolNames.From(draft.Files.Select(file => (file.Path, file.Content)));
+        var merged = OpenApiDraft.Merge(draft.OpenApiJson ?? string.Empty, OpenApiImport.Select(api, selected), reserved);
         return await SaveOpenApiAsync(id, merged, expectedRevision, ct);
     }
 

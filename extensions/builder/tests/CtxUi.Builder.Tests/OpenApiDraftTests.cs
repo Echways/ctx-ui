@@ -73,7 +73,9 @@ public sealed class OpenApiDraftTests
         var json = JsonNode.Parse(OpenApiDraft.Upsert(string.Empty, Forecast()))!;
 
         Assert.Equal("get_forecast", json["paths"]!["/v1/forecast/{city}"]!["get"]!["operationId"]!.GetValue<string>());
-        Assert.Throws<PanelException>(() => OpenApiDraft.Upsert(string.Empty, Forecast() with { Name = "get forecast" }));
+        foreach (var invalid in new[] { "get forecast", "get-forecast", "a__b", "_a", "a_", new string('x', 57) })
+            Assert.Throws<PanelException>(() => OpenApiDraft.Upsert(string.Empty, Forecast() with { Name = invalid }));
+        Assert.NotNull(OpenApiDraft.Upsert(string.Empty, Forecast() with { Name = new string('x', 56) }));
     }
 
     [Fact]
@@ -167,12 +169,27 @@ public sealed class OpenApiDraftTests
     [Fact]
     public void Convert_to_code_keeps_the_tool_name_when_it_is_not_a_python_identifier()
     {
-        var json = OpenApiDraft.Upsert(string.Empty, Forecast() with { Name = "get-forecast" });
+        var json = OpenApiDraft.Upsert(string.Empty, Forecast() with { Name = "1forecast" });
 
-        var (_, python) = OpenApiDraft.ConvertToCode(json, "get-forecast");
+        var (_, python) = OpenApiDraft.ConvertToCode(json, "1forecast");
 
-        Assert.Contains("@tool(name=\"get-forecast\")", python);
-        Assert.Contains("async def get_forecast(", python);
+        Assert.Contains("@tool(name=\"1forecast\")", python);
+        Assert.Contains("async def tool_1forecast(", python);
+    }
+
+    [Fact]
+    public void Header_values_are_sent_as_strings_with_lower_case_booleans()
+    {
+        var tool = new FormTool("t", "GET", "/t", null,
+        [
+            new ToolParameter("X-Count", "integer", ParameterPlace.Header, false, null, null),
+            new ToolParameter("X-Debug", "boolean", ParameterPlace.Header, false, null, null),
+        ], null);
+
+        var (_, python) = OpenApiDraft.ConvertToCode(OpenApiDraft.Upsert(string.Empty, tool), "t");
+
+        Assert.Contains("(str(value).lower() if isinstance(value, bool) else str(value))", python);
+        Assert.Contains("headers = {key: (str(value).lower() if isinstance(value, bool) else str(value)) for key, value in {\"X-Count\": x_count, \"X-Debug\": x_debug}.items() if value is not None}", python);
     }
 
     [Fact]
@@ -203,5 +220,147 @@ public sealed class OpenApiDraftTests
         const string json = """{"openapi":"3.0.3","paths":{"/pets/{id}":{"get":{"responses":{"200":{"description":"OK"}}}}}}""";
 
         Assert.Equal("get_pets_id", Assert.Single(OpenApiDraft.Read(json)).Name);
+    }
+
+    private const string Imported = """
+    {
+      "openapi": "3.1.0",
+      "info": { "title": "Shop", "version": "1" },
+      "paths": {
+        "/orders/{id}": {
+          "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+          "servers": [{ "url": "https://orders.example.com" }],
+          "summary": "Order",
+          "get": {
+            "operationId": "getOrder",
+            "parameters": [
+              { "name": "expand", "in": "query", "schema": { "anyOf": [{ "type": "string" }, { "type": "null" }] } },
+              { "name": "kind", "in": "query", "schema": { "$ref": "#/components/schemas/Kind" } },
+              { "name": "ids", "in": "query", "schema": { "type": ["array", "null"], "items": { "type": "string" } } }
+            ],
+            "responses": { "200": { "description": "OK" } }
+          }
+        },
+        "/orders": {
+          "post": {
+            "operationId": "createOrder",
+            "requestBody": { "required": true, "content": { "application/json": { "schema": { "allOf": [{ "$ref": "#/components/schemas/Base" }, { "type": "object", "properties": { "x": { "type": "string" } } }] } } } },
+            "responses": { "201": { "description": "Created" } }
+          },
+          "put": {
+            "operationId": "replaceOrders",
+            "requestBody": { "content": { "application/json": { "schema": { "type": "array", "items": { "type": "string" } } } } },
+            "responses": { "200": { "description": "OK" } }
+          }
+        }
+      },
+      "components": { "schemas": { "Kind": { "type": "string", "enum": ["a", "b"] }, "Base": { "type": "object" } } }
+    }
+    """;
+
+    private static JsonNode Operation(string json, string path, string method) => JsonNode.Parse(json)!["paths"]![path]![method]!;
+
+    [Fact]
+    public void Complex_parameters_are_read_as_complex_and_saved_unchanged()
+    {
+        var tool = OpenApiDraft.Read(Imported).Single(candidate => candidate.Name == "getOrder");
+
+        Assert.Equal(["id", "expand", "kind", "ids"], tool.Parameters.Select(parameter => parameter.Name));
+        Assert.Equal(["integer", "complex", "complex", "complex"], tool.Parameters.Select(parameter => parameter.Type));
+
+        var saved = OpenApiDraft.Upsert(Imported, tool with { Description = "Changed" });
+
+        var parameters = Operation(saved, "/orders/{id}", "get")["parameters"]!.AsArray();
+        Assert.Equal("string", parameters[1]!["schema"]!["anyOf"]![0]!["type"]!.GetValue<string>());
+        Assert.Equal("#/components/schemas/Kind", parameters[2]!["schema"]!["$ref"]!.GetValue<string>());
+        Assert.Equal("array", parameters[3]!["schema"]!["type"]![0]!.GetValue<string>());
+    }
+
+    [Fact]
+    public void Path_level_fields_survive_when_a_tool_is_saved_and_when_it_is_removed()
+    {
+        var tool = OpenApiDraft.Read(Imported).Single(candidate => candidate.Name == "getOrder");
+
+        var saved = JsonNode.Parse(OpenApiDraft.Upsert(Imported, tool))!["paths"]!["/orders/{id}"]!;
+        var removed = JsonNode.Parse(OpenApiDraft.Remove(Imported, "getOrder"))!["paths"]!["/orders/{id}"]!;
+
+        Assert.Equal("https://orders.example.com", saved["servers"]![0]!["url"]!.GetValue<string>());
+        Assert.Equal("Order", saved["summary"]!.GetValue<string>());
+        Assert.Equal("https://orders.example.com", removed["servers"]![0]!["url"]!.GetValue<string>());
+        Assert.NotNull(removed["parameters"]);
+    }
+
+    [Fact]
+    public void Bodies_the_form_cannot_represent_are_kept_as_they_are()
+    {
+        var tools = OpenApiDraft.Read(Imported);
+        var create = tools.Single(candidate => candidate.Name == "createOrder");
+        var replace = tools.Single(candidate => candidate.Name == "replaceOrders");
+
+        Assert.DoesNotContain(create.Parameters, parameter => parameter.Place == ParameterPlace.Body);
+        Assert.DoesNotContain(replace.Parameters, parameter => parameter.Place == ParameterPlace.Body);
+
+        var saved = OpenApiDraft.Upsert(OpenApiDraft.Upsert(Imported, create with { Description = "Create" }), replace with { Description = "Replace" });
+
+        Assert.NotNull(Operation(saved, "/orders", "post")["requestBody"]!["content"]!["application/json"]!["schema"]!["allOf"]);
+        Assert.Equal("array", Operation(saved, "/orders", "put")["requestBody"]!["content"]!["application/json"]!["schema"]!["type"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public void Adding_body_parameters_to_a_body_the_form_cannot_represent_is_refused()
+    {
+        var create = OpenApiDraft.Read(Imported).Single(candidate => candidate.Name == "createOrder");
+        var extra = create with { Parameters = [new ToolParameter("note", "string", ParameterPlace.Body, false, null, null)] };
+
+        var failure = Assert.Throws<PanelException>(() => OpenApiDraft.Upsert(Imported, extra));
+
+        Assert.Equal(BuilderText.ToolBodyNotEditable, failure.Message);
+    }
+
+    [Fact]
+    public void A_ref_body_with_properties_stays_editable_and_keeps_its_other_fields()
+    {
+        const string json = """
+        {"openapi":"3.0.3","info":{"title":"t","version":"1"},"paths":{"/a":{"post":{"operationId":"a","requestBody":{"description":"Payload","content":{"application/json":{"schema":{"$ref":"#/components/schemas/Body"}}}},"responses":{"200":{"description":"OK"}}}}},
+         "components":{"schemas":{"Body":{"type":"object","title":"Body","properties":{"text":{"type":"string","enum":["x"]},"ref":{"$ref":"#/components/schemas/Body"}}}}}}
+        """;
+
+        var tool = Assert.Single(OpenApiDraft.Read(json));
+        var saved = OpenApiDraft.Upsert(json, tool);
+
+        Assert.Equal(["string", "complex"], tool.Parameters.Select(parameter => parameter.Type));
+        var request = Operation(saved, "/a", "post")["requestBody"]!;
+        Assert.Equal("Payload", request["description"]!.GetValue<string>());
+        var schema = request["content"]!["application/json"]!["schema"]!;
+        Assert.Equal("x", schema["properties"]!["text"]!["enum"]![0]!.GetValue<string>());
+        Assert.Equal("#/components/schemas/Body", schema["properties"]!["ref"]!["$ref"]!.GetValue<string>());
+        Assert.Equal("Body", schema["title"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public void Wrong_typed_fields_are_skipped_instead_of_throwing()
+    {
+        const string json = """
+        {"openapi":"3.0.3","paths":{"/a":{"get":{"operationId":5,"description":7,"parameters":[{"name":3,"in":"query"},{"name":"ok","in":"query","required":"yes","description":false,"schema":{"type":5}}],
+         "requestBody":{"content":{"application/json":7}},"responses":{"200":{"description":"OK","content":{"application/json":3}}}}},"/b":5,"/c":{"post":{"operationId":"c","requestBody":{"content":{"application/json":{"schema":{"properties":{"p":{"type":[1],"description":2}},"required":[1,"p"]}}}},"responses":"x"}}}}
+        """;
+
+        var tools = OpenApiDraft.Read(json);
+
+        Assert.Equal(["get_a", "c"], tools.Select(tool => tool.Name));
+        Assert.Equal(["ok"], tools[0].Parameters.Select(parameter => parameter.Name));
+        Assert.False(tools[0].Parameters[0].Required);
+        Assert.Equal("p", Assert.Single(tools[1].Parameters).Name);
+        Assert.NotNull(OpenApiDraft.Upsert(json, tools[0] with { Description = "d" }));
+    }
+
+    [Fact]
+    public void Complex_parameters_become_untyped_python_arguments()
+    {
+        var tool = OpenApiDraft.Read(Imported).Single(candidate => candidate.Name == "getOrder");
+
+        var (_, python) = OpenApiDraft.ConvertToCode(Imported, "getOrder");
+
+        Assert.Contains("async def getorder(id: int, expand=None, kind=None, ids=None):", python);
     }
 }

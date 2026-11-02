@@ -34,7 +34,7 @@
 </Sheet>
 
 @code {
-    private readonly ImportSelection _selection = new();
+    private ImportSelection _selection = new();
     private ImportedApi? _api;
     private string? _address;
     private string? _pasted;
@@ -47,6 +47,17 @@
 
     [Parameter]
     public string? CurrentBaseUrl { get; set; }
+
+    [Parameter]
+    public ImportedApi? Api { get; set; }
+
+    protected override void OnInitialized()
+    {
+        if (Api is null)
+            return;
+        _api = Api;
+        _selection = ImportSelection.Default(Api, CurrentBaseUrl);
+    }
 
     private bool SameAsCurrent(string address) =>
         string.Equals(address.TrimEnd('/'), (CurrentBaseUrl ?? string.Empty).Trim().TrimEnd('/'), StringComparison.OrdinalIgnoreCase);
@@ -61,22 +72,8 @@
 
     private async Task LoadAsync()
     {
-        _api = await ReadAsync();
-        _selection.Names.Clear();
-        _selection.UseBaseUrl = string.IsNullOrWhiteSpace(CurrentBaseUrl) && _api.BaseUrl is not null;
-    }
-
-    private async Task<ImportedApi> ReadAsync()
-    {
-        if (!string.IsNullOrWhiteSpace(_pasted))
-        {
-            using var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(_pasted));
-            return await OpenApiImport.ParseAsync(stream, CancellationToken.None);
-        }
-
-        if (!Uri.TryCreate(_address?.Trim(), UriKind.Absolute, out var address))
-            throw new PanelException(BuilderText.ImportAddressInvalid);
-        return await OpenApiImport.FetchAsync(address, HttpClients.CreateClient(), CancellationToken.None);
+        _api = await OpenApiSource.ReadAsync(_address, _pasted, HttpClients, CancellationToken.None);
+        _selection = ImportSelection.Default(_api, CurrentBaseUrl);
     }
 
     private async Task ApplyAsync()

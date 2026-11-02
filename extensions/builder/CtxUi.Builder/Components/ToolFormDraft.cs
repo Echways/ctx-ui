@@ -38,7 +38,7 @@ public sealed class ParameterRow
 
     private JsonNode? DefaultOf()
     {
-        if (string.IsNullOrWhiteSpace(DefaultText))
+        if (string.IsNullOrWhiteSpace(DefaultText) || Type == OpenApiDraft.ComplexType)
             return null;
         var text = DefaultText.Trim();
         JsonNode? parsed = Type switch

@@ -4,9 +4,9 @@ namespace CtxUi.Builder.Tools;
 
 internal static partial class OperationNames
 {
-    private const int MaxLength = 64;
+    private const int MaxLength = OpenApiDraft.MaxNameLength;
 
-    [GeneratedRegex("[^A-Za-z0-9_-]+")]
+    [GeneratedRegex("[^A-Za-z0-9]+")]
     private static partial Regex Forbidden();
 
     [GeneratedRegex("[^a-z0-9]+")]
@@ -14,20 +14,24 @@ internal static partial class OperationNames
 
     public static string Unique(string? declared, string method, string path, HashSet<string> used)
     {
-        var name = string.IsNullOrWhiteSpace(declared) ? Generated(method, path) : Forbidden().Replace(declared.Trim(), "_").Trim('_');
+        var name = Normalized(declared);
         if (name.Length == 0)
-            name = Generated(method, path);
-        if (name.Length > MaxLength)
-            name = name[..MaxLength];
+            name = Normalized(Generated(method, path));
 
         var candidate = name;
         for (var attempt = 2; !used.Add(candidate); attempt++)
         {
             var suffix = "_" + attempt;
-            candidate = name[..Math.Min(name.Length, MaxLength - suffix.Length)] + suffix;
+            candidate = name[..Math.Min(name.Length, MaxLength - suffix.Length)].TrimEnd('_') + suffix;
         }
 
         return candidate;
+    }
+
+    private static string Normalized(string? raw)
+    {
+        var name = Forbidden().Replace(raw ?? string.Empty, "_").Trim('_');
+        return name.Length > MaxLength ? name[..MaxLength].TrimEnd('_') : name;
     }
 
     private static string Generated(string method, string path)

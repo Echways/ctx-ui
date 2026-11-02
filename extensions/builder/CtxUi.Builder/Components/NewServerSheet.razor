@@ -1,10 +1,14 @@
 @inject ServerCatalog Catalog
 @inject NavigationManager Navigation
+@inject PendingImports Pending
+@inject IHttpClientFactory HttpClients
 
 <Sheet>
     <Form Model="_draft" OnSubmit="SaveAsync" Submit="@BuilderText.Create" Done="@BuilderText.ServerCreated">
         <Field For="() => _draft.Name" Label="@BuilderText.Name" />
         <Field For="() => _draft.Slug" Label="@BuilderText.Slug" Hint="@BuilderText.SlugHint" />
+        <Field For="() => _draft.ImportAddress" Label="@BuilderText.ImportAddress" Hint="@BuilderText.NewServerOpenApi" />
+        <Field For="() => _draft.ImportPaste" Label="@BuilderText.ImportPaste" Lines="4" />
         <div class="builder-archive">
             <label for="builder-archive">@BuilderText.ImportArchive</label>
             <InputFile id="builder-archive" OnChange="Choose" accept=".gz,.tgz,.zip" data-testid="archive" />
@@ -23,13 +27,22 @@
 
     private async Task SaveAsync()
     {
-        if (_archive is null)
+        var withDocument = OpenApiSource.IsGiven(_draft.ImportAddress, _draft.ImportPaste);
+        if (_archive is not null && withDocument)
+            throw new PanelException(BuilderText.NewServerChooseOne);
+
+        if (_archive is not null)
         {
-            await Catalog.CreateAsync(_draft.Slug, _draft.Name, CancellationToken.None);
+            await using var stream = _archive.OpenReadStream(MaximumArchiveBytes);
+            await Catalog.ImportArchiveAsync(_draft.Slug, _draft.Name, stream, CancellationToken.None);
             return;
         }
 
-        await using var stream = _archive.OpenReadStream(MaximumArchiveBytes);
-        await Catalog.ImportArchiveAsync(_draft.Slug, _draft.Name, stream, CancellationToken.None);
+        var api = withDocument ? await OpenApiSource.ReadAsync(_draft.ImportAddress, _draft.ImportPaste, HttpClients, CancellationToken.None) : null;
+        var server = await Catalog.CreateAsync(_draft.Slug, _draft.Name, CancellationToken.None);
+        if (api is null)
+            return;
+        Pending.Put(server.Id, api);
+        Navigation.NavigateTo($"builder/{server.Id}");
     }
 }

@@ -110,14 +110,14 @@ public sealed class ServerSettingsTests : IClassFixture<CatalogHarness>
     public async Task Imported_archive_creates_a_server_with_its_files_draft_and_dependencies()
     {
         var import = new ProjectImport(
-            [("mcp/a.py", "a = 1"), ("openapi.json", "{\"openapi\": \"3.1.0\"}"), ("builder.json", "{}")],
+            [("mcp/a.py", "a = 1"), ("openapi.json", "{\"openapi\": \"3.1.0\", \"info\": {\"title\": \"t\", \"version\": \"1\"}, \"paths\": {}}"), ("builder.json", "{}")],
             "httpx");
 
         var server = await Catalog.ImportAsync(Slug(), "Imported", import, default);
 
         var draft = await Catalog.DraftAsync(server.Id, default);
         Assert.Equal("mcp/a.py", Assert.Single(draft.Files).Path);
-        Assert.Equal("{\"openapi\": \"3.1.0\"}", draft.OpenApiJson);
+        Assert.Equal("{\"openapi\": \"3.1.0\", \"info\": {\"title\": \"t\", \"version\": \"1\"}, \"paths\": {}}", draft.OpenApiJson);
         Assert.Equal("{}", draft.BuilderJson);
         Assert.Equal("httpx", draft.Dependencies);
     }

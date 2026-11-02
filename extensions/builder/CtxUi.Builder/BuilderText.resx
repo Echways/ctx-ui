@@ -580,7 +580,7 @@
     <value>The API document is not valid JSON.</value>
   </data>
   <data name="ToolNameInvalid" xml:space="preserve">
-    <value>The tool name may contain only letters, digits, underscores and hyphens, up to 64 characters.</value>
+    <value>The tool name may contain only letters, digits and single underscores, up to 56 characters, and cannot start or end with an underscore.</value>
   </data>
   <data name="ToolMethodInvalid" xml:space="preserve">
     <value>Choose one of the methods GET, POST, PUT, PATCH or DELETE.</value>
@@ -643,7 +643,7 @@
     <value>Enter a full http or https address.</value>
   </data>
   <data name="ImportNameTaken" xml:space="preserve">
-    <value>The tool {0} already exists in this server.</value>
+    <value>Tools already exist in this server: {0}</value>
   </data>
   <data name="ImportNothingSelected" xml:space="preserve">
     <value>Choose at least one operation.</value>
@@ -794,5 +794,44 @@
   </data>
   <data name="ConvertedToCode" xml:space="preserve">
     <value>The tool is now code</value>
+  </data>
+  <data name="OpenApiVersionMismatch" xml:space="preserve">
+    <value>The draft uses OpenAPI {0} but the import is {1}. Mixed versions would stop the server from starting, so the import is refused.</value>
+  </data>
+  <data name="ToolBodyNotEditable" xml:space="preserve">
+    <value>The request body of this tool is too complex for the form and is kept as it is. Remove the body parameters from the form.</value>
+  </data>
+  <data name="ToolNameTaken" xml:space="preserve">
+    <value>A tool named {0} already exists in this server.</value>
+  </data>
+  <data name="ArchiveOpenApiInvalid" xml:space="preserve">
+    <value>The openapi.json in the archive cannot be used: {0}</value>
+  </data>
+  <data name="ImportHostNotFound" xml:space="preserve">
+    <value>The address was not found. Check the host name.</value>
+  </data>
+  <data name="ImportTlsFailed" xml:space="preserve">
+    <value>A secure connection to the address could not be established.</value>
+  </data>
+  <data name="ImportUnreachable" xml:space="preserve">
+    <value>The address could not be reached.</value>
+  </data>
+  <data name="ImportInterrupted" xml:space="preserve">
+    <value>The connection was interrupted while the document was being received.</value>
+  </data>
+  <data name="ImportSwaggerNotStored" xml:space="preserve">
+    <value>Swagger 2.0 cannot be stored in a project, use OpenAPI 3</value>
+  </data>
+  <data name="RetryOnNewVersion" xml:space="preserve">
+    <value>Repeat on the new version</value>
+  </data>
+  <data name="ParameterTypeComplex" xml:space="preserve">
+    <value>complex (kept as it is)</value>
+  </data>
+  <data name="NewServerChooseOne" xml:space="preserve">
+    <value>Choose either an archive or an OpenAPI document, not both.</value>
+  </data>
+  <data name="NewServerOpenApi" xml:space="preserve">
+    <value>OpenAPI document (optional)</value>
   </data>
 </root>

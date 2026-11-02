@@ -6,6 +6,7 @@
 @inject IPanelData Data
 @inject IDialogService Dialogs
 @inject NavigationManager Navigation
+@inject PendingImports Pending
 
 <PageHead>
     <Summary>
@@ -59,7 +60,7 @@ else
             else if (_view == ServerView.Form)
             {
                 <ToolForm @key="@($"{_formName}:{_draftRevision}")" ServerId="Id" Tool="_formTools.FirstOrDefault(tool => tool.Name == _formName)"
-                          OpenApiJson="@_openApiJson" Revision="_draftRevision"
+                          Revision="_draftRevision"
                           OnSaved="FormSavedAsync" OnDeleted="FormDeletedAsync" OnConverted="FormConvertedAsync" OnReload="ReloadFormAsync" />
             }
             else if (_view == ServerView.Releases)
@@ -262,7 +263,15 @@ else
 
     private async Task ReloadFormAsync() => await LoadAsync();
 
-    private Task ImportAsync() => GuardedAsync(async () =>
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && Pending.Take(Id) is { } api)
+            await ImportCoreAsync(api);
+    }
+
+    private Task ImportAsync() => GuardedAsync(() => ImportCoreAsync(null));
+
+    private async Task ImportCoreAsync(ImportedApi? api)
     {
         await LoadAsync();
         var parameters = new DialogParameters<OpenApiImportDialog>
@@ -270,9 +279,11 @@ else
             { sheet => sheet.ServerId, Id },
             { sheet => sheet.Revision, _draftRevision },
             { sheet => sheet.CurrentBaseUrl, _settings?.BaseUrl },
+            { sheet => sheet.Api, api },
         };
         var sheet = await Dialogs.ShowSheetAsync<OpenApiImportDialog>(BuilderText.ImportTitle, parameters);
         await sheet.Result;
         await LoadAsync();
-    });
+        StateHasChanged();
+    }
 }

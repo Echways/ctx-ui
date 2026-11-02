@@ -82,8 +82,34 @@ public static class OpenApiImport
         }
         catch (HttpRequestException failure)
         {
-            throw new PanelException(string.Format(BuilderText.ImportFetchFailed, failure.StatusCode is { } status ? (int)status : 0));
+            throw new PanelException(failure.StatusCode is { } status ? string.Format(BuilderText.ImportFetchFailed, (int)status) : failure.HttpRequestError switch
+            {
+                HttpRequestError.NameResolutionError => BuilderText.ImportHostNotFound,
+                HttpRequestError.SecureConnectionError => BuilderText.ImportTlsFailed,
+                _ => BuilderText.ImportUnreachable,
+            });
         }
+        catch (IOException)
+        {
+            throw new PanelException(BuilderText.ImportInterrupted);
+        }
+    }
+
+    public static async Task ValidateStoredAsync(string json, CancellationToken ct)
+    {
+        JsonObject root;
+        try
+        {
+            root = JsonNode.Parse(json) as JsonObject ?? throw new PanelException(BuilderText.OpenApiInvalid);
+        }
+        catch (JsonException)
+        {
+            throw new PanelException(BuilderText.OpenApiInvalid);
+        }
+
+        if (root["swagger"] is not null)
+            throw new PanelException(string.Format(BuilderText.ImportUnsupported, BuilderText.ImportSwaggerNotStored));
+        await ValidatedAsync(root, System.Text.Encoding.UTF8.GetBytes(json), ct);
     }
 
     public static string Select(ImportedApi api, IReadOnlySet<string> names)

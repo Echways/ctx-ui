@@ -1,6 +1,7 @@
 using System.Net;
 using System.Text;
 using System.Text.Json.Nodes;
+using CtxUi.Builder.Components;
 using CtxUi.Builder.Tools;
 using Enfilade;
 
@@ -85,11 +86,15 @@ public sealed class OpenApiImportTests
     {
         var api = await OpenApiImport.ParseAsync(Text(Pets), default);
 
+        var selection = ImportSelection.Default(api, null);
+
+        Assert.Empty(selection.Names);
+        Assert.True(selection.UseBaseUrl);
+        Assert.False(ImportSelection.Default(api, "https://already.example.com").UseBaseUrl);
         Assert.Equal(3, api.Operations.Count);
         Assert.Equal("https://pets.example.com/api", api.BaseUrl);
         Assert.Equal(("GET", "/pets", "List pets"), (api.Operations[0].Method, api.Operations[0].Path, api.Operations[0].Summary));
-        Assert.Empty(OpenApiDraft.Read(OpenApiImport.Select(api, new HashSet<string>())));
-    }
+            }
 
     [Fact]
     public async Task Operation_without_operation_id_gets_a_stable_generated_name()
@@ -118,7 +123,7 @@ public sealed class OpenApiImportTests
     {
         var api = await OpenApiImport.ParseAsync(Text(Pets), default);
 
-        var merged = OpenApiDraft.Merge(string.Empty, OpenApiImport.Select(api, new HashSet<string> { "listPets" }));
+        var merged = OpenApiDraft.Merge(string.Empty, OpenApiImport.Select(api, new HashSet<string> { "listPets" }), new HashSet<string>());
 
         Assert.Equal(["listPets"], OpenApiDraft.Read(merged).Select(tool => tool.Name));
         var schemas = JsonNode.Parse(merged)!["components"]!["schemas"]!.AsObject();
@@ -130,9 +135,9 @@ public sealed class OpenApiImportTests
     {
         var api = await OpenApiImport.ParseAsync(Text(Pets), default);
         var subset = OpenApiImport.Select(api, new HashSet<string> { "listPets" });
-        var merged = OpenApiDraft.Merge(string.Empty, subset);
+        var merged = OpenApiDraft.Merge(string.Empty, subset, new HashSet<string>());
 
-        Assert.Throws<PanelException>(() => OpenApiDraft.Merge(merged, subset));
+        Assert.Throws<PanelException>(() => OpenApiDraft.Merge(merged, subset, new HashSet<string>()));
     }
 
     [Theory]
@@ -244,5 +249,116 @@ public sealed class OpenApiImportTests
         }));
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => OpenApiImport.FetchAsync(new Uri("https://docs.example.com/x.json"), client, cancel.Token));
+    }
+
+    private const string Nullable31 = """{"openapi":"3.1.0","info":{"title":"t","version":"1"},"paths":{"/a":{"get":{"operationId":"a","parameters":[{"name":"q","in":"query","schema":{"anyOf":[{"type":"string"},{"type":"null"}]}}],"responses":{"200":{"description":"OK"}}}}}}""";
+
+    [Fact]
+    public async Task A_3_1_import_into_an_empty_draft_keeps_its_version()
+    {
+        var api = await OpenApiImport.ParseAsync(Text(Nullable31), default);
+
+        var merged = OpenApiDraft.Merge(string.Empty, OpenApiImport.Select(api, new HashSet<string> { "a" }), new HashSet<string>());
+
+        Assert.Equal("3.1.0", JsonNode.Parse(merged)!["openapi"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public async Task A_draft_that_only_held_form_made_defaults_adopts_the_imported_version()
+    {
+        var api = await OpenApiImport.ParseAsync(Text(Nullable31), default);
+        var empty = OpenApiDraft.Remove(OpenApiDraft.Upsert(string.Empty, new FormTool("x", "GET", "/x", null, [], null)), "x");
+
+        var merged = OpenApiDraft.Merge(empty, OpenApiImport.Select(api, new HashSet<string> { "a" }), new HashSet<string>());
+
+        Assert.Equal("3.1.0", JsonNode.Parse(merged)!["openapi"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public async Task Mixing_openapi_versions_is_refused_with_a_message()
+    {
+        var api = await OpenApiImport.ParseAsync(Text(Nullable31), default);
+        var existing = OpenApiDraft.Upsert(string.Empty, new FormTool("x", "GET", "/x", null, [], null));
+
+        var failure = Assert.Throws<PanelException>(() => OpenApiDraft.Merge(existing, OpenApiImport.Select(api, new HashSet<string> { "a" }), new HashSet<string>()));
+
+        Assert.Equal(string.Format(BuilderText.OpenApiVersionMismatch, "3.0.3", "3.1.0"), failure.Message);
+    }
+
+    [Fact]
+    public async Task Imported_operation_ids_are_normalised_to_what_the_runtime_keeps()
+    {
+        var document = """{"openapi":"3.0.3","info":{"title":"t","version":"1"},"paths":{"/a":{"get":{"operationId":"get-forecast.v1","responses":{"200":{"description":"OK"}}}},"/b":{"get":{"operationId":"get_forecast_v1","responses":{"200":{"description":"OK"}}}},"/c":{"get":{"operationId":"a__b","responses":{"200":{"description":"OK"}}}},"/d":{"get":{"operationId":"LONG","responses":{"200":{"description":"OK"}}}}}}""".Replace("LONG", new string('x', 70));
+
+        var api = await OpenApiImport.ParseAsync(Text(document), default);
+
+        Assert.Equal(["get_forecast_v1", "get_forecast_v1_2", "a_b", new string('x', 56)], api.Operations.Select(operation => operation.Name));
+        Assert.Equal(api.Operations.Select(operation => operation.Name), OpenApiDraft.Read(api.OpenApiJson).Select(tool => tool.Name));
+    }
+
+    [Fact]
+    public async Task Merge_reports_every_clashing_name_including_code_tools()
+    {
+        var api = await OpenApiImport.ParseAsync(Text(Pets), default);
+        var subset = OpenApiImport.Select(api, new HashSet<string> { "listPets", "getOwner" });
+
+        var failure = Assert.Throws<PanelException>(() => OpenApiDraft.Merge(string.Empty, subset, new HashSet<string> { "listPets", "getOwner" }));
+
+        Assert.Equal(string.Format(BuilderText.ImportNameTaken, "listPets, getOwner"), failure.Message);
+    }
+
+    private sealed class FailingStream(Exception failure) : Stream
+    {
+        public override bool CanRead => true;
+
+        public override bool CanSeek => false;
+
+        public override bool CanWrite => false;
+
+        public override long Length => throw new NotSupportedException();
+
+        public override long Position
+        {
+            get => throw new NotSupportedException();
+            set => throw new NotSupportedException();
+        }
+
+        public override int Read(byte[] buffer, int offset, int count) => throw failure;
+
+        public override ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default) => throw failure;
+
+        public override void Flush()
+        {
+        }
+
+        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+
+        public override void SetLength(long value) => throw new NotSupportedException();
+
+        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+    }
+
+    [Theory]
+    [InlineData(HttpRequestError.NameResolutionError)]
+    [InlineData(HttpRequestError.SecureConnectionError)]
+    [InlineData(HttpRequestError.ConnectionError)]
+    public async Task Fetch_maps_connection_failures_to_clear_messages(HttpRequestError error)
+    {
+        using var client = new HttpClient(new StubHandler((_, _) => throw new HttpRequestException(error, "boom")));
+
+        var failure = await Assert.ThrowsAsync<PanelException>(() => OpenApiImport.FetchAsync(new Uri("https://docs.example.com/x.json"), client, default));
+
+        Assert.Equal(error switch { HttpRequestError.NameResolutionError => BuilderText.ImportHostNotFound, HttpRequestError.SecureConnectionError => BuilderText.ImportTlsFailed, _ => BuilderText.ImportUnreachable }, failure.Message);
+    }
+
+    [Fact]
+    public async Task Fetch_maps_a_broken_body_stream_to_a_clear_message()
+    {
+        var content = new StreamContent(new FailingStream(new IOException("reset")));
+        using var client = new HttpClient(new StubHandler((_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = content })));
+
+        var failure = await Assert.ThrowsAsync<PanelException>(() => OpenApiImport.FetchAsync(new Uri("https://docs.example.com/x.json"), client, default));
+
+        Assert.Equal(BuilderText.ImportInterrupted, failure.Message);
     }
 }

@@ -72,6 +72,22 @@ internal static class BuilderText
 
     public static string DraftChangedElsewhere => Read();
 
+    public static string ImportHostNotFound => Read();
+
+    public static string ImportTlsFailed => Read();
+
+    public static string ImportUnreachable => Read();
+
+    public static string ImportInterrupted => Read();
+
+    public static string OpenApiVersionMismatch => Read();
+
+    public static string ToolNameTaken => Read();
+
+    public static string ToolBodyNotEditable => Read();
+
+    public static string ArchiveOpenApiInvalid => Read();
+
     private static string Read([System.Runtime.CompilerServices.CallerMemberName] string name = "") =>
         (string)Source.GetProperty(name, BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)!.GetValue(null)!;
 }

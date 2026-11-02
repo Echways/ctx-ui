@@ -130,4 +130,78 @@ public sealed class OpenApiCatalogTests : IClassFixture<CatalogHarness>
         Assert.Equal("https://pets.example.com/api", settings.BaseUrl);
         Assert.Equal(ApiAuthKind.None, settings.AuthKind);
     }
+
+    [Fact]
+    public async Task A_new_form_tool_cannot_take_the_name_of_a_form_tool_or_a_code_tool()
+    {
+        var id = await ServerAsync();
+        var revision = await Catalog.SaveFormToolAsync(id, Tool("taken"), true, (await Catalog.DraftAsync(id, default)).Revision, default);
+
+        var duplicate = await Assert.ThrowsAsync<PanelException>(() => Catalog.SaveFormToolAsync(id, Tool("taken") with { Description = "other" }, true, revision, default));
+        Assert.Equal(string.Format(BuilderText.ToolNameTaken, "taken"), duplicate.Message);
+
+        await Catalog.SaveFileAsync(id, "mcp/greet.py", "from fastmcp.tools import tool\n\n\n@tool\ndef greet():\n    return 1\n", 0, default);
+        revision = (await Catalog.DraftAsync(id, default)).Revision;
+        await Assert.ThrowsAsync<PanelException>(() => Catalog.SaveFormToolAsync(id, Tool("greet"), true, revision, default));
+
+        var edited = await Catalog.SaveFormToolAsync(id, Tool("taken") with { Description = "edited" }, false, revision, default);
+        Assert.Equal(revision + 1, edited);
+        Assert.Equal("edited", Assert.Single(OpenApiDraft.Read((await Catalog.DraftAsync(id, default)).OpenApiJson!)).Description);
+    }
+
+    [Fact]
+    public async Task Importing_a_name_used_by_a_code_tool_is_refused_with_the_name()
+    {
+        var id = await ServerAsync();
+        await Catalog.SaveFileAsync(id, "mcp/a.py", "@tool\ndef a():\n    return 1\n", 0, default);
+        var document = """{"openapi":"3.0.3","info":{"title":"t","version":"1"},"paths":{"/a":{"get":{"operationId":"a","responses":{"200":{"description":"OK"}}}}}}""";
+        var api = await OpenApiImport.ParseAsync(new MemoryStream(Encoding.UTF8.GetBytes(document)), default);
+
+        var failure = await Assert.ThrowsAsync<PanelException>(async () => await Catalog.ImportOperationsAsync(id, api, new HashSet<string> { "a" }, (await Catalog.DraftAsync(id, default)).Revision, default));
+
+        Assert.Equal(string.Format(BuilderText.ImportNameTaken, "a"), failure.Message);
+        Assert.Null((await Catalog.DraftAsync(id, default)).OpenApiJson);
+    }
+
+    [Fact]
+    public async Task A_conflicting_delete_leaves_the_document_and_a_retry_at_the_fresh_revision_deletes_it()
+    {
+        var id = await ServerAsync();
+        var first = await Catalog.SaveFormToolAsync(id, Tool("one"), true, (await Catalog.DraftAsync(id, default)).Revision, default);
+        await Catalog.SaveFormToolAsync(id, Tool("two"), true, first, default);
+
+        await Assert.ThrowsAsync<DraftConflictException>(() => Catalog.DeleteFormToolAsync(id, "one", first, default));
+        Assert.Equal(2, OpenApiDraft.Read((await Catalog.DraftAsync(id, default)).OpenApiJson!).Count);
+
+        await Catalog.DeleteFormToolAsync(id, "one", (await Catalog.DraftAsync(id, default)).Revision, default);
+
+        Assert.Equal(["two"], OpenApiDraft.Read((await Catalog.DraftAsync(id, default)).OpenApiJson!).Select(tool => tool.Name));
+    }
+
+    [Fact]
+    public async Task A_conflicting_convert_changes_nothing()
+    {
+        var id = await ServerAsync();
+        var first = await Catalog.SaveFormToolAsync(id, Tool("one"), true, (await Catalog.DraftAsync(id, default)).Revision, default);
+        await Catalog.SaveFormToolAsync(id, Tool("two"), true, first, default);
+
+        await Assert.ThrowsAsync<DraftConflictException>(() => Catalog.ConvertToCodeAsync(id, "one", first, default));
+
+        var draft = await Catalog.DraftAsync(id, default);
+        Assert.Empty(draft.Files);
+        Assert.Equal(2, OpenApiDraft.Read(draft.OpenApiJson!).Count);
+    }
+
+    [Theory]
+    [InlineData("{ nope")]
+    [InlineData("""{"hello":"world"}""")]
+    [InlineData("""{"swagger":"2.0","info":{"title":"t","version":"1"},"paths":{}}""")]
+    public async Task An_archive_with_an_unusable_openapi_json_is_refused(string document)
+    {
+        var import = new ProjectImport([("openapi.json", document)], null);
+
+        var failure = await Assert.ThrowsAsync<PanelException>(() => Catalog.ImportAsync(Slug(), "Archive", import, default));
+
+        Assert.StartsWith(BuilderText.ArchiveOpenApiInvalid.Split("{0}")[0], failure.Message);
+    }
 }

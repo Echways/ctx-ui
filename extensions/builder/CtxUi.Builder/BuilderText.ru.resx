@@ -580,7 +580,7 @@
     <value>Документ API не является корректным JSON.</value>
   </data>
   <data name="ToolNameInvalid" xml:space="preserve">
-    <value>Имя инструмента может содержать только буквы, цифры, подчёркивание и дефис, не больше 64 символов.</value>
+    <value>Имя инструмента может содержать только буквы, цифры и одиночные подчёркивания, не больше 56 символов, и не может начинаться или заканчиваться подчёркиванием.</value>
   </data>
   <data name="ToolMethodInvalid" xml:space="preserve">
     <value>Выберите метод GET, POST, PUT, PATCH или DELETE.</value>
@@ -643,7 +643,7 @@
     <value>Введите полный адрес http или https.</value>
   </data>
   <data name="ImportNameTaken" xml:space="preserve">
-    <value>Инструмент {0} в этом сервере уже есть.</value>
+    <value>Такие инструменты в этом сервере уже есть: {0}</value>
   </data>
   <data name="ImportNothingSelected" xml:space="preserve">
     <value>Выберите хотя бы одну операцию.</value>
@@ -794,5 +794,44 @@
   </data>
   <data name="ConvertedToCode" xml:space="preserve">
     <value>Инструмент стал кодом</value>
+  </data>
+  <data name="OpenApiVersionMismatch" xml:space="preserve">
+    <value>В черновике OpenAPI {0}, а в импорте {1}. Смесь версий не даст серверу запуститься, поэтому импорт отклонён.</value>
+  </data>
+  <data name="ToolBodyNotEditable" xml:space="preserve">
+    <value>Тело запроса этого инструмента слишком сложное для формы и сохраняется как есть. Уберите параметры тела из формы.</value>
+  </data>
+  <data name="ToolNameTaken" xml:space="preserve">
+    <value>Инструмент с именем {0} в этом сервере уже есть.</value>
+  </data>
+  <data name="ArchiveOpenApiInvalid" xml:space="preserve">
+    <value>openapi.json в архиве использовать нельзя: {0}</value>
+  </data>
+  <data name="ImportHostNotFound" xml:space="preserve">
+    <value>Адрес не найден. Проверьте имя хоста.</value>
+  </data>
+  <data name="ImportTlsFailed" xml:space="preserve">
+    <value>Не удалось установить защищённое соединение с адресом.</value>
+  </data>
+  <data name="ImportUnreachable" xml:space="preserve">
+    <value>Адрес недоступен.</value>
+  </data>
+  <data name="ImportInterrupted" xml:space="preserve">
+    <value>Соединение прервалось во время получения документа.</value>
+  </data>
+  <data name="ImportSwaggerNotStored" xml:space="preserve">
+    <value>Swagger 2.0 нельзя хранить в проекте, используйте OpenAPI 3</value>
+  </data>
+  <data name="RetryOnNewVersion" xml:space="preserve">
+    <value>Повторить на новой версии</value>
+  </data>
+  <data name="ParameterTypeComplex" xml:space="preserve">
+    <value>сложный (сохраняется как есть)</value>
+  </data>
+  <data name="NewServerChooseOne" xml:space="preserve">
+    <value>Выберите либо архив, либо документ OpenAPI, но не оба сразу.</value>
+  </data>
+  <data name="NewServerOpenApi" xml:space="preserve">
+    <value>Документ OpenAPI (необязательно)</value>
   </data>
 </root>

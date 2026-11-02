@@ -351,4 +351,142 @@
   <data name="DiscardMine" xml:space="preserve">
     <value>Отбросить мой текст и продолжить</value>
   </data>
+  <data name="PublishBusy" xml:space="preserve">
+    <value>Версия этого сервера ещё собирается. Дождитесь завершения.</value>
+  </data>
+  <data name="PublishInterrupted" xml:space="preserve">
+    <value>Публикация прервана перезапуском панели.</value>
+  </data>
+  <data name="RunnerForgotRelease" xml:space="preserve">
+    <value>Runner перезапустился и потерял эту сборку. Опубликуйте заново.</value>
+  </data>
+  <data name="RunnerLostDuringBuild" xml:space="preserve">
+    <value>Runner недоступен уже {0} с, пока собиралась версия.</value>
+  </data>
+  <data name="ArchiveCorrupted" xml:space="preserve">
+    <value>Сохранённый снимок этой версии не совпадает с контрольной суммой, использовать его нельзя.</value>
+  </data>
+  <data name="ArchiveMissing" xml:space="preserve">
+    <value>Снимок этой версии не найден.</value>
+  </data>
+  <data name="CheckTimedOut" xml:space="preserve">
+    <value>Сервер не ответил на запрос списка инструментов за {0} с.</value>
+  </data>
+  <data name="CheckFailed" xml:space="preserve">
+    <value>Проверка списка инструментов не удалась: {0}</value>
+  </data>
+  <data name="PublishBaseUrlRequired" xml:space="preserve">
+    <value>Проект собран из описания OpenAPI. Перед публикацией укажите базовый адрес API в настройках.</value>
+  </data>
+  <data name="BuildTimedOut" xml:space="preserve">
+    <value>Сборка не завершилась за {0} мин.</value>
+  </data>
+  <data name="StartTimedOut" xml:space="preserve">
+    <value>Сервер не запустился за {0} мин.</value>
+  </data>
+  <data name="RollbackUnavailable" xml:space="preserve">
+    <value>Эту версию нельзя восстановить.</value>
+  </data>
+  <data name="ReleaseNotFound" xml:space="preserve">
+    <value>Версия не найдена.</value>
+  </data>
+  <data name="Publish" xml:space="preserve">
+    <value>Опубликовать</value>
+  </data>
+  <data name="PublishBuildOnly" xml:space="preserve">
+    <value>Собрать без активации</value>
+  </data>
+  <data name="StateNoRelease" xml:space="preserve">
+    <value>Не опубликован</value>
+  </data>
+  <data name="StateRunning" xml:space="preserve">
+    <value>Работает, v{0}</value>
+  </data>
+  <data name="StateBuilding" xml:space="preserve">
+    <value>Сборка v{0}</value>
+  </data>
+  <data name="StateBuildingWhileRunning" xml:space="preserve">
+    <value>Работает v{0}, сборка v{1}</value>
+  </data>
+  <data name="StateRunnerUnavailable" xml:space="preserve">
+    <value>Runner недоступен</value>
+  </data>
+  <data name="StateNeedsReactivation" xml:space="preserve">
+    <value>Остановлен, версию v{0} нужно активировать заново</value>
+  </data>
+  <data name="Releases" xml:space="preserve">
+    <value>Версии</value>
+  </data>
+  <data name="Logs" xml:space="preserve">
+    <value>Логи</value>
+  </data>
+  <data name="ReleaseTitle" xml:space="preserve">
+    <value>Версия {0}</value>
+  </data>
+  <data name="ReleaseBuilt" xml:space="preserve">
+    <value>Собрана</value>
+  </data>
+  <data name="ReleaseBuilding" xml:space="preserve">
+    <value>Собирается</value>
+  </data>
+  <data name="ReleaseFailed" xml:space="preserve">
+    <value>Ошибка</value>
+  </data>
+  <data name="ReleaseCandidate" xml:space="preserve">
+    <value>Кандидат</value>
+  </data>
+  <data name="ReleaseActive" xml:space="preserve">
+    <value>Активна</value>
+  </data>
+  <data name="ReleaseRetired" xml:space="preserve">
+    <value>Снята</value>
+  </data>
+  <data name="Rollback" xml:space="preserve">
+    <value>Откатить на эту версию</value>
+  </data>
+  <data name="RollbackStarted" xml:space="preserve">
+    <value>Версия {0} активируется.</value>
+  </data>
+  <data name="RemovedToolsWarning" xml:space="preserve">
+    <value>Инструменты, удалённые с прошлой версии: {0}</value>
+  </data>
+  <data name="ToolsInRelease" xml:space="preserve">
+    <value>Инструменты: {0}</value>
+  </data>
+  <data name="BuildLog" xml:space="preserve">
+    <value>Журнал сборки</value>
+  </data>
+  <data name="NoBuildLog" xml:space="preserve">
+    <value>Журнал сборки пуст.</value>
+  </data>
+  <data name="NoReleases" xml:space="preserve">
+    <value>Версий пока нет</value>
+  </data>
+  <data name="NoReleasesHint" xml:space="preserve">
+    <value>Опубликуйте черновик, чтобы появилась первая версия.</value>
+  </data>
+  <data name="LogsRuntime" xml:space="preserve">
+    <value>Вывод сервера</value>
+  </data>
+  <data name="LogsLastBuild" xml:space="preserve">
+    <value>Последняя сборка</value>
+  </data>
+  <data name="LogsEmpty" xml:space="preserve">
+    <value>Вывода пока нет.</value>
+  </data>
+  <data name="LogsLineLimit" xml:space="preserve">
+    <value>Показаны последние {0} строк.</value>
+  </data>
+  <data name="LogsUnavailable" xml:space="preserve">
+    <value>Поток логов прервался: {0}</value>
+  </data>
+  <data name="BuildFailed" xml:space="preserve">
+    <value>Сборка не удалась.</value>
+  </data>
+  <data name="StartFailed" xml:space="preserve">
+    <value>Сервер не запустился.</value>
+  </data>
+  <data name="Reactivate" xml:space="preserve">
+    <value>Запустить снова</value>
+  </data>
 </root>

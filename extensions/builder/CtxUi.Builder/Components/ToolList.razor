@@ -36,7 +36,9 @@
         </ul>
     }
     <hr class="builder-rule" />
-    <button type="button" class="builder-file" aria-current="@(SettingsOpen ? "true" : null)" data-testid="open-settings" @onclick="OnSettings">@BuilderText.Settings</button>
+    <button type="button" class="builder-file" aria-current="@(View == ServerView.Releases ? "true" : null)" data-testid="open-releases" @onclick="() => OnView.InvokeAsync(ServerView.Releases)">@BuilderText.Releases</button>
+    <button type="button" class="builder-file" aria-current="@(View == ServerView.Logs ? "true" : null)" data-testid="open-logs" @onclick="() => OnView.InvokeAsync(ServerView.Logs)">@BuilderText.Logs</button>
+    <button type="button" class="builder-file" aria-current="@(View == ServerView.Settings ? "true" : null)" data-testid="open-settings" @onclick="() => OnView.InvokeAsync(ServerView.Settings)">@BuilderText.Settings</button>
 </nav>
 
 @code {
@@ -52,18 +54,18 @@
     public string? Selected { get; set; }
 
     [Parameter]
-    public bool SettingsOpen { get; set; }
+    public ServerView View { get; set; }
 
     [Parameter]
     public EventCallback<string> OnSelect { get; set; }
 
     [Parameter]
-    public EventCallback OnSettings { get; set; }
+    public EventCallback<ServerView> OnView { get; set; }
 
     [Parameter, EditorRequired]
     public EventCallback<string> OnCreate { get; set; }
 
-    private bool IsOpen(string path) => !SettingsOpen && path == Selected;
+    private bool IsOpen(string path) => View == ServerView.Editor && path == Selected;
 
     private static bool IsTool(string path) => path.EndsWith(".py", StringComparison.OrdinalIgnoreCase);
 

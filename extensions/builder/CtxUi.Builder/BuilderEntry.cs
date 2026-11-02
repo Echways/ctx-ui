@@ -1,5 +1,6 @@
 using CtxUi.Builder.Components;
 using CtxUi.Builder.Data;
+using CtxUi.Builder.Publishing;
 using CtxUi.Builder.Runner;
 using CtxUi.Builder.Servers;
 using CtxUi.Extensions;
@@ -30,6 +31,7 @@ public sealed class BuilderEntry : IPanelExtension
         context.Services.AddSingleton<SecretBox>();
         context.Services.AddScoped<ServerCatalog>();
         context.Services.AddScoped<RunnerAvailability>();
+        context.Services.AddPublishing(context.DataDirectory);
 
         context.Panel
             .AddCaption(() => BuilderText.Caption)

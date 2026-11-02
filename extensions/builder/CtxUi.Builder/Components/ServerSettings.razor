@@ -1,4 +1,5 @@
 @inject ServerCatalog Catalog
+@inject PublishQueue Queue
 @inject IJSRuntime Js
 @inject NavigationManager Navigation
 
@@ -140,6 +141,7 @@
     private async Task SaveSecretAsync()
     {
         await Catalog.SetSecretAsync(Settings.ServerId, _secret.Name, _secret.Value, CancellationToken.None);
+        await Queue.ApplySettingsAsync(Settings.ServerId, CancellationToken.None);
         await OnChanged.InvokeAsync();
     }
 
@@ -148,6 +150,7 @@
         if (_access.Access == NetworkAccess.FullNetwork && Settings.Access != NetworkAccess.FullNetwork && !_confirmed)
             throw new PanelException(BuilderText.AccessNotConfirmed);
         await Catalog.SetAccessAsync(Settings.ServerId, _access.Access, new ServerLimits(_access.MemoryMb, _access.Cpus, _access.Pids), CancellationToken.None);
+        await Queue.ApplySettingsAsync(Settings.ServerId, CancellationToken.None);
         await OnChanged.InvokeAsync();
     }
 

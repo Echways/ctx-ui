@@ -15,6 +15,9 @@ public sealed partial class ServerCatalog(BuilderDatabase database, SecretBox bo
     private const int MinimumMemoryMb = 6;
     private const double MinimumCpus = 0.01;
     private const string ProjectRoot = "mcp/";
+    private const string ServerNameVariable = "BUILDER_SERVER_NAME";
+    private const string BaseUrlVariable = "BUILDER_BASE_URL";
+    private const string ApiHeadersVariable = "BUILDER_API_HEADERS";
 
     [GeneratedRegex("^[a-z][a-z0-9-]{0,31}$")]
     private static partial Regex SlugPattern();
@@ -238,6 +241,33 @@ public sealed partial class ServerCatalog(BuilderDatabase database, SecretBox bo
         return path;
     }
 
+    public async Task<string> RouteSecretAsync(Guid id, CancellationToken ct)
+    {
+        var server = await database.Servers.AsNoTracking().SingleOrDefaultAsync(server => server.Id == id, ct)
+            ?? throw new PanelException(BuilderText.ServerNotFound);
+        return box.Open(server.RouteSecretSealed);
+    }
+
+    public async Task<ServerLaunch> LaunchAsync(Guid id, CancellationToken ct)
+    {
+        var server = await database.Servers.AsNoTracking().SingleOrDefaultAsync(server => server.Id == id, ct)
+            ?? throw new PanelException(BuilderText.ServerNotFound);
+        var draft = await database.Drafts.AsNoTracking().SingleAsync(draft => draft.ServerId == id, ct);
+        var secrets = await database.Secrets.AsNoTracking().Where(secret => secret.ServerId == id).ToListAsync(ct);
+
+        var environment = secrets.ToDictionary(secret => secret.Name, secret => box.Open(secret.ValueSealed));
+        environment[ServerNameVariable] = server.Name;
+        environment.Remove(BaseUrlVariable);
+        environment.Remove(ApiHeadersVariable);
+        if (!string.IsNullOrEmpty(draft.BaseUrl))
+            environment[BaseUrlVariable] = draft.BaseUrl;
+        if (OpenAuth(draft.ApiAuthSealed) is { } auth)
+            environment[ApiHeadersVariable] = JsonSerializer.Serialize(new Dictionary<string, string> { [auth.Kind == ApiAuthKind.Header ? auth.HeaderName! : "Authorization"] = AuthValue(auth) });
+
+        var spec = new ServerSpec(server.NetworkAccess, new ServerLimits(server.MemoryMb, server.CpuLimit, server.PidsLimit), box.Open(server.RouteSecretSealed));
+        return new ServerLaunch(spec, new StartRelease(environment));
+    }
+
     public async Task<ProjectExport> ExportAsync(Guid id, CancellationToken ct)
     {
         var server = await database.Servers.AsNoTracking().SingleOrDefaultAsync(server => server.Id == id, ct)
@@ -245,6 +275,13 @@ public sealed partial class ServerCatalog(BuilderDatabase database, SecretBox bo
         var draft = await DraftAsync(id, ct);
         return new ProjectExport($"{server.Slug}.tar.gz", await ProjectFiles.SnapshotAsync(draft, draft.Files, ProjectFiles.FastMcpVersion, ct));
     }
+
+    private static string AuthValue(StoredAuth auth) => auth.Kind switch
+    {
+        ApiAuthKind.Basic => "Basic " + Convert.ToBase64String(Encoding.UTF8.GetBytes($"{auth.Username}:{auth.Secret}")),
+        ApiAuthKind.Bearer => $"Bearer {auth.Secret}",
+        _ => auth.Secret,
+    };
 
     private StoredAuth? OpenAuth(string? sealedAuth) =>
         sealedAuth is null ? null : JsonSerializer.Deserialize<StoredAuth>(box.Open(sealedAuth));

@@ -7,6 +7,9 @@
         <span>/</span>
         <span>@_settings?.Name</span>
     </Summary>
+    <Actions>
+        <PublishButton ServerId="Id" Prepare="FlushAsync" />
+    </Actions>
 </PageHead>
 
 @if (_settings is null)
@@ -23,12 +26,20 @@ else
         </div>
     }
     <div class="builder-workspace">
-        <ToolList Files="_files.Select(file => file.Path).ToList()" Selected="_selected" SettingsOpen="_settingsOpen"
-                  OnSelect="SelectAsync" OnSettings="OpenSettingsAsync" OnCreate="CreateToolAsync" />
+        <ToolList Files="_files.Select(file => file.Path).ToList()" Selected="_selected" View="_view"
+                  OnSelect="SelectAsync" OnView="OpenViewAsync" OnCreate="CreateToolAsync" />
         <div class="builder-main">
-            @if (_settingsOpen)
+            @if (_view == ServerView.Settings)
             {
                 <ServerSettings Settings="_settings" OnChanged="ReloadAsync" />
+            }
+            else if (_view == ServerView.Releases)
+            {
+                <ReleasesPanel ServerId="Id" />
+            }
+            else if (_view == ServerView.Logs)
+            {
+                <LogsPanel ServerId="Id" />
             }
             else if (_selected is not null && _files.FirstOrDefault(file => file.Path == _selected) is { } file)
             {
@@ -47,7 +58,7 @@ else
     private ServerSettingsView? _settings;
     private CodeEditor? _editor;
     private string? _selected;
-    private bool _settingsOpen;
+    private ServerView _view;
 
     [Parameter]
     public Guid Id { get; set; }
@@ -91,14 +102,14 @@ else
     private Task SelectAsync(string path) => GuardedAsync(async () =>
     {
         await LoadAsync();
-        _settingsOpen = false;
+        _view = ServerView.Editor;
         _selected = path;
     });
 
-    private Task OpenSettingsAsync() => GuardedAsync(async () =>
+    private Task OpenViewAsync(ServerView view) => GuardedAsync(async () =>
     {
         await LoadAsync();
-        _settingsOpen = true;
+        _view = view;
     });
 
     private async Task ReloadAsync() => await LoadAsync();
@@ -109,6 +120,6 @@ else
             throw new PanelException(BuilderText.UnsavedBlocked);
         _selected = await Catalog.CreateToolAsync(Id, name, CancellationToken.None);
         await LoadAsync();
-        _settingsOpen = false;
+        _view = ServerView.Editor;
     }
 }

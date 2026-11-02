@@ -351,4 +351,142 @@
   <data name="DiscardMine" xml:space="preserve">
     <value>Discard my text and continue</value>
   </data>
+  <data name="PublishBusy" xml:space="preserve">
+    <value>A version of this server is still being built. Wait for it to finish.</value>
+  </data>
+  <data name="PublishInterrupted" xml:space="preserve">
+    <value>The publication was interrupted by a restart of the panel.</value>
+  </data>
+  <data name="RunnerForgotRelease" xml:space="preserve">
+    <value>The runner restarted and lost this build. Publish again.</value>
+  </data>
+  <data name="RunnerLostDuringBuild" xml:space="preserve">
+    <value>The runner was not reachable for {0} seconds while the version was being built.</value>
+  </data>
+  <data name="ArchiveCorrupted" xml:space="preserve">
+    <value>The saved snapshot of this version does not match its checksum and cannot be used.</value>
+  </data>
+  <data name="ArchiveMissing" xml:space="preserve">
+    <value>The saved snapshot of this version is missing.</value>
+  </data>
+  <data name="CheckTimedOut" xml:space="preserve">
+    <value>The server did not answer the tool list within {0} seconds.</value>
+  </data>
+  <data name="CheckFailed" xml:space="preserve">
+    <value>The tool list check failed: {0}</value>
+  </data>
+  <data name="PublishBaseUrlRequired" xml:space="preserve">
+    <value>This project is built from an OpenAPI description. Set the base URL of the API in the settings before publishing.</value>
+  </data>
+  <data name="BuildTimedOut" xml:space="preserve">
+    <value>The build did not finish within {0} minutes.</value>
+  </data>
+  <data name="StartTimedOut" xml:space="preserve">
+    <value>The server did not start within {0} minutes.</value>
+  </data>
+  <data name="RollbackUnavailable" xml:space="preserve">
+    <value>This version cannot be restored.</value>
+  </data>
+  <data name="ReleaseNotFound" xml:space="preserve">
+    <value>Version not found.</value>
+  </data>
+  <data name="Publish" xml:space="preserve">
+    <value>Publish</value>
+  </data>
+  <data name="PublishBuildOnly" xml:space="preserve">
+    <value>Build without activating</value>
+  </data>
+  <data name="StateNoRelease" xml:space="preserve">
+    <value>Not published</value>
+  </data>
+  <data name="StateRunning" xml:space="preserve">
+    <value>Running, v{0}</value>
+  </data>
+  <data name="StateBuilding" xml:space="preserve">
+    <value>Building v{0}</value>
+  </data>
+  <data name="StateBuildingWhileRunning" xml:space="preserve">
+    <value>Running v{0}, building v{1}</value>
+  </data>
+  <data name="StateRunnerUnavailable" xml:space="preserve">
+    <value>Runner unavailable</value>
+  </data>
+  <data name="StateNeedsReactivation" xml:space="preserve">
+    <value>Stopped, v{0} must be activated again</value>
+  </data>
+  <data name="Releases" xml:space="preserve">
+    <value>Versions</value>
+  </data>
+  <data name="Logs" xml:space="preserve">
+    <value>Logs</value>
+  </data>
+  <data name="ReleaseTitle" xml:space="preserve">
+    <value>Version {0}</value>
+  </data>
+  <data name="ReleaseBuilt" xml:space="preserve">
+    <value>Built</value>
+  </data>
+  <data name="ReleaseBuilding" xml:space="preserve">
+    <value>Building</value>
+  </data>
+  <data name="ReleaseFailed" xml:space="preserve">
+    <value>Failed</value>
+  </data>
+  <data name="ReleaseCandidate" xml:space="preserve">
+    <value>Candidate</value>
+  </data>
+  <data name="ReleaseActive" xml:space="preserve">
+    <value>Active</value>
+  </data>
+  <data name="ReleaseRetired" xml:space="preserve">
+    <value>Retired</value>
+  </data>
+  <data name="Rollback" xml:space="preserve">
+    <value>Roll back to this version</value>
+  </data>
+  <data name="RollbackStarted" xml:space="preserve">
+    <value>Version {0} is being activated.</value>
+  </data>
+  <data name="RemovedToolsWarning" xml:space="preserve">
+    <value>Tools removed since the previous version: {0}</value>
+  </data>
+  <data name="ToolsInRelease" xml:space="preserve">
+    <value>Tools: {0}</value>
+  </data>
+  <data name="BuildLog" xml:space="preserve">
+    <value>Build log</value>
+  </data>
+  <data name="NoBuildLog" xml:space="preserve">
+    <value>The build log is empty.</value>
+  </data>
+  <data name="NoReleases" xml:space="preserve">
+    <value>No versions yet</value>
+  </data>
+  <data name="NoReleasesHint" xml:space="preserve">
+    <value>Publish the draft to create the first version.</value>
+  </data>
+  <data name="LogsRuntime" xml:space="preserve">
+    <value>Server output</value>
+  </data>
+  <data name="LogsLastBuild" xml:space="preserve">
+    <value>Last build</value>
+  </data>
+  <data name="LogsEmpty" xml:space="preserve">
+    <value>No output yet.</value>
+  </data>
+  <data name="LogsLineLimit" xml:space="preserve">
+    <value>Showing the last {0} lines.</value>
+  </data>
+  <data name="LogsUnavailable" xml:space="preserve">
+    <value>The log stream stopped: {0}</value>
+  </data>
+  <data name="BuildFailed" xml:space="preserve">
+    <value>The build failed.</value>
+  </data>
+  <data name="StartFailed" xml:space="preserve">
+    <value>The server did not start.</value>
+  </data>
+  <data name="Reactivate" xml:space="preserve">
+    <value>Start again</value>
+  </data>
 </root>

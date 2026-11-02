@@ -12,6 +12,7 @@
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="all" />
+    <PackageReference Include="ModelContextProtocol.Core" />
     <ProjectReference Include="..\..\..\src\CtxUi.Extensions\CtxUi.Extensions.csproj" />
     <ProjectReference Include="..\CtxUi.Builder.Contracts\CtxUi.Builder.Contracts.csproj" />
   </ItemGroup>

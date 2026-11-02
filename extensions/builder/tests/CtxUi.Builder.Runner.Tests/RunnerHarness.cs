@@ -151,6 +151,7 @@ internal sealed class RunnerHarness : IAsyncDisposable
     public RunnerPorts Ports { get; }
     public HttpClient Control { get; }
     public HttpClient Ingress { get; }
+    public IServiceProvider Services => _app.Services;
 
     public static ServerSpec Spec(NetworkAccess access = NetworkAccess.InternetOnly, string secret = Secret) =>
         new(access, new ServerLimits(), secret);

@@ -97,7 +97,8 @@ internal sealed class FakeDockerEngine : IDockerEngine
             {
                 Name = name,
                 Labels = new Dictionary<string, string> { [BuilderLabels.Root] = owner.ToString() }
-            }) { Running = true };
+            })
+            { Running = true };
         }
     }
 

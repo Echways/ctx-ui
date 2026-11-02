@@ -2,6 +2,9 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using CtxUi.Builder.Contracts;
+using Microsoft.AspNetCore.DataProtection.KeyManagement;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace CtxUi.Builder.Runner.Tests;
 
@@ -40,6 +43,20 @@ public sealed class RunnerEndpointsTests
         Assert.Equal(HttpStatusCode.Unauthorized, unknownPath.StatusCode);
         Assert.Equal(HttpStatusCode.Unauthorized, mutation.StatusCode);
         Assert.Equal(HttpStatusCode.OK, right.StatusCode);
+    }
+
+    [Fact]
+    public async Task Data_protection_keys_stay_in_memory()
+    {
+        await using var harness = await RunnerHarness.StartAsync();
+
+        var keys = harness.Services.GetRequiredService<IOptions<KeyManagementOptions>>().Value;
+        var repository = keys.XmlRepository;
+        harness.Services.GetRequiredService<IKeyManager>().CreateNewKey(DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddDays(1));
+
+        Assert.IsType<InMemoryXmlRepository>(repository);
+        Assert.NotNull(keys.XmlEncryptor);
+        Assert.NotEmpty(repository!.GetAllElements());
     }
 
     [Fact]

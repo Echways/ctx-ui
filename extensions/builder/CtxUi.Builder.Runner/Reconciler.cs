@@ -136,8 +136,8 @@ public sealed class Reconciler(
             server.Unmarked.UnionWith(running);
         }
 
-        logger.LogError(
-            "Server {Server} has {Count} running containers and no activation marker, so its active route cannot be restored. They are kept running until a release is activated.",
+        logger.LogWarning(
+            "Server {Server} has {Count} running containers and no activation marker. None of them is routed as active, and they are kept running until a release is activated.",
             server.Id,
             running.Count);
     }

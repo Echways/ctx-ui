@@ -1,0 +1,8 @@
+services:
+  ctx-ui:
+    networks:
+      - default
+      - ctxb-control
+
+  runner:
+    ports: !reset []

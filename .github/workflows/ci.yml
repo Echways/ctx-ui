@@ -176,3 +176,25 @@ jobs:
 
       - name: Run extension checks
         run: deploy/tests/extension.sh
+
+  builder:
+    name: "Builder: isolation"
+    runs-on: ubuntu-26.04
+    timeout-minutes: 30
+    steps:
+      - name: Check out
+        uses: actions/checkout@v7
+
+      - name: Set up .NET
+        uses: ./.github/actions/dotnet
+
+      - name: Test runner
+        run: dotnet test --project extensions/builder/tests/CtxUi.Builder.Runner.Tests -c Release
+
+      - name: Run runtime checks
+        if: ${{ !cancelled() }}
+        run: deploy/tests/builder-runtime.sh
+
+      - name: Run isolation checks
+        if: ${{ !cancelled() }}
+        run: deploy/tests/builder-isolation.sh

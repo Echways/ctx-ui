@@ -5,6 +5,8 @@ using System.Security.Cryptography;
 using System.Text;
 using CtxUi.Builder.Contracts;
 using Docker.DotNet;
+using Microsoft.AspNetCore.DataProtection.KeyManagement;
+using Microsoft.AspNetCore.DataProtection.XmlEncryption;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc;
 using Yarp.ReverseProxy.Configuration;
@@ -52,6 +54,12 @@ public static class RunnerEndpoints
         builder.Services.AddSingleton<ReleaseRunner>();
         builder.Services.AddHostedService<Reconciler>();
         builder.Services.AddReverseProxy();
+        builder.Services.AddDataProtection();
+        builder.Services.Configure<KeyManagementOptions>(keys =>
+        {
+            keys.XmlRepository = new InMemoryXmlRepository();
+            keys.XmlEncryptor = new NullXmlEncryptor();
+        });
 
         var app = builder.Build();
         app.UseRouting();

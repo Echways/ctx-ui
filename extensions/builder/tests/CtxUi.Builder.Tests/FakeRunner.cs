@@ -51,6 +51,8 @@ public sealed partial class FakeRunner : HttpMessageHandler
 
     public bool FailDeletes { get; set; }
 
+    public HashSet<Guid> UnknownServers { get; } = [];
+
     public bool ServerDeleted { get; private set; }
 
     public bool KnowsSpec { get; private set; }
@@ -126,6 +128,9 @@ public sealed partial class FakeRunner : HttpMessageHandler
         var match = RoutePattern().Match(path);
         if (!match.Success)
             return Problem(HttpStatusCode.NotFound, "unknown path");
+
+        if (match.Groups["server"].Success && UnknownServers.Contains(Guid.Parse(match.Groups["server"].Value)) && method == HttpMethod.Get && !match.Groups["number"].Success)
+            return Problem(HttpStatusCode.NotFound, "unknown server");
 
         var release = match.Groups["number"].Success ? int.Parse(match.Groups["number"].Value) : (int?)null;
         var action = match.Groups["action"].Value;
@@ -247,6 +252,6 @@ public sealed partial class FakeRunner : HttpMessageHandler
     private static HttpResponseMessage Problem(HttpStatusCode status, string detail) =>
         new(status) { Content = JsonContent.Create(new ProblemDetails { Status = (int)status, Detail = detail }) };
 
-    [GeneratedRegex(@"^/v1/servers/[0-9a-f-]{36}(/releases/(?<number>\d+))?(/(?<action>[a-z]+))?$")]
+    [GeneratedRegex(@"^/v1/servers/(?<server>[0-9a-f-]{36})(/releases/(?<number>\d+))?(/(?<action>[a-z]+))?$")]
     private static partial Regex RoutePattern();
 }

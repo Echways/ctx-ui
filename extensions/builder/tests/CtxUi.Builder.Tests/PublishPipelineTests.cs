@@ -165,6 +165,31 @@ public sealed class PublishPipelineTests
     }
 
     [Fact]
+    public async Task A_server_unknown_to_the_runner_does_not_hide_the_activated_release_of_another()
+    {
+        await using var harness = await PublishHarness.CreateAsync();
+        var first = await harness.CreateServerAsync("first");
+        var second = await harness.CreateServerAsync("second");
+        var ordered = new[] { first, second }.Order().ToArray();
+        await harness.WithScopeAsync(async services =>
+        {
+            var database = services.GetRequiredService<BuilderDatabase>();
+            foreach (var id in ordered)
+                database.Releases.Add(new Release { Id = Guid.NewGuid(), ServerId = id, Number = 1, Status = ReleaseState.Building, CreatedAt = DateTimeOffset.UtcNow });
+            await database.SaveChangesAsync();
+            return 0;
+        });
+        harness.Runner.UnknownServers.Add(ordered[0]);
+        harness.Runner.Active = 1;
+
+        await harness.Queue.InitializeAsync(default);
+        await harness.StartAsync();
+
+        Assert.Equal(ReleaseState.Failed, (await harness.ReleaseAsync(ordered[0], 1)).Status);
+        Assert.Equal(ReleaseState.Active, (await harness.ReleaseAsync(ordered[1], 1)).Status);
+    }
+
+    [Fact]
     public async Task Runner_restart_during_a_build_fails_the_release_and_a_new_publish_works()
     {
         var (harness, server) = await StartedAsync();

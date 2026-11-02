@@ -124,6 +124,9 @@ public sealed class PublishPipeline(
                 {
                     activated = (await run.Runner.ServerAsync(release.ServerId, limit.Token)).ActiveRelease == release.Number;
                 }
+                catch (RunnerException failure) when (failure.Status == HttpStatusCode.NotFound)
+                {
+                }
                 catch (Exception failure) when (failure is RunnerException or OperationCanceledException && !ct.IsCancellationRequested)
                 {
                     runnerReachable = false;

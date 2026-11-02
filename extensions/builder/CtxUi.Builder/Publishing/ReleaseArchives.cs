@@ -22,6 +22,8 @@ public sealed class ReleaseArchives(string dataDirectory)
 
     public void Remove(Guid releaseId)
     {
+        if (!Directory.Exists(_directory))
+            return;
         File.Delete(PathOf(releaseId));
         File.Delete(PathOf(releaseId) + TemporarySuffix);
     }

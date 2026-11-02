@@ -35,16 +35,17 @@ public sealed class PanelActionSlotEditor<TContext>
         _slot = slot;
     }
 
-    public PanelEditor AddAction(Func<string> title, Func<PanelActionArgs<TContext>, Task> run, int order = 0)
+    public PanelEditor AddAction(Func<string> title, Func<PanelActionArgs<TContext>, Task> run, int order = 0, Func<TContext, bool>? visible = null)
     {
-        _registry.AddAction(_slot, new SlotAction<TContext>(title, run, order));
+        _registry.AddAction(_slot, new SlotAction<TContext>(title, run, order, visible));
         return _editor;
     }
 
-    public PanelEditor AddSheet<TSheet>(Func<string> title, Func<TContext, string> sheetTitle, int order = 0)
+    public PanelEditor AddSheet<TSheet>(Func<string> title, Func<TContext, string> sheetTitle, int order = 0, Func<TContext, bool>? visible = null)
         where TSheet : PanelBlock<TContext> =>
         AddAction(
             title,
             args => args.Services.GetRequiredService<IBlockSheets>().ShowAsync(sheetTitle(args.Context), typeof(TSheet), args.Context),
-            order);
+            order,
+            visible);
 }

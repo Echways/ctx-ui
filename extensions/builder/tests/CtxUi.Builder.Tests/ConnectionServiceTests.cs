@@ -1,6 +1,8 @@
 using CtxUi.Builder.Contracts;
 using CtxUi.Builder.Publishing;
+using CtxUi.Builder.Servers;
 using Enfilade;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace CtxUi.Builder.Tests;
 
@@ -64,7 +66,7 @@ public sealed class ConnectionServiceTests
     {
         await using var harness = await PublishHarness.CreateAsync();
         var server = await harness.CreateServerAsync();
-        harness.Data.AddFailure = new Core.DomainException("Slug is invalid.");
+        harness.Data.AddFailure = new PanelException("Slug is invalid.");
 
         var failure = await Assert.ThrowsAsync<PanelException>(() => harness.ConnectAsync(server, "Bad Slug"));
 
@@ -223,5 +225,236 @@ public sealed class ConnectionServiceTests
         await harness.WaitIdleAsync(connected);
 
         Assert.Empty(announced);
+    }
+
+    [Fact]
+    public async Task A_connect_that_overlaps_another_one_is_refused_and_leaves_one_inbound()
+    {
+        await using var harness = await PublishHarness.CreateAsync();
+        var server = await harness.CreateServerAsync();
+        Exception? refused = null;
+        harness.Data.DuringAdd = async () =>
+        {
+            try
+            {
+                await harness.ConnectAsync(server, "second-mcp");
+            }
+            catch (PanelException failure)
+            {
+                refused = failure;
+            }
+        };
+
+        var inbound = await harness.ConnectAsync(server, "first-mcp");
+
+        Assert.Equal(BuilderText.ConnectionBusy, refused?.Message);
+        Assert.Equal([inbound.Id], harness.Data.Inbounds.Select(known => known.Id));
+        Assert.Equal(inbound.Id.ToString(), (await harness.ServerAsync(server)).InboundId);
+    }
+
+    [Fact]
+    public async Task A_connection_written_by_someone_else_in_the_meantime_removes_the_new_inbound()
+    {
+        await using var harness = await PublishHarness.CreateAsync();
+        var server = await harness.CreateServerAsync();
+        var client = harness.Data.AddClient("first");
+        var other = Guid.NewGuid().ToString();
+        harness.Data.DuringAdd = () => harness.SetInboundIdAsync(server, other);
+
+        var failure = await Assert.ThrowsAsync<PanelException>(() => harness.ConnectAsync(server, "weather-mcp", "Weather", false, client.Id));
+
+        Assert.Equal(BuilderText.ConnectionAlreadyConnected, failure.Message);
+        Assert.Empty(harness.Data.Inbounds);
+        Assert.Equal(other, (await harness.ServerAsync(server)).InboundId);
+    }
+
+    [Fact]
+    public async Task A_server_deleted_in_the_meantime_removes_the_new_inbound()
+    {
+        await using var harness = await PublishHarness.CreateAsync();
+        var server = await harness.CreateServerAsync();
+        harness.Data.DuringAdd = () => harness.RemoveServerRowAsync(server);
+
+        var failure = await Assert.ThrowsAsync<PanelException>(() => harness.ConnectAsync(server, "weather-mcp"));
+
+        Assert.Equal(BuilderText.ServerNotFound, failure.Message);
+        Assert.Empty(harness.Data.Inbounds);
+    }
+
+    [Fact]
+    public async Task A_delete_that_overlaps_a_connect_is_refused()
+    {
+        await using var harness = await PublishHarness.CreateAsync();
+        var server = await harness.CreateServerAsync();
+        Exception? refused = null;
+        harness.Data.DuringAdd = async () =>
+        {
+            try
+            {
+                await harness.DeleteServerAsync(server);
+            }
+            catch (PanelException failure)
+            {
+                refused = failure;
+            }
+        };
+
+        await harness.ConnectAsync(server, "weather-mcp");
+
+        Assert.Equal(BuilderText.ConnectionBusy, refused?.Message);
+        Assert.True(await harness.ServerExistsAsync(server));
+        Assert.False(harness.Runner.ServerDeleted);
+    }
+
+    [Fact]
+    public async Task A_connect_during_a_delete_is_refused()
+    {
+        await using var harness = await PublishHarness.CreateAsync();
+        var server = await harness.CreateServerAsync();
+        harness.Queue.ReserveForDeletion(server);
+
+        var refused = await Record.ExceptionAsync(() => harness.ConnectAsync(server, "weather-mcp"));
+
+        Assert.Equal(BuilderText.ServerDeleting, refused?.Message);
+        Assert.Empty(harness.Data.Drafts);
+    }
+
+    [Fact]
+    public async Task A_server_reserved_for_deletion_refuses_publications_and_settings_changes_until_released()
+    {
+        await using var harness = await PublishHarness.CreateAsync();
+        var server = await harness.CreateServerAsync();
+        await harness.StartAsync();
+        await harness.PublishAndWaitAsync(server);
+        await harness.WaitIdleAsync(server);
+        await harness.PublishAndWaitAsync(server);
+        await harness.WaitIdleAsync(server);
+        harness.Queue.ReserveForDeletion(server);
+
+        var publish = await Assert.ThrowsAsync<PanelException>(() => harness.Queue.PublishAsync(server, PublishMode.Activate, default));
+        var rollback = await Assert.ThrowsAsync<PanelException>(() => harness.Queue.RollbackAsync(server, 1, default));
+        var settings = await Assert.ThrowsAsync<PanelException>(() => harness.Queue.ApplySettingsAsync(server, default));
+
+        Assert.All([publish, rollback, settings], failure => Assert.Equal(BuilderText.ServerDeleting, failure.Message));
+        Assert.False(harness.Queue.IsBusy(server));
+
+        harness.Queue.ReleaseDeletion(server);
+        await harness.PublishAndWaitAsync(server);
+    }
+
+    [Fact]
+    public async Task A_publication_in_progress_blocks_the_reservation()
+    {
+        await using var harness = await PublishHarness.CreateAsync();
+        var server = await harness.CreateServerAsync();
+        await harness.StartAsync();
+        harness.Runner.HoldBuilds = true;
+        await harness.Queue.PublishAsync(server, PublishMode.Activate, default);
+
+        var failure = Assert.Throws<PanelException>(() => harness.Queue.ReserveForDeletion(server));
+
+        Assert.Equal(BuilderText.PublishBusy, failure.Message);
+    }
+
+    [Fact]
+    public async Task Repair_does_not_run_for_a_server_being_deleted()
+    {
+        await using var harness = await PublishHarness.CreateAsync();
+        var server = await harness.CreateServerAsync();
+        harness.RepairInterval = TimeSpan.FromMilliseconds(40);
+        await harness.StartAsync();
+        await harness.PublishAndWaitAsync(server);
+        await harness.WaitIdleAsync(server);
+        harness.Queue.ReserveForDeletion(server);
+        harness.Runner.Restart(loseMarker: true);
+
+        await Task.Delay(300);
+
+        Assert.Null(harness.Runner.Active);
+        harness.Queue.ReleaseDeletion(server);
+        await harness.WaitForAsync(() => Task.FromResult(harness.Runner.Active == 1));
+    }
+
+    [Fact]
+    public async Task A_failed_delete_releases_the_reservation()
+    {
+        await using var harness = await PublishHarness.CreateAsync();
+        var server = await harness.CreateServerAsync();
+        await harness.StartAsync();
+        harness.Runner.FailDeletes = true;
+
+        await Assert.ThrowsAsync<PanelException>(() => harness.DeleteServerAsync(server));
+
+        harness.Runner.FailDeletes = false;
+        await harness.PublishAndWaitAsync(server);
+    }
+
+    [Fact]
+    public async Task A_missing_archive_directory_does_not_fail_the_delete()
+    {
+        await using var harness = await PublishHarness.CreateAsync();
+        var server = await harness.CreateServerAsync();
+        await harness.StartAsync();
+        await harness.PublishAndWaitAsync(server);
+        Directory.Delete(Path.GetDirectoryName(harness.Archives.PathOf(Guid.Empty))!, true);
+
+        await harness.DeleteServerAsync(server);
+
+        Assert.False(await harness.ServerExistsAsync(server));
+    }
+
+    [Fact]
+    public async Task An_archive_that_cannot_be_removed_does_not_fail_the_delete_after_the_commit()
+    {
+        await using var harness = await PublishHarness.CreateAsync();
+        var server = await harness.CreateServerAsync();
+        await harness.StartAsync();
+        await harness.PublishAndWaitAsync(server);
+        var path = harness.Archives.PathOf((await harness.ReleaseAsync(server, 1)).Id);
+        File.Delete(path);
+        Directory.CreateDirectory(path);
+        File.WriteAllText(Path.Combine(path, "block"), "x");
+
+        await harness.DeleteServerAsync(server);
+
+        Assert.False(await harness.ServerExistsAsync(server));
+        Assert.True(Directory.Exists(path));
+    }
+
+    [Fact]
+    public async Task The_set_of_connected_inbounds_follows_connect_delete_and_removal_elsewhere()
+    {
+        await using var harness = await PublishHarness.CreateAsync();
+        var first = await harness.CreateServerAsync("first");
+        var second = await harness.CreateServerAsync("second");
+        var inbound = await harness.ConnectAsync(first, "first-mcp");
+        var other = await harness.ConnectAsync(second, "second-mcp");
+
+        Assert.True(harness.Connected.Contains(inbound.Id));
+        Assert.True(harness.Connected.Contains(other.Id));
+
+        harness.Data.Inbounds.RemoveAll(known => known.Id == other.Id);
+        await harness.FindInboundAsync(second);
+        Assert.False(harness.Connected.Contains(other.Id));
+
+        await harness.DeleteServerAsync(first);
+        Assert.False(harness.Connected.Contains(inbound.Id));
+    }
+
+    [Fact]
+    public async Task The_set_of_connected_inbounds_is_loaded_from_the_database_at_start()
+    {
+        await using var harness = await PublishHarness.CreateAsync();
+        var server = await harness.CreateServerAsync();
+        var inbound = await harness.ConnectAsync(server, "weather-mcp");
+        var fresh = new ConnectedInbounds();
+
+        await harness.WithScopeAsync(async services =>
+        {
+            await new ConnectedInboundsLoader(fresh, services.GetRequiredService<IServiceScopeFactory>()).InitializeAsync(default);
+            return true;
+        });
+
+        Assert.True(fresh.Contains(inbound.Id));
     }
 }

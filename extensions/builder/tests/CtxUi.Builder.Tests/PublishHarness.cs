@@ -57,6 +57,8 @@ public sealed class PublishHarness : IAsyncDisposable
 
     public FakePanelData Data { get; } = new();
 
+    public ConnectedInbounds Connected { get; } = new();
+
     public SecretBox Box { get; } = new(new EphemeralDataProtectionProvider());
 
     public string DataDirectory => _directory;
@@ -169,6 +171,21 @@ public sealed class PublishHarness : IAsyncDisposable
     public Task<bool> ServerExistsAsync(Guid serverId) =>
         WithScopeAsync(services => services.GetRequiredService<BuilderDatabase>().Servers.AsNoTracking().AnyAsync(server => server.Id == serverId));
 
+    public Task SetInboundIdAsync(Guid serverId, string? inboundId) =>
+        WithScopeAsync(async services =>
+        {
+            await services.GetRequiredService<BuilderDatabase>().Servers.Where(server => server.Id == serverId)
+                .ExecuteUpdateAsync(setters => setters.SetProperty(server => server.InboundId, inboundId));
+            return true;
+        });
+
+    public Task RemoveServerRowAsync(Guid serverId) =>
+        WithScopeAsync(async services =>
+        {
+            await services.GetRequiredService<BuilderDatabase>().Servers.Where(server => server.Id == serverId).ExecuteDeleteAsync();
+            return true;
+        });
+
     public Task<string> RouteSecretAsync(Guid id) =>
         WithScopeAsync(services => services.GetRequiredService<ServerCatalog>().RouteSecretAsync(id, default));
 
@@ -191,6 +208,7 @@ public sealed class PublishHarness : IAsyncDisposable
         services.AddSingleton(_ => new PublishTimings(TimeSpan.FromMilliseconds(5), TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(10), TimeSpan.FromMilliseconds(300), TimeSpan.FromMilliseconds(300), RepairInterval));
         services.AddSingleton<IToolInspector>(Inspector);
         services.AddSingleton<IPanelData>(Data);
+        services.AddSingleton(Connected);
         services.AddScoped<ConnectionService>();
         return services.BuildServiceProvider();
     }

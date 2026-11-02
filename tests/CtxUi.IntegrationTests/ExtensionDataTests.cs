@@ -1,6 +1,6 @@
 using System.Net;
+using Enfilade;
 using Microsoft.Extensions.DependencyInjection;
-using CtxUi.Core;
 using CtxUi.Extensions;
 
 namespace CtxUi.IntegrationTests;
@@ -120,7 +120,8 @@ public class ExtensionDataTests
         await using var gateway = await GatewayHost.StartAsync();
         await gateway.AddInboundAsync("a", upstream.McpUrl);
 
-        await Assert.ThrowsAsync<NotFoundException>(() => Data(gateway).SetInboundClientsAsync("a", [Guid.NewGuid()]));
+        var failure = await Assert.ThrowsAsync<PanelException>(() => Data(gateway).SetInboundClientsAsync("a", [Guid.NewGuid()]));
+        Assert.False(string.IsNullOrWhiteSpace(failure.Message));
     }
 
     [Fact]
@@ -141,13 +142,32 @@ public class ExtensionDataTests
     }
 
     [Fact]
-    public async Task Adding_a_taken_slug_throws_DomainException()
+    public async Task Adding_a_taken_slug_throws_PanelException_with_the_core_message()
     {
         await using var upstream = await FakeUpstream.StartAsync();
         await using var gateway = await GatewayHost.StartAsync();
         await gateway.AddInboundAsync("echo", upstream.McpUrl);
 
-        await Assert.ThrowsAsync<DomainException>(() =>
+        var failure = await Assert.ThrowsAsync<PanelException>(() =>
             Data(gateway).AddHttpInboundAsync(new HttpInboundDraft("echo", "Echo", upstream.McpUrl)));
+        Assert.Contains("echo", failure.Message);
+    }
+
+    [Fact]
+    public async Task Adding_an_inbound_with_an_invalid_address_throws_PanelException()
+    {
+        await using var gateway = await GatewayHost.StartAsync();
+
+        var failure = await Assert.ThrowsAsync<PanelException>(() =>
+            Data(gateway).AddHttpInboundAsync(new HttpInboundDraft("echo", "Echo", "not an address")));
+        Assert.Contains("not an address", failure.Message);
+    }
+
+    [Fact]
+    public async Task Removing_an_unknown_inbound_throws_PanelException()
+    {
+        await using var gateway = await GatewayHost.StartAsync();
+
+        await Assert.ThrowsAsync<PanelException>(() => Data(gateway).RemoveInboundAsync("missing"));
     }
 }

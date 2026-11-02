@@ -1,11 +1,5 @@
 using CtxUi.Extensions;
-
-namespace CtxUi.Core
-{
-    public class DomainException(string message) : Exception(message);
-
-    public sealed class NotFoundException(string message) : DomainException(message);
-}
+using Enfilade;
 
 namespace CtxUi.Builder.Tests
 {
@@ -22,6 +16,8 @@ namespace CtxUi.Builder.Tests
         public Action<string>? OnRemove { get; set; }
 
         public Exception? AddFailure { get; set; }
+
+        public Func<Task>? DuringAdd { get; set; }
 
         public ClientSummary AddClient(string name)
         {
@@ -53,14 +49,21 @@ namespace CtxUi.Builder.Tests
 
         public Task SetInboundEnabledAsync(string slug, bool enabled, CancellationToken ct = default) => Task.CompletedTask;
 
-        public Task<InboundSummary> AddHttpInboundAsync(HttpInboundDraft draft, CancellationToken ct = default)
+        public async Task<InboundSummary> AddHttpInboundAsync(HttpInboundDraft draft, CancellationToken ct = default)
         {
             if (AddFailure is not null)
                 throw AddFailure;
             if (Inbounds.Any(inbound => inbound.Slug == draft.Slug))
-                throw new Core.DomainException($"Inbound {draft.Slug} exists.");
+                throw new PanelException($"Inbound {draft.Slug} exists.");
             Drafts.Add(draft);
-            return Task.FromResult(AddInbound(draft.Slug));
+            var inbound = AddInbound(draft.Slug);
+            if (DuringAdd is { } during)
+            {
+                DuringAdd = null;
+                await during();
+            }
+
+            return inbound;
         }
 
         public Task RemoveInboundAsync(string slug, CancellationToken ct = default)
@@ -77,7 +80,7 @@ namespace CtxUi.Builder.Tests
         public Task SetInboundClientsAsync(string slug, IReadOnlyCollection<Guid> clientIds, CancellationToken ct = default)
         {
             if (clientIds.Any(id => Clients.All(client => client.Id != id)))
-                throw new Core.NotFoundException("Client not found.");
+                throw new PanelException("Client not found.");
             Links[slug] = [.. clientIds];
             return Task.CompletedTask;
         }

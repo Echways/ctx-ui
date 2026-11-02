@@ -74,6 +74,7 @@ else
     private List<DraftFile> _files = [];
     private ServerSettingsView? _settings;
     private InboundSummary? _inbound;
+    private bool _connectOpen;
     private CodeEditor? _editor;
     private string? _selected;
     private ServerView _view;
@@ -105,18 +106,32 @@ else
 
     private async Task ConnectAsync()
     {
-        if (_inbound is not null || _settings is null)
+        if (_inbound is not null || _settings is null || _connectOpen)
             return;
+        _connectOpen = true;
+        try
+        {
+            await ShowConnectSheetAsync(_settings);
+        }
+        finally
+        {
+            _connectOpen = false;
+        }
+
+        await LoadAsync();
+        StateHasChanged();
+    }
+
+    private async Task ShowConnectSheetAsync(ServerSettingsView settings)
+    {
         var parameters = new DialogParameters<ConnectSheet>
         {
             { sheet => sheet.ServerId, Id },
-            { sheet => sheet.Slug, _settings.Slug },
-            { sheet => sheet.ServerName, _settings.Name },
+            { sheet => sheet.Slug, settings.Slug },
+            { sheet => sheet.ServerName, settings.Name },
         };
-        var sheet = await Dialogs.ShowSheetAsync<ConnectSheet>(string.Format(BuilderText.ConnectTitle, _settings.Name), parameters);
+        var sheet = await Dialogs.ShowSheetAsync<ConnectSheet>(string.Format(BuilderText.ConnectTitle, settings.Name), parameters);
         await sheet.Result;
-        await LoadAsync();
-        StateHasChanged();
     }
 
     private async Task DeleteAsync()

@@ -6,6 +6,7 @@ using CtxUi.Builder.Runner;
 using CtxUi.Extensions;
 using Enfilade;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace CtxUi.Builder.Servers;
 
@@ -16,13 +17,75 @@ public sealed class ConnectionService(
     RunnerSettings settings,
     SecretBox box,
     ReleaseArchives archives,
-    PublishQueue queue)
+    PublishQueue queue,
+    ConnectedInbounds connected,
+    ILogger<ConnectionService> log)
 {
-    private const string DomainFailureType = "CtxUi.Core.DomainException";
-
     public async Task<InboundSummary> ConnectAsync(Guid serverId, string slug, string name, bool forwardIdentity, IReadOnlyCollection<Guid> clients, CancellationToken ct)
     {
         RequireConfigured();
+        queue.ReserveForConnection(serverId);
+        try
+        {
+            return await ConnectCoreAsync(serverId, slug, name, forwardIdentity, clients, ct);
+        }
+        finally
+        {
+            queue.ReleaseConnection(serverId);
+        }
+    }
+
+    public async Task<InboundSummary?> FindInboundAsync(BuilderServer server, CancellationToken ct)
+    {
+        var inbound = OwnInbound(server, await data.InboundsAsync(ct));
+        if (inbound is not null)
+            connected.Add(inbound.Id);
+        else if (Guid.TryParse(server.InboundId, out var stale))
+            connected.Remove(stale);
+        return inbound;
+    }
+
+    public async Task<InboundSummary?> FindInboundAsync(Guid serverId, CancellationToken ct) =>
+        await FindInboundAsync(await FindServerAsync(serverId, ct), ct);
+
+    public async Task<Guid?> FindServerIdAsync(InboundSummary inbound, CancellationToken ct)
+    {
+        var id = inbound.Id.ToString();
+        var found = await database.Servers.AsNoTracking().Where(server => server.InboundId == id).Select(server => (Guid?)server.Id).FirstOrDefaultAsync(ct);
+        if (found is null)
+            connected.Remove(inbound.Id);
+        return found;
+    }
+
+    public async Task DeleteServerAsync(Guid serverId, CancellationToken ct)
+    {
+        RequireConfigured();
+        var server = await FindServerAsync(serverId, ct);
+        queue.ReserveForDeletion(serverId);
+        try
+        {
+            await DeleteFromRunnerAsync(serverId, ct);
+            if (await FindInboundAsync(server, ct) is { } inbound)
+            {
+                await data.RemoveInboundAsync(inbound.Slug, ct);
+                connected.Remove(inbound.Id);
+            }
+
+            var releases = await database.Releases.AsNoTracking().Where(release => release.ServerId == serverId).Select(release => release.Id).ToListAsync(ct);
+            await database.Servers.Where(known => known.Id == serverId).ExecuteDeleteAsync(ct);
+            RemoveArchives(releases);
+        }
+        finally
+        {
+            queue.ReleaseDeletion(serverId);
+        }
+    }
+
+    public string? AddressOf(Guid serverId) =>
+        settings.IngressUrl is null ? null : $"{settings.IngressUrl.ToString().TrimEnd('/')}/s/{serverId}/mcp";
+
+    private async Task<InboundSummary> ConnectCoreAsync(Guid serverId, string slug, string name, bool forwardIdentity, IReadOnlyCollection<Guid> clients, CancellationToken ct)
+    {
         var server = await FindServerAsync(serverId, ct);
         var inbounds = await data.InboundsAsync(ct);
         if (OwnInbound(server, inbounds) is not null)
@@ -32,14 +95,16 @@ public sealed class ConnectionService(
         if (inbounds.Any(inbound => inbound.Slug == wanted))
             throw new PanelException(BuilderText.InboundSlugTaken);
 
-        var headers = new Dictionary<string, string> { [RouteSecret.Header] = box.Open(server.RouteSecretSealed) };
-        var inbound = await GuardAsync(() => data.AddHttpInboundAsync(new HttpInboundDraft(wanted, name.Trim(), AddressOf(serverId)!, headers, forwardIdentity), ct));
+        var inbound = await AddInboundAsync(new HttpInboundDraft(wanted, name.Trim(), AddressOf(serverId)!, new Dictionary<string, string> { [RouteSecret.Header] = box.Open(server.RouteSecretSealed) }, forwardIdentity), ct);
         try
         {
             if (clients.Count > 0)
-                await GuardAsync(() => data.SetInboundClientsAsync(inbound.Slug, clients, ct));
-            await database.Servers.Where(known => known.Id == serverId)
+                await data.SetInboundClientsAsync(inbound.Slug, clients, ct);
+            var previous = server.InboundId;
+            var updated = await database.Servers.Where(known => known.Id == serverId && known.InboundId == previous)
                 .ExecuteUpdateAsync(setters => setters.SetProperty(known => known.InboundId, inbound.Id.ToString()), ct);
+            if (updated == 0)
+                throw new PanelException(await database.Servers.AnyAsync(known => known.Id == serverId, ct) ? BuilderText.ConnectionAlreadyConnected : BuilderText.ServerNotFound);
         }
         catch
         {
@@ -47,36 +112,20 @@ public sealed class ConnectionService(
             throw;
         }
 
+        connected.Add(inbound.Id);
         return inbound;
     }
 
-    public async Task<InboundSummary?> FindInboundAsync(BuilderServer server, CancellationToken ct) =>
-        OwnInbound(server, await data.InboundsAsync(ct));
-
-    public async Task<InboundSummary?> FindInboundAsync(Guid serverId, CancellationToken ct) =>
-        await FindInboundAsync(await FindServerAsync(serverId, ct), ct);
-
-    public async Task<Guid?> FindServerIdAsync(InboundSummary inbound, CancellationToken ct)
+    private async Task<InboundSummary> AddInboundAsync(HttpInboundDraft draft, CancellationToken ct)
     {
-        var id = inbound.Id.ToString();
-        return await database.Servers.AsNoTracking().Where(server => server.InboundId == id).Select(server => (Guid?)server.Id).FirstOrDefaultAsync(ct);
-    }
-
-    public async Task DeleteServerAsync(Guid serverId, CancellationToken ct)
-    {
-        RequireConfigured();
-        var server = await FindServerAsync(serverId, ct);
-        if (queue.IsBusy(serverId))
-            throw new PanelException(BuilderText.PublishBusy);
-
-        await DeleteFromRunnerAsync(serverId, ct);
-        if (await FindInboundAsync(server, ct) is { } inbound)
-            await data.RemoveInboundAsync(inbound.Slug, ct);
-
-        var releases = await database.Releases.AsNoTracking().Where(release => release.ServerId == serverId).Select(release => release.Id).ToListAsync(ct);
-        await database.Servers.Where(known => known.Id == serverId).ExecuteDeleteAsync(ct);
-        foreach (var release in releases)
-            archives.Remove(release);
+        try
+        {
+            return await data.AddHttpInboundAsync(draft, ct);
+        }
+        catch (PanelException failure)
+        {
+            throw new PanelException(string.Format(BuilderText.InboundRejected, failure.Message));
+        }
     }
 
     private async Task DeleteFromRunnerAsync(Guid serverId, CancellationToken ct)
@@ -94,8 +143,20 @@ public sealed class ConnectionService(
         }
     }
 
-    public string? AddressOf(Guid serverId) =>
-        settings.IngressUrl is null ? null : $"{settings.IngressUrl.ToString().TrimEnd('/')}/s/{serverId}/mcp";
+    private void RemoveArchives(IEnumerable<Guid> releases)
+    {
+        foreach (var release in releases)
+        {
+            try
+            {
+                archives.Remove(release);
+            }
+            catch (Exception failure) when (failure is IOException or UnauthorizedAccessException)
+            {
+                log.LogWarning(failure, "The archive of release {Release} could not be removed.", release);
+            }
+        }
+    }
 
     private static InboundSummary? OwnInbound(BuilderServer server, IReadOnlyList<InboundSummary> inbounds) =>
         server.InboundId is null ? null : inbounds.FirstOrDefault(inbound => inbound.Id.ToString() == server.InboundId);
@@ -108,34 +169,5 @@ public sealed class ConnectionService(
     {
         if (!settings.IsComplete)
             throw new PanelException(string.Format(BuilderText.RunnerNotConfigured, string.Join(", ", settings.Missing)));
-    }
-
-    private static async Task<T> GuardAsync<T>(Func<Task<T>> call)
-    {
-        try
-        {
-            return await call();
-        }
-        catch (Exception failure) when (IsDomainFailure(failure))
-        {
-            throw new PanelException(string.Format(BuilderText.InboundRejected, failure.Message));
-        }
-    }
-
-    private static async Task GuardAsync(Func<Task> call) => await GuardAsync(async () =>
-    {
-        await call();
-        return true;
-    });
-
-    private static bool IsDomainFailure(Exception failure)
-    {
-        for (var type = failure.GetType(); type is not null; type = type.BaseType)
-        {
-            if (type.FullName == DomainFailureType)
-                return true;
-        }
-
-        return false;
     }
 }

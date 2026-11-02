@@ -21,6 +21,8 @@ public sealed class BuilderEntry : IPanelExtension
             context.Configuration["RunnerIngressUrl"],
             context.Configuration["RunnerToken"]);
 
+        var connected = new ConnectedInbounds();
+
         context.AddDatabase<BuilderDatabase>();
         context.Services.AddSingleton(settings);
         context.Services.AddHttpClient<RunnerClient>(client =>
@@ -32,6 +34,8 @@ public sealed class BuilderEntry : IPanelExtension
         });
         context.Services.AddSingleton<SecretBox>();
         context.Services.AddScoped<ServerCatalog>();
+        context.Services.AddSingleton(connected);
+        context.Services.AddSingleton<IExtensionInitializer, ConnectedInboundsLoader>();
         context.Services.AddScoped<ConnectionService>();
         context.Services.AddScoped<RunnerAvailability>();
         context.Services.AddPublishing(context.DataDirectory);
@@ -39,7 +43,7 @@ public sealed class BuilderEntry : IPanelExtension
         context.Panel
             .AddCaption(() => BuilderText.Caption)
             .AddSection<ServersPage>(() => BuilderText.Servers)
-            .In(PanelSlots.InboundActions).AddAction(() => BuilderText.OpenInBuilder, OpenInBuilderAsync)
+            .In(PanelSlots.InboundActions).AddAction(() => BuilderText.OpenInBuilder, OpenInBuilderAsync, visible: inbound => connected.Contains(inbound.Id))
             .In(PanelSlots.InboundSheet).AddBlock<InboundBuilderBlock>()
             .AddStylesheet("builder.css");
     }

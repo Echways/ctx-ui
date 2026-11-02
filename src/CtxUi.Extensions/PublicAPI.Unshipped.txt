@@ -23,3 +23,7 @@ override CtxUi.Extensions.HttpInboundDraft.GetHashCode() -> int
 override CtxUi.Extensions.HttpInboundDraft.ToString() -> string!
 static CtxUi.Extensions.HttpInboundDraft.operator !=(CtxUi.Extensions.HttpInboundDraft? left, CtxUi.Extensions.HttpInboundDraft? right) -> bool
 static CtxUi.Extensions.HttpInboundDraft.operator ==(CtxUi.Extensions.HttpInboundDraft? left, CtxUi.Extensions.HttpInboundDraft? right) -> bool
+*REMOVED*CtxUi.Extensions.PanelActionSlotEditor<TContext>.AddAction(System.Func<string!>! title, System.Func<CtxUi.Extensions.PanelActionArgs<TContext>!, System.Threading.Tasks.Task!>! run, int order = 0) -> CtxUi.Extensions.PanelEditor!
+*REMOVED*CtxUi.Extensions.PanelActionSlotEditor<TContext>.AddSheet<TSheet>(System.Func<string!>! title, System.Func<TContext, string!>! sheetTitle, int order = 0) -> CtxUi.Extensions.PanelEditor!
+CtxUi.Extensions.PanelActionSlotEditor<TContext>.AddAction(System.Func<string!>! title, System.Func<CtxUi.Extensions.PanelActionArgs<TContext>!, System.Threading.Tasks.Task!>! run, int order = 0, System.Func<TContext, bool>? visible = null) -> CtxUi.Extensions.PanelEditor!
+CtxUi.Extensions.PanelActionSlotEditor<TContext>.AddSheet<TSheet>(System.Func<string!>! title, System.Func<TContext, string!>! sheetTitle, int order = 0, System.Func<TContext, bool>? visible = null) -> CtxUi.Extensions.PanelEditor!

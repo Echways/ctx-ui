@@ -570,4 +570,10 @@
   <data name="BuiltServer" xml:space="preserve">
     <value>Built server</value>
   </data>
+  <data name="ConnectionBusy" xml:space="preserve">
+    <value>Another change of this server's connection is in progress. Try again in a moment.</value>
+  </data>
+  <data name="ServerDeleting" xml:space="preserve">
+    <value>This server is being deleted.</value>
+  </data>
 </root>

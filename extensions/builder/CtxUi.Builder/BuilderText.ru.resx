@@ -570,4 +570,10 @@
   <data name="BuiltServer" xml:space="preserve">
     <value>Собранный сервер</value>
   </data>
+  <data name="ConnectionBusy" xml:space="preserve">
+    <value>Подключение этого сервера уже меняется. Повторите чуть позже.</value>
+  </data>
+  <data name="ServerDeleting" xml:space="preserve">
+    <value>Этот сервер удаляется.</value>
+  </data>
 </root>

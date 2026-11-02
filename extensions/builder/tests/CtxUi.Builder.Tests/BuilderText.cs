@@ -16,6 +16,8 @@ internal static class BuilderText
 
     public static string ConnectionAlreadyConnected => Read();
 
+    public static string ConnectionBusy => Read();
+
     public static string InboundRejected => Read();
 
     public static string InboundSlugTaken => Read();
@@ -25,6 +27,10 @@ internal static class BuilderText
     public static string PublishBusy => Read();
 
     public static string PublishInterrupted => Read();
+
+    public static string ServerDeleting => Read();
+
+    public static string ServerNotFound => Read();
 
     public static string RunnerDeleteFailed => Read();
 

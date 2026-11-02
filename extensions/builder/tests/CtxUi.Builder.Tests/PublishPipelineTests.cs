@@ -567,6 +567,103 @@ public sealed class PublishPipelineTests
     }
 
     [Fact]
+    public async Task Repair_waits_for_a_runner_that_is_unreachable_at_start()
+    {
+        var (harness, server) = await StartedAsync();
+        await using var _ = harness;
+        await harness.PublishAndWaitAsync(server);
+        harness.Runner.Restart(loseMarker: true);
+        harness.Runner.Unreachable = true;
+        harness.RepairInterval = TimeSpan.FromMilliseconds(40);
+
+        await harness.RestartPanelAsync();
+        await Task.Delay(150);
+        Assert.Null(harness.Runner.Active);
+        harness.Runner.Unreachable = false;
+
+        await harness.WaitForAsync(() => Task.FromResult(harness.Runner.Active == 1));
+        Assert.Equal(ReleaseState.Active, (await harness.ReleaseAsync(server, 1)).Status);
+    }
+
+    [Fact]
+    public async Task Repair_notices_a_runner_restart_while_the_panel_keeps_running()
+    {
+        await using var harness = await PublishHarness.CreateAsync();
+        var server = await harness.CreateServerAsync();
+        harness.RepairInterval = TimeSpan.FromMilliseconds(40);
+        await harness.StartAsync();
+        await harness.PublishAndWaitAsync(server);
+        Assert.Equal(1, harness.Runner.Active);
+
+        harness.Runner.Restart(loseMarker: true);
+
+        await harness.WaitForAsync(() => Task.FromResult(harness.Runner.Active == 1));
+        Assert.Single(await harness.ReleasesAsync(server));
+    }
+
+    [Fact]
+    public async Task A_changed_api_credential_restarts_through_candidate_and_activate_with_the_new_value()
+    {
+        var (harness, server) = await StartedAsync();
+        await using var _ = harness;
+        await SetApiAsync(harness, server, "https://api.example.com", "old");
+        await harness.PublishAndWaitAsync(server);
+        var startsBefore = harness.Runner.Starts.Count;
+        await SetApiAsync(harness, server, "https://api.example.com", "rotated");
+
+        await harness.Queue.ApplySettingsAsync(server, default);
+        await harness.WaitIdleAsync(server);
+
+        Assert.Equal(startsBefore + 1, harness.Runner.Starts.Count);
+        Assert.Contains("Bearer rotated", harness.Runner.Starts[^1].Start.Environment["BUILDER_API_HEADERS"]);
+        Assert.Equal("POST release 1 activate", harness.Runner.CallsSnapshot()[^1]);
+    }
+
+    [Fact]
+    public async Task A_draft_base_url_is_not_used_by_a_restart()
+    {
+        var (harness, server) = await StartedAsync();
+        await using var _ = harness;
+        await SetApiAsync(harness, server, "https://live.example.com", "token");
+        await harness.PublishAndWaitAsync(server);
+        await SetApiAsync(harness, server, "https://draft.example.com", "token");
+
+        await harness.Queue.ApplySettingsAsync(server, default);
+        await harness.WaitIdleAsync(server);
+
+        Assert.Equal("https://live.example.com", harness.Runner.Starts[^1].Start.Environment["BUILDER_BASE_URL"]);
+    }
+
+    [Fact]
+    public async Task Rollback_starts_the_old_release_with_its_own_base_url()
+    {
+        var (harness, server) = await StartedAsync();
+        await using var _ = harness;
+        await SetApiAsync(harness, server, "https://first.example.com", "token");
+        await harness.PublishAndWaitAsync(server);
+        await SetApiAsync(harness, server, "https://second.example.com", "token");
+        await harness.PublishAndWaitAsync(server);
+        await SetApiAsync(harness, server, "https://draft.example.com", "token");
+
+        await harness.Queue.RollbackAsync(server, 1, default);
+        await harness.WaitIdleAsync(server);
+
+        Assert.Equal(1, harness.Runner.Starts[^1].Number);
+        Assert.Equal("https://first.example.com", harness.Runner.Starts[^1].Start.Environment["BUILDER_BASE_URL"]);
+        Assert.Equal("https://first.example.com", (await harness.ReleaseAsync(server, 1)).BaseUrl);
+        Assert.Equal("https://second.example.com", (await harness.ReleaseAsync(server, 2)).BaseUrl);
+    }
+
+    private static Task SetApiAsync(PublishHarness harness, Guid server, string baseUrl, string token) =>
+        harness.WithScopeAsync(async services =>
+        {
+            var catalog = services.GetRequiredService<ServerCatalog>();
+            var revision = (await catalog.SettingsAsync(server, default)).SettingsRevision;
+            await catalog.SetApiAsync(server, baseUrl, new ApiAuthInput(ApiAuthKind.Bearer, Secret: token), revision, default);
+            return 0;
+        });
+
+    [Fact]
     public async Task Changed_is_raised_while_a_publish_progresses()
     {
         var (harness, server) = await StartedAsync();

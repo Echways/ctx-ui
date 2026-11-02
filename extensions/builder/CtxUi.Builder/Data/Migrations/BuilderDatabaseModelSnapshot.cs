@@ -99,6 +99,9 @@ namespace CtxUi.Builder.Data.Migrations
                     b.Property<string>("ArchiveHash")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("BaseUrl")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("BuildLog")
                         .HasColumnType("TEXT");
 

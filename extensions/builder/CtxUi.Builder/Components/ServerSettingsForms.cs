@@ -14,6 +14,16 @@ public sealed class ApiForm
     public string? Username { get; set; }
 
     public string? Secret { get; set; }
+
+    public bool ChangesAuth(ServerSettingsView current) =>
+        Kind != current.AuthKind
+        || (Kind == ApiAuthKind.Header && HeaderName?.Trim() != current.AuthHeaderName)
+        || (Kind == ApiAuthKind.Basic && Username?.Trim() != current.AuthUsername)
+        || (Kind != ApiAuthKind.None && !string.IsNullOrEmpty(Secret));
+
+    public bool ChangesBaseUrl(ServerSettingsView current) => Normalized(BaseUrl) != Normalized(current.BaseUrl);
+
+    private static string Normalized(string? address) => (address ?? string.Empty).Trim().TrimEnd('/');
 }
 
 public sealed class DependenciesForm

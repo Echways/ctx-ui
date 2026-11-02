@@ -90,6 +90,8 @@ public sealed class Release
 
     public string? ArchiveHash { get; set; }
 
+    public string? BaseUrl { get; set; }
+
     public string? EnvironmentHash { get; set; }
 
     public DateTimeOffset CreatedAt { get; set; }

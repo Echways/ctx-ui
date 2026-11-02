@@ -248,7 +248,7 @@ public sealed partial class ServerCatalog(BuilderDatabase database, SecretBox bo
         return box.Open(server.RouteSecretSealed);
     }
 
-    public async Task<ServerLaunch> LaunchAsync(Guid id, CancellationToken ct)
+    public async Task<ServerLaunch> LaunchAsync(Guid id, string? baseUrl, CancellationToken ct)
     {
         var server = await database.Servers.AsNoTracking().SingleOrDefaultAsync(server => server.Id == id, ct)
             ?? throw new PanelException(BuilderText.ServerNotFound);
@@ -259,8 +259,8 @@ public sealed partial class ServerCatalog(BuilderDatabase database, SecretBox bo
         environment[ServerNameVariable] = server.Name;
         environment.Remove(BaseUrlVariable);
         environment.Remove(ApiHeadersVariable);
-        if (!string.IsNullOrEmpty(draft.BaseUrl))
-            environment[BaseUrlVariable] = draft.BaseUrl;
+        if (!string.IsNullOrEmpty(baseUrl))
+            environment[BaseUrlVariable] = baseUrl;
         if (OpenAuth(draft.ApiAuthSealed) is { } auth)
             environment[ApiHeadersVariable] = JsonSerializer.Serialize(new Dictionary<string, string> { [auth.Kind == ApiAuthKind.Header ? auth.HeaderName! : "Authorization"] = AuthValue(auth) });
 

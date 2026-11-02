@@ -58,6 +58,8 @@ public sealed class PublishHarness : IAsyncDisposable
 
     public string DataDirectory => _directory;
 
+    public TimeSpan RepairInterval { get; set; } = TimeSpan.FromHours(1);
+
     public PublishQueue Queue => _services.GetRequiredService<PublishQueue>();
 
     public ReleaseArchives Archives => _services.GetRequiredService<ReleaseArchives>();
@@ -167,7 +169,7 @@ public sealed class PublishHarness : IAsyncDisposable
             : new RunnerSettings(null, null, null));
         services.AddTransient(_ => new RunnerClient(new HttpClient(Runner, false) { BaseAddress = new Uri("http://runner:8091/") }));
         services.AddPublishing(_directory);
-        services.AddSingleton(new PublishTimings(TimeSpan.FromMilliseconds(5), TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(10), TimeSpan.FromMilliseconds(300), TimeSpan.FromMilliseconds(300)));
+        services.AddSingleton(_ => new PublishTimings(TimeSpan.FromMilliseconds(5), TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(10), TimeSpan.FromMilliseconds(300), TimeSpan.FromMilliseconds(300), RepairInterval));
         services.AddSingleton<IToolInspector>(Inspector);
         return services.BuildServiceProvider();
     }

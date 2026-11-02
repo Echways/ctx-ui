@@ -489,4 +489,7 @@
   <data name="Reactivate" xml:space="preserve">
     <value>Запустить снова</value>
   </data>
+  <data name="BaseUrlAppliesOnPublish" xml:space="preserve">
+    <value>Новый базовый адрес вступит в силу при следующей публикации. Запущенные версии сохраняют свой.</value>
+  </data>
 </root>

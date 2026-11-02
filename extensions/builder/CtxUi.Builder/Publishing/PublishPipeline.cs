@@ -53,7 +53,7 @@ public sealed class PublishPipeline(
         ServerState state;
         try
         {
-            await run.Runner.PutServerAsync(serverId, (await run.Catalog.LaunchAsync(serverId, ct)).Spec, ct);
+            await run.Runner.PutServerAsync(serverId, (await run.Catalog.LaunchAsync(serverId, null, ct)).Spec, ct);
             state = await run.Runner.ServerAsync(serverId, ct);
         }
         catch (RunnerException failure)
@@ -84,6 +84,7 @@ public sealed class PublishPipeline(
             Status = ReleaseState.Building,
             FastMcpVersion = ProjectFiles.FastMcpVersion,
             ArchiveHash = Convert.ToHexString(SHA256.HashData(archive)),
+            BaseUrl = draft.BaseUrl,
             CreatedAt = clock.GetUtcNow(),
         };
         await archives.WriteAsync(created.Id, archive, ct);
@@ -154,7 +155,7 @@ public sealed class PublishPipeline(
         }
         catch (RunnerException failure)
         {
-            log.LogWarning("The activation of release {Number} of server {Server} could not be checked: {Message}", active.Number, serverId, failure.Message);
+            log.LogDebug("The activation of release {Number} of server {Server} could not be checked: {Message}", active.Number, serverId, failure.Message);
         }
     }
 
@@ -165,7 +166,7 @@ public sealed class PublishPipeline(
         {
             var release = await run.Database.Releases.AsNoTracking().SingleAsync(release => release.ServerId == serverId && release.Number == number, ct);
             await BuildAsync(run, release, ct);
-            var tools = await StartAndCheckAsync(run, number, ct);
+            var tools = await StartAndCheckAsync(run, release, ct);
             await UpdateAsync(run, number, setters => setters.SetProperty(entity => entity.ToolsSnapshotJson, ToolSnapshot.Serialize(tools)), ct);
             if (mode == PublishMode.BuildOnly)
                 await UpdateAsync(run, number, setters => setters.SetProperty(entity => entity.Status, ReleaseState.Candidate).SetProperty(entity => entity.FinishedAt, clock.GetUtcNow()), ct);
@@ -215,7 +216,7 @@ public sealed class PublishPipeline(
             var known = state.Releases.FirstOrDefault(entry => entry.Number == release.Number);
             if (known is null || known is { State: ReleaseState.Failed, EnvironmentHash: null } || known.State == ReleaseState.Building)
                 await BuildAsync(run, release, ct);
-            await StartAndCheckAsync(run, release.Number, ct);
+            await StartAndCheckAsync(run, release, ct);
             await ActivateOnRunnerAsync(run, release.Number, ct);
             await PromoteAsync(run, release.Id, ct);
         }
@@ -245,9 +246,11 @@ public sealed class PublishPipeline(
             throw new ReleaseFailure(status.Error ?? BuilderText.BuildFailed);
     }
 
-    private async Task<IReadOnlyList<ToolInfo>> StartAndCheckAsync(Run run, int number, CancellationToken ct)
+    private async Task<IReadOnlyList<ToolInfo>> StartAndCheckAsync(Run run, Release release, CancellationToken ct)
     {
-        var launch = await PutSpecAsync(run, ct);
+        var number = release.Number;
+        var launch = await run.Catalog.LaunchAsync(run.ServerId, release.BaseUrl, ct);
+        await run.Runner.PutServerAsync(run.ServerId, launch.Spec, ct);
         await SendAsync(run, launch.Spec, () => run.Runner.StartReleaseAsync(run.ServerId, number, launch.Start, ct), ct);
         var status = await PollAsync(run, number, status => status.State is ReleaseState.Candidate or ReleaseState.Failed, timings.StartTimeout, BuilderText.StartTimedOut, false, ct);
         if (status.State == ReleaseState.Failed)
@@ -283,7 +286,7 @@ public sealed class PublishPipeline(
 
     private async Task<ServerLaunch> PutSpecAsync(Run run, CancellationToken ct)
     {
-        var launch = await run.Catalog.LaunchAsync(run.ServerId, ct);
+        var launch = await run.Catalog.LaunchAsync(run.ServerId, null, ct);
         await run.Runner.PutServerAsync(run.ServerId, launch.Spec, ct);
         return launch;
     }

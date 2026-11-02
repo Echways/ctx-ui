@@ -15,6 +15,7 @@ public sealed class PublishQueue : BackgroundService, IExtensionInitializer
     private sealed record Job(Guid ServerId, Func<CancellationToken, Task> Run);
 
     private readonly PublishPipeline _pipeline;
+    private readonly PublishTimings _timings;
     private readonly RunnerSettings _settings;
     private readonly ReleaseArchives _archives;
     private readonly IServiceScopeFactory _scopes;
@@ -25,10 +26,11 @@ public sealed class PublishQueue : BackgroundService, IExtensionInitializer
     private readonly Dictionary<Guid, int> _outstanding = [];
     private readonly HashSet<Guid> _preparing = [];
 
-    public PublishQueue(PublishPipeline pipeline, RunnerSettings settings, ReleaseArchives archives, IServiceScopeFactory scopes, ILogger<PublishQueue> log)
+    public PublishQueue(PublishPipeline pipeline, RunnerSettings settings, PublishTimings timings, ReleaseArchives archives, IServiceScopeFactory scopes, ILogger<PublishQueue> log)
     {
         _pipeline = pipeline;
         _settings = settings;
+        _timings = timings;
         _archives = archives;
         _scopes = scopes;
         _log = log;
@@ -89,7 +91,7 @@ public sealed class PublishQueue : BackgroundService, IExtensionInitializer
         var lanes = new List<Task>();
         try
         {
-            await ScheduleRepairsAsync(stoppingToken);
+            lanes.Add(RepairLoopAsync(stoppingToken));
             await foreach (var job in _jobs.Reader.ReadAllAsync(stoppingToken))
                 Dispatch(job, lanes, stoppingToken);
         }
@@ -104,6 +106,22 @@ public sealed class PublishQueue : BackgroundService, IExtensionInitializer
         await Task.WhenAll(lanes);
     }
 
+    private async Task RepairLoopAsync(CancellationToken ct)
+    {
+        using var timer = new PeriodicTimer(_timings.RepairInterval);
+        try
+        {
+            do
+            {
+                await ScheduleRepairsAsync(ct);
+            }
+            while (await timer.WaitForNextTickAsync(ct));
+        }
+        catch (OperationCanceledException)
+        {
+        }
+    }
+
     private async Task ScheduleRepairsAsync(CancellationToken ct)
     {
         try
@@ -111,7 +129,7 @@ public sealed class PublishQueue : BackgroundService, IExtensionInitializer
             await using var scope = _scopes.CreateAsyncScope();
             var database = scope.ServiceProvider.GetRequiredService<BuilderDatabase>();
             var servers = await database.Servers.AsNoTracking().Where(server => server.ActiveReleaseId != null).Select(server => server.Id).ToListAsync(ct);
-            foreach (var serverId in servers)
+            foreach (var serverId in servers.Where(serverId => !IsBusy(serverId)))
                 Enqueue(serverId, token => _pipeline.RepairActivationAsync(serverId, token));
         }
         catch (Exception failure) when (failure is not OperationCanceledException)

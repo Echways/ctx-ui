@@ -489,4 +489,7 @@
   <data name="Reactivate" xml:space="preserve">
     <value>Start again</value>
   </data>
+  <data name="BaseUrlAppliesOnPublish" xml:space="preserve">
+    <value>The new base URL takes effect with the next publish. Running versions keep their own.</value>
+  </data>
 </root>

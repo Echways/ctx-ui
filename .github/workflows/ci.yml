@@ -59,6 +59,10 @@ jobs:
         if: ${{ !cancelled() }}
         run: dotnet test --project tests/CtxUi.Panel.Tests -c Release --results-directory "$GITHUB_WORKSPACE/TestResults" --report-xunit-junit --coverage --coverage-output-format cobertura
 
+      - name: Test builder
+        if: ${{ !cancelled() }}
+        run: dotnet test --project extensions/builder/tests/CtxUi.Builder.Tests -c Release --results-directory "$GITHUB_WORKSPACE/TestResults" --report-xunit-junit --coverage --coverage-output-format cobertura
+
       - name: Test server units
         if: ${{ !cancelled() }}
         run: dotnet test --project tests/CtxUi.Server.Tests -c Release --results-directory "$GITHUB_WORKSPACE/TestResults" --report-xunit-junit --coverage --coverage-output-format cobertura

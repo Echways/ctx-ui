@@ -576,4 +576,223 @@
   <data name="ServerDeleting" xml:space="preserve">
     <value>Этот сервер удаляется.</value>
   </data>
+  <data name="OpenApiInvalid" xml:space="preserve">
+    <value>Документ API не является корректным JSON.</value>
+  </data>
+  <data name="ToolNameInvalid" xml:space="preserve">
+    <value>Имя инструмента может содержать только буквы, цифры, подчёркивание и дефис, не больше 64 символов.</value>
+  </data>
+  <data name="ToolMethodInvalid" xml:space="preserve">
+    <value>Выберите метод GET, POST, PUT, PATCH или DELETE.</value>
+  </data>
+  <data name="ToolPathInvalid" xml:space="preserve">
+    <value>Путь должен начинаться со слэша и не содержать пробелов.</value>
+  </data>
+  <data name="ToolPathParameterMissing" xml:space="preserve">
+    <value>Параметр пути {0} не встречается в пути как {{{0}}}.</value>
+  </data>
+  <data name="ToolPathPlaceholderUndeclared" xml:space="preserve">
+    <value>В пути есть {{{0}}}, но нет параметра пути с именем {0}.</value>
+  </data>
+  <data name="ToolRouteTaken" xml:space="preserve">
+    <value>{0} {1} уже занят другим инструментом.</value>
+  </data>
+  <data name="ToolNotFound" xml:space="preserve">
+    <value>Такого инструмента нет.</value>
+  </data>
+  <data name="ParameterNameRequired" xml:space="preserve">
+    <value>У каждого параметра должно быть имя.</value>
+  </data>
+  <data name="ParameterTypeInvalid" xml:space="preserve">
+    <value>Тип параметра {0} не поддерживается.</value>
+  </data>
+  <data name="ParameterDuplicate" xml:space="preserve">
+    <value>Параметр {0} указан дважды.</value>
+  </data>
+  <data name="ResponseExampleEmpty" xml:space="preserve">
+    <value>Сначала вставьте пример ответа.</value>
+  </data>
+  <data name="ResponseExampleInvalid" xml:space="preserve">
+    <value>Пример не является корректным JSON.</value>
+  </data>
+  <data name="ImportEmpty" xml:space="preserve">
+    <value>Документ пустой.</value>
+  </data>
+  <data name="ImportBroken" xml:space="preserve">
+    <value>Документ не является корректным JSON. YAML не поддерживается, сначала преобразуйте его в JSON.</value>
+  </data>
+  <data name="ImportUnsupported" xml:space="preserve">
+    <value>Документ нельзя импортировать: {0}</value>
+  </data>
+  <data name="ImportNotOpenApi" xml:space="preserve">
+    <value>это не документ OpenAPI или Swagger</value>
+  </data>
+  <data name="ImportNoOperations" xml:space="preserve">
+    <value>В документе нет операций для импорта.</value>
+  </data>
+  <data name="ImportTooLarge" xml:space="preserve">
+    <value>Документ больше 5 МБ.</value>
+  </data>
+  <data name="ImportTimedOut" xml:space="preserve">
+    <value>Документ не получен за 20 секунд.</value>
+  </data>
+  <data name="ImportFetchFailed" xml:space="preserve">
+    <value>Адрес ответил статусом {0}.</value>
+  </data>
+  <data name="ImportAddressInvalid" xml:space="preserve">
+    <value>Введите полный адрес http или https.</value>
+  </data>
+  <data name="ImportNameTaken" xml:space="preserve">
+    <value>Инструмент {0} в этом сервере уже есть.</value>
+  </data>
+  <data name="ImportNothingSelected" xml:space="preserve">
+    <value>Выберите хотя бы одну операцию.</value>
+  </data>
+  <data name="FormTool" xml:space="preserve">
+    <value>Инструмент формой</value>
+  </data>
+  <data name="NewFormTool" xml:space="preserve">
+    <value>Новый инструмент формой</value>
+  </data>
+  <data name="ImportOpenApi" xml:space="preserve">
+    <value>Импорт OpenAPI</value>
+  </data>
+  <data name="ImportTitle" xml:space="preserve">
+    <value>Импорт из OpenAPI</value>
+  </data>
+  <data name="ImportAddress" xml:space="preserve">
+    <value>Адрес документа</value>
+  </data>
+  <data name="ImportPaste" xml:space="preserve">
+    <value>Или вставьте документ</value>
+  </data>
+  <data name="ImportLoad" xml:space="preserve">
+    <value>Загрузить</value>
+  </data>
+  <data name="ImportOperationsLead" xml:space="preserve">
+    <value>Выберите операции, которые станут инструментами. По умолчанию не выбрана ни одна: отобранные вручную инструменты работают у моделей лучше автоконвертации.</value>
+  </data>
+  <data name="ImportUseBaseUrl" xml:space="preserve">
+    <value>Взять {0} как базовый адрес</value>
+  </data>
+  <data name="ImportApply" xml:space="preserve">
+    <value>Импортировать выбранные</value>
+  </data>
+  <data name="ImportDone" xml:space="preserve">
+    <value>Инструменты импортированы</value>
+  </data>
+  <data name="ToolMethod" xml:space="preserve">
+    <value>Метод</value>
+  </data>
+  <data name="ToolPath" xml:space="preserve">
+    <value>Путь</value>
+  </data>
+  <data name="ToolDescription" xml:space="preserve">
+    <value>Описание</value>
+  </data>
+  <data name="ToolDescriptionEmpty" xml:space="preserve">
+    <value>Без описания модели приходится угадывать, что делает инструмент.</value>
+  </data>
+  <data name="Parameters" xml:space="preserve">
+    <value>Параметры</value>
+  </data>
+  <data name="AddParameter" xml:space="preserve">
+    <value>Добавить параметр</value>
+  </data>
+  <data name="RemoveParameter" xml:space="preserve">
+    <value>Убрать параметр</value>
+  </data>
+  <data name="ParameterName" xml:space="preserve">
+    <value>Имя</value>
+  </data>
+  <data name="ParameterType" xml:space="preserve">
+    <value>Тип</value>
+  </data>
+  <data name="ParameterPlace" xml:space="preserve">
+    <value>Где</value>
+  </data>
+  <data name="ParameterRequired" xml:space="preserve">
+    <value>Обязателен</value>
+  </data>
+  <data name="ParameterDefault" xml:space="preserve">
+    <value>По умолчанию</value>
+  </data>
+  <data name="PlacePath" xml:space="preserve">
+    <value>Путь</value>
+  </data>
+  <data name="PlaceQuery" xml:space="preserve">
+    <value>Запрос</value>
+  </data>
+  <data name="PlaceHeader" xml:space="preserve">
+    <value>Заголовок</value>
+  </data>
+  <data name="PlaceBody" xml:space="preserve">
+    <value>Тело</value>
+  </data>
+  <data name="ResponseExample" xml:space="preserve">
+    <value>Пример ответа (JSON)</value>
+  </data>
+  <data name="GenerateSchema" xml:space="preserve">
+    <value>Построить схему</value>
+  </data>
+  <data name="ResponseSchemaLabel" xml:space="preserve">
+    <value>Схема ответа</value>
+  </data>
+  <data name="ClearSchema" xml:space="preserve">
+    <value>Убрать схему</value>
+  </data>
+  <data name="SaveTool" xml:space="preserve">
+    <value>Сохранить</value>
+  </data>
+  <data name="ToolSaved" xml:space="preserve">
+    <value>Инструмент сохранён</value>
+  </data>
+  <data name="DeleteTool" xml:space="preserve">
+    <value>Удалить инструмент</value>
+  </data>
+  <data name="DeleteToolQuestion" xml:space="preserve">
+    <value>Удалить инструмент {0}?</value>
+  </data>
+  <data name="DeleteToolWarning" xml:space="preserve">
+    <value>Операция удаляется из черновика.</value>
+  </data>
+  <data name="ConvertToCode" xml:space="preserve">
+    <value>Превратить в код</value>
+  </data>
+  <data name="ConvertToCodeQuestion" xml:space="preserve">
+    <value>Превратить {0} в код?</value>
+  </data>
+  <data name="ConvertToCodeWarning" xml:space="preserve">
+    <value>Создаётся файл Python, а операция формы удаляется. Обратного пути из кода в форму нет.</value>
+  </data>
+  <data name="ConvertToCodeYes" xml:space="preserve">
+    <value>Превратить в код</value>
+  </data>
+  <data name="FormTools" xml:space="preserve">
+    <value>Инструменты формой</value>
+  </data>
+  <data name="CodeTools" xml:space="preserve">
+    <value>Инструменты кодом</value>
+  </data>
+  <data name="NewToolInForm" xml:space="preserve">
+    <value>Новый</value>
+  </data>
+  <data name="ParameterDefaultInvalid" xml:space="preserve">
+    <value>Значение по умолчанию параметра {0} не подходит к его типу.</value>
+  </data>
+  <data name="ResponseSchemaCleared" xml:space="preserve">
+    <value>Схема будет убрана при сохранении.</value>
+  </data>
+  <data name="ImportSource" xml:space="preserve">
+    <value>Откуда взять документ</value>
+  </data>
+  <data name="ImportOperationCount" xml:space="preserve">
+    <value>Выбрано {0} из {1}</value>
+  </data>
+  <data name="ToolDeleted" xml:space="preserve">
+    <value>Инструмент удалён</value>
+  </data>
+  <data name="ConvertedToCode" xml:space="preserve">
+    <value>Инструмент стал кодом</value>
+  </data>
 </root>

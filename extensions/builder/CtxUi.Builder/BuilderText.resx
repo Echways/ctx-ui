@@ -576,4 +576,223 @@
   <data name="ServerDeleting" xml:space="preserve">
     <value>This server is being deleted.</value>
   </data>
+  <data name="OpenApiInvalid" xml:space="preserve">
+    <value>The API document is not valid JSON.</value>
+  </data>
+  <data name="ToolNameInvalid" xml:space="preserve">
+    <value>The tool name may contain only letters, digits, underscores and hyphens, up to 64 characters.</value>
+  </data>
+  <data name="ToolMethodInvalid" xml:space="preserve">
+    <value>Choose one of the methods GET, POST, PUT, PATCH or DELETE.</value>
+  </data>
+  <data name="ToolPathInvalid" xml:space="preserve">
+    <value>The path must start with a slash and contain no spaces.</value>
+  </data>
+  <data name="ToolPathParameterMissing" xml:space="preserve">
+    <value>The path parameter {0} does not appear in the path as {{{0}}}.</value>
+  </data>
+  <data name="ToolPathPlaceholderUndeclared" xml:space="preserve">
+    <value>The path contains {{{0}}} but there is no path parameter named {0}.</value>
+  </data>
+  <data name="ToolRouteTaken" xml:space="preserve">
+    <value>{0} {1} already belongs to another tool.</value>
+  </data>
+  <data name="ToolNotFound" xml:space="preserve">
+    <value>This tool does not exist.</value>
+  </data>
+  <data name="ParameterNameRequired" xml:space="preserve">
+    <value>Every parameter needs a name.</value>
+  </data>
+  <data name="ParameterTypeInvalid" xml:space="preserve">
+    <value>The type of the parameter {0} is not supported.</value>
+  </data>
+  <data name="ParameterDuplicate" xml:space="preserve">
+    <value>The parameter {0} is listed twice.</value>
+  </data>
+  <data name="ResponseExampleEmpty" xml:space="preserve">
+    <value>Paste an example of the response first.</value>
+  </data>
+  <data name="ResponseExampleInvalid" xml:space="preserve">
+    <value>The example is not valid JSON.</value>
+  </data>
+  <data name="ImportEmpty" xml:space="preserve">
+    <value>The document is empty.</value>
+  </data>
+  <data name="ImportBroken" xml:space="preserve">
+    <value>The document is not valid JSON. YAML is not supported, convert it to JSON first.</value>
+  </data>
+  <data name="ImportUnsupported" xml:space="preserve">
+    <value>The document cannot be imported: {0}</value>
+  </data>
+  <data name="ImportNotOpenApi" xml:space="preserve">
+    <value>it is not an OpenAPI or Swagger document</value>
+  </data>
+  <data name="ImportNoOperations" xml:space="preserve">
+    <value>The document has no operations to import.</value>
+  </data>
+  <data name="ImportTooLarge" xml:space="preserve">
+    <value>The document is larger than 5 MB.</value>
+  </data>
+  <data name="ImportTimedOut" xml:space="preserve">
+    <value>The document was not received within 20 seconds.</value>
+  </data>
+  <data name="ImportFetchFailed" xml:space="preserve">
+    <value>The address answered with status {0}.</value>
+  </data>
+  <data name="ImportAddressInvalid" xml:space="preserve">
+    <value>Enter a full http or https address.</value>
+  </data>
+  <data name="ImportNameTaken" xml:space="preserve">
+    <value>The tool {0} already exists in this server.</value>
+  </data>
+  <data name="ImportNothingSelected" xml:space="preserve">
+    <value>Choose at least one operation.</value>
+  </data>
+  <data name="FormTool" xml:space="preserve">
+    <value>Form tool</value>
+  </data>
+  <data name="NewFormTool" xml:space="preserve">
+    <value>New tool from a form</value>
+  </data>
+  <data name="ImportOpenApi" xml:space="preserve">
+    <value>Import OpenAPI</value>
+  </data>
+  <data name="ImportTitle" xml:space="preserve">
+    <value>Import from OpenAPI</value>
+  </data>
+  <data name="ImportAddress" xml:space="preserve">
+    <value>Document address</value>
+  </data>
+  <data name="ImportPaste" xml:space="preserve">
+    <value>Or paste the document</value>
+  </data>
+  <data name="ImportLoad" xml:space="preserve">
+    <value>Load</value>
+  </data>
+  <data name="ImportOperationsLead" xml:space="preserve">
+    <value>Choose the operations to turn into tools. None are chosen by default: hand-picked tools work better for models than automatic conversion.</value>
+  </data>
+  <data name="ImportUseBaseUrl" xml:space="preserve">
+    <value>Use {0} as the base address</value>
+  </data>
+  <data name="ImportApply" xml:space="preserve">
+    <value>Import selected</value>
+  </data>
+  <data name="ImportDone" xml:space="preserve">
+    <value>Tools imported</value>
+  </data>
+  <data name="ToolMethod" xml:space="preserve">
+    <value>Method</value>
+  </data>
+  <data name="ToolPath" xml:space="preserve">
+    <value>Path</value>
+  </data>
+  <data name="ToolDescription" xml:space="preserve">
+    <value>Description</value>
+  </data>
+  <data name="ToolDescriptionEmpty" xml:space="preserve">
+    <value>Without a description the model has to guess what the tool does.</value>
+  </data>
+  <data name="Parameters" xml:space="preserve">
+    <value>Parameters</value>
+  </data>
+  <data name="AddParameter" xml:space="preserve">
+    <value>Add parameter</value>
+  </data>
+  <data name="RemoveParameter" xml:space="preserve">
+    <value>Remove parameter</value>
+  </data>
+  <data name="ParameterName" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="ParameterType" xml:space="preserve">
+    <value>Type</value>
+  </data>
+  <data name="ParameterPlace" xml:space="preserve">
+    <value>Where</value>
+  </data>
+  <data name="ParameterRequired" xml:space="preserve">
+    <value>Required</value>
+  </data>
+  <data name="ParameterDefault" xml:space="preserve">
+    <value>Default</value>
+  </data>
+  <data name="PlacePath" xml:space="preserve">
+    <value>Path</value>
+  </data>
+  <data name="PlaceQuery" xml:space="preserve">
+    <value>Query</value>
+  </data>
+  <data name="PlaceHeader" xml:space="preserve">
+    <value>Header</value>
+  </data>
+  <data name="PlaceBody" xml:space="preserve">
+    <value>Body</value>
+  </data>
+  <data name="ResponseExample" xml:space="preserve">
+    <value>Response example (JSON)</value>
+  </data>
+  <data name="GenerateSchema" xml:space="preserve">
+    <value>Build schema</value>
+  </data>
+  <data name="ResponseSchemaLabel" xml:space="preserve">
+    <value>Response schema</value>
+  </data>
+  <data name="ClearSchema" xml:space="preserve">
+    <value>Clear schema</value>
+  </data>
+  <data name="SaveTool" xml:space="preserve">
+    <value>Save</value>
+  </data>
+  <data name="ToolSaved" xml:space="preserve">
+    <value>Tool saved</value>
+  </data>
+  <data name="DeleteTool" xml:space="preserve">
+    <value>Delete tool</value>
+  </data>
+  <data name="DeleteToolQuestion" xml:space="preserve">
+    <value>Delete the tool {0}?</value>
+  </data>
+  <data name="DeleteToolWarning" xml:space="preserve">
+    <value>The operation is removed from the draft.</value>
+  </data>
+  <data name="ConvertToCode" xml:space="preserve">
+    <value>Turn into code</value>
+  </data>
+  <data name="ConvertToCodeQuestion" xml:space="preserve">
+    <value>Turn {0} into code?</value>
+  </data>
+  <data name="ConvertToCodeWarning" xml:space="preserve">
+    <value>A Python file is created and the form operation is deleted. There is no way back from code to a form.</value>
+  </data>
+  <data name="ConvertToCodeYes" xml:space="preserve">
+    <value>Turn into code</value>
+  </data>
+  <data name="FormTools" xml:space="preserve">
+    <value>Form tools</value>
+  </data>
+  <data name="CodeTools" xml:space="preserve">
+    <value>Code tools</value>
+  </data>
+  <data name="NewToolInForm" xml:space="preserve">
+    <value>New</value>
+  </data>
+  <data name="ParameterDefaultInvalid" xml:space="preserve">
+    <value>The default of the parameter {0} does not match its type.</value>
+  </data>
+  <data name="ResponseSchemaCleared" xml:space="preserve">
+    <value>The schema will be removed when you save.</value>
+  </data>
+  <data name="ImportSource" xml:space="preserve">
+    <value>Where the document comes from</value>
+  </data>
+  <data name="ImportOperationCount" xml:space="preserve">
+    <value>{0} of {1} chosen</value>
+  </data>
+  <data name="ToolDeleted" xml:space="preserve">
+    <value>Tool deleted</value>
+  </data>
+  <data name="ConvertedToCode" xml:space="preserve">
+    <value>The tool is now code</value>
+  </data>
 </root>

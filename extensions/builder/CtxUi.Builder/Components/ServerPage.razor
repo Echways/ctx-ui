@@ -42,13 +42,25 @@ else
             <button type="button" class="link" data-testid="discard-mine" @onclick="DiscardAsync">@BuilderText.DiscardMine</button>
         </div>
     }
+    @if (_openApiError is not null)
+    {
+        <p class="bad-t" role="alert" data-testid="openapi-error">@_openApiError</p>
+    }
     <div class="builder-workspace">
         <ToolList Files="_files.Select(file => file.Path).ToList()" Selected="_selected" View="_view"
-                  OnSelect="SelectAsync" OnView="OpenViewAsync" OnCreate="CreateToolAsync" />
+                  FormTools="_formTools.Select(tool => tool.Name).ToList()" SelectedForm="_formName"
+                  OnSelect="SelectAsync" OnView="OpenViewAsync" OnCreate="CreateToolAsync"
+                  OnSelectForm="SelectFormAsync" OnNewForm="NewFormAsync" OnImport="ImportAsync" />
         <div class="builder-main">
             @if (_view == ServerView.Settings)
             {
                 <ServerSettings Settings="_settings" OnChanged="ReloadAsync" />
+            }
+            else if (_view == ServerView.Form)
+            {
+                <ToolForm @key="@($"{_formName}:{_draftRevision}")" ServerId="Id" Tool="_formTools.FirstOrDefault(tool => tool.Name == _formName)"
+                          OpenApiJson="@_openApiJson" Revision="_draftRevision"
+                          OnSaved="FormSavedAsync" OnDeleted="FormDeletedAsync" OnConverted="FormConvertedAsync" OnReload="ReloadFormAsync" />
             }
             else if (_view == ServerView.Releases)
             {
@@ -78,6 +90,11 @@ else
     private CodeEditor? _editor;
     private string? _selected;
     private ServerView _view;
+    private IReadOnlyList<FormTool> _formTools = [];
+    private string _openApiJson = string.Empty;
+    private string? _openApiError;
+    private string? _formName;
+    private long _draftRevision;
 
     [Parameter]
     public Guid Id { get; set; }
@@ -100,7 +117,21 @@ else
     private async Task LoadAsync()
     {
         _settings = await Catalog.SettingsAsync(Id, CancellationToken.None);
-        _files = [.. (await Catalog.DraftAsync(Id, CancellationToken.None)).Files];
+        var draft = await Catalog.DraftAsync(Id, CancellationToken.None);
+        _files = [.. draft.Files];
+        _draftRevision = draft.Revision;
+        _openApiJson = draft.OpenApiJson ?? string.Empty;
+        try
+        {
+            _formTools = OpenApiDraft.Read(_openApiJson);
+            _openApiError = null;
+        }
+        catch (PanelException failure)
+        {
+            _formTools = [];
+            _openApiError = failure.Message;
+        }
+
         _inbound = await Connections.FindInboundAsync(Id, CancellationToken.None);
     }
 
@@ -193,4 +224,55 @@ else
         await LoadAsync();
         _view = ServerView.Editor;
     }
+
+    private Task SelectFormAsync(string name) => GuardedAsync(async () =>
+    {
+        await LoadAsync();
+        _formName = name;
+        _view = ServerView.Form;
+    });
+
+    private Task NewFormAsync() => GuardedAsync(async () =>
+    {
+        await LoadAsync();
+        _formName = null;
+        _view = ServerView.Form;
+    });
+
+    private async Task FormSavedAsync(string name)
+    {
+        await LoadAsync();
+        _formName = name;
+    }
+
+    private async Task FormDeletedAsync()
+    {
+        await LoadAsync();
+        _formName = null;
+        _view = ServerView.Editor;
+    }
+
+    private async Task FormConvertedAsync(string path)
+    {
+        await LoadAsync();
+        _selected = path;
+        _formName = null;
+        _view = ServerView.Editor;
+    }
+
+    private async Task ReloadFormAsync() => await LoadAsync();
+
+    private Task ImportAsync() => GuardedAsync(async () =>
+    {
+        await LoadAsync();
+        var parameters = new DialogParameters<OpenApiImportDialog>
+        {
+            { sheet => sheet.ServerId, Id },
+            { sheet => sheet.Revision, _draftRevision },
+            { sheet => sheet.CurrentBaseUrl, _settings?.BaseUrl },
+        };
+        var sheet = await Dialogs.ShowSheetAsync<OpenApiImportDialog>(BuilderText.ImportTitle, parameters);
+        await sheet.Result;
+        await LoadAsync();
+    });
 }

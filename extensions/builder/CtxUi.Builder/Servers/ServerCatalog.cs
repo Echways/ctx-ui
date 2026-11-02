@@ -4,6 +4,7 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using CtxUi.Builder.Contracts;
 using CtxUi.Builder.Data;
+using CtxUi.Builder.Tools;
 using Enfilade;
 using Microsoft.EntityFrameworkCore;
 
@@ -127,6 +128,71 @@ public sealed partial class ServerCatalog(BuilderDatabase database, SecretBox bo
         await database.Drafts.Where(draft => draft.ServerId == id)
             .ExecuteUpdateAsync(setters => setters.SetProperty(draft => draft.Revision, draft => draft.Revision + 1).SetProperty(draft => draft.UpdatedAt, now), ct);
         return revision;
+    }
+
+    public async Task<long> SaveOpenApiAsync(Guid id, string openApiJson, long expectedRevision, CancellationToken ct)
+    {
+        OpenApiDraft.Parse(openApiJson);
+        await RequireServerAsync(id, ct);
+        await RequireRoomAsync(id, null, Encoding.UTF8.GetByteCount(openApiJson), ct);
+        var now = clock.GetUtcNow();
+        var updated = await database.Drafts.Where(draft => draft.ServerId == id && draft.Revision == expectedRevision).ExecuteUpdateAsync(setters => setters
+            .SetProperty(draft => draft.OpenApiJson, openApiJson)
+            .SetProperty(draft => draft.Revision, expectedRevision + 1)
+            .SetProperty(draft => draft.UpdatedAt, now), ct);
+        return updated == 0 ? throw new DraftConflictException(BuilderText.DraftChangedElsewhere) : expectedRevision + 1;
+    }
+
+    public async Task<(string Path, long Revision)> ConvertToCodeAsync(Guid id, string toolName, long expectedRevision, CancellationToken ct)
+    {
+        await RequireServerAsync(id, ct);
+        var draft = await database.Drafts.AsNoTracking().SingleAsync(draft => draft.ServerId == id, ct);
+        if (draft.Revision != expectedRevision)
+            throw new DraftConflictException(BuilderText.DraftChangedElsewhere);
+
+        var (openApiJson, python) = OpenApiDraft.ConvertToCode(draft.OpenApiJson ?? string.Empty, toolName);
+        var path = OpenApiDraft.ToolFilePath(toolName);
+        await RequireRoomAsync(id, path, Encoding.UTF8.GetByteCount(openApiJson) + Encoding.UTF8.GetByteCount(python), ct);
+
+        await using var transaction = await database.Database.BeginTransactionAsync(ct);
+        var now = clock.GetUtcNow();
+        var updated = await database.Drafts.Where(candidate => candidate.ServerId == id && candidate.Revision == expectedRevision).ExecuteUpdateAsync(setters => setters
+            .SetProperty(candidate => candidate.OpenApiJson, openApiJson)
+            .SetProperty(candidate => candidate.Revision, expectedRevision + 1)
+            .SetProperty(candidate => candidate.UpdatedAt, now), ct);
+        if (updated == 0)
+            throw new DraftConflictException(BuilderText.DraftChangedElsewhere);
+
+        try
+        {
+            await InsertFileAsync(id, path, python, ct);
+        }
+        catch (DraftConflictException)
+        {
+            throw new PanelException(BuilderText.ToolExists);
+        }
+
+        await transaction.CommitAsync(ct);
+        return (path, expectedRevision + 1);
+    }
+
+    public async Task<long> ImportOperationsAsync(Guid id, ImportedApi api, IReadOnlySet<string> selected, long expectedRevision, CancellationToken ct)
+    {
+        if (selected.Count == 0)
+            throw new PanelException(BuilderText.ImportNothingSelected);
+        await RequireServerAsync(id, ct);
+        var draft = await database.Drafts.AsNoTracking().SingleAsync(draft => draft.ServerId == id, ct);
+        if (draft.Revision != expectedRevision)
+            throw new DraftConflictException(BuilderText.DraftChangedElsewhere);
+
+        var merged = OpenApiDraft.Merge(draft.OpenApiJson ?? string.Empty, OpenApiImport.Select(api, selected));
+        return await SaveOpenApiAsync(id, merged, expectedRevision, ct);
+    }
+
+    public async Task<long> ProposeBaseUrlAsync(Guid id, string baseUrl, CancellationToken ct)
+    {
+        var settings = await SettingsAsync(id, ct);
+        return await SetApiAsync(id, baseUrl, new ApiAuthInput(settings.AuthKind, settings.AuthHeaderName, settings.AuthUsername, null), settings.SettingsRevision, ct);
     }
 
     public async Task SetSecretAsync(Guid id, string name, string value, CancellationToken ct)
@@ -301,6 +367,15 @@ public sealed partial class ServerCatalog(BuilderDatabase database, SecretBox bo
         {
             database.ChangeTracker.Clear();
         }
+    }
+
+    private async Task RequireRoomAsync(Guid id, string? replacedPath, long addedBytes, CancellationToken ct)
+    {
+        var otherBytes = await database.Database
+            .SqlQuery<long>($"SELECT COALESCE(SUM(LENGTH(CAST(Content AS BLOB))), 0) AS Value FROM Files WHERE ServerId = {id} AND Path <> {replacedPath ?? string.Empty}")
+            .SingleAsync(ct);
+        if (otherBytes + addedBytes > ProjectFiles.MaxProjectBytes)
+            throw new PanelException(BuilderText.ProjectTooLarge);
     }
 
     private async Task RequireServerAsync(Guid id, CancellationToken ct)

@@ -1,0 +1,96 @@
+@inject ServerCatalog Catalog
+@inject IHttpClientFactory HttpClients
+
+<Sheet>
+    @if (_api is null)
+    {
+        <div class="builder-import-source" data-testid="import-source">
+            <p class="hint">@BuilderText.ImportSource</p>
+            <MudTextField T="string" Label="@BuilderText.ImportAddress" @bind-Value="_address" Immediate="true" data-testid="import-address" />
+            <MudTextField T="string" Label="@BuilderText.ImportPaste" @bind-Value="_pasted" Lines="8" Immediate="true" data-testid="import-paste" />
+            <Button OnClick="LoadAsync" Refresh="false" data-testid="import-load">@BuilderText.ImportLoad</Button>
+        </div>
+    }
+    else
+    {
+        <Form Model="_selection" OnSubmit="ApplyAsync" Submit="@BuilderText.ImportApply" Done="@BuilderText.ImportDone">
+            <p class="hint">@BuilderText.ImportOperationsLead</p>
+            <p class="note" data-testid="import-count">@string.Format(BuilderText.ImportOperationCount, _selection.Names.Count, _api.Operations.Count)</p>
+            <div class="builder-import-operations" data-testid="import-operations">
+                @foreach (var operation in _api.Operations)
+                {
+                    <MudCheckBox T="bool" Value="_selection.Names.Contains(operation.Name)" ValueChanged="chosen => Choose(operation.Name, chosen)" Dense="true" @key="operation.Name" data-operation="@operation.Name">
+                        <strong>@operation.Method</strong> <code>@operation.Path</code> <span class="note">@operation.Summary</span>
+                    </MudCheckBox>
+                }
+            </div>
+            @if (_api.BaseUrl is not null && !SameAsCurrent(_api.BaseUrl))
+            {
+                <MudCheckBox T="bool" @bind-Value="_selection.UseBaseUrl" Label="@string.Format(BuilderText.ImportUseBaseUrl, _api.BaseUrl)" Dense="true" data-testid="import-base-url" />
+                <p class="note">@BuilderText.BaseUrlAppliesOnPublish</p>
+            }
+        </Form>
+    }
+</Sheet>
+
+@code {
+    private readonly ImportSelection _selection = new();
+    private ImportedApi? _api;
+    private string? _address;
+    private string? _pasted;
+
+    [Parameter, EditorRequired]
+    public Guid ServerId { get; set; }
+
+    [Parameter, EditorRequired]
+    public long Revision { get; set; }
+
+    [Parameter]
+    public string? CurrentBaseUrl { get; set; }
+
+    private bool SameAsCurrent(string address) =>
+        string.Equals(address.TrimEnd('/'), (CurrentBaseUrl ?? string.Empty).Trim().TrimEnd('/'), StringComparison.OrdinalIgnoreCase);
+
+    private void Choose(string name, bool chosen)
+    {
+        if (chosen)
+            _selection.Names.Add(name);
+        else
+            _selection.Names.Remove(name);
+    }
+
+    private async Task LoadAsync()
+    {
+        _api = await ReadAsync();
+        _selection.Names.Clear();
+        _selection.UseBaseUrl = string.IsNullOrWhiteSpace(CurrentBaseUrl) && _api.BaseUrl is not null;
+    }
+
+    private async Task<ImportedApi> ReadAsync()
+    {
+        if (!string.IsNullOrWhiteSpace(_pasted))
+        {
+            using var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(_pasted));
+            return await OpenApiImport.ParseAsync(stream, CancellationToken.None);
+        }
+
+        if (!Uri.TryCreate(_address?.Trim(), UriKind.Absolute, out var address))
+            throw new PanelException(BuilderText.ImportAddressInvalid);
+        return await OpenApiImport.FetchAsync(address, HttpClients.CreateClient(), CancellationToken.None);
+    }
+
+    private async Task ApplyAsync()
+    {
+        try
+        {
+            await Catalog.ImportOperationsAsync(ServerId, _api!, _selection.Names, Revision, CancellationToken.None);
+        }
+        catch (DraftConflictException failure)
+        {
+            throw new PanelException(failure.Message);
+        }
+
+        if (_selection.UseBaseUrl && _api!.BaseUrl is { } baseUrl)
+            await Catalog.ProposeBaseUrlAsync(ServerId, baseUrl, CancellationToken.None);
+    }
+}

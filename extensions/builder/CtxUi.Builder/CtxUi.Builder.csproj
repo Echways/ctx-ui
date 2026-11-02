@@ -13,6 +13,8 @@
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="all" />
     <PackageReference Include="ModelContextProtocol.Core" />
+    <PackageReference Include="Microsoft.OpenApi" VersionOverride="3.11.0" />
+    <PackageReference Include="NJsonSchema" />
     <ProjectReference Include="..\..\..\src\CtxUi.Extensions\CtxUi.Extensions.csproj" />
     <ProjectReference Include="..\CtxUi.Builder.Contracts\CtxUi.Builder.Contracts.csproj" />
   </ItemGroup>

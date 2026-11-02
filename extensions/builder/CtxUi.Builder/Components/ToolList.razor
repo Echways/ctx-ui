@@ -1,6 +1,19 @@
 <nav class="builder-tools" aria-label="@BuilderText.Tools">
     <div class="builder-tools-head">
-        <span class="builder-tools-title">@BuilderText.Tools</span>
+        <span class="builder-tools-title">@BuilderText.FormTools</span>
+        <button type="button" class="link" aria-label="@BuilderText.NewFormTool" data-testid="new-form-tool" @onclick="() => OnNewForm.InvokeAsync()">+</button>
+    </div>
+    <ul class="builder-files" data-testid="form-tools">
+        @foreach (var name in FormTools)
+        {
+            <li>
+                <button type="button" class="builder-file" aria-current="@(View == ServerView.Form && name == SelectedForm ? "true" : null)" data-form-tool="@name" @onclick="() => OnSelectForm.InvokeAsync(name)">@name</button>
+            </li>
+        }
+    </ul>
+    <button type="button" class="link" data-testid="import-openapi" @onclick="() => OnImport.InvokeAsync()">@BuilderText.ImportOpenApi</button>
+    <div class="builder-tools-head">
+        <span class="builder-tools-title">@BuilderText.CodeTools</span>
         <button type="button" class="link" aria-label="@BuilderText.NewTool" aria-expanded="@_adding" data-testid="new-tool" @onclick="Toggle">+</button>
     </div>
     @if (_adding)
@@ -49,6 +62,21 @@
 
     [Parameter, EditorRequired]
     public IReadOnlyList<string> Files { get; set; } = [];
+
+    [Parameter]
+    public IReadOnlyList<string> FormTools { get; set; } = [];
+
+    [Parameter]
+    public string? SelectedForm { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnSelectForm { get; set; }
+
+    [Parameter]
+    public EventCallback OnNewForm { get; set; }
+
+    [Parameter]
+    public EventCallback OnImport { get; set; }
 
     [Parameter]
     public string? Selected { get; set; }

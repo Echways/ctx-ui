@@ -40,6 +40,38 @@ internal static class BuilderText
 
     public static string RunnerNotConfigured => Read();
 
+    public static string ResponseExampleEmpty => Read();
+
+    public static string ResponseExampleInvalid => Read();
+
+    public static string OpenApiInvalid => Read();
+
+    public static string ImportBroken => Read();
+
+    public static string ImportEmpty => Read();
+
+    public static string ImportUnsupported => Read();
+
+    public static string ImportNoOperations => Read();
+
+    public static string ImportTooLarge => Read();
+
+    public static string ImportTimedOut => Read();
+
+    public static string ImportFetchFailed => Read();
+
+    public static string ImportAddressInvalid => Read();
+
+    public static string ImportNameTaken => Read();
+
+    public static string ImportNothingSelected => Read();
+
+    public static string ToolExists => Read();
+
+    public static string ToolRouteTaken => Read();
+
+    public static string DraftChangedElsewhere => Read();
+
     private static string Read([System.Runtime.CompilerServices.CallerMemberName] string name = "") =>
         (string)Source.GetProperty(name, BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)!.GetValue(null)!;
 }

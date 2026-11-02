@@ -20,24 +20,43 @@ HTTP-инбаунд, поэтому сервер доходит до клиен�
 curl -fsSL https://github.com/Echways/ctx-ui/releases/latest/download/builder-install.sh | sudo bash
 ```
 
-Установщик сам определяет способ установки ctx-ui, проверяет Docker и `SHA256SUMS`
-релиза и, если что-то не так, останавливается до любых изменений. Затем он генерирует
-токен Runner, поднимает контейнеры, записывает настройки
+Установщик определяет способ установки ctx-ui (systemd, если есть служба
+`ctx-ui.service`, иначе работающий проект Docker compose со службой `ctx-ui`),
+проверяет, что Docker Engine версии 29 или новее, и сверяет скачанные файлы с
+`SHA256SUMS` релиза. Если что-то не так, он останавливается до любых изменений. Затем он
+генерирует токен Runner, поднимает контейнеры `ctxb-runner` и `ctxb-egress`, ждёт, пока
+Runner сообщит версию релиза, ставит расширение, записывает настройки
 `CtxUi__Extensions__builder__RunnerUrl`, `CtxUi__Extensions__builder__RunnerIngressUrl`
-и `CtxUi__Extensions__builder__RunnerToken`, ставит расширение и перезапускает ctx-ui.
-Токен и адрес руками задавать не нужно.
+и `CtxUi__Extensions__builder__RunnerToken` и перезапускает ctx-ui. Токен и адрес руками
+задавать не нужно.
+
+- **systemd.** Проект compose `ctx-ui-builder` лежит в `/opt/ctx-ui-builder`
+  (`compose.yaml` и закрытый `.env` с токеном). Runner слушает `127.0.0.1:8091`
+  (управление) и `127.0.0.1:8090` (серверы). Настройки добавляются в
+  `/etc/ctx-ui/ctx-ui.env`.
+- **Docker.** Файлы `builder-compose.yaml` и `builder-compose.docker.yaml` кладутся рядом
+  с `compose.yaml` ctx-ui и перечисляются в `COMPOSE_FILE` в `.env` вместе с
+  `CTXB_VERSION` и `CTXB_RUNNER_TOKEN`, поэтому обычный `docker compose up -d` сохраняет
+  конструктор. Runner стоит на `10.212.0.2`, а ctx-ui на `10.212.0.3` в сети `ctxb-control` (8091
+  управление, 8090 серверы); Runner не публикует портов на хосте. Настройки попадают в ctx-ui через файл-оверлей.
 
 | Параметр | Что делает |
 | --- | --- |
 | `--version <v>` | ставит указанный релиз вместо последнего |
-| `--remove` | удаляет контейнеры с меткой `ctx-ui.builder` и расширение; ctx-ui продолжает работать |
+| `--remove` | удаляет контейнеры с меткой `ctx-ui.builder`, расширение и настройки; ctx-ui продолжает работать |
+
+Версию можно задать и переменной `CTXB_VERSION`, а `CTX_UI_DOWNLOAD_URL` заменяет
+страницу релиза как источник файлов.
 
 ```bash
 curl -fsSL https://github.com/Echways/ctx-ui/releases/latest/download/builder-install.sh \
     | sudo bash -s -- --version 0.2.0
 ```
 
-Для обновления выполните команду ещё раз: токен и собранные серверы сохраняются. В
+Для обновления выполните команду ещё раз: токен и собранные серверы сохраняются.
+`--remove` удаляет Runner, прокси и контейнеры собранных серверов. Сети и тома остаются,
+в том числе тома `/data` серверов, и данные расширения тоже
+(`ctx-ui extension remove builder --purge` удаляет их). В
 навигации панели появляется раздел «Конструктор». Если Runner недоступен, раздел
 показывает причину и эту команду.
 
@@ -140,15 +159,16 @@ root, с `cap_drop: ALL` и `no-new-privileges`, на корне только д
 
 ## Ручная установка
 
-Нужна, если скрипт не подходит. Понадобятся папка `deploy/builder` релиза, например из
-репозитория по тегу `v<версия>`, и архив `builder-<версия>.zip` со страницы релиза.
+Нужна, если скрипт не подходит. Скачайте со страницы релиза `builder-<версия>.zip`
+(расширение), `builder-compose.yaml` и `builder-compose.docker.yaml` и сверьте их с
+`SHA256SUMS`.
 
 Установка через systemd:
 
 ```bash
-export CTX_UI_VERSION=0.2.0
+export CTXB_VERSION=0.2.0
 export CTXB_RUNNER_TOKEN=$(openssl rand -hex 32)
-docker compose -f deploy/builder/compose.yaml up -d
+docker compose -f builder-compose.yaml up -d
 ```
 
 Это проект `ctx-ui-builder`. Runner слушает `127.0.0.1:8091` (управление) и
@@ -165,26 +185,27 @@ sudo ctx-ui extension install builder-0.2.0.zip
 sudo systemctl restart ctx-ui
 ```
 
-Установка через Docker, в каталоге `ctx-ui`. Порядок файлов важен, оверлей идёт
-последним: он сохраняет имя проекта `ctx-ui`, подключает ctx-ui к сети Runner и не
-публикует портов:
+Установка через Docker: положите `builder-compose.yaml` и `builder-compose.docker.yaml`
+рядом с `compose.yaml` ctx-ui и добавьте в `.env`:
+
+```
+CTXB_VERSION=0.2.0
+CTXB_RUNNER_TOKEN=<64 шестнадцатеричные цифры>
+COMPOSE_FILE=compose.yaml:builder-compose.yaml:builder-compose.docker.yaml
+```
+
+Порядок файлов важен, оверлей идёт последним: он сохраняет имя проекта `ctx-ui`,
+подключает ctx-ui к сети Runner, не публикует портов и передаёт ctx-ui настройки с
+адресами `http://10.212.0.2:8091` и `http://10.212.0.2:8090`. Затем:
 
 ```bash
-docker compose -f deploy/docker/compose.yaml -f deploy/builder/compose.yaml -f deploy/builder/compose.docker.yaml up -d
+docker compose up -d
+docker compose cp builder-0.2.0.zip ctx-ui:/tmp/builder.zip
+docker compose exec ctx-ui ctx-ui extension install /tmp/builder.zip
+docker compose restart ctx-ui
 ```
 
-`CTXB_RUNNER_TOKEN` добавьте в `.env` рядом с `CTX_UI_VERSION`. Настройки идут в
-`environment` службы `ctx-ui`:
-
-```
-CtxUi__Extensions__builder__RunnerUrl=http://10.212.0.2:8091
-CtxUi__Extensions__builder__RunnerIngressUrl=http://10.212.0.2:8090
-CtxUi__Extensions__builder__RunnerToken=<тот же токен>
-```
-
-Затем выполните `ctx-ui extension install` внутри контейнера или смонтируйте
-распакованное расширение (см. [расширения](extensions.md#установка-обновление-удаление))
-и перезапустите его.
+Или смонтируйте распакованное расширение (см. [расширения](extensions.md#установка-обновление-удаление)).
 
 Остальные настройки Runner, в `environment` службы `runner`: `RUNNER_SUBNET_POOL`
 (подсети сетей серверов, по умолчанию `10.213.0.0/16`) и `BUILDER_RUNTIME`.
@@ -205,7 +226,7 @@ CtxUi__Extensions__builder__RunnerToken=<тот же токен>
   такие контейнеры могут накапливаться.
 - Удаление расширения, в том числе с `--purge`, не останавливает контейнеры. Серверы и
   инбаунды продолжают работать. `builder-install.sh --remove` удаляет контейнеры с
-  меткой `ctx-ui.builder` вместе с расширением.
+  меткой `ctx-ui.builder` вместе с расширением и его настройками.
 - Пока Runner недоступен, черновики редактируются, а публикация нет, и вызовы клиентов к
   собранным серверам падают до его возвращения.
 - `ctx-ui backup` покрывает черновики, версии и секреты конструктора (данные

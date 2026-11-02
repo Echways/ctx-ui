@@ -117,6 +117,91 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+  builder-assets:
+    name: Build builder assets
+    needs: [version, checks]
+    runs-on: ubuntu-26.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out
+        uses: actions/checkout@v7
+
+      - name: Set up .NET
+        uses: ./.github/actions/dotnet
+
+      - name: Package the extension, installer and compose files
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+        run: deploy/builder/package.sh "$VERSION" builder
+
+      - name: Upload builder assets
+        uses: actions/upload-artifact@v7
+        with:
+          name: builder
+          path: builder
+          if-no-files-found: error
+
+  builder-images:
+    name: Publish ${{ matrix.image }}
+    needs: [version, checks]
+    runs-on: ubuntu-26.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - image: ctx-ui-builder-runner
+            context: .
+            file: extensions/builder/CtxUi.Builder.Runner/Dockerfile
+          - image: ctx-ui-builder-runtime
+            context: extensions/builder/runtime
+            file: extensions/builder/runtime/Dockerfile
+          - image: ctx-ui-builder-egress
+            context: extensions/builder/egress
+            file: extensions/builder/egress/Dockerfile
+    steps:
+      - name: Check out
+        uses: actions/checkout@v7
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v4
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Compute tags and labels
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ghcr.io/echways/${{ matrix.image }}
+          tags: |
+            type=semver,pattern={{version}}
+          labels: |
+            org.opencontainers.image.title=${{ matrix.image }}
+
+      - name: Build and push amd64 and arm64
+        uses: docker/build-push-action@v7
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.file }}
+          platforms: linux/amd64,linux/arm64
+          push: true
+          build-args: ${{ matrix.image == 'ctx-ui-builder-runner' && format('VERSION={0}', needs.version.outputs.version) || '' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=${{ matrix.image }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.image }}
+
   packages:
     name: Pack extension packages
     needs: [version, checks]
@@ -181,7 +266,7 @@ jobs:
 
   release:
     name: Publish release
-    needs: [version, assets, image, nuget]
+    needs: [version, assets, image, builder-assets, builder-images, nuget]
     runs-on: ubuntu-26.04
     timeout-minutes: 5
     permissions:
@@ -193,12 +278,20 @@ jobs:
           name: dist
           path: dist
 
+      - name: Download builder assets
+        uses: actions/download-artifact@v8
+        with:
+          name: builder
+          path: builder
+
       - name: Create GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ github.ref_name }}
           VERSION: ${{ needs.version.outputs.version }}
         run: |
+          cat builder/SHA256SUMS >> dist/SHA256SUMS
+          rm builder/SHA256SUMS
           flags=()
           if [[ "$VERSION" == *-* ]]; then
             flags+=(--prerelease)
@@ -222,6 +315,16 @@ jobs:
 
           Docker: set \`CTX_UI_VERSION=$VERSION\` in \`.env\`, then \`docker compose up -d\`.
 
+          ## Server builder
+
+          Optional extension for an installed ctx-ui, needs Docker Engine 29 or newer:
+
+          \`\`\`bash
+          curl -fsSL https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG/builder-install.sh | sudo bash
+          \`\`\`
+
+          Images: \`ghcr.io/echways/ctx-ui-builder-runner:$VERSION\`, \`-runtime\` and \`-egress\`.
+
           EOF
-          gh release create "$TAG" dist/* --repo "$GITHUB_REPOSITORY" --title "ctx-ui $VERSION" \
+          gh release create "$TAG" dist/* builder/* --repo "$GITHUB_REPOSITORY" --title "ctx-ui $VERSION" \
             --notes-file notes.md --generate-notes --verify-tag "${flags[@]}"

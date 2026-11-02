@@ -2,7 +2,7 @@ name: ctx-ui-builder
 
 services:
   runner:
-    image: ghcr.io/echways/ctx-ui-builder-runner:${CTX_UI_VERSION:?}
+    image: ghcr.io/echways/ctx-ui-builder-runner:${CTXB_VERSION:-${CTX_UI_VERSION:?}}
     container_name: ctxb-runner
     restart: unless-stopped
     depends_on:
@@ -10,7 +10,7 @@ services:
     environment:
       RUNNER_TOKEN: ${CTXB_RUNNER_TOKEN:?}
       RUNNER_BIND: 10.212.0.2
-      RUNNER_RUNTIME_IMAGE: ghcr.io/echways/ctx-ui-builder-runtime:${CTX_UI_VERSION:?}
+      RUNNER_RUNTIME_IMAGE: ghcr.io/echways/ctx-ui-builder-runtime:${CTXB_VERSION:-${CTX_UI_VERSION:?}}
       RUNNER_EGRESS_CONTAINER: ctxb-egress
     labels:
       ctx-ui.builder: system
@@ -31,7 +31,7 @@ services:
       - no-new-privileges:true
 
   egress:
-    image: ghcr.io/echways/ctx-ui-builder-egress:${CTX_UI_VERSION:?}
+    image: ghcr.io/echways/ctx-ui-builder-egress:${CTXB_VERSION:-${CTX_UI_VERSION:?}}
     container_name: ctxb-egress
     restart: unless-stopped
     labels:

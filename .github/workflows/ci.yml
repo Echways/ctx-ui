@@ -31,7 +31,7 @@ jobs:
         run: dotnet format CtxUi.slnx --verify-no-changes
 
       - name: Check shell scripts
-        run: shellcheck deploy/package.sh deploy/linux/*.sh deploy/tests/*.sh
+        run: shellcheck deploy/package.sh deploy/linux/*.sh deploy/builder/*.sh deploy/tests/*.sh
 
   unit:
     name: Unit tests
@@ -198,6 +198,20 @@ jobs:
       - name: Run isolation checks
         if: ${{ !cancelled() }}
         run: deploy/tests/builder-isolation.sh
+
+  builder-install:
+    name: "Builder: install"
+    runs-on: ubuntu-26.04
+    timeout-minutes: 40
+    steps:
+      - name: Check out
+        uses: actions/checkout@v7
+
+      - name: Set up .NET
+        uses: ./.github/actions/dotnet
+
+      - name: Run installer checks
+        run: deploy/tests/builder-install.sh
 
   builder-flow:
     name: "Builder: end to end"

@@ -834,4 +834,7 @@
   <data name="NewServerOpenApi" xml:space="preserve">
     <value>OpenAPI document (optional)</value>
   </data>
+  <data name="CodeToolNameTaken" xml:space="preserve">
+    <value>The tool {0} already exists as a form tool. Choose another name or delete the form tool first.</value>
+  </data>
 </root>

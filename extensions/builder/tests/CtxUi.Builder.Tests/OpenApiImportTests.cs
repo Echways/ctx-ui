@@ -94,7 +94,7 @@ public sealed class OpenApiImportTests
         Assert.Equal(3, api.Operations.Count);
         Assert.Equal("https://pets.example.com/api", api.BaseUrl);
         Assert.Equal(("GET", "/pets", "List pets"), (api.Operations[0].Method, api.Operations[0].Path, api.Operations[0].Summary));
-            }
+    }
 
     [Fact]
     public async Task Operation_without_operation_id_gets_a_stable_generated_name()

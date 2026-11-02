@@ -834,4 +834,7 @@
   <data name="NewServerOpenApi" xml:space="preserve">
     <value>Документ OpenAPI (необязательно)</value>
   </data>
+  <data name="CodeToolNameTaken" xml:space="preserve">
+    <value>Инструмент {0} уже есть как инструмент формой. Выберите другое имя или сначала удалите инструмент формой.</value>
+  </data>
 </root>

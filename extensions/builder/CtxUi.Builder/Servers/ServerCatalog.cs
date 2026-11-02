@@ -117,6 +117,7 @@ public sealed partial class ServerCatalog(BuilderDatabase database, SecretBox bo
             throw new PanelException(BuilderText.PathInvalid);
         path = ProjectPath(path);
         await RequireServerAsync(id, ct);
+        await RequireNoFormToolClashAsync(id, path, content, ct);
 
         var otherBytes = await database.Database
             .SqlQuery<long>($"SELECT COALESCE(SUM(LENGTH(CAST(Content AS BLOB))), 0) AS Value FROM Files WHERE ServerId = {id} AND Path <> {path}")
@@ -162,7 +163,7 @@ public sealed partial class ServerCatalog(BuilderDatabase database, SecretBox bo
             throw new DraftConflictException(BuilderText.DraftChangedElsewhere);
 
         var document = draft.OpenApiJson ?? string.Empty;
-        if (isNew && (OpenApiDraft.Names(document).Contains(tool.Name) || CodeToolNames.From(draft.Files.Select(file => (file.Path, file.Content))).Contains(tool.Name)))
+        if (CodeToolNames.From(draft.Files.Select(file => (file.Path, file.Content))).Contains(tool.Name) || (isNew && OpenApiDraft.Names(document).Contains(tool.Name)))
             throw new PanelException(string.Format(BuilderText.ToolNameTaken, tool.Name));
         return await SaveOpenApiAsync(id, OpenApiDraft.Upsert(document, tool), expectedRevision, ct);
     }
@@ -399,6 +400,35 @@ public sealed partial class ServerCatalog(BuilderDatabase database, SecretBox bo
         {
             database.ChangeTracker.Clear();
         }
+    }
+
+    private async Task RequireNoFormToolClashAsync(Guid id, string path, string content, CancellationToken ct)
+    {
+        if (!path.EndsWith(".py", StringComparison.OrdinalIgnoreCase))
+            return;
+        var names = CodeToolNames.From([(path, content)]).ToHashSet();
+        if (names.Count == 0)
+            return;
+
+        var previous = await database.Files.AsNoTracking().Where(file => file.ServerId == id && file.Path == path).Select(file => file.Content).SingleOrDefaultAsync(ct);
+        if (previous is not null)
+            names.ExceptWith(CodeToolNames.From([(path, previous)]));
+        var document = await database.Drafts.AsNoTracking().Where(draft => draft.ServerId == id).Select(draft => draft.OpenApiJson).SingleOrDefaultAsync(ct);
+        if (names.Count == 0 || document is null)
+            return;
+
+        IReadOnlySet<string> formNames;
+        try
+        {
+            formNames = OpenApiDraft.Names(document);
+        }
+        catch (PanelException)
+        {
+            return;
+        }
+
+        if (names.FirstOrDefault(formNames.Contains) is { } clash)
+            throw new PanelException(string.Format(BuilderText.CodeToolNameTaken, clash));
     }
 
     private async Task RequireRoomAsync(Guid id, string? replacedPath, long addedBytes, CancellationToken ct)

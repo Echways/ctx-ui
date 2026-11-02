@@ -96,6 +96,8 @@ else
     private string? _openApiError;
     private string? _formName;
     private long _draftRevision;
+    private bool _loaded;
+    private bool _importChecked;
 
     [Parameter]
     public Guid Id { get; set; }
@@ -105,6 +107,7 @@ else
         Queue.FirstActivated += OnFirstActivated;
         await LoadAsync();
         _selected = _files.OrderBy(file => file.Path, StringComparer.Ordinal).FirstOrDefault()?.Path;
+        _loaded = true;
     }
 
     public void Dispose() => Queue.FirstActivated -= OnFirstActivated;
@@ -265,8 +268,11 @@ else
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender && Pending.Take(Id) is { } api)
-            await ImportCoreAsync(api);
+        if (!_loaded || _importChecked)
+            return;
+        _importChecked = true;
+        if (Pending.Take(Id) is { } api)
+            await GuardedAsync(() => ImportCoreAsync(api));
     }
 
     private Task ImportAsync() => GuardedAsync(() => ImportCoreAsync(null));

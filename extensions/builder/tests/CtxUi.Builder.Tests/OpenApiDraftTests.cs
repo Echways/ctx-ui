@@ -271,9 +271,10 @@ public sealed class OpenApiDraftTests
         var saved = OpenApiDraft.Upsert(Imported, tool with { Description = "Changed" });
 
         var parameters = Operation(saved, "/orders/{id}", "get")["parameters"]!.AsArray();
-        Assert.Equal("string", parameters[1]!["schema"]!["anyOf"]![0]!["type"]!.GetValue<string>());
-        Assert.Equal("#/components/schemas/Kind", parameters[2]!["schema"]!["$ref"]!.GetValue<string>());
-        Assert.Equal("array", parameters[3]!["schema"]!["type"]![0]!.GetValue<string>());
+        Assert.Equal(["expand", "kind", "ids"], parameters.Select(node => node!["name"]!.GetValue<string>()));
+        Assert.Equal("string", parameters[0]!["schema"]!["anyOf"]![0]!["type"]!.GetValue<string>());
+        Assert.Equal("#/components/schemas/Kind", parameters[1]!["schema"]!["$ref"]!.GetValue<string>());
+        Assert.Equal("array", parameters[2]!["schema"]!["type"]![0]!.GetValue<string>());
     }
 
     [Fact]
@@ -362,5 +363,61 @@ public sealed class OpenApiDraftTests
         var (_, python) = OpenApiDraft.ConvertToCode(Imported, "getOrder");
 
         Assert.Contains("async def getorder(id: int, expand=None, kind=None, ids=None):", python);
+    }
+
+    private const string Inherited = """
+    {"openapi":"3.0.3","info":{"title":"t","version":"1"},
+     "paths":{"/items/{id}":{"parameters":[{"name":"id","in":"path","required":true,"schema":{"$ref":"#/components/schemas/Id"}},{"name":"v","in":"query","description":"Version","schema":{"type":"integer","format":"int64","minimum":1}}],
+       "get":{"operationId":"getItem","responses":{"200":{"description":"OK"}}}}},
+     "components":{"schemas":{"Id":{"type":"string"}}}}
+    """;
+
+    private static string Effective(string json)
+    {
+        var path = JsonNode.Parse(json)!["paths"]!["/items/{id}"]!;
+        var inherited = path["parameters"]!.AsArray();
+        var own = path["get"]!["parameters"]?.AsArray() ?? [];
+        return JsonNode.Parse("[" + string.Join(",", inherited.Concat(own).Select(node => node!.ToJsonString())) + "]")!.ToJsonString();
+    }
+
+    [Fact]
+    public void An_unchanged_save_leaves_inherited_parameters_at_the_path_level()
+    {
+        var tool = Assert.Single(OpenApiDraft.Read(Inherited));
+
+        var saved = OpenApiDraft.Upsert(Inherited, tool);
+
+        Assert.Null(JsonNode.Parse(saved)!["paths"]!["/items/{id}"]!["get"]!["parameters"]);
+        Assert.Equal(Effective(Inherited), Effective(saved));
+        Assert.True(JsonNode.DeepEquals(JsonNode.Parse(Inherited), JsonNode.Parse(saved)));
+    }
+
+    [Fact]
+    public void Changing_an_inherited_parameter_overrides_it_on_top_of_the_path_level_node()
+    {
+        var tool = Assert.Single(OpenApiDraft.Read(Inherited));
+        var changed = tool with { Parameters = [.. tool.Parameters.Select(parameter => parameter.Name == "v" ? parameter with { Description = "Changed" } : parameter)] };
+
+        var saved = OpenApiDraft.Upsert(Inherited, changed);
+
+        var overrides = JsonNode.Parse(saved)!["paths"]!["/items/{id}"]!["get"]!["parameters"]!.AsArray();
+        var version = Assert.Single(overrides);
+        Assert.Equal("Changed", version!["description"]!.GetValue<string>());
+        Assert.Equal("int64", version["schema"]!["format"]!.GetValue<string>());
+        Assert.Equal(1, version["schema"]!["minimum"]!.GetValue<int>());
+        Assert.Equal("#/components/schemas/Id", JsonNode.Parse(saved)!["paths"]!["/items/{id}"]!["parameters"]![0]!["schema"]!["$ref"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public void Moving_a_tool_with_inherited_parameters_carries_them_to_the_new_path()
+    {
+        var tool = Assert.Single(OpenApiDraft.Read(Inherited));
+
+        var moved = OpenApiDraft.Upsert(Inherited, tool with { Path = "/things/{id}" });
+
+        var parameters = JsonNode.Parse(moved)!["paths"]!["/things/{id}"]!["get"]!["parameters"]!.AsArray();
+        Assert.Equal(["id", "v"], parameters.Select(node => node!["name"]!.GetValue<string>()));
+        Assert.Equal("int64", parameters[1]!["schema"]!["format"]!.GetValue<string>());
+        Assert.Equal("#/components/schemas/Id", parameters[0]!["schema"]!["$ref"]!.GetValue<string>());
     }
 }

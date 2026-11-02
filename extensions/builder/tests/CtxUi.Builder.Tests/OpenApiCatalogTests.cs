@@ -204,4 +204,31 @@ public sealed class OpenApiCatalogTests : IClassFixture<CatalogHarness>
 
         Assert.StartsWith(BuilderText.ArchiveOpenApiInvalid.Split("{0}")[0], failure.Message);
     }
+
+    [Fact]
+    public async Task A_stale_edit_cannot_recreate_a_form_tool_that_was_turned_into_code()
+    {
+        var id = await ServerAsync();
+        var revision = await Catalog.SaveFormToolAsync(id, Tool("move"), true, (await Catalog.DraftAsync(id, default)).Revision, default);
+        var (_, converted) = await Catalog.ConvertToCodeAsync(id, "move", revision, default);
+
+        var failure = await Assert.ThrowsAsync<PanelException>(() => Catalog.SaveFormToolAsync(id, Tool("move"), false, converted, default));
+
+        Assert.Equal(string.Format(BuilderText.ToolNameTaken, "move"), failure.Message);
+    }
+
+    [Fact]
+    public async Task A_code_tool_cannot_take_the_name_of_a_form_tool()
+    {
+        var id = await ServerAsync();
+        await Catalog.SaveFormToolAsync(id, Tool("forecast"), true, (await Catalog.DraftAsync(id, default)).Revision, default);
+
+        var failure = await Assert.ThrowsAsync<PanelException>(() => Catalog.SaveFileAsync(id, "mcp/f.py", "@tool\ndef forecast():\n    pass\n", 0, default));
+        Assert.Equal(string.Format(BuilderText.CodeToolNameTaken, "forecast"), failure.Message);
+        Assert.Empty((await Catalog.DraftAsync(id, default)).Files);
+
+        var revision = await Catalog.SaveFileAsync(id, "mcp/f.py", "@tool\ndef other():\n    pass\n", 0, default);
+        await Assert.ThrowsAsync<PanelException>(() => Catalog.SaveFileAsync(id, "mcp/f.py", "@tool(name=\"forecast\")\ndef other():\n    pass\n", revision, default));
+        await Catalog.SaveFileAsync(id, "mcp/data.txt", "forecast", 0, default);
+    }
 }

@@ -55,9 +55,13 @@ public static partial class OpenApiDraft
         var paths = root["paths"] as JsonObject ?? (JsonObject)(root["paths"] = new JsonObject());
 
         JsonObject? previous = null;
+        JsonObject? previousPathItem = null;
+        var previousPath = string.Empty;
         foreach (var existing in Operations(root).Where(entry => entry.Name == tool.Name).ToList())
         {
             previous = existing.Operation;
+            previousPathItem = (JsonObject)existing.PathItem.DeepClone();
+            previousPath = existing.Path;
             Detach(paths, existing.Path, existing.Method);
         }
 
@@ -66,7 +70,7 @@ public static partial class OpenApiDraft
         if (pathItem[method] is JsonObject occupant && !IsSameOperation(occupant, tool.Name))
             throw new PanelException(string.Format(BuilderText.ToolRouteTaken, tool.Method.ToUpperInvariant(), tool.Path));
 
-        pathItem[method] = Compose(root, previous, tool);
+        pathItem[method] = Compose(root, previous, previousPathItem, previousPath == tool.Path, tool);
         return Serialize(root);
     }
 
@@ -223,15 +227,7 @@ public static partial class OpenApiDraft
             var resolved = Resolve(root, node);
             if (resolved is null || !TryPlace(Str(resolved["in"]), out var place) || Str(resolved["name"]) is not { } parameterName)
                 continue;
-            var raw = resolved["schema"] as JsonObject;
-            var complex = IsComplex(raw, resolved["content"] is not null);
-            parameters.Add(new ToolParameter(
-                parameterName,
-                complex ? ComplexType : TypeOf(raw),
-                place,
-                place == ParameterPlace.Path || Flag(resolved["required"]),
-                complex ? null : raw?["default"]?.DeepClone(),
-                Str(resolved["description"])));
+            parameters.Add(Describe(resolved, place, parameterName));
         }
 
         if (FormBody(root, operation) is { } body)
@@ -247,6 +243,19 @@ public static partial class OpenApiDraft
 
         var description = Str(operation["description"]) ?? Str(operation["summary"]);
         return new FormTool(name, method.ToUpperInvariant(), path, description, parameters, ResponseOf(operation)?.DeepClone());
+    }
+
+    private static ToolParameter Describe(JsonObject resolved, ParameterPlace place, string name)
+    {
+        var raw = resolved["schema"] as JsonObject;
+        var complex = IsComplex(raw, resolved["content"] is not null);
+        return new ToolParameter(
+            name,
+            complex ? ComplexType : TypeOf(raw),
+            place,
+            place == ParameterPlace.Path || Flag(resolved["required"]),
+            complex ? null : raw?["default"]?.DeepClone(),
+            Str(resolved["description"]));
     }
 
     private static IEnumerable<JsonNode> Merged(JsonNode? inherited, JsonNode? own)
@@ -342,7 +351,11 @@ public static partial class OpenApiDraft
         return responses.ContainsKey("200") ? "200" : responses.Select(pair => pair.Key).FirstOrDefault(key => key.StartsWith('2'));
     }
 
-    private static JsonObject Compose(JsonObject root, JsonObject? previous, FormTool tool)
+    private static bool SameParameter(ToolParameter left, ToolParameter right) =>
+        (left.Name, left.Type, left.Place, left.Required, left.Description) == (right.Name, right.Type, right.Place, right.Required, right.Description)
+        && left.Default?.ToJsonString() == right.Default?.ToJsonString();
+
+    private static JsonObject Compose(JsonObject root, JsonObject? previous, JsonObject? previousPathItem, bool samePath, FormTool tool)
     {
         var operation = previous is null ? [] : (JsonObject)previous.DeepClone();
         operation["operationId"] = tool.Name;
@@ -352,16 +365,26 @@ public static partial class OpenApiDraft
             operation["description"] = tool.Description;
 
         var existing = Merged(null, previous?["parameters"]).Select(node => (Node: node as JsonObject, Resolved: Resolve(root, node))).ToList();
+        var inherited = Merged(previousPathItem?["parameters"], null).Select(node => Resolve(root, node)).OfType<JsonObject>().ToList();
         var parameters = new JsonArray();
         foreach (var parameter in tool.Parameters.Where(parameter => parameter.Place != ParameterPlace.Body))
         {
             var place = PlaceName(parameter.Place);
             var match = existing.FirstOrDefault(entry => Str(entry.Resolved?["name"]) == parameter.Name && Str(entry.Resolved?["in"]) == place).Resolved;
+            if (match is null)
+            {
+                match = inherited.FirstOrDefault(entry => Str(entry["name"]) == parameter.Name && Str(entry["in"]) == place);
+                if (match is not null && samePath && TryPlace(Str(match["in"]), out var inheritedPlace) && SameParameter(parameter, Describe(match, inheritedPlace, parameter.Name)))
+                    continue;
+            }
+
             var node = match is null ? [] : (JsonObject)match.DeepClone();
             node.Remove("$ref");
             node["name"] = parameter.Name;
             node["in"] = place;
-            node["required"] = parameter.Required || parameter.Place == ParameterPlace.Path;
+            var required = parameter.Required || parameter.Place == ParameterPlace.Path;
+            if (Flag(node["required"]) != required)
+                node["required"] = required;
             ApplyDescription(node, parameter.Description);
             if (parameter.Type == ComplexType)
             {

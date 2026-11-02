@@ -301,6 +301,16 @@ runs ctx-ui commands against the same data. The panel speaks Russian unless `Lan
 says otherwise. Data lives in a temporary folder, the port is free, an administrator is
 created for you.
 
+## Examples
+
+- To start a new extension, use the template from
+  [Your first extension in 5 minutes](#your-first-extension-in-5-minutes):
+  `dotnet new ctxui-extension`.
+- The [server builder](builder.md) is a large real example, built only on the
+  public contract: [`extensions/builder/CtxUi.Builder`](../extensions/builder/CtxUi.Builder).
+  It shows sections and pages, slots on the inbounds page, a database, hosted
+  services, endpoints and the inbound methods of `IPanelData`.
+
 ## Install, update, remove
 
 ```bash

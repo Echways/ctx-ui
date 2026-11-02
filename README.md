@@ -281,6 +281,7 @@ these names are stripped.
 - [Configuration](docs/configuration.md)
 - [Browser sign-in (OAuth)](docs/oauth.md)
 - [Panel extensions](docs/extensions.md)
+- [Server builder](docs/builder.md)
 
 ## License
 

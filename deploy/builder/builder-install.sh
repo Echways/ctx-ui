@@ -466,6 +466,7 @@ install_docker() {
     fi
 
     container="$(stack_container 1)"
+    wait_for 60 stack_healthy "$container" || fail "ctx-ui did not become healthy within 60 seconds"
     docker restart "$container" > /dev/null
     if ! wait_for 60 stack_healthy "$container"; then
         docker logs --tail 30 "$container" >&2 2>&1 || true

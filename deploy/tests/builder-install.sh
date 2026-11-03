@@ -74,7 +74,7 @@ failures=0
 listener_pid=""
 
 stack_compose() {
-    docker compose --project-directory "$stack" -p "$stack_project" "$@"
+    docker exec "$box" docker compose --project-directory "$stack" -p "$stack_project" "$@"
 }
 
 remove_builder_objects() {
@@ -456,7 +456,7 @@ check "the builder settings are gone" lacks "$settings_prefix" "$env_content"
 check "the ctx-ui settings are kept" contains "CtxUi__PublicUrl=http://127.0.0.1:18080" "$env_content"
 check "the builder directory is gone" equals "" "$(in_box sh -c 'ls -d /opt/ctx-ui-builder 2>/dev/null' || true)"
 check "ctx-ui is active" equals active "$(in_box systemctl is-active ctx-ui)"
-check "ctx-ui is healthy" in_box /opt/ctx-ui/ctx-ui health
+check "ctx-ui is healthy" in_box sh -c 'cd / && ctx-ui health'
 check "the extension endpoint is gone" equals 302 "$(curl -s -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $key" "${panel_path}extensions/builder/servers")"
 check "a second remove succeeds" in_box bash /dist/release/builder-install.sh --remove
 in_box bash /dist/install.sh --uninstall --purge > /dev/null 2>&1 || true
@@ -544,7 +544,7 @@ check "the extension endpoint answers" equals 200 "$(curl -sk -o /dev/null -w '%
 check "a server builds and activates" build_server http://10.212.0.2:8091 "$token"
 check "the built server answers through the ingress" server_answers http://10.212.0.2:8090
 runner_id="$(docker inspect -f '{{.Id}}' "$runner")"
-check "a plain compose up keeps the builder" bash -c "cd '$stack' && docker compose up -d > /dev/null 2>&1"
+check "a plain compose up keeps the builder" in_box sh -c "cd '$stack' && docker compose up -d > /dev/null 2>&1"
 check "the plain compose up keeps ctx-ui" equals "$panel_container" "$(stack_compose ps -q ctx-ui)"
 check "the plain compose up keeps the Runner" equals "$runner_id" "$(docker inspect -f '{{.Id}}' "$runner")"
 

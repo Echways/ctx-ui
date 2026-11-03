@@ -2,7 +2,7 @@ using System.Collections.Frozen;
 
 namespace CtxUi.Extensions;
 
-internal sealed record SlotAction<TContext>(Func<string> Title, Func<PanelActionArgs<TContext>, Task> Run, int Order);
+internal sealed record SlotAction<TContext>(Func<string> Title, Func<PanelActionArgs<TContext>, Task> Run, int Order, Func<TContext, bool>? Visible = null);
 
 internal sealed class PanelSlotRegistry
 {
@@ -39,4 +39,39 @@ internal sealed class PanelSlotRegistry
 
     public IReadOnlyList<SlotAction<TContext>> Actions<TContext>(string slot) =>
         _actions.GetValueOrDefault(slot) as List<SlotAction<TContext>> ?? [];
+
+    public IReadOnlyList<SlotAction<TContext>> VisibleActions<TContext>(string slot, Func<TContext> context, Action<Exception> failed)
+    {
+        var actions = Actions<TContext>(slot);
+        if (actions.All(action => action.Visible is null))
+            return actions;
+
+        TContext row;
+        try
+        {
+            row = context();
+        }
+        catch (Exception failure)
+        {
+            failed(failure);
+            return [.. actions.Where(action => action.Visible is null)];
+        }
+
+        return [.. actions.Where(action => IsVisible(action, row, failed))];
+    }
+
+    private static bool IsVisible<TContext>(SlotAction<TContext> action, TContext row, Action<Exception> failed)
+    {
+        if (action.Visible is null)
+            return true;
+        try
+        {
+            return action.Visible(row);
+        }
+        catch (Exception failure)
+        {
+            failed(failure);
+            return false;
+        }
+    }
 }

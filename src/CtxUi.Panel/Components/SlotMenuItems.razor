@@ -1,14 +1,16 @@
+@using Microsoft.Extensions.Logging
 @typeparam TContext
 @inject PanelSlotRegistry Slots
 @inject Act Act
 @inject IDialogService Dialogs
 @inject IServiceProvider Services
+@inject ILoggerFactory Loggers
 
-@foreach (var action in Slots.Actions<TContext>(Slot.Name))
+@foreach (var action in _visible)
 {
     <MudMenuItem OnClick="() => RunAsync(action)">@action.Title()</MudMenuItem>
 }
-@if (DividerAfter && Slots.Actions<TContext>(Slot.Name).Count > 0)
+@if (DividerAfter && _visible.Count > 0)
 {
     <MudDivider />
 }
@@ -25,6 +27,11 @@
 
     [Parameter]
     public EventCallback OnDone { get; set; }
+
+    private IReadOnlyList<SlotAction<TContext>> _visible = [];
+
+    protected override void OnParametersSet() =>
+        _visible = Slots.VisibleActions(Slot.Name, Context, failure => Loggers.CreateLogger("CtxUi.Panel.Slots").LogError(failure, "An action of slot {Slot} could not decide if it is visible.", Slot.Name));
 
     private async Task RunAsync(SlotAction<TContext> action)
     {

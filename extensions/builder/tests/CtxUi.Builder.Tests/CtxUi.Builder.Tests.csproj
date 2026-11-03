@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <PackageReference Include="ModelContextProtocol.AspNetCore" />
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <ProjectReference Include="..\..\CtxUi.Builder\CtxUi.Builder.csproj" />
+    <Content Include="..\..\CtxUi.Builder\BuilderText.resx;..\..\CtxUi.Builder\BuilderText.ru.resx" Link="%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Fixtures\*.json" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\runtime\main.py" Link="runtime-main.py" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

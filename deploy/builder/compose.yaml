@@ -1,0 +1,58 @@
+name: ctx-ui-builder
+
+services:
+  runner:
+    image: ghcr.io/echways/ctx-ui-builder-runner:${CTXB_VERSION:-${CTX_UI_VERSION:?}}
+    container_name: ctxb-runner
+    restart: unless-stopped
+    depends_on:
+      - egress
+    environment:
+      RUNNER_TOKEN: ${CTXB_RUNNER_TOKEN:?}
+      RUNNER_BIND: 10.212.0.2
+      RUNNER_RUNTIME_IMAGE: ghcr.io/echways/ctx-ui-builder-runtime:${CTXB_VERSION:-${CTX_UI_VERSION:?}}
+      RUNNER_EGRESS_CONTAINER: ctxb-egress
+    labels:
+      ctx-ui.builder: system
+    ports:
+      - "127.0.0.1:8090:8090"
+      - "127.0.0.1:8091:8091"
+    networks:
+      ctxb-control:
+        ipv4_address: 10.212.0.2
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+
+  egress:
+    image: ghcr.io/echways/ctx-ui-builder-egress:${CTXB_VERSION:-${CTX_UI_VERSION:?}}
+    container_name: ctxb-egress
+    restart: unless-stopped
+    labels:
+      ctx-ui.builder: system
+    networks:
+      - outbound
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /run
+      - /var/spool/squid:uid=31,gid=31
+      - /var/log/squid:uid=31,gid=31
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+
+networks:
+  ctxb-control:
+    name: ctxb-control
+    ipam:
+      config:
+        - subnet: 10.212.0.0/29
+  outbound:

@@ -1,1 +1,29 @@
 #nullable enable
+CtxUi.Extensions.HttpInboundDraft
+CtxUi.Extensions.HttpInboundDraft.<Clone>$() -> CtxUi.Extensions.HttpInboundDraft!
+CtxUi.Extensions.HttpInboundDraft.Deconstruct(out string! Slug, out string! Name, out string! Url, out System.Collections.Generic.IReadOnlyDictionary<string!, string!>? UpstreamHeaders, out bool ForwardIdentity) -> void
+CtxUi.Extensions.HttpInboundDraft.Equals(CtxUi.Extensions.HttpInboundDraft? other) -> bool
+CtxUi.Extensions.HttpInboundDraft.ForwardIdentity.get -> bool
+CtxUi.Extensions.HttpInboundDraft.ForwardIdentity.init -> void
+CtxUi.Extensions.HttpInboundDraft.HttpInboundDraft(string! Slug, string! Name, string! Url, System.Collections.Generic.IReadOnlyDictionary<string!, string!>? UpstreamHeaders = null, bool ForwardIdentity = false) -> void
+CtxUi.Extensions.HttpInboundDraft.Name.get -> string!
+CtxUi.Extensions.HttpInboundDraft.Name.init -> void
+CtxUi.Extensions.HttpInboundDraft.Slug.get -> string!
+CtxUi.Extensions.HttpInboundDraft.Slug.init -> void
+CtxUi.Extensions.HttpInboundDraft.UpstreamHeaders.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>?
+CtxUi.Extensions.HttpInboundDraft.UpstreamHeaders.init -> void
+CtxUi.Extensions.HttpInboundDraft.Url.get -> string!
+CtxUi.Extensions.HttpInboundDraft.Url.init -> void
+CtxUi.Extensions.IPanelData.AddHttpInboundAsync(CtxUi.Extensions.HttpInboundDraft! draft, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<CtxUi.Extensions.InboundSummary!>!
+CtxUi.Extensions.IPanelData.InboundClientsAsync(string! slug, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<System.Guid>!>!
+CtxUi.Extensions.IPanelData.RemoveInboundAsync(string! slug, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+CtxUi.Extensions.IPanelData.SetInboundClientsAsync(string! slug, System.Collections.Generic.IReadOnlyCollection<System.Guid>! clientIds, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+override CtxUi.Extensions.HttpInboundDraft.Equals(object? obj) -> bool
+override CtxUi.Extensions.HttpInboundDraft.GetHashCode() -> int
+override CtxUi.Extensions.HttpInboundDraft.ToString() -> string!
+static CtxUi.Extensions.HttpInboundDraft.operator !=(CtxUi.Extensions.HttpInboundDraft? left, CtxUi.Extensions.HttpInboundDraft? right) -> bool
+static CtxUi.Extensions.HttpInboundDraft.operator ==(CtxUi.Extensions.HttpInboundDraft? left, CtxUi.Extensions.HttpInboundDraft? right) -> bool
+CtxUi.Extensions.PanelActionSlotEditor<TContext>.When(System.Func<TContext, bool>! visible) -> CtxUi.Extensions.PanelConditionalActionEditor<TContext>!
+CtxUi.Extensions.PanelConditionalActionEditor<TContext>
+CtxUi.Extensions.PanelConditionalActionEditor<TContext>.AddAction(System.Func<string!>! title, System.Func<CtxUi.Extensions.PanelActionArgs<TContext>!, System.Threading.Tasks.Task!>! run, int order = 0) -> CtxUi.Extensions.PanelEditor!
+CtxUi.Extensions.PanelConditionalActionEditor<TContext>.AddSheet<TSheet>(System.Func<string!>! title, System.Func<TContext, string!>! sheetTitle, int order = 0) -> CtxUi.Extensions.PanelEditor!

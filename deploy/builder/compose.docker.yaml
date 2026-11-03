@@ -1,0 +1,15 @@
+name: ctx-ui
+
+services:
+  ctx-ui:
+    environment:
+      CtxUi__Extensions__builder__RunnerUrl: http://10.212.0.2:8091
+      CtxUi__Extensions__builder__RunnerIngressUrl: http://10.212.0.2:8090
+      CtxUi__Extensions__builder__RunnerToken: ${CTXB_RUNNER_TOKEN:?}
+    networks:
+      default:
+      ctxb-control:
+        ipv4_address: 10.212.0.3
+
+  runner:
+    ports: !reset []

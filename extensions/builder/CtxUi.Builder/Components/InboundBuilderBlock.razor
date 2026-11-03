@@ -1,0 +1,35 @@
+@inherits PanelBlock<InboundSummary>
+@inject ConnectionService Connections
+@inject ServerCatalog Catalog
+@inject ReleaseReader Reader
+
+@if (_server is not null)
+{
+    <section class="builder-inbound-block" data-testid="inbound-builder">
+        <h3>@BuilderText.BuiltServer</h3>
+        <p><a class="link" href="builder/@_server.ServerId">@_server.Name</a></p>
+        <p class="note">@Status</p>
+    </section>
+}
+
+@code {
+    private ServerSettingsView? _server;
+    private ServerStatus? _status;
+
+    private string Status => _status switch
+    {
+        { State: ServerRunState.Running } status => string.Format(BuilderText.StateRunning, status.ActiveNumber),
+        { State: ServerRunState.Building } status => string.Format(BuilderText.StateBuilding, status.BuildingNumber),
+        { State: ServerRunState.RunnerUnavailable } => BuilderText.StateRunnerUnavailable,
+        { State: ServerRunState.NeedsReactivation } status => string.Format(BuilderText.StateNeedsReactivation, status.ActiveNumber),
+        _ => BuilderText.StateNoRelease,
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (await Connections.FindServerIdAsync(Context, CancellationToken.None) is not { } id)
+            return;
+        _server = await Catalog.SettingsAsync(id, CancellationToken.None);
+        _status = await Reader.StatusAsync(id, CancellationToken.None);
+    }
+}

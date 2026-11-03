@@ -1,0 +1,23 @@
+<div class="builder-confirm" role="alertdialog" aria-labelledby="access-confirm-title" data-testid="access-confirm">
+    <h3 id="access-confirm-title" class="warn-t">@BuilderText.AccessConfirmTitle</h3>
+    <p>@BuilderText.AccessConfirmLead</p>
+    <ul>
+        <li>@BuilderText.AccessConfirmLocal</li>
+        <li>@BuilderText.AccessConfirmDatabases</li>
+        <li>@BuilderText.AccessConfirmMetadata</li>
+        <li>@BuilderText.AccessConfirmMail</li>
+    </ul>
+    <p class="hint">@BuilderText.AccessConfirmCode</p>
+    <div class="builder-actions">
+        <Button Kind="ButtonKind.Danger" OnClick="() => OnConfirm.InvokeAsync()" Refresh="false">@BuilderText.AccessConfirmYes</Button>
+        <button type="button" class="link" data-testid="access-cancel" @onclick="OnCancel">@BuilderText.Cancel</button>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public EventCallback OnConfirm { get; set; }
+
+    [Parameter]
+    public EventCallback OnCancel { get; set; }
+}

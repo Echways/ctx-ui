@@ -44,6 +44,9 @@ public sealed class FakeUpstream : IAsyncDisposable
         return upstream;
     }
 
+    public string? LastHeader(string name) =>
+        Requests.LastOrDefault()?.Headers.GetValueOrDefault(name);
+
     public async Task<RecordedRequest> RecordAsync(HttpContext context)
     {
         using var reader = new StreamReader(context.Request.Body);

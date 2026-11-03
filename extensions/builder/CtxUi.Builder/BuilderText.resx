@@ -1,0 +1,1008 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Caption" xml:space="preserve">
+    <value>Builder</value>
+  </data>
+  <data name="Servers" xml:space="preserve">
+    <value>Servers</value>
+  </data>
+  <data name="ServersSummary" xml:space="preserve">
+    <value>MCP servers built here and run by the runner.</value>
+  </data>
+  <data name="NewServer" xml:space="preserve">
+    <value>New server</value>
+  </data>
+  <data name="Name" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="Slug" xml:space="preserve">
+    <value>Slug</value>
+  </data>
+  <data name="SlugHint" xml:space="preserve">
+    <value>Lowercase letters, digits and dashes. It cannot be changed later.</value>
+  </data>
+  <data name="Create" xml:space="preserve">
+    <value>Create</value>
+  </data>
+  <data name="ServerCreated" xml:space="preserve">
+    <value>Server created</value>
+  </data>
+  <data name="Access" xml:space="preserve">
+    <value>Network</value>
+  </data>
+  <data name="AccessInternetOnly" xml:space="preserve">
+    <value>Internet only</value>
+  </data>
+  <data name="AccessFullNetwork" xml:space="preserve">
+    <value>Full network</value>
+  </data>
+  <data name="Inbound" xml:space="preserve">
+    <value>Inbound</value>
+  </data>
+  <data name="InboundConnected" xml:space="preserve">
+    <value>Connected</value>
+  </data>
+  <data name="InboundNone" xml:space="preserve">
+    <value>Not connected</value>
+  </data>
+  <data name="Created" xml:space="preserve">
+    <value>Created</value>
+  </data>
+  <data name="NoServers" xml:space="preserve">
+    <value>No servers yet</value>
+  </data>
+  <data name="NoServersHint" xml:space="preserve">
+    <value>Create the first server to build and run an MCP server.</value>
+  </data>
+  <data name="SlugInvalid" xml:space="preserve">
+    <value>The slug starts with a lowercase letter and holds lowercase letters, digits and dashes, 32 characters at most.</value>
+  </data>
+  <data name="NameRequired" xml:space="preserve">
+    <value>Enter a name.</value>
+  </data>
+  <data name="SlugTaken" xml:space="preserve">
+    <value>This slug is already taken.</value>
+  </data>
+  <data name="ServerNotFound" xml:space="preserve">
+    <value>The server was not found.</value>
+  </data>
+  <data name="PathInvalid" xml:space="preserve">
+    <value>A file path is relative, starts with mcp/ and has no empty segments, dots or backslashes.</value>
+  </data>
+  <data name="ProjectTooLarge" xml:space="preserve">
+    <value>The project is larger than 16 MB.</value>
+  </data>
+  <data name="DraftChangedElsewhere" xml:space="preserve">
+    <value>The draft was changed elsewhere. Reload it before saving.</value>
+  </data>
+  <data name="SecretNameInvalid" xml:space="preserve">
+    <value>A secret name is an environment variable name: letters, digits and underscores, not starting with a digit.</value>
+  </data>
+  <data name="SecretValueRequired" xml:space="preserve">
+    <value>Enter a secret value.</value>
+  </data>
+  <data name="AccessInvalid" xml:space="preserve">
+    <value>Unknown network access.</value>
+  </data>
+  <data name="LimitsInvalid" xml:space="preserve">
+    <value>Limits are too low: at least 6 MB of memory, 0.01 CPU and 1 process.</value>
+  </data>
+  <data name="RunnerNotConfigured" xml:space="preserve">
+    <value>The runner is not configured. Missing settings: {0}.</value>
+  </data>
+  <data name="RunnerUnreachable" xml:space="preserve">
+    <value>The runner at {0} did not answer: {1}</value>
+  </data>
+  <data name="RunnerRefused" xml:space="preserve">
+    <value>The runner at {0} refused the token. Check RunnerToken.</value>
+  </data>
+  <data name="RunnerVersionMismatch" xml:space="preserve">
+    <value>The runner is version {0}, the extension is version {1}.</value>
+  </data>
+  <data name="RunnerCommandHint" xml:space="preserve">
+    <value>Run this command on the server:</value>
+  </data>
+  <data name="RunnerReady" xml:space="preserve">
+    <value>Runner {0}, Docker {1}</value>
+  </data>
+  <data name="RunnerEgressDown" xml:space="preserve">
+    <value>The egress proxy is unreachable, so servers with internet access cannot call out.</value>
+  </data>
+  <data name="RunnerCommand" xml:space="preserve">
+    <value>Command</value>
+  </data>
+  <data name="CopyCommand" xml:space="preserve">
+    <value>Copy the command</value>
+  </data>
+  <data name="ProjectPathInvalid" xml:space="preserve">
+    <value>File path is not allowed: {0}</value>
+  </data>
+  <data name="ProjectFileTypeNotAllowed" xml:space="preserve">
+    <value>Only .py and data files are allowed in mcp/: {0}</value>
+  </data>
+  <data name="DependencyInvalid" xml:space="preserve">
+    <value>Not a package requirement: {0}</value>
+  </data>
+  <data name="ArchiveUnreadable" xml:space="preserve">
+    <value>The file is not a readable tar.gz or zip archive.</value>
+  </data>
+  <data name="ArchiveTooLarge" xml:space="preserve">
+    <value>The archive is larger than 16 MB once unpacked.</value>
+  </data>
+  <data name="ArchiveTooManyEntries" xml:space="preserve">
+    <value>The archive has more than {0} entries.</value>
+  </data>
+  <data name="ArchiveLinkRefused" xml:space="preserve">
+    <value>The archive contains a link, which is not allowed: {0}</value>
+  </data>
+  <data name="ArchiveEntryKindRefused" xml:space="preserve">
+    <value>The archive contains an entry that is not a file or a folder: {0}</value>
+  </data>
+  <data name="ArchiveDuplicate" xml:space="preserve">
+    <value>The archive contains the file twice: {0}</value>
+  </data>
+  <data name="ArchiveNotUtf8" xml:space="preserve">
+    <value>The file is not valid UTF-8 text: {0}</value>
+  </data>
+  <data name="BaseUrlInvalid" xml:space="preserve">
+    <value>The base address must be an http or https URL.</value>
+  </data>
+  <data name="AuthHeaderInvalid" xml:space="preserve">
+    <value>The header name may hold letters, digits and dashes only.</value>
+  </data>
+  <data name="AuthUsernameInvalid" xml:space="preserve">
+    <value>The user name is required and cannot contain a colon.</value>
+  </data>
+  <data name="NoTools" xml:space="preserve">
+    <value>No tools yet</value>
+  </data>
+  <data name="NoToolsHint" xml:space="preserve">
+    <value>Add a tool with the plus button. It opens with a working template.</value>
+  </data>
+  <data name="Tools" xml:space="preserve">
+    <value>Tools</value>
+  </data>
+  <data name="DataFiles" xml:space="preserve">
+    <value>Data files</value>
+  </data>
+  <data name="NewTool" xml:space="preserve">
+    <value>New tool</value>
+  </data>
+  <data name="ToolName" xml:space="preserve">
+    <value>Tool name</value>
+  </data>
+  <data name="AddTool" xml:space="preserve">
+    <value>Add</value>
+  </data>
+  <data name="ToolExists" xml:space="preserve">
+    <value>A tool with this name already exists.</value>
+  </data>
+  <data name="Settings" xml:space="preserve">
+    <value>Settings</value>
+  </data>
+  <data name="Save" xml:space="preserve">
+    <value>Save</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="StateSaved" xml:space="preserve">
+    <value>Saved</value>
+  </data>
+  <data name="StateUnsaved" xml:space="preserve">
+    <value>Unsaved changes</value>
+  </data>
+  <data name="StateSaving" xml:space="preserve">
+    <value>Saving</value>
+  </data>
+  <data name="StateConflict" xml:space="preserve">
+    <value>Not saved</value>
+  </data>
+  <data name="StateFailed" xml:space="preserve">
+    <value>Save failed</value>
+  </data>
+  <data name="SaveFailed" xml:space="preserve">
+    <value>The draft could not be saved. Try again.</value>
+  </data>
+  <data name="LoadNewVersion" xml:space="preserve">
+    <value>Load the new version</value>
+  </data>
+  <data name="KeepMine" xml:space="preserve">
+    <value>Keep my text and overwrite</value>
+  </data>
+  <data name="ApiPane" xml:space="preserve">
+    <value>API</value>
+  </data>
+  <data name="ApiHint" xml:space="preserve">
+    <value>The address and authorization used by tools made from an OpenAPI description.</value>
+  </data>
+  <data name="BaseUrl" xml:space="preserve">
+    <value>Base address</value>
+  </data>
+  <data name="AuthKind" xml:space="preserve">
+    <value>Authorization</value>
+  </data>
+  <data name="AuthNone" xml:space="preserve">
+    <value>None</value>
+  </data>
+  <data name="AuthBearer" xml:space="preserve">
+    <value>Bearer token</value>
+  </data>
+  <data name="AuthHeader" xml:space="preserve">
+    <value>Header</value>
+  </data>
+  <data name="AuthBasic" xml:space="preserve">
+    <value>Basic</value>
+  </data>
+  <data name="HeaderName" xml:space="preserve">
+    <value>Header name</value>
+  </data>
+  <data name="UserName" xml:space="preserve">
+    <value>User name</value>
+  </data>
+  <data name="AuthSecret" xml:space="preserve">
+    <value>Token or password</value>
+  </data>
+  <data name="KeepSecretHint" xml:space="preserve">
+    <value>Leave empty to keep the stored value.</value>
+  </data>
+  <data name="DependenciesPane" xml:space="preserve">
+    <value>Dependencies</value>
+  </data>
+  <data name="DependenciesHint" xml:space="preserve">
+    <value>One Python requirement per line. FastMCP 4.1.4 is pinned by the builder.</value>
+  </data>
+  <data name="DependenciesLabel" xml:space="preserve">
+    <value>Requirements</value>
+  </data>
+  <data name="SecretsPane" xml:space="preserve">
+    <value>Secrets</value>
+  </data>
+  <data name="SecretsHint" xml:space="preserve">
+    <value>Write-only. Only names are shown. The server receives them as environment variables.</value>
+  </data>
+  <data name="NoSecrets" xml:space="preserve">
+    <value>No secrets yet.</value>
+  </data>
+  <data name="SecretName" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="SecretValue" xml:space="preserve">
+    <value>Value</value>
+  </data>
+  <data name="SetSecret" xml:space="preserve">
+    <value>Set secret</value>
+  </data>
+  <data name="AccessPane" xml:space="preserve">
+    <value>Network and limits</value>
+  </data>
+  <data name="AccessHint" xml:space="preserve">
+    <value>Changes apply to the running version when it restarts.</value>
+  </data>
+  <data name="Memory" xml:space="preserve">
+    <value>Memory, MB</value>
+  </data>
+  <data name="Cpus" xml:space="preserve">
+    <value>CPUs</value>
+  </data>
+  <data name="Pids" xml:space="preserve">
+    <value>Processes</value>
+  </data>
+  <data name="AccessNotConfirmed" xml:space="preserve">
+    <value>Confirm full network access first.</value>
+  </data>
+  <data name="AccessConfirmTitle" xml:space="preserve">
+    <value>Allow the whole network?</value>
+  </data>
+  <data name="AccessConfirmLead" xml:space="preserve">
+    <value>With full network access the server can reach:</value>
+  </data>
+  <data name="AccessConfirmLocal" xml:space="preserve">
+    <value>Hosts and services on your local network.</value>
+  </data>
+  <data name="AccessConfirmDatabases" xml:space="preserve">
+    <value>Databases and admin ports on any address.</value>
+  </data>
+  <data name="AccessConfirmMetadata" xml:space="preserve">
+    <value>Cloud metadata and other link-local addresses.</value>
+  </data>
+  <data name="AccessConfirmMail" xml:space="preserve">
+    <value>Any port, including mail ports 25, 465 and 587.</value>
+  </data>
+  <data name="AccessConfirmCode" xml:space="preserve">
+    <value>The code you publish runs with this access.</value>
+  </data>
+  <data name="AccessConfirmYes" xml:space="preserve">
+    <value>Allow whole network</value>
+  </data>
+  <data name="ExportPane" xml:space="preserve">
+    <value>Export</value>
+  </data>
+  <data name="ExportHint" xml:space="preserve">
+    <value>Download the project as a tar.gz archive that runs without the panel. Secret values are not included: set them as environment variables where you run it.</value>
+  </data>
+  <data name="Export" xml:space="preserve">
+    <value>Download archive</value>
+  </data>
+  <data name="ImportArchive" xml:space="preserve">
+    <value>Project archive</value>
+  </data>
+  <data name="ImportArchiveHint" xml:space="preserve">
+    <value>Optional. A tar.gz or zip with mcp/, openapi.json and builder.json.</value>
+  </data>
+  <data name="SettingsChangedElsewhere" xml:space="preserve">
+    <value>These settings were changed elsewhere. Your input is kept here; reload the page to see the new values before saving.</value>
+  </data>
+  <data name="UnsavedBlocked" xml:space="preserve">
+    <value>Your changes here are not saved. Save them or resolve the conflict first, or discard them explicitly.</value>
+  </data>
+  <data name="DiscardMine" xml:space="preserve">
+    <value>Discard my changes and continue</value>
+  </data>
+  <data name="PublishBusy" xml:space="preserve">
+    <value>A version of this server is still being built. Wait for it to finish.</value>
+  </data>
+  <data name="PublishInterrupted" xml:space="preserve">
+    <value>The publication was interrupted by a restart of the panel.</value>
+  </data>
+  <data name="RunnerForgotRelease" xml:space="preserve">
+    <value>The runner restarted and lost this build. Publish again.</value>
+  </data>
+  <data name="RunnerLostDuringBuild" xml:space="preserve">
+    <value>The runner was not reachable for {0} seconds while the version was being built.</value>
+  </data>
+  <data name="ArchiveCorrupted" xml:space="preserve">
+    <value>The saved snapshot of this version does not match its checksum and cannot be used.</value>
+  </data>
+  <data name="ArchiveMissing" xml:space="preserve">
+    <value>The saved snapshot of this version is missing.</value>
+  </data>
+  <data name="CheckTimedOut" xml:space="preserve">
+    <value>The server did not answer the tool list within {0} seconds.</value>
+  </data>
+  <data name="CheckFailed" xml:space="preserve">
+    <value>The tool list check failed: {0}</value>
+  </data>
+  <data name="PublishBaseUrlRequired" xml:space="preserve">
+    <value>This project is built from an OpenAPI description. Set the base URL of the API in the settings before publishing.</value>
+  </data>
+  <data name="BuildTimedOut" xml:space="preserve">
+    <value>The build did not finish within {0} minutes.</value>
+  </data>
+  <data name="StartTimedOut" xml:space="preserve">
+    <value>The server did not start within {0} minutes.</value>
+  </data>
+  <data name="RollbackUnavailable" xml:space="preserve">
+    <value>This version cannot be restored.</value>
+  </data>
+  <data name="ReleaseNotFound" xml:space="preserve">
+    <value>Version not found.</value>
+  </data>
+  <data name="Publish" xml:space="preserve">
+    <value>Publish</value>
+  </data>
+  <data name="PublishBuildOnly" xml:space="preserve">
+    <value>Build without activating</value>
+  </data>
+  <data name="StateNoRelease" xml:space="preserve">
+    <value>Not published</value>
+  </data>
+  <data name="StateRunning" xml:space="preserve">
+    <value>Running, v{0}</value>
+  </data>
+  <data name="StateBuilding" xml:space="preserve">
+    <value>Building v{0}</value>
+  </data>
+  <data name="StateBuildingWhileRunning" xml:space="preserve">
+    <value>Running v{0}, building v{1}</value>
+  </data>
+  <data name="StateRunnerUnavailable" xml:space="preserve">
+    <value>Runner unavailable</value>
+  </data>
+  <data name="StateNeedsReactivation" xml:space="preserve">
+    <value>Stopped, v{0} must be activated again</value>
+  </data>
+  <data name="Releases" xml:space="preserve">
+    <value>Versions</value>
+  </data>
+  <data name="Logs" xml:space="preserve">
+    <value>Logs</value>
+  </data>
+  <data name="ReleaseTitle" xml:space="preserve">
+    <value>Version {0}</value>
+  </data>
+  <data name="ReleaseBuilt" xml:space="preserve">
+    <value>Built</value>
+  </data>
+  <data name="ReleaseBuilding" xml:space="preserve">
+    <value>Building</value>
+  </data>
+  <data name="ReleaseFailed" xml:space="preserve">
+    <value>Failed</value>
+  </data>
+  <data name="ReleaseCandidate" xml:space="preserve">
+    <value>Candidate</value>
+  </data>
+  <data name="ReleaseActive" xml:space="preserve">
+    <value>Active</value>
+  </data>
+  <data name="ReleaseRetired" xml:space="preserve">
+    <value>Retired</value>
+  </data>
+  <data name="Rollback" xml:space="preserve">
+    <value>Roll back to this version</value>
+  </data>
+  <data name="RollbackStarted" xml:space="preserve">
+    <value>Version {0} is being activated.</value>
+  </data>
+  <data name="RemovedToolsWarning" xml:space="preserve">
+    <value>Tools removed since the previous version: {0}</value>
+  </data>
+  <data name="ToolsInRelease" xml:space="preserve">
+    <value>Tools: {0}</value>
+  </data>
+  <data name="BuildLog" xml:space="preserve">
+    <value>Build log</value>
+  </data>
+  <data name="NoBuildLog" xml:space="preserve">
+    <value>The build log is empty.</value>
+  </data>
+  <data name="NoReleases" xml:space="preserve">
+    <value>No versions yet</value>
+  </data>
+  <data name="NoReleasesHint" xml:space="preserve">
+    <value>Publish the draft to create the first version.</value>
+  </data>
+  <data name="LogsRuntime" xml:space="preserve">
+    <value>Server output</value>
+  </data>
+  <data name="LogsLastBuild" xml:space="preserve">
+    <value>Last build</value>
+  </data>
+  <data name="LogsEmpty" xml:space="preserve">
+    <value>No output yet.</value>
+  </data>
+  <data name="LogsLineLimit" xml:space="preserve">
+    <value>Showing the last {0} lines.</value>
+  </data>
+  <data name="LogsUnavailable" xml:space="preserve">
+    <value>The log stream stopped: {0}</value>
+  </data>
+  <data name="BuildFailed" xml:space="preserve">
+    <value>The build failed.</value>
+  </data>
+  <data name="StartFailed" xml:space="preserve">
+    <value>The server did not start.</value>
+  </data>
+  <data name="Reactivate" xml:space="preserve">
+    <value>Start again</value>
+  </data>
+  <data name="BaseUrlAppliesOnPublish" xml:space="preserve">
+    <value>The new base URL takes effect with the next publish. Running versions keep their own.</value>
+  </data>
+  <data name="ConnectionAlreadyConnected" xml:space="preserve">
+    <value>This server is already connected as an inbound.</value>
+  </data>
+  <data name="InboundSlugTaken" xml:space="preserve">
+    <value>An inbound with this slug already exists. Choose another slug.</value>
+  </data>
+  <data name="InboundRejected" xml:space="preserve">
+    <value>The panel refused the inbound: {0}</value>
+  </data>
+  <data name="RunnerDeleteFailed" xml:space="preserve">
+    <value>The runner could not remove the server, nothing was deleted: {0}</value>
+  </data>
+  <data name="Connect" xml:space="preserve">
+    <value>Connect</value>
+  </data>
+  <data name="ConnectTitle" xml:space="preserve">
+    <value>Connect {0}</value>
+  </data>
+  <data name="ConnectLead" xml:space="preserve">
+    <value>The server becomes an inbound of the panel. Clients that are linked to it can call its tools.</value>
+  </data>
+  <data name="InboundSlug" xml:space="preserve">
+    <value>Inbound slug</value>
+  </data>
+  <data name="InboundSlugHint" xml:space="preserve">
+    <value>Lowercase letters, digits and dashes.</value>
+  </data>
+  <data name="ForwardIdentity" xml:space="preserve">
+    <value>Send the client identity to the server</value>
+  </data>
+  <data name="ConnectClients" xml:space="preserve">
+    <value>Clients</value>
+  </data>
+  <data name="ConnectClientsHint" xml:space="preserve">
+    <value>Only the chosen clients get access to this server.</value>
+  </data>
+  <data name="NoClients" xml:space="preserve">
+    <value>There are no clients yet. Add them later on the clients page.</value>
+  </data>
+  <data name="ServerConnected" xml:space="preserve">
+    <value>Server connected</value>
+  </data>
+  <data name="ConnectedAddress" xml:space="preserve">
+    <value>Address of the inbound: {0}</value>
+  </data>
+  <data name="OpenInbound" xml:space="preserve">
+    <value>Open inbound {0}</value>
+  </data>
+  <data name="ConnectedTo" xml:space="preserve">
+    <value>Connected as</value>
+  </data>
+  <data name="DeleteServer" xml:space="preserve">
+    <value>Delete server</value>
+  </data>
+  <data name="DeleteServerQuestion" xml:space="preserve">
+    <value>Delete server {0}?</value>
+  </data>
+  <data name="DeleteServerWarning" xml:space="preserve">
+    <value>The running server, all its versions and its project are deleted. This cannot be undone.</value>
+  </data>
+  <data name="DeleteServerInbound" xml:space="preserve">
+    <value>The inbound {0} and its links to {1} clients are deleted too.</value>
+  </data>
+  <data name="DeleteServerYes" xml:space="preserve">
+    <value>Delete</value>
+  </data>
+  <data name="ServerDeleted" xml:space="preserve">
+    <value>Server deleted</value>
+  </data>
+  <data name="OpenInBuilder" xml:space="preserve">
+    <value>Open in builder</value>
+  </data>
+  <data name="InboundNotBuilt" xml:space="preserve">
+    <value>This inbound was not built here.</value>
+  </data>
+  <data name="BuiltServer" xml:space="preserve">
+    <value>Built server</value>
+  </data>
+  <data name="ConnectionBusy" xml:space="preserve">
+    <value>Another change of this server's connection is in progress. Try again in a moment.</value>
+  </data>
+  <data name="ServerDeleting" xml:space="preserve">
+    <value>This server is being deleted.</value>
+  </data>
+  <data name="OpenApiInvalid" xml:space="preserve">
+    <value>The API document is not valid JSON.</value>
+  </data>
+  <data name="ToolNameInvalid" xml:space="preserve">
+    <value>The tool name may contain only letters, digits and single underscores, up to 56 characters, and cannot start or end with an underscore.</value>
+  </data>
+  <data name="ToolMethodInvalid" xml:space="preserve">
+    <value>Choose one of the methods GET, POST, PUT, PATCH or DELETE.</value>
+  </data>
+  <data name="ToolPathInvalid" xml:space="preserve">
+    <value>The path must start with a slash and contain no spaces.</value>
+  </data>
+  <data name="ToolPathParameterMissing" xml:space="preserve">
+    <value>The path parameter {0} does not appear in the path as {{{0}}}.</value>
+  </data>
+  <data name="ToolPathPlaceholderUndeclared" xml:space="preserve">
+    <value>The path contains {{{0}}} but there is no path parameter named {0}.</value>
+  </data>
+  <data name="ToolRouteTaken" xml:space="preserve">
+    <value>{0} {1} already belongs to another tool.</value>
+  </data>
+  <data name="ToolNotFound" xml:space="preserve">
+    <value>This tool does not exist.</value>
+  </data>
+  <data name="ParameterNameRequired" xml:space="preserve">
+    <value>Every parameter needs a name.</value>
+  </data>
+  <data name="ParameterTypeInvalid" xml:space="preserve">
+    <value>The type of the parameter {0} is not supported.</value>
+  </data>
+  <data name="ParameterDuplicate" xml:space="preserve">
+    <value>The parameter {0} is listed twice.</value>
+  </data>
+  <data name="ResponseExampleEmpty" xml:space="preserve">
+    <value>Paste an example of the response first.</value>
+  </data>
+  <data name="ResponseExampleInvalid" xml:space="preserve">
+    <value>The example is not valid JSON.</value>
+  </data>
+  <data name="ImportEmpty" xml:space="preserve">
+    <value>The document is empty.</value>
+  </data>
+  <data name="ImportBroken" xml:space="preserve">
+    <value>The document is not valid JSON. YAML is not supported, convert it to JSON first.</value>
+  </data>
+  <data name="ImportUnsupported" xml:space="preserve">
+    <value>The document cannot be imported: {0}</value>
+  </data>
+  <data name="ImportNotOpenApi" xml:space="preserve">
+    <value>it is not an OpenAPI or Swagger document</value>
+  </data>
+  <data name="ImportNoOperations" xml:space="preserve">
+    <value>The document has no operations to import.</value>
+  </data>
+  <data name="ImportTooLarge" xml:space="preserve">
+    <value>The document is larger than 5 MB.</value>
+  </data>
+  <data name="ImportTimedOut" xml:space="preserve">
+    <value>The document was not received within 20 seconds.</value>
+  </data>
+  <data name="ImportFetchFailed" xml:space="preserve">
+    <value>The address answered with status {0}.</value>
+  </data>
+  <data name="ImportAddressInvalid" xml:space="preserve">
+    <value>Enter a full http or https address.</value>
+  </data>
+  <data name="ImportNameTaken" xml:space="preserve">
+    <value>Tools already exist in this server: {0}</value>
+  </data>
+  <data name="ImportNothingSelected" xml:space="preserve">
+    <value>Choose at least one operation.</value>
+  </data>
+  <data name="FormTool" xml:space="preserve">
+    <value>Form tool</value>
+  </data>
+  <data name="NewFormTool" xml:space="preserve">
+    <value>New tool from a form</value>
+  </data>
+  <data name="ImportOpenApi" xml:space="preserve">
+    <value>Import OpenAPI</value>
+  </data>
+  <data name="ImportTitle" xml:space="preserve">
+    <value>Import from OpenAPI</value>
+  </data>
+  <data name="ImportAddress" xml:space="preserve">
+    <value>Document address</value>
+  </data>
+  <data name="ImportPaste" xml:space="preserve">
+    <value>Or paste the document</value>
+  </data>
+  <data name="ImportLoad" xml:space="preserve">
+    <value>Load</value>
+  </data>
+  <data name="ImportOperationsLead" xml:space="preserve">
+    <value>Choose the operations to turn into tools. None are chosen by default: hand-picked tools work better for models than automatic conversion.</value>
+  </data>
+  <data name="ImportUseBaseUrl" xml:space="preserve">
+    <value>Use {0} as the base address</value>
+  </data>
+  <data name="ImportApply" xml:space="preserve">
+    <value>Import selected</value>
+  </data>
+  <data name="ImportDone" xml:space="preserve">
+    <value>Tools imported</value>
+  </data>
+  <data name="ToolMethod" xml:space="preserve">
+    <value>Method</value>
+  </data>
+  <data name="ToolPath" xml:space="preserve">
+    <value>Path</value>
+  </data>
+  <data name="ToolDescription" xml:space="preserve">
+    <value>Description</value>
+  </data>
+  <data name="ToolDescriptionEmpty" xml:space="preserve">
+    <value>Without a description the model has to guess what the tool does.</value>
+  </data>
+  <data name="Parameters" xml:space="preserve">
+    <value>Parameters</value>
+  </data>
+  <data name="AddParameter" xml:space="preserve">
+    <value>Add parameter</value>
+  </data>
+  <data name="RemoveParameter" xml:space="preserve">
+    <value>Remove parameter</value>
+  </data>
+  <data name="ParameterName" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="ParameterType" xml:space="preserve">
+    <value>Type</value>
+  </data>
+  <data name="ParameterPlace" xml:space="preserve">
+    <value>Where</value>
+  </data>
+  <data name="ParameterRequired" xml:space="preserve">
+    <value>Required</value>
+  </data>
+  <data name="ParameterDefault" xml:space="preserve">
+    <value>Default</value>
+  </data>
+  <data name="PlacePath" xml:space="preserve">
+    <value>Path</value>
+  </data>
+  <data name="PlaceQuery" xml:space="preserve">
+    <value>Query</value>
+  </data>
+  <data name="PlaceHeader" xml:space="preserve">
+    <value>Header</value>
+  </data>
+  <data name="PlaceBody" xml:space="preserve">
+    <value>Body</value>
+  </data>
+  <data name="ResponseExample" xml:space="preserve">
+    <value>Response example (JSON)</value>
+  </data>
+  <data name="GenerateSchema" xml:space="preserve">
+    <value>Build schema</value>
+  </data>
+  <data name="ResponseSchemaLabel" xml:space="preserve">
+    <value>Response schema</value>
+  </data>
+  <data name="ClearSchema" xml:space="preserve">
+    <value>Clear schema</value>
+  </data>
+  <data name="SaveTool" xml:space="preserve">
+    <value>Save</value>
+  </data>
+  <data name="ToolSaved" xml:space="preserve">
+    <value>Tool saved</value>
+  </data>
+  <data name="DeleteTool" xml:space="preserve">
+    <value>Delete tool</value>
+  </data>
+  <data name="DeleteToolQuestion" xml:space="preserve">
+    <value>Delete the tool {0}?</value>
+  </data>
+  <data name="DeleteToolWarning" xml:space="preserve">
+    <value>The operation is removed from the draft.</value>
+  </data>
+  <data name="ConvertToCode" xml:space="preserve">
+    <value>Turn into code</value>
+  </data>
+  <data name="ConvertToCodeQuestion" xml:space="preserve">
+    <value>Turn {0} into code?</value>
+  </data>
+  <data name="ConvertToCodeWarning" xml:space="preserve">
+    <value>A Python file is created and the form operation is deleted. There is no way back from code to a form.</value>
+  </data>
+  <data name="ConvertToCodeYes" xml:space="preserve">
+    <value>Turn into code</value>
+  </data>
+  <data name="FormTools" xml:space="preserve">
+    <value>Form tools</value>
+  </data>
+  <data name="CodeTools" xml:space="preserve">
+    <value>Code tools</value>
+  </data>
+  <data name="NewToolInForm" xml:space="preserve">
+    <value>New</value>
+  </data>
+  <data name="ParameterDefaultInvalid" xml:space="preserve">
+    <value>The default of the parameter {0} does not match its type.</value>
+  </data>
+  <data name="ResponseSchemaCleared" xml:space="preserve">
+    <value>The schema will be removed when you save.</value>
+  </data>
+  <data name="ImportSource" xml:space="preserve">
+    <value>Where the document comes from</value>
+  </data>
+  <data name="ImportOperationCount" xml:space="preserve">
+    <value>{0} of {1} chosen</value>
+  </data>
+  <data name="ToolDeleted" xml:space="preserve">
+    <value>Tool deleted</value>
+  </data>
+  <data name="ConvertedToCode" xml:space="preserve">
+    <value>The tool is now code</value>
+  </data>
+  <data name="OpenApiVersionMismatch" xml:space="preserve">
+    <value>The draft uses OpenAPI {0} but the import is {1}. Mixed versions would stop the server from starting, so the import is refused.</value>
+  </data>
+  <data name="ToolBodyNotEditable" xml:space="preserve">
+    <value>The request body of this tool is too complex for the form and is kept as it is. Remove the body parameters from the form.</value>
+  </data>
+  <data name="ToolNameTaken" xml:space="preserve">
+    <value>A tool named {0} already exists in this server.</value>
+  </data>
+  <data name="ArchiveOpenApiInvalid" xml:space="preserve">
+    <value>The openapi.json in the archive cannot be used: {0}</value>
+  </data>
+  <data name="ImportHostNotFound" xml:space="preserve">
+    <value>The address was not found. Check the host name.</value>
+  </data>
+  <data name="ImportTlsFailed" xml:space="preserve">
+    <value>A secure connection to the address could not be established.</value>
+  </data>
+  <data name="ImportUnreachable" xml:space="preserve">
+    <value>The address could not be reached.</value>
+  </data>
+  <data name="ImportInterrupted" xml:space="preserve">
+    <value>The connection was interrupted while the document was being received.</value>
+  </data>
+  <data name="ImportSwaggerNotStored" xml:space="preserve">
+    <value>Swagger 2.0 cannot be stored in a project, use OpenAPI 3</value>
+  </data>
+  <data name="RetryOnNewVersion" xml:space="preserve">
+    <value>Repeat on the new version</value>
+  </data>
+  <data name="ParameterTypeComplex" xml:space="preserve">
+    <value>complex (kept as it is)</value>
+  </data>
+  <data name="NewServerChooseOne" xml:space="preserve">
+    <value>Choose either an archive or an OpenAPI document, not both.</value>
+  </data>
+  <data name="NewServerOpenApi" xml:space="preserve">
+    <value>OpenAPI document (optional)</value>
+  </data>
+  <data name="CodeToolNameTaken" xml:space="preserve">
+    <value>The tool {0} already exists as a form tool. Choose another name or delete the form tool first.</value>
+  </data>
+  <data name="Resources" xml:space="preserve">
+    <value>Resources</value>
+  </data>
+  <data name="Prompts" xml:space="preserve">
+    <value>Prompts</value>
+  </data>
+  <data name="NewResource" xml:space="preserve">
+    <value>New resource</value>
+  </data>
+  <data name="NewPrompt" xml:space="preserve">
+    <value>New prompt</value>
+  </data>
+  <data name="ResourceUri" xml:space="preserve">
+    <value>Address (URI)</value>
+  </data>
+  <data name="ResourceName" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="ResourceMimeType" xml:space="preserve">
+    <value>Content type</value>
+  </data>
+  <data name="ResourceText" xml:space="preserve">
+    <value>Content</value>
+  </data>
+  <data name="SaveResource" xml:space="preserve">
+    <value>Save resource</value>
+  </data>
+  <data name="ResourceSaved" xml:space="preserve">
+    <value>Resource saved</value>
+  </data>
+  <data name="DeleteResource" xml:space="preserve">
+    <value>Delete resource</value>
+  </data>
+  <data name="ResourceDeleted" xml:space="preserve">
+    <value>Resource deleted</value>
+  </data>
+  <data name="DeleteResourceQuestion" xml:space="preserve">
+    <value>Delete the resource {0}?</value>
+  </data>
+  <data name="DeleteResourceWarning" xml:space="preserve">
+    <value>The resource is removed from the draft. Published versions keep it.</value>
+  </data>
+  <data name="PromptName" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="PromptDescription" xml:space="preserve">
+    <value>Description</value>
+  </data>
+  <data name="PromptTemplate" xml:space="preserve">
+    <value>Template</value>
+  </data>
+  <data name="PromptTemplateHint" xml:space="preserve">
+    <value>Write {name} where a value is inserted. Each such placeholder becomes a required argument.</value>
+  </data>
+  <data name="PromptArguments" xml:space="preserve">
+    <value>Arguments: {0}</value>
+  </data>
+  <data name="PromptArgumentsNone" xml:space="preserve">
+    <value>No arguments</value>
+  </data>
+  <data name="SavePrompt" xml:space="preserve">
+    <value>Save prompt</value>
+  </data>
+  <data name="PromptSaved" xml:space="preserve">
+    <value>Prompt saved</value>
+  </data>
+  <data name="DeletePrompt" xml:space="preserve">
+    <value>Delete prompt</value>
+  </data>
+  <data name="PromptDeleted" xml:space="preserve">
+    <value>Prompt deleted</value>
+  </data>
+  <data name="DeletePromptQuestion" xml:space="preserve">
+    <value>Delete the prompt {0}?</value>
+  </data>
+  <data name="DeletePromptWarning" xml:space="preserve">
+    <value>The prompt is removed from the draft. Published versions keep it.</value>
+  </data>
+  <data name="ResourceNotFound" xml:space="preserve">
+    <value>The resource {0} does not exist.</value>
+  </data>
+  <data name="ResourceUriTaken" xml:space="preserve">
+    <value>A resource with the address {0} already exists.</value>
+  </data>
+  <data name="ResourceUriInvalid" xml:space="preserve">
+    <value>The address {0} is not a valid URI such as data://cities.</value>
+  </data>
+  <data name="ResourceMimeTypeInvalid" xml:space="preserve">
+    <value>The content type {0} is not valid. Use a form such as text/plain.</value>
+  </data>
+  <data name="BuilderNameInvalid" xml:space="preserve">
+    <value>The name {0} must be 1 to 64 characters without spaces.</value>
+  </data>
+  <data name="PromptNotFound" xml:space="preserve">
+    <value>The prompt {0} does not exist.</value>
+  </data>
+  <data name="PromptNameTaken" xml:space="preserve">
+    <value>A prompt named {0} already exists.</value>
+  </data>
+  <data name="PromptTemplateRequired" xml:space="preserve">
+    <value>The prompt {0} needs a template.</value>
+  </data>
+  <data name="BuilderDocumentInvalid" xml:space="preserve">
+    <value>The resources and prompts file is not valid.</value>
+  </data>
+  <data name="ArchiveBuilderInvalid" xml:space="preserve">
+    <value>The builder.json in the archive cannot be used: {0}</value>
+  </data>
+  <data name="ToolTest" xml:space="preserve">
+    <value>Check</value>
+  </data>
+  <data name="ToolTestNoTargetTitle" xml:space="preserve">
+    <value>Nothing to check yet</value>
+  </data>
+  <data name="ToolTestNoTargetHint" xml:space="preserve">
+    <value>Publish the server or build a version without activating it, then call its tools here.</value>
+  </data>
+  <data name="ToolTestTargetCandidate" xml:space="preserve">
+    <value>Built version {0}, not yet active</value>
+  </data>
+  <data name="ToolTestTargetActive" xml:space="preserve">
+    <value>Active version {0}</value>
+  </data>
+  <data name="ToolTestTool" xml:space="preserve">
+    <value>Tool</value>
+  </data>
+  <data name="ToolTestNoTools" xml:space="preserve">
+    <value>This version has no tools.</value>
+  </data>
+  <data name="ToolTestCall" xml:space="preserve">
+    <value>Call</value>
+  </data>
+  <data name="ToolTestReload" xml:space="preserve">
+    <value>Refresh</value>
+  </data>
+  <data name="ToolTestOk" xml:space="preserve">
+    <value>Success</value>
+  </data>
+  <data name="ToolTestError" xml:space="preserve">
+    <value>Error</value>
+  </data>
+  <data name="ToolTestElapsed" xml:space="preserve">
+    <value>{0:N0} ms</value>
+  </data>
+  <data name="ToolTestNoOutput" xml:space="preserve">
+    <value>The tool returned nothing.</value>
+  </data>
+  <data name="ToolTestProxyRefused" xml:space="preserve">
+    <value>The egress proxy refused the request. The server is limited to public internet addresses, and this destination is outside them. If it is intended, allow the full network in the server settings.</value>
+  </data>
+  <data name="ToolTestOpenSettings" xml:space="preserve">
+    <value>Open settings</value>
+  </data>
+  <data name="ToolTestFailed" xml:space="preserve">
+    <value>The check could not reach the server: {0}</value>
+  </data>
+  <data name="ToolTestTimedOut" xml:space="preserve">
+    <value>The server did not answer within {0} seconds.</value>
+  </data>
+  <data name="ToolArgumentRequired" xml:space="preserve">
+    <value>The argument {0} is required.</value>
+  </data>
+  <data name="ToolArgumentInvalid" xml:space="preserve">
+    <value>The value of {0} does not fit its type.</value>
+  </data>
+  <data name="ToolArgumentJsonHint" xml:space="preserve">
+    <value>JSON</value>
+  </data>
+</root>

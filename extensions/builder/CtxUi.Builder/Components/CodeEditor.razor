@@ -1,0 +1,201 @@
+@implements IAsyncDisposable
+@inject IJSRuntime Js
+@inject NavigationManager Navigation
+@inject ServerCatalog Catalog
+@inject ILogger<CodeEditor> Logger
+
+<div class="builder-editor">
+    <div class="builder-editor-bar">
+        <span class="builder-editor-path">@Path</span>
+        <span class="builder-editor-state" role="status" data-state="@_state.ToString().ToLowerInvariant()" data-testid="save-state">@StateText</span>
+    </div>
+    @if (_state == SaveState.Conflict)
+    {
+        <div class="builder-conflict" role="alert" data-testid="conflict">
+            <p class="warn-t">@BuilderText.DraftChangedElsewhere</p>
+            <button type="button" class="link" data-testid="load-new-version" @onclick="LoadNewVersionAsync">@BuilderText.LoadNewVersion</button>
+            <button type="button" class="link" data-testid="keep-mine" @onclick="KeepMineAsync">@BuilderText.KeepMine</button>
+        </div>
+    }
+    else if (_error is not null)
+    {
+        <p class="bad-t" role="alert" data-testid="save-error">@_error</p>
+    }
+    <div @ref="_host" class="builder-editor-host" data-testid="editor"></div>
+</div>
+
+@code {
+    private const int QuietMilliseconds = 800;
+
+    private enum SaveState { Saved, Pending, Saving, Conflict, Failed }
+
+    private readonly SemaphoreSlim _gate = new(1, 1);
+    private ElementReference _host;
+    private IJSObjectReference? _module;
+    private DotNetObjectReference<CodeEditor>? _self;
+    private CancellationTokenSource? _quiet;
+    private SaveState _state = SaveState.Saved;
+    private string? _error;
+    private long _revision;
+    private bool _dirty;
+    private bool _disposed;
+
+    [Parameter, EditorRequired]
+    public Guid ServerId { get; set; }
+
+    [Parameter, EditorRequired]
+    public string Path { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired]
+    public string Content { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired]
+    public long Revision { get; set; }
+
+    private string StateText => _state switch
+    {
+        SaveState.Saved => BuilderText.StateSaved,
+        SaveState.Pending => BuilderText.StateUnsaved,
+        SaveState.Saving => BuilderText.StateSaving,
+        SaveState.Conflict => BuilderText.StateConflict,
+        _ => BuilderText.StateFailed,
+    };
+
+    protected override void OnInitialized() => _revision = Revision;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+            return;
+        _module = await Js.InvokeAsync<IJSObjectReference>("import", Navigation.ToAbsoluteUri("_content/CtxUi.Builder/editor.js").AbsoluteUri);
+        _self = DotNetObjectReference.Create(this);
+        await _module.InvokeVoidAsync("create", _host, _self, Content);
+    }
+
+    [JSInvokable]
+    public Task EditorChanged() => InvokeAsync(() =>
+    {
+        _dirty = true;
+        _quiet?.Cancel();
+        _quiet?.Dispose();
+        _quiet = null;
+        if (_state == SaveState.Conflict)
+            return;
+
+        _state = SaveState.Pending;
+        _quiet = new CancellationTokenSource();
+        _ = SaveAfterQuietAsync(_quiet.Token);
+        StateHasChanged();
+    });
+
+    public async Task<bool> TryFlushAsync()
+    {
+        _quiet?.Cancel();
+        await SaveAsync();
+        return _disposed || !_dirty;
+    }
+
+    private async Task SaveAfterQuietAsync(CancellationToken token)
+    {
+        try
+        {
+            await Task.Delay(QuietMilliseconds, token);
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
+
+        await InvokeAsync(SaveAsync);
+    }
+
+    private async Task SaveAsync()
+    {
+        await _gate.WaitAsync();
+        try
+        {
+            if (!_dirty || _state == SaveState.Conflict || _module is null || _disposed)
+                return;
+
+            var text = await _module.InvokeAsync<string>("getValue", _host);
+            _dirty = false;
+            _error = null;
+            _state = SaveState.Saving;
+            StateHasChanged();
+            try
+            {
+                _revision = await Catalog.SaveFileAsync(ServerId, Path, text, _revision, CancellationToken.None);
+                _state = _dirty ? SaveState.Pending : SaveState.Saved;
+            }
+            catch (DraftConflictException)
+            {
+                _dirty = true;
+                _state = SaveState.Conflict;
+            }
+            catch (PanelException failure)
+            {
+                _dirty = true;
+                _error = failure.Message;
+                _state = SaveState.Failed;
+            }
+            catch (Exception failure)
+            {
+                Logger.LogError(failure, "Saving {Path} failed", Path);
+                _dirty = true;
+                _error = BuilderText.SaveFailed;
+                _state = SaveState.Failed;
+            }
+
+            StateHasChanged();
+        }
+        finally
+        {
+            _gate.Release();
+        }
+    }
+
+    private async Task LoadNewVersionAsync()
+    {
+        _quiet?.Cancel();
+        var file = await LatestAsync();
+        _revision = file.Revision;
+        _dirty = false;
+        _error = null;
+        _state = SaveState.Saved;
+        await _module!.InvokeVoidAsync("setValue", _host, file.Content);
+    }
+
+    private async Task KeepMineAsync()
+    {
+        _revision = (await LatestAsync()).Revision;
+        _state = SaveState.Pending;
+        _dirty = true;
+        await SaveAsync();
+    }
+
+    private async Task<DraftFile> LatestAsync() =>
+        (await Catalog.DraftAsync(ServerId, CancellationToken.None)).Files.SingleOrDefault(file => file.Path == Path)
+        ?? throw new PanelException(BuilderText.ServerNotFound);
+
+    public async ValueTask DisposeAsync()
+    {
+        _quiet?.Cancel();
+        try
+        {
+            if (_module is not null)
+            {
+                await SaveAsync();
+                await _module.InvokeVoidAsync("dispose", _host);
+                await _module.DisposeAsync();
+            }
+        }
+        catch (Exception failure) when (failure is JSDisconnectedException or ObjectDisposedException or InvalidOperationException)
+        {
+        }
+        finally
+        {
+            _disposed = true;
+            _self?.Dispose();
+        }
+    }
+}

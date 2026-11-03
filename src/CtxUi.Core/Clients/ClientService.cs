@@ -147,6 +147,31 @@ public sealed class ClientService(CtxUiDbContext db, ISecretVault vault, TimePro
         await db.SaveChangesAsync(ct);
     }
 
+    public async Task<IReadOnlyList<Guid>> InboundClientsAsync(string slug, CancellationToken ct = default)
+    {
+        var inbound = await FindInboundAsync(slug, ct);
+        return await db.ClientInbounds.AsNoTracking()
+            .Where(link => link.InboundId == inbound.Id)
+            .Select(link => link.ClientId)
+            .ToListAsync(ct);
+    }
+
+    public async Task SetInboundClientsAsync(string slug, IReadOnlyCollection<Guid> clientIds, CancellationToken ct = default)
+    {
+        var inbound = await FindInboundAsync(slug, ct);
+        var wanted = clientIds.ToHashSet();
+        var known = await db.Clients.Where(client => wanted.Contains(client.Id)).Select(client => client.Id).ToListAsync(ct);
+        if (known.Count != wanted.Count)
+            throw new NotFoundException(CoreText.ClientIdNotFound);
+
+        var links = await db.ClientInbounds.Where(link => link.InboundId == inbound.Id).ToListAsync(ct);
+        db.ClientInbounds.RemoveRange(links.Where(link => !wanted.Contains(link.ClientId)));
+        var linked = links.Select(link => link.ClientId).ToHashSet();
+        db.ClientInbounds.AddRange(wanted.Where(id => !linked.Contains(id))
+            .Select(id => new ClientInbound { ClientId = id, InboundId = inbound.Id }));
+        await db.SaveChangesAsync(ct);
+    }
+
     public async Task ResetQuotaAsync(Guid id, CancellationToken ct = default)
     {
         var client = await TrackAsync(id, ct);
@@ -254,6 +279,13 @@ public sealed class ClientService(CtxUiDbContext db, ISecretVault vault, TimePro
             .Include(client => client.Inbounds)
             .SingleOrDefaultAsync(client => client.Id == id, ct)
         ?? throw new NotFoundException(CoreText.ClientIdNotFound);
+
+    private async Task<Inbound> FindInboundAsync(string slug, CancellationToken ct)
+    {
+        var trimmed = slug.Trim();
+        return await db.Inbounds.AsNoTracking().SingleOrDefaultAsync(inbound => inbound.Slug == trimmed, ct)
+            ?? throw new NotFoundException(string.Format(CoreText.InboundNotFound, trimmed));
+    }
 
     private async Task<List<Inbound>> ResolveInboundsAsync(IReadOnlyCollection<string> slugs, CancellationToken ct)
     {

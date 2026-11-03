@@ -146,7 +146,7 @@ public class ExtensionLoadingTests
     {
         var logs = new CapturingLogs();
         await using var gateway = await SampleExtensionHost.StartAsync(
-            prepare: folder => SampleExtensionHost.RewriteManifest(Path.Combine(folder, "sample"), "\"api\": \"1.0\"", "\"api\": \"2.0\""),
+            prepare: folder => SampleExtensionHost.RewriteManifest(Path.Combine(folder, "sample"), "\"api\": \"1.1\"", "\"api\": \"2.0\""),
             configure: builder => builder.Logging.AddProvider(logs));
 
         var rejected = Assert.Single(gateway.App.Services.GetRequiredService<ExtensionCatalog>().Rejected);

@@ -1,0 +1,374 @@
+@page "/builder/{Id:guid}"
+@implements IDisposable
+@inject ServerCatalog Catalog
+@inject ConnectionService Connections
+@inject PublishQueue Queue
+@inject IPanelData Data
+@inject IDialogService Dialogs
+@inject NavigationManager Navigation
+@inject PendingImports Pending
+
+<PageHead>
+    <Summary>
+        <a class="link" href="builder">@BuilderText.Servers</a>
+        <span>/</span>
+        <span>@_settings?.Name</span>
+    </Summary>
+    <Actions>
+        @if (_inbound is not null)
+        {
+            <span class="builder-connected" data-testid="connected" title="@Connections.AddressOf(Id)">
+                @BuilderText.ConnectedTo <a class="link" href="inbounds">@_inbound.Slug</a>
+            </span>
+        }
+        else if (_settings is not null)
+        {
+            <Button Kind="ButtonKind.Quiet" OnClick="ConnectAsync" Refresh="false" data-testid="connect">@BuilderText.Connect</Button>
+        }
+        <Button Kind="ButtonKind.Quiet" OnClick="DeleteAsync" Refresh="false" data-testid="delete-server">@BuilderText.DeleteServer</Button>
+        <PublishButton ServerId="Id" Prepare="FlushAsync" />
+    </Actions>
+</PageHead>
+
+@if (_settings is null)
+{
+    <Placeholder />
+}
+else
+{
+    @if (_blockedAction is not null)
+    {
+        <div class="builder-conflict" role="alert" data-testid="switch-blocked">
+            <p class="warn-t">@BuilderText.UnsavedBlocked</p>
+            <button type="button" class="link" data-testid="discard-mine" @onclick="DiscardAsync">@BuilderText.DiscardMine</button>
+        </div>
+    }
+    @if (_openApiError is not null)
+    {
+        <p class="bad-t" role="alert" data-testid="openapi-error">@_openApiError</p>
+    }
+    @if (_documentError is not null)
+    {
+        <p class="bad-t" role="alert" data-testid="builder-document-error">@_documentError</p>
+    }
+    <div class="builder-workspace">
+        <ToolList Files="_files.Select(file => file.Path).ToList()" Selected="_selected" View="_view"
+                  FormTools="_formTools.Select(tool => tool.Name).ToList()" SelectedForm="_formName"
+                  OnSelect="SelectAsync" OnView="OpenViewAsync" OnCreate="CreateToolAsync"
+                  OnSelectForm="SelectFormAsync" OnNewForm="NewFormAsync" OnImport="ImportAsync"
+                  Resources="_document.Resources" SelectedResource="_resourceUri" OnSelectResource="SelectResourceAsync" OnNewResource="NewResourceAsync"
+                  Prompts="_document.Prompts" SelectedPrompt="_promptName" OnSelectPrompt="SelectPromptAsync" OnNewPrompt="NewPromptAsync" />
+        <div class="builder-main">
+            @if (_view == ServerView.Settings)
+            {
+                <ServerSettings Settings="_settings" OnChanged="ReloadAsync" />
+            }
+            else if (_view == ServerView.Form)
+            {
+                <ToolForm @ref="_form" @key="@($"{_formName}:{_draftRevision}:{_discards}")" ServerId="Id" Tool="_formTools.FirstOrDefault(tool => tool.Name == _formName)"
+                          Revision="_draftRevision"
+                          OnSaved="FormSavedAsync" OnDeleted="FormDeletedAsync" OnConverted="FormConvertedAsync" OnReload="ReloadFormAsync" />
+            }
+            else if (_view == ServerView.Resource)
+            {
+                <ResourceForm @ref="_form" @key="@($"{_resourceUri}:{_draftRevision}:{_discards}")" ServerId="Id" Resource="_document.Resources.FirstOrDefault(resource => resource.Uri == _resourceUri)"
+                              Revision="_draftRevision" OnSaved="ResourceSavedAsync" OnDeleted="BuilderEntryDeletedAsync" OnReload="ReloadFormAsync" />
+            }
+            else if (_view == ServerView.Prompt)
+            {
+                <PromptForm @ref="_form" @key="@($"{_promptName}:{_draftRevision}:{_discards}")" ServerId="Id" Prompt="_document.Prompts.FirstOrDefault(prompt => prompt.Name == _promptName)"
+                            Revision="_draftRevision" OnSaved="PromptSavedAsync" OnDeleted="BuilderEntryDeletedAsync" OnReload="ReloadFormAsync" />
+            }
+            else if (_view == ServerView.Test)
+            {
+                <ToolTester ServerId="Id" OnOpenSettings="() => OpenViewAsync(ServerView.Settings)" />
+            }
+            else if (_view == ServerView.Releases)
+            {
+                <ReleasesPanel ServerId="Id" />
+            }
+            else if (_view == ServerView.Logs)
+            {
+                <LogsPanel ServerId="Id" />
+            }
+            else if (_selected is not null && _files.FirstOrDefault(file => file.Path == _selected) is { } file)
+            {
+                <CodeEditor @ref="_editor" @key="file.Path" ServerId="Id" Path="@file.Path" Content="@file.Content" Revision="file.Revision" />
+            }
+            else
+            {
+                <EmptyState Title="@BuilderText.NoTools" Hint="@BuilderText.NoToolsHint" />
+            }
+        </div>
+    </div>
+}
+
+@code {
+    private List<DraftFile> _files = [];
+    private ServerSettingsView? _settings;
+    private InboundSummary? _inbound;
+    private bool _connectOpen;
+    private CodeEditor? _editor;
+    private string? _selected;
+    private ServerView _view;
+    private IReadOnlyList<FormTool> _formTools = [];
+    private string _openApiJson = string.Empty;
+    private string? _openApiError;
+    private BuilderDocumentModel _document = BuilderDocumentModel.Empty;
+    private string? _documentError;
+    private string? _resourceUri;
+    private string? _promptName;
+    private string? _formName;
+    private long _draftRevision;
+    private int _discards;
+    private bool _loaded;
+    private bool _importChecked;
+
+    [Parameter]
+    public Guid Id { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        Queue.FirstActivated += OnFirstActivated;
+        await LoadAsync();
+        _selected = _files.OrderBy(file => file.Path, StringComparer.Ordinal).FirstOrDefault()?.Path;
+        _loaded = true;
+    }
+
+    public void Dispose() => Queue.FirstActivated -= OnFirstActivated;
+
+    private void OnFirstActivated(Guid serverId)
+    {
+        if (serverId == Id)
+            _ = InvokeAsync(ConnectAsync);
+    }
+
+    private async Task LoadAsync()
+    {
+        _settings = await Catalog.SettingsAsync(Id, CancellationToken.None);
+        var draft = await Catalog.DraftAsync(Id, CancellationToken.None);
+        _files = [.. draft.Files];
+        _draftRevision = draft.Revision;
+        _openApiJson = draft.OpenApiJson ?? string.Empty;
+        try
+        {
+            _formTools = OpenApiDraft.Read(_openApiJson);
+            _openApiError = null;
+        }
+        catch (PanelException failure)
+        {
+            _formTools = [];
+            _openApiError = failure.Message;
+        }
+
+        try
+        {
+            _document = BuilderDocument.Read(draft.BuilderJson);
+            _documentError = null;
+        }
+        catch (PanelException failure)
+        {
+            _document = BuilderDocumentModel.Empty;
+            _documentError = failure.Message;
+        }
+
+        _inbound = await Connections.FindInboundAsync(Id, CancellationToken.None);
+    }
+
+    private async Task ConnectAsync()
+    {
+        if (_inbound is not null || _settings is null || _connectOpen)
+            return;
+        _connectOpen = true;
+        try
+        {
+            await ShowConnectSheetAsync(_settings);
+        }
+        finally
+        {
+            _connectOpen = false;
+        }
+
+        await LoadAsync();
+        StateHasChanged();
+    }
+
+    private async Task ShowConnectSheetAsync(ServerSettingsView settings)
+    {
+        var parameters = new DialogParameters<ConnectSheet>
+        {
+            { sheet => sheet.ServerId, Id },
+            { sheet => sheet.Slug, settings.Slug },
+            { sheet => sheet.ServerName, settings.Name },
+        };
+        var sheet = await Dialogs.ShowSheetAsync<ConnectSheet>(string.Format(BuilderText.ConnectTitle, settings.Name), parameters);
+        await sheet.Result;
+    }
+
+    private async Task DeleteAsync()
+    {
+        var warning = BuilderText.DeleteServerWarning;
+        if (_inbound is not null)
+            warning += " " + string.Format(BuilderText.DeleteServerInbound, _inbound.Slug, (await Data.InboundClientsAsync(_inbound.Slug)).Count);
+        if (!await Dialogs.ConfirmAsync(string.Format(BuilderText.DeleteServerQuestion, _settings?.Name), warning, BuilderText.DeleteServerYes, danger: true))
+            return;
+
+        await Connections.DeleteServerAsync(Id, CancellationToken.None);
+        Navigation.NavigateTo("builder");
+    }
+
+    private Func<Task>? _blockedAction;
+
+    private IUnsavedForm? _form;
+
+    private bool FormUnsaved => _view is ServerView.Form or ServerView.Resource or ServerView.Prompt && _form?.HasUnsavedChanges == true;
+
+    private async Task<bool> FlushAsync() => (_editor is null || await _editor.TryFlushAsync()) && !FormUnsaved;
+
+    private async Task GuardedAsync(Func<Task> action)
+    {
+        if (!await FlushAsync())
+        {
+            _blockedAction = action;
+            return;
+        }
+
+        _blockedAction = null;
+        await action();
+    }
+
+    private async Task DiscardAsync()
+    {
+        var action = _blockedAction;
+        _blockedAction = null;
+        _discards++;
+        if (action is not null)
+            await action();
+    }
+
+    private Task SelectAsync(string path) => GuardedAsync(async () =>
+    {
+        await LoadAsync();
+        _view = ServerView.Editor;
+        _selected = path;
+    });
+
+    private Task OpenViewAsync(ServerView view) => GuardedAsync(async () =>
+    {
+        await LoadAsync();
+        _view = view;
+    });
+
+    private async Task ReloadAsync() => await LoadAsync();
+
+    private async Task CreateToolAsync(string name)
+    {
+        if (!await FlushAsync())
+            throw new PanelException(BuilderText.UnsavedBlocked);
+        _selected = await Catalog.CreateToolAsync(Id, name, CancellationToken.None);
+        await LoadAsync();
+        _view = ServerView.Editor;
+    }
+
+    private Task SelectFormAsync(string name) => GuardedAsync(async () =>
+    {
+        await LoadAsync();
+        _formName = name;
+        _view = ServerView.Form;
+    });
+
+    private Task NewFormAsync() => GuardedAsync(async () =>
+    {
+        await LoadAsync();
+        _formName = null;
+        _view = ServerView.Form;
+    });
+
+    private async Task FormSavedAsync(string name)
+    {
+        await LoadAsync();
+        _formName = name;
+    }
+
+    private async Task FormDeletedAsync()
+    {
+        await LoadAsync();
+        _formName = null;
+        _view = ServerView.Editor;
+    }
+
+    private async Task FormConvertedAsync(string path)
+    {
+        await LoadAsync();
+        _selected = path;
+        _formName = null;
+        _view = ServerView.Editor;
+    }
+
+    private async Task ReloadFormAsync() => await LoadAsync();
+
+    private Task SelectResourceAsync(string? uri) => GuardedAsync(async () =>
+    {
+        await LoadAsync();
+        _resourceUri = uri;
+        _view = ServerView.Resource;
+    });
+
+    private Task NewResourceAsync() => SelectResourceAsync(null);
+
+    private async Task ResourceSavedAsync(string uri)
+    {
+        await LoadAsync();
+        _resourceUri = uri;
+    }
+
+    private Task SelectPromptAsync(string? name) => GuardedAsync(async () =>
+    {
+        await LoadAsync();
+        _promptName = name;
+        _view = ServerView.Prompt;
+    });
+
+    private Task NewPromptAsync() => SelectPromptAsync(null);
+
+    private async Task PromptSavedAsync(string name)
+    {
+        await LoadAsync();
+        _promptName = name;
+    }
+
+    private async Task BuilderEntryDeletedAsync()
+    {
+        await LoadAsync();
+        _resourceUri = null;
+        _promptName = null;
+        _view = ServerView.Editor;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!_loaded || _importChecked)
+            return;
+        _importChecked = true;
+        if (Pending.Take(Id) is { } api)
+            await GuardedAsync(() => ImportCoreAsync(api));
+    }
+
+    private Task ImportAsync() => GuardedAsync(() => ImportCoreAsync(null));
+
+    private async Task ImportCoreAsync(ImportedApi? api)
+    {
+        await LoadAsync();
+        var parameters = new DialogParameters<OpenApiImportDialog>
+        {
+            { sheet => sheet.ServerId, Id },
+            { sheet => sheet.Revision, _draftRevision },
+            { sheet => sheet.CurrentBaseUrl, _settings?.BaseUrl },
+            { sheet => sheet.Api, api },
+        };
+        var sheet = await Dialogs.ShowSheetAsync<OpenApiImportDialog>(BuilderText.ImportTitle, parameters);
+        await sheet.Result;
+        await LoadAsync();
+        StateHasChanged();
+    }
+}

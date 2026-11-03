@@ -1,0 +1,1008 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Caption" xml:space="preserve">
+    <value>Конструктор</value>
+  </data>
+  <data name="Servers" xml:space="preserve">
+    <value>Серверы</value>
+  </data>
+  <data name="ServersSummary" xml:space="preserve">
+    <value>MCP-серверы, собранные здесь и запущенные раннером.</value>
+  </data>
+  <data name="NewServer" xml:space="preserve">
+    <value>Новый сервер</value>
+  </data>
+  <data name="Name" xml:space="preserve">
+    <value>Имя</value>
+  </data>
+  <data name="Slug" xml:space="preserve">
+    <value>Слаг</value>
+  </data>
+  <data name="SlugHint" xml:space="preserve">
+    <value>Строчные буквы, цифры и дефисы. Потом изменить нельзя.</value>
+  </data>
+  <data name="Create" xml:space="preserve">
+    <value>Создать</value>
+  </data>
+  <data name="ServerCreated" xml:space="preserve">
+    <value>Сервер создан</value>
+  </data>
+  <data name="Access" xml:space="preserve">
+    <value>Сеть</value>
+  </data>
+  <data name="AccessInternetOnly" xml:space="preserve">
+    <value>Только интернет</value>
+  </data>
+  <data name="AccessFullNetwork" xml:space="preserve">
+    <value>Вся сеть</value>
+  </data>
+  <data name="Inbound" xml:space="preserve">
+    <value>Инбаунд</value>
+  </data>
+  <data name="InboundConnected" xml:space="preserve">
+    <value>Подключён</value>
+  </data>
+  <data name="InboundNone" xml:space="preserve">
+    <value>Не подключён</value>
+  </data>
+  <data name="Created" xml:space="preserve">
+    <value>Создан</value>
+  </data>
+  <data name="NoServers" xml:space="preserve">
+    <value>Серверов пока нет</value>
+  </data>
+  <data name="NoServersHint" xml:space="preserve">
+    <value>Создайте первый сервер, чтобы собрать и запустить MCP-сервер.</value>
+  </data>
+  <data name="SlugInvalid" xml:space="preserve">
+    <value>Слаг начинается со строчной буквы и состоит из строчных букв, цифр и дефисов, не длиннее 32 символов.</value>
+  </data>
+  <data name="NameRequired" xml:space="preserve">
+    <value>Укажите имя.</value>
+  </data>
+  <data name="SlugTaken" xml:space="preserve">
+    <value>Этот слаг уже занят.</value>
+  </data>
+  <data name="ServerNotFound" xml:space="preserve">
+    <value>Сервер не найден.</value>
+  </data>
+  <data name="PathInvalid" xml:space="preserve">
+    <value>Путь файла относительный, начинается с mcp/ и не содержит пустых частей, точек и обратных косых.</value>
+  </data>
+  <data name="ProjectTooLarge" xml:space="preserve">
+    <value>Проект больше 16 МБ.</value>
+  </data>
+  <data name="DraftChangedElsewhere" xml:space="preserve">
+    <value>Черновик изменён в другом месте. Перезагрузите его перед сохранением.</value>
+  </data>
+  <data name="SecretNameInvalid" xml:space="preserve">
+    <value>Имя секрета совпадает с именем переменной окружения: буквы, цифры и подчёркивания, не с цифры.</value>
+  </data>
+  <data name="SecretValueRequired" xml:space="preserve">
+    <value>Укажите значение секрета.</value>
+  </data>
+  <data name="AccessInvalid" xml:space="preserve">
+    <value>Неизвестный доступ к сети.</value>
+  </data>
+  <data name="LimitsInvalid" xml:space="preserve">
+    <value>Лимиты слишком малы: не меньше 6 МБ памяти, 0,01 процессора и 1 процесса.</value>
+  </data>
+  <data name="RunnerNotConfigured" xml:space="preserve">
+    <value>Раннер не настроен. Не заданы настройки: {0}.</value>
+  </data>
+  <data name="RunnerUnreachable" xml:space="preserve">
+    <value>Раннер по адресу {0} не отвечает: {1}</value>
+  </data>
+  <data name="RunnerRefused" xml:space="preserve">
+    <value>Раннер по адресу {0} не принял токен. Проверьте RunnerToken.</value>
+  </data>
+  <data name="RunnerVersionMismatch" xml:space="preserve">
+    <value>Раннер версии {0}, расширение версии {1}.</value>
+  </data>
+  <data name="RunnerCommandHint" xml:space="preserve">
+    <value>Выполните на сервере команду:</value>
+  </data>
+  <data name="RunnerReady" xml:space="preserve">
+    <value>Раннер {0}, Docker {1}</value>
+  </data>
+  <data name="RunnerEgressDown" xml:space="preserve">
+    <value>Прокси исходящего трафика недоступен, поэтому серверы с доступом в интернет не смогут выходить наружу.</value>
+  </data>
+  <data name="RunnerCommand" xml:space="preserve">
+    <value>Команда</value>
+  </data>
+  <data name="CopyCommand" xml:space="preserve">
+    <value>Скопировать команду</value>
+  </data>
+  <data name="ProjectPathInvalid" xml:space="preserve">
+    <value>Недопустимый путь файла: {0}</value>
+  </data>
+  <data name="ProjectFileTypeNotAllowed" xml:space="preserve">
+    <value>В mcp/ допустимы только файлы .py и файлы данных: {0}</value>
+  </data>
+  <data name="DependencyInvalid" xml:space="preserve">
+    <value>Это не требование к пакету: {0}</value>
+  </data>
+  <data name="ArchiveUnreadable" xml:space="preserve">
+    <value>Файл не является читаемым архивом tar.gz или zip.</value>
+  </data>
+  <data name="ArchiveTooLarge" xml:space="preserve">
+    <value>Архив больше 16 МБ после распаковки.</value>
+  </data>
+  <data name="ArchiveTooManyEntries" xml:space="preserve">
+    <value>В архиве больше {0} записей.</value>
+  </data>
+  <data name="ArchiveLinkRefused" xml:space="preserve">
+    <value>В архиве есть ссылка, это не допускается: {0}</value>
+  </data>
+  <data name="ArchiveEntryKindRefused" xml:space="preserve">
+    <value>В архиве есть запись, которая не файл и не папка: {0}</value>
+  </data>
+  <data name="ArchiveDuplicate" xml:space="preserve">
+    <value>В архиве файл встречается дважды: {0}</value>
+  </data>
+  <data name="ArchiveNotUtf8" xml:space="preserve">
+    <value>Файл не является текстом в UTF-8: {0}</value>
+  </data>
+  <data name="BaseUrlInvalid" xml:space="preserve">
+    <value>Базовый адрес должен быть адресом http или https.</value>
+  </data>
+  <data name="AuthHeaderInvalid" xml:space="preserve">
+    <value>Имя заголовка может содержать только буквы, цифры и дефисы.</value>
+  </data>
+  <data name="AuthUsernameInvalid" xml:space="preserve">
+    <value>Нужно имя пользователя без двоеточия.</value>
+  </data>
+  <data name="NoTools" xml:space="preserve">
+    <value>Инструментов пока нет</value>
+  </data>
+  <data name="NoToolsHint" xml:space="preserve">
+    <value>Добавьте инструмент кнопкой с плюсом. Он откроется с рабочей заготовкой.</value>
+  </data>
+  <data name="Tools" xml:space="preserve">
+    <value>Инструменты</value>
+  </data>
+  <data name="DataFiles" xml:space="preserve">
+    <value>Файлы данных</value>
+  </data>
+  <data name="NewTool" xml:space="preserve">
+    <value>Новый инструмент</value>
+  </data>
+  <data name="ToolName" xml:space="preserve">
+    <value>Имя инструмента</value>
+  </data>
+  <data name="AddTool" xml:space="preserve">
+    <value>Добавить</value>
+  </data>
+  <data name="ToolExists" xml:space="preserve">
+    <value>Инструмент с таким именем уже есть.</value>
+  </data>
+  <data name="Settings" xml:space="preserve">
+    <value>Настройки</value>
+  </data>
+  <data name="Save" xml:space="preserve">
+    <value>Сохранить</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>Отмена</value>
+  </data>
+  <data name="StateSaved" xml:space="preserve">
+    <value>Сохранено</value>
+  </data>
+  <data name="StateUnsaved" xml:space="preserve">
+    <value>Есть несохранённые изменения</value>
+  </data>
+  <data name="StateSaving" xml:space="preserve">
+    <value>Сохранение</value>
+  </data>
+  <data name="StateConflict" xml:space="preserve">
+    <value>Не сохранено</value>
+  </data>
+  <data name="StateFailed" xml:space="preserve">
+    <value>Ошибка сохранения</value>
+  </data>
+  <data name="SaveFailed" xml:space="preserve">
+    <value>Не удалось сохранить черновик. Попробуйте ещё раз.</value>
+  </data>
+  <data name="LoadNewVersion" xml:space="preserve">
+    <value>Загрузить новую версию</value>
+  </data>
+  <data name="KeepMine" xml:space="preserve">
+    <value>Оставить мой текст и перезаписать</value>
+  </data>
+  <data name="ApiPane" xml:space="preserve">
+    <value>API</value>
+  </data>
+  <data name="ApiHint" xml:space="preserve">
+    <value>Адрес и авторизация для инструментов, созданных из описания OpenAPI.</value>
+  </data>
+  <data name="BaseUrl" xml:space="preserve">
+    <value>Базовый адрес</value>
+  </data>
+  <data name="AuthKind" xml:space="preserve">
+    <value>Авторизация</value>
+  </data>
+  <data name="AuthNone" xml:space="preserve">
+    <value>Нет</value>
+  </data>
+  <data name="AuthBearer" xml:space="preserve">
+    <value>Bearer-токен</value>
+  </data>
+  <data name="AuthHeader" xml:space="preserve">
+    <value>Заголовок</value>
+  </data>
+  <data name="AuthBasic" xml:space="preserve">
+    <value>Basic</value>
+  </data>
+  <data name="HeaderName" xml:space="preserve">
+    <value>Имя заголовка</value>
+  </data>
+  <data name="UserName" xml:space="preserve">
+    <value>Имя пользователя</value>
+  </data>
+  <data name="AuthSecret" xml:space="preserve">
+    <value>Токен или пароль</value>
+  </data>
+  <data name="KeepSecretHint" xml:space="preserve">
+    <value>Оставьте пустым, чтобы сохранить текущее значение.</value>
+  </data>
+  <data name="DependenciesPane" xml:space="preserve">
+    <value>Зависимости</value>
+  </data>
+  <data name="DependenciesHint" xml:space="preserve">
+    <value>Одно требование Python на строку. Версию FastMCP 4.1.4 задаёт конструктор.</value>
+  </data>
+  <data name="DependenciesLabel" xml:space="preserve">
+    <value>Требования</value>
+  </data>
+  <data name="SecretsPane" xml:space="preserve">
+    <value>Секреты</value>
+  </data>
+  <data name="SecretsHint" xml:space="preserve">
+    <value>Только для записи, видны одни имена. Сервер получает их переменными окружения.</value>
+  </data>
+  <data name="NoSecrets" xml:space="preserve">
+    <value>Секретов пока нет.</value>
+  </data>
+  <data name="SecretName" xml:space="preserve">
+    <value>Имя</value>
+  </data>
+  <data name="SecretValue" xml:space="preserve">
+    <value>Значение</value>
+  </data>
+  <data name="SetSecret" xml:space="preserve">
+    <value>Задать секрет</value>
+  </data>
+  <data name="AccessPane" xml:space="preserve">
+    <value>Сеть и лимиты</value>
+  </data>
+  <data name="AccessHint" xml:space="preserve">
+    <value>Изменения применяются к запущенной версии при её перезапуске.</value>
+  </data>
+  <data name="Memory" xml:space="preserve">
+    <value>Память, МБ</value>
+  </data>
+  <data name="Cpus" xml:space="preserve">
+    <value>Процессоры</value>
+  </data>
+  <data name="Pids" xml:space="preserve">
+    <value>Процессы</value>
+  </data>
+  <data name="AccessNotConfirmed" xml:space="preserve">
+    <value>Сначала подтвердите доступ ко всей сети.</value>
+  </data>
+  <data name="AccessConfirmTitle" xml:space="preserve">
+    <value>Разрешить всю сеть?</value>
+  </data>
+  <data name="AccessConfirmLead" xml:space="preserve">
+    <value>С доступом ко всей сети сервер сможет обращаться к:</value>
+  </data>
+  <data name="AccessConfirmLocal" xml:space="preserve">
+    <value>Узлам и службам вашей локальной сети.</value>
+  </data>
+  <data name="AccessConfirmDatabases" xml:space="preserve">
+    <value>Базам данных и административным портам по любым адресам.</value>
+  </data>
+  <data name="AccessConfirmMetadata" xml:space="preserve">
+    <value>Метаданным облака и другим служебным адресам.</value>
+  </data>
+  <data name="AccessConfirmMail" xml:space="preserve">
+    <value>Любым портам, включая почтовые 25, 465 и 587.</value>
+  </data>
+  <data name="AccessConfirmCode" xml:space="preserve">
+    <value>Опубликованный код работает с этим доступом.</value>
+  </data>
+  <data name="AccessConfirmYes" xml:space="preserve">
+    <value>Разрешить всю сеть</value>
+  </data>
+  <data name="ExportPane" xml:space="preserve">
+    <value>Экспорт</value>
+  </data>
+  <data name="ExportHint" xml:space="preserve">
+    <value>Скачайте проект архивом tar.gz, который запускается без панели. Значения секретов не входят в архив: задайте их переменными окружения там, где запускаете проект.</value>
+  </data>
+  <data name="Export" xml:space="preserve">
+    <value>Скачать архив</value>
+  </data>
+  <data name="ImportArchive" xml:space="preserve">
+    <value>Архив с проектом</value>
+  </data>
+  <data name="ImportArchiveHint" xml:space="preserve">
+    <value>Необязательно. Архив tar.gz или zip с mcp/, openapi.json и builder.json.</value>
+  </data>
+  <data name="SettingsChangedElsewhere" xml:space="preserve">
+    <value>Эти настройки изменены в другом месте. Ваш ввод сохранён здесь; перезагрузите страницу, чтобы увидеть новые значения, прежде чем сохранять.</value>
+  </data>
+  <data name="UnsavedBlocked" xml:space="preserve">
+    <value>Ваши изменения здесь не сохранены. Сначала сохраните их или разрешите конфликт, либо явно отбросьте их.</value>
+  </data>
+  <data name="DiscardMine" xml:space="preserve">
+    <value>Отбросить мои изменения и продолжить</value>
+  </data>
+  <data name="PublishBusy" xml:space="preserve">
+    <value>Версия этого сервера ещё собирается. Дождитесь завершения.</value>
+  </data>
+  <data name="PublishInterrupted" xml:space="preserve">
+    <value>Публикация прервана перезапуском панели.</value>
+  </data>
+  <data name="RunnerForgotRelease" xml:space="preserve">
+    <value>Runner перезапустился и потерял эту сборку. Опубликуйте заново.</value>
+  </data>
+  <data name="RunnerLostDuringBuild" xml:space="preserve">
+    <value>Runner недоступен уже {0} с, пока собиралась версия.</value>
+  </data>
+  <data name="ArchiveCorrupted" xml:space="preserve">
+    <value>Сохранённый снимок этой версии не совпадает с контрольной суммой, использовать его нельзя.</value>
+  </data>
+  <data name="ArchiveMissing" xml:space="preserve">
+    <value>Снимок этой версии не найден.</value>
+  </data>
+  <data name="CheckTimedOut" xml:space="preserve">
+    <value>Сервер не ответил на запрос списка инструментов за {0} с.</value>
+  </data>
+  <data name="CheckFailed" xml:space="preserve">
+    <value>Проверка списка инструментов не удалась: {0}</value>
+  </data>
+  <data name="PublishBaseUrlRequired" xml:space="preserve">
+    <value>Проект собран из описания OpenAPI. Перед публикацией укажите базовый адрес API в настройках.</value>
+  </data>
+  <data name="BuildTimedOut" xml:space="preserve">
+    <value>Сборка не завершилась за {0} мин.</value>
+  </data>
+  <data name="StartTimedOut" xml:space="preserve">
+    <value>Сервер не запустился за {0} мин.</value>
+  </data>
+  <data name="RollbackUnavailable" xml:space="preserve">
+    <value>Эту версию нельзя восстановить.</value>
+  </data>
+  <data name="ReleaseNotFound" xml:space="preserve">
+    <value>Версия не найдена.</value>
+  </data>
+  <data name="Publish" xml:space="preserve">
+    <value>Опубликовать</value>
+  </data>
+  <data name="PublishBuildOnly" xml:space="preserve">
+    <value>Собрать без активации</value>
+  </data>
+  <data name="StateNoRelease" xml:space="preserve">
+    <value>Не опубликован</value>
+  </data>
+  <data name="StateRunning" xml:space="preserve">
+    <value>Работает, v{0}</value>
+  </data>
+  <data name="StateBuilding" xml:space="preserve">
+    <value>Сборка v{0}</value>
+  </data>
+  <data name="StateBuildingWhileRunning" xml:space="preserve">
+    <value>Работает v{0}, сборка v{1}</value>
+  </data>
+  <data name="StateRunnerUnavailable" xml:space="preserve">
+    <value>Runner недоступен</value>
+  </data>
+  <data name="StateNeedsReactivation" xml:space="preserve">
+    <value>Остановлен, версию v{0} нужно активировать заново</value>
+  </data>
+  <data name="Releases" xml:space="preserve">
+    <value>Версии</value>
+  </data>
+  <data name="Logs" xml:space="preserve">
+    <value>Логи</value>
+  </data>
+  <data name="ReleaseTitle" xml:space="preserve">
+    <value>Версия {0}</value>
+  </data>
+  <data name="ReleaseBuilt" xml:space="preserve">
+    <value>Собрана</value>
+  </data>
+  <data name="ReleaseBuilding" xml:space="preserve">
+    <value>Собирается</value>
+  </data>
+  <data name="ReleaseFailed" xml:space="preserve">
+    <value>Ошибка</value>
+  </data>
+  <data name="ReleaseCandidate" xml:space="preserve">
+    <value>Кандидат</value>
+  </data>
+  <data name="ReleaseActive" xml:space="preserve">
+    <value>Активна</value>
+  </data>
+  <data name="ReleaseRetired" xml:space="preserve">
+    <value>Снята</value>
+  </data>
+  <data name="Rollback" xml:space="preserve">
+    <value>Откатить на эту версию</value>
+  </data>
+  <data name="RollbackStarted" xml:space="preserve">
+    <value>Версия {0} активируется.</value>
+  </data>
+  <data name="RemovedToolsWarning" xml:space="preserve">
+    <value>Инструменты, удалённые с прошлой версии: {0}</value>
+  </data>
+  <data name="ToolsInRelease" xml:space="preserve">
+    <value>Инструменты: {0}</value>
+  </data>
+  <data name="BuildLog" xml:space="preserve">
+    <value>Журнал сборки</value>
+  </data>
+  <data name="NoBuildLog" xml:space="preserve">
+    <value>Журнал сборки пуст.</value>
+  </data>
+  <data name="NoReleases" xml:space="preserve">
+    <value>Версий пока нет</value>
+  </data>
+  <data name="NoReleasesHint" xml:space="preserve">
+    <value>Опубликуйте черновик, чтобы появилась первая версия.</value>
+  </data>
+  <data name="LogsRuntime" xml:space="preserve">
+    <value>Вывод сервера</value>
+  </data>
+  <data name="LogsLastBuild" xml:space="preserve">
+    <value>Последняя сборка</value>
+  </data>
+  <data name="LogsEmpty" xml:space="preserve">
+    <value>Вывода пока нет.</value>
+  </data>
+  <data name="LogsLineLimit" xml:space="preserve">
+    <value>Показаны последние {0} строк.</value>
+  </data>
+  <data name="LogsUnavailable" xml:space="preserve">
+    <value>Поток логов прервался: {0}</value>
+  </data>
+  <data name="BuildFailed" xml:space="preserve">
+    <value>Сборка не удалась.</value>
+  </data>
+  <data name="StartFailed" xml:space="preserve">
+    <value>Сервер не запустился.</value>
+  </data>
+  <data name="Reactivate" xml:space="preserve">
+    <value>Запустить снова</value>
+  </data>
+  <data name="BaseUrlAppliesOnPublish" xml:space="preserve">
+    <value>Новый базовый адрес вступит в силу при следующей публикации. Запущенные версии сохраняют свой.</value>
+  </data>
+  <data name="ConnectionAlreadyConnected" xml:space="preserve">
+    <value>Этот сервер уже подключён как инбаунд.</value>
+  </data>
+  <data name="InboundSlugTaken" xml:space="preserve">
+    <value>Инбаунд с таким слагом уже есть. Выберите другой слаг.</value>
+  </data>
+  <data name="InboundRejected" xml:space="preserve">
+    <value>Панель отклонила инбаунд: {0}</value>
+  </data>
+  <data name="RunnerDeleteFailed" xml:space="preserve">
+    <value>Раннер не смог удалить сервер, ничего не удалено: {0}</value>
+  </data>
+  <data name="Connect" xml:space="preserve">
+    <value>Подключить</value>
+  </data>
+  <data name="ConnectTitle" xml:space="preserve">
+    <value>Подключение {0}</value>
+  </data>
+  <data name="ConnectLead" xml:space="preserve">
+    <value>Сервер станет инбаундом панели. Клиенты, привязанные к нему, смогут вызывать его инструменты.</value>
+  </data>
+  <data name="InboundSlug" xml:space="preserve">
+    <value>Слаг инбаунда</value>
+  </data>
+  <data name="InboundSlugHint" xml:space="preserve">
+    <value>Строчные буквы, цифры и дефисы.</value>
+  </data>
+  <data name="ForwardIdentity" xml:space="preserve">
+    <value>Передавать серверу личность клиента</value>
+  </data>
+  <data name="ConnectClients" xml:space="preserve">
+    <value>Клиенты</value>
+  </data>
+  <data name="ConnectClientsHint" xml:space="preserve">
+    <value>Доступ к серверу получат только выбранные клиенты.</value>
+  </data>
+  <data name="NoClients" xml:space="preserve">
+    <value>Клиентов пока нет. Добавьте их позже на странице клиентов.</value>
+  </data>
+  <data name="ServerConnected" xml:space="preserve">
+    <value>Сервер подключён</value>
+  </data>
+  <data name="ConnectedAddress" xml:space="preserve">
+    <value>Адрес инбаунда: {0}</value>
+  </data>
+  <data name="OpenInbound" xml:space="preserve">
+    <value>Открыть инбаунд {0}</value>
+  </data>
+  <data name="ConnectedTo" xml:space="preserve">
+    <value>Подключён как</value>
+  </data>
+  <data name="DeleteServer" xml:space="preserve">
+    <value>Удалить сервер</value>
+  </data>
+  <data name="DeleteServerQuestion" xml:space="preserve">
+    <value>Удалить сервер {0}?</value>
+  </data>
+  <data name="DeleteServerWarning" xml:space="preserve">
+    <value>Работающий сервер, все его версии и проект будут удалены. Это нельзя отменить.</value>
+  </data>
+  <data name="DeleteServerInbound" xml:space="preserve">
+    <value>Инбаунд {0} и его связи с клиентами ({1}) тоже будут удалены.</value>
+  </data>
+  <data name="DeleteServerYes" xml:space="preserve">
+    <value>Удалить</value>
+  </data>
+  <data name="ServerDeleted" xml:space="preserve">
+    <value>Сервер удалён</value>
+  </data>
+  <data name="OpenInBuilder" xml:space="preserve">
+    <value>Открыть в конструкторе</value>
+  </data>
+  <data name="InboundNotBuilt" xml:space="preserve">
+    <value>Этот инбаунд собран не в конструкторе.</value>
+  </data>
+  <data name="BuiltServer" xml:space="preserve">
+    <value>Собранный сервер</value>
+  </data>
+  <data name="ConnectionBusy" xml:space="preserve">
+    <value>Подключение этого сервера уже меняется. Повторите чуть позже.</value>
+  </data>
+  <data name="ServerDeleting" xml:space="preserve">
+    <value>Этот сервер удаляется.</value>
+  </data>
+  <data name="OpenApiInvalid" xml:space="preserve">
+    <value>Документ API не является корректным JSON.</value>
+  </data>
+  <data name="ToolNameInvalid" xml:space="preserve">
+    <value>Имя инструмента может содержать только буквы, цифры и одиночные подчёркивания, не больше 56 символов, и не может начинаться или заканчиваться подчёркиванием.</value>
+  </data>
+  <data name="ToolMethodInvalid" xml:space="preserve">
+    <value>Выберите метод GET, POST, PUT, PATCH или DELETE.</value>
+  </data>
+  <data name="ToolPathInvalid" xml:space="preserve">
+    <value>Путь должен начинаться со слэша и не содержать пробелов.</value>
+  </data>
+  <data name="ToolPathParameterMissing" xml:space="preserve">
+    <value>Параметр пути {0} не встречается в пути как {{{0}}}.</value>
+  </data>
+  <data name="ToolPathPlaceholderUndeclared" xml:space="preserve">
+    <value>В пути есть {{{0}}}, но нет параметра пути с именем {0}.</value>
+  </data>
+  <data name="ToolRouteTaken" xml:space="preserve">
+    <value>{0} {1} уже занят другим инструментом.</value>
+  </data>
+  <data name="ToolNotFound" xml:space="preserve">
+    <value>Такого инструмента нет.</value>
+  </data>
+  <data name="ParameterNameRequired" xml:space="preserve">
+    <value>У каждого параметра должно быть имя.</value>
+  </data>
+  <data name="ParameterTypeInvalid" xml:space="preserve">
+    <value>Тип параметра {0} не поддерживается.</value>
+  </data>
+  <data name="ParameterDuplicate" xml:space="preserve">
+    <value>Параметр {0} указан дважды.</value>
+  </data>
+  <data name="ResponseExampleEmpty" xml:space="preserve">
+    <value>Сначала вставьте пример ответа.</value>
+  </data>
+  <data name="ResponseExampleInvalid" xml:space="preserve">
+    <value>Пример не является корректным JSON.</value>
+  </data>
+  <data name="ImportEmpty" xml:space="preserve">
+    <value>Документ пустой.</value>
+  </data>
+  <data name="ImportBroken" xml:space="preserve">
+    <value>Документ не является корректным JSON. YAML не поддерживается, сначала преобразуйте его в JSON.</value>
+  </data>
+  <data name="ImportUnsupported" xml:space="preserve">
+    <value>Документ нельзя импортировать: {0}</value>
+  </data>
+  <data name="ImportNotOpenApi" xml:space="preserve">
+    <value>это не документ OpenAPI или Swagger</value>
+  </data>
+  <data name="ImportNoOperations" xml:space="preserve">
+    <value>В документе нет операций для импорта.</value>
+  </data>
+  <data name="ImportTooLarge" xml:space="preserve">
+    <value>Документ больше 5 МБ.</value>
+  </data>
+  <data name="ImportTimedOut" xml:space="preserve">
+    <value>Документ не получен за 20 секунд.</value>
+  </data>
+  <data name="ImportFetchFailed" xml:space="preserve">
+    <value>Адрес ответил статусом {0}.</value>
+  </data>
+  <data name="ImportAddressInvalid" xml:space="preserve">
+    <value>Введите полный адрес http или https.</value>
+  </data>
+  <data name="ImportNameTaken" xml:space="preserve">
+    <value>Такие инструменты в этом сервере уже есть: {0}</value>
+  </data>
+  <data name="ImportNothingSelected" xml:space="preserve">
+    <value>Выберите хотя бы одну операцию.</value>
+  </data>
+  <data name="FormTool" xml:space="preserve">
+    <value>Инструмент формой</value>
+  </data>
+  <data name="NewFormTool" xml:space="preserve">
+    <value>Новый инструмент формой</value>
+  </data>
+  <data name="ImportOpenApi" xml:space="preserve">
+    <value>Импорт OpenAPI</value>
+  </data>
+  <data name="ImportTitle" xml:space="preserve">
+    <value>Импорт из OpenAPI</value>
+  </data>
+  <data name="ImportAddress" xml:space="preserve">
+    <value>Адрес документа</value>
+  </data>
+  <data name="ImportPaste" xml:space="preserve">
+    <value>Или вставьте документ</value>
+  </data>
+  <data name="ImportLoad" xml:space="preserve">
+    <value>Загрузить</value>
+  </data>
+  <data name="ImportOperationsLead" xml:space="preserve">
+    <value>Выберите операции, которые станут инструментами. По умолчанию не выбрана ни одна: отобранные вручную инструменты работают у моделей лучше автоконвертации.</value>
+  </data>
+  <data name="ImportUseBaseUrl" xml:space="preserve">
+    <value>Взять {0} как базовый адрес</value>
+  </data>
+  <data name="ImportApply" xml:space="preserve">
+    <value>Импортировать выбранные</value>
+  </data>
+  <data name="ImportDone" xml:space="preserve">
+    <value>Инструменты импортированы</value>
+  </data>
+  <data name="ToolMethod" xml:space="preserve">
+    <value>Метод</value>
+  </data>
+  <data name="ToolPath" xml:space="preserve">
+    <value>Путь</value>
+  </data>
+  <data name="ToolDescription" xml:space="preserve">
+    <value>Описание</value>
+  </data>
+  <data name="ToolDescriptionEmpty" xml:space="preserve">
+    <value>Без описания модели приходится угадывать, что делает инструмент.</value>
+  </data>
+  <data name="Parameters" xml:space="preserve">
+    <value>Параметры</value>
+  </data>
+  <data name="AddParameter" xml:space="preserve">
+    <value>Добавить параметр</value>
+  </data>
+  <data name="RemoveParameter" xml:space="preserve">
+    <value>Убрать параметр</value>
+  </data>
+  <data name="ParameterName" xml:space="preserve">
+    <value>Имя</value>
+  </data>
+  <data name="ParameterType" xml:space="preserve">
+    <value>Тип</value>
+  </data>
+  <data name="ParameterPlace" xml:space="preserve">
+    <value>Где</value>
+  </data>
+  <data name="ParameterRequired" xml:space="preserve">
+    <value>Обязателен</value>
+  </data>
+  <data name="ParameterDefault" xml:space="preserve">
+    <value>По умолчанию</value>
+  </data>
+  <data name="PlacePath" xml:space="preserve">
+    <value>Путь</value>
+  </data>
+  <data name="PlaceQuery" xml:space="preserve">
+    <value>Запрос</value>
+  </data>
+  <data name="PlaceHeader" xml:space="preserve">
+    <value>Заголовок</value>
+  </data>
+  <data name="PlaceBody" xml:space="preserve">
+    <value>Тело</value>
+  </data>
+  <data name="ResponseExample" xml:space="preserve">
+    <value>Пример ответа (JSON)</value>
+  </data>
+  <data name="GenerateSchema" xml:space="preserve">
+    <value>Построить схему</value>
+  </data>
+  <data name="ResponseSchemaLabel" xml:space="preserve">
+    <value>Схема ответа</value>
+  </data>
+  <data name="ClearSchema" xml:space="preserve">
+    <value>Убрать схему</value>
+  </data>
+  <data name="SaveTool" xml:space="preserve">
+    <value>Сохранить</value>
+  </data>
+  <data name="ToolSaved" xml:space="preserve">
+    <value>Инструмент сохранён</value>
+  </data>
+  <data name="DeleteTool" xml:space="preserve">
+    <value>Удалить инструмент</value>
+  </data>
+  <data name="DeleteToolQuestion" xml:space="preserve">
+    <value>Удалить инструмент {0}?</value>
+  </data>
+  <data name="DeleteToolWarning" xml:space="preserve">
+    <value>Операция удаляется из черновика.</value>
+  </data>
+  <data name="ConvertToCode" xml:space="preserve">
+    <value>Превратить в код</value>
+  </data>
+  <data name="ConvertToCodeQuestion" xml:space="preserve">
+    <value>Превратить {0} в код?</value>
+  </data>
+  <data name="ConvertToCodeWarning" xml:space="preserve">
+    <value>Создаётся файл Python, а операция формы удаляется. Обратного пути из кода в форму нет.</value>
+  </data>
+  <data name="ConvertToCodeYes" xml:space="preserve">
+    <value>Превратить в код</value>
+  </data>
+  <data name="FormTools" xml:space="preserve">
+    <value>Инструменты формой</value>
+  </data>
+  <data name="CodeTools" xml:space="preserve">
+    <value>Инструменты кодом</value>
+  </data>
+  <data name="NewToolInForm" xml:space="preserve">
+    <value>Новый</value>
+  </data>
+  <data name="ParameterDefaultInvalid" xml:space="preserve">
+    <value>Значение по умолчанию параметра {0} не подходит к его типу.</value>
+  </data>
+  <data name="ResponseSchemaCleared" xml:space="preserve">
+    <value>Схема будет убрана при сохранении.</value>
+  </data>
+  <data name="ImportSource" xml:space="preserve">
+    <value>Откуда взять документ</value>
+  </data>
+  <data name="ImportOperationCount" xml:space="preserve">
+    <value>Выбрано {0} из {1}</value>
+  </data>
+  <data name="ToolDeleted" xml:space="preserve">
+    <value>Инструмент удалён</value>
+  </data>
+  <data name="ConvertedToCode" xml:space="preserve">
+    <value>Инструмент стал кодом</value>
+  </data>
+  <data name="OpenApiVersionMismatch" xml:space="preserve">
+    <value>В черновике OpenAPI {0}, а в импорте {1}. Смесь версий не даст серверу запуститься, поэтому импорт отклонён.</value>
+  </data>
+  <data name="ToolBodyNotEditable" xml:space="preserve">
+    <value>Тело запроса этого инструмента слишком сложное для формы и сохраняется как есть. Уберите параметры тела из формы.</value>
+  </data>
+  <data name="ToolNameTaken" xml:space="preserve">
+    <value>Инструмент с именем {0} в этом сервере уже есть.</value>
+  </data>
+  <data name="ArchiveOpenApiInvalid" xml:space="preserve">
+    <value>openapi.json в архиве использовать нельзя: {0}</value>
+  </data>
+  <data name="ImportHostNotFound" xml:space="preserve">
+    <value>Адрес не найден. Проверьте имя хоста.</value>
+  </data>
+  <data name="ImportTlsFailed" xml:space="preserve">
+    <value>Не удалось установить защищённое соединение с адресом.</value>
+  </data>
+  <data name="ImportUnreachable" xml:space="preserve">
+    <value>Адрес недоступен.</value>
+  </data>
+  <data name="ImportInterrupted" xml:space="preserve">
+    <value>Соединение прервалось во время получения документа.</value>
+  </data>
+  <data name="ImportSwaggerNotStored" xml:space="preserve">
+    <value>Swagger 2.0 нельзя хранить в проекте, используйте OpenAPI 3</value>
+  </data>
+  <data name="RetryOnNewVersion" xml:space="preserve">
+    <value>Повторить на новой версии</value>
+  </data>
+  <data name="ParameterTypeComplex" xml:space="preserve">
+    <value>сложный (сохраняется как есть)</value>
+  </data>
+  <data name="NewServerChooseOne" xml:space="preserve">
+    <value>Выберите либо архив, либо документ OpenAPI, но не оба сразу.</value>
+  </data>
+  <data name="NewServerOpenApi" xml:space="preserve">
+    <value>Документ OpenAPI (необязательно)</value>
+  </data>
+  <data name="CodeToolNameTaken" xml:space="preserve">
+    <value>Инструмент {0} уже есть как инструмент формой. Выберите другое имя или сначала удалите инструмент формой.</value>
+  </data>
+  <data name="Resources" xml:space="preserve">
+    <value>Ресурсы</value>
+  </data>
+  <data name="Prompts" xml:space="preserve">
+    <value>Промпты</value>
+  </data>
+  <data name="NewResource" xml:space="preserve">
+    <value>Новый ресурс</value>
+  </data>
+  <data name="NewPrompt" xml:space="preserve">
+    <value>Новый промпт</value>
+  </data>
+  <data name="ResourceUri" xml:space="preserve">
+    <value>Адрес (URI)</value>
+  </data>
+  <data name="ResourceName" xml:space="preserve">
+    <value>Имя</value>
+  </data>
+  <data name="ResourceMimeType" xml:space="preserve">
+    <value>Тип содержимого</value>
+  </data>
+  <data name="ResourceText" xml:space="preserve">
+    <value>Содержимое</value>
+  </data>
+  <data name="SaveResource" xml:space="preserve">
+    <value>Сохранить ресурс</value>
+  </data>
+  <data name="ResourceSaved" xml:space="preserve">
+    <value>Ресурс сохранён</value>
+  </data>
+  <data name="DeleteResource" xml:space="preserve">
+    <value>Удалить ресурс</value>
+  </data>
+  <data name="ResourceDeleted" xml:space="preserve">
+    <value>Ресурс удалён</value>
+  </data>
+  <data name="DeleteResourceQuestion" xml:space="preserve">
+    <value>Удалить ресурс {0}?</value>
+  </data>
+  <data name="DeleteResourceWarning" xml:space="preserve">
+    <value>Ресурс удаляется из черновика. Опубликованные версии его сохраняют.</value>
+  </data>
+  <data name="PromptName" xml:space="preserve">
+    <value>Имя</value>
+  </data>
+  <data name="PromptDescription" xml:space="preserve">
+    <value>Описание</value>
+  </data>
+  <data name="PromptTemplate" xml:space="preserve">
+    <value>Шаблон</value>
+  </data>
+  <data name="PromptTemplateHint" xml:space="preserve">
+    <value>Напишите {name} там, где подставляется значение. Каждая такая метка становится обязательным аргументом.</value>
+  </data>
+  <data name="PromptArguments" xml:space="preserve">
+    <value>Аргументы: {0}</value>
+  </data>
+  <data name="PromptArgumentsNone" xml:space="preserve">
+    <value>Аргументов нет</value>
+  </data>
+  <data name="SavePrompt" xml:space="preserve">
+    <value>Сохранить промпт</value>
+  </data>
+  <data name="PromptSaved" xml:space="preserve">
+    <value>Промпт сохранён</value>
+  </data>
+  <data name="DeletePrompt" xml:space="preserve">
+    <value>Удалить промпт</value>
+  </data>
+  <data name="PromptDeleted" xml:space="preserve">
+    <value>Промпт удалён</value>
+  </data>
+  <data name="DeletePromptQuestion" xml:space="preserve">
+    <value>Удалить промпт {0}?</value>
+  </data>
+  <data name="DeletePromptWarning" xml:space="preserve">
+    <value>Промпт удаляется из черновика. Опубликованные версии его сохраняют.</value>
+  </data>
+  <data name="ResourceNotFound" xml:space="preserve">
+    <value>Ресурса {0} нет.</value>
+  </data>
+  <data name="ResourceUriTaken" xml:space="preserve">
+    <value>Ресурс с адресом {0} уже есть.</value>
+  </data>
+  <data name="ResourceUriInvalid" xml:space="preserve">
+    <value>Адрес {0} не похож на URI вида data://cities.</value>
+  </data>
+  <data name="ResourceMimeTypeInvalid" xml:space="preserve">
+    <value>Тип содержимого {0} неверен. Нужен вид text/plain.</value>
+  </data>
+  <data name="BuilderNameInvalid" xml:space="preserve">
+    <value>Имя {0} должно быть от 1 до 64 символов без пробелов.</value>
+  </data>
+  <data name="PromptNotFound" xml:space="preserve">
+    <value>Промпта {0} нет.</value>
+  </data>
+  <data name="PromptNameTaken" xml:space="preserve">
+    <value>Промпт с именем {0} уже есть.</value>
+  </data>
+  <data name="PromptTemplateRequired" xml:space="preserve">
+    <value>У промпта {0} нет шаблона.</value>
+  </data>
+  <data name="BuilderDocumentInvalid" xml:space="preserve">
+    <value>Файл ресурсов и промптов неверен.</value>
+  </data>
+  <data name="ArchiveBuilderInvalid" xml:space="preserve">
+    <value>builder.json в архиве использовать нельзя: {0}</value>
+  </data>
+  <data name="ToolTest" xml:space="preserve">
+    <value>Проверка</value>
+  </data>
+  <data name="ToolTestNoTargetTitle" xml:space="preserve">
+    <value>Проверять пока нечего</value>
+  </data>
+  <data name="ToolTestNoTargetHint" xml:space="preserve">
+    <value>Опубликуйте сервер или соберите версию без активации, и здесь можно вызвать её инструменты.</value>
+  </data>
+  <data name="ToolTestTargetCandidate" xml:space="preserve">
+    <value>Собранная версия {0}, ещё не активна</value>
+  </data>
+  <data name="ToolTestTargetActive" xml:space="preserve">
+    <value>Активная версия {0}</value>
+  </data>
+  <data name="ToolTestTool" xml:space="preserve">
+    <value>Инструмент</value>
+  </data>
+  <data name="ToolTestNoTools" xml:space="preserve">
+    <value>В этой версии нет инструментов.</value>
+  </data>
+  <data name="ToolTestCall" xml:space="preserve">
+    <value>Вызвать</value>
+  </data>
+  <data name="ToolTestReload" xml:space="preserve">
+    <value>Обновить</value>
+  </data>
+  <data name="ToolTestOk" xml:space="preserve">
+    <value>Успех</value>
+  </data>
+  <data name="ToolTestError" xml:space="preserve">
+    <value>Ошибка</value>
+  </data>
+  <data name="ToolTestElapsed" xml:space="preserve">
+    <value>{0:N0} мс</value>
+  </data>
+  <data name="ToolTestNoOutput" xml:space="preserve">
+    <value>Инструмент ничего не вернул.</value>
+  </data>
+  <data name="ToolTestProxyRefused" xml:space="preserve">
+    <value>Прокси отказал в запросе. Сервер ограничен публичными адресами интернета, а этот адрес к ним не относится. Если так и задумано, включите «Вся сеть» в настройках сервера.</value>
+  </data>
+  <data name="ToolTestOpenSettings" xml:space="preserve">
+    <value>Открыть настройки</value>
+  </data>
+  <data name="ToolTestFailed" xml:space="preserve">
+    <value>Проверка не достучалась до сервера: {0}</value>
+  </data>
+  <data name="ToolTestTimedOut" xml:space="preserve">
+    <value>Сервер не ответил за {0} с.</value>
+  </data>
+  <data name="ToolArgumentRequired" xml:space="preserve">
+    <value>Аргумент {0} обязателен.</value>
+  </data>
+  <data name="ToolArgumentInvalid" xml:space="preserve">
+    <value>Значение {0} не подходит по типу.</value>
+  </data>
+  <data name="ToolArgumentJsonHint" xml:space="preserve">
+    <value>JSON</value>
+  </data>
+</root>

@@ -1,0 +1,176 @@
+<nav class="builder-tools" aria-label="@BuilderText.Tools">
+    <div class="builder-tools-head">
+        <span class="builder-tools-title">@BuilderText.FormTools</span>
+        <button type="button" class="link" aria-label="@BuilderText.NewFormTool" data-testid="new-form-tool" @onclick="() => OnNewForm.InvokeAsync()">+</button>
+    </div>
+    <ul class="builder-files" data-testid="form-tools">
+        @foreach (var name in FormTools)
+        {
+            <li>
+                <button type="button" class="builder-file" aria-current="@(View == ServerView.Form && name == SelectedForm ? "true" : null)" data-form-tool="@name" @onclick="() => OnSelectForm.InvokeAsync(name)">@name</button>
+            </li>
+        }
+    </ul>
+    <button type="button" class="link" data-testid="import-openapi" @onclick="() => OnImport.InvokeAsync()">@BuilderText.ImportOpenApi</button>
+    <div class="builder-tools-head">
+        <span class="builder-tools-title">@BuilderText.CodeTools</span>
+        <button type="button" class="link" aria-label="@BuilderText.NewTool" aria-expanded="@_adding" data-testid="new-tool" @onclick="Toggle">+</button>
+    </div>
+    @if (_adding)
+    {
+        <form class="builder-new-tool" @onsubmit="AddAsync" @onsubmit:preventDefault>
+            <input class="builder-input" type="text" aria-label="@BuilderText.ToolName" placeholder="@BuilderText.ToolName" maxlength="64"
+                   data-testid="new-tool-name" @bind="_name" @bind:event="oninput" />
+            <button type="submit" class="btn-k pigment" disabled="@(_busy || string.IsNullOrWhiteSpace(_name))" data-testid="add-tool">@BuilderText.AddTool</button>
+        </form>
+        @if (_error is not null)
+        {
+            <p class="bad-t" role="alert">@_error</p>
+        }
+    }
+    <ul class="builder-files">
+        @foreach (var path in Files.Where(IsTool))
+        {
+            <li>
+                <button type="button" class="builder-file" aria-current="@(IsOpen(path) ? "true" : null)" data-path="@path" @onclick="() => OnSelect.InvokeAsync(path)">@Name(path)</button>
+            </li>
+        }
+    </ul>
+    @if (Files.Any(path => !IsTool(path)))
+    {
+        <span class="builder-tools-title">@BuilderText.DataFiles</span>
+        <ul class="builder-files">
+            @foreach (var path in Files.Where(path => !IsTool(path)))
+            {
+                <li>
+                    <button type="button" class="builder-file" aria-current="@(IsOpen(path) ? "true" : null)" data-path="@path" @onclick="() => OnSelect.InvokeAsync(path)">@Name(path)</button>
+                </li>
+            }
+        </ul>
+    }
+    <div class="builder-tools-head">
+        <span class="builder-tools-title">@BuilderText.Resources</span>
+        <button type="button" class="link" aria-label="@BuilderText.NewResource" data-testid="new-resource" @onclick="() => OnNewResource.InvokeAsync()">+</button>
+    </div>
+    <ul class="builder-files" data-testid="resources">
+        @foreach (var resource in Resources)
+        {
+            <li>
+                <button type="button" class="builder-file" aria-current="@(View == ServerView.Resource && resource.Uri == SelectedResource ? "true" : null)" data-resource="@resource.Uri" title="@resource.Uri" @onclick="() => OnSelectResource.InvokeAsync(resource.Uri)">@resource.Name</button>
+            </li>
+        }
+    </ul>
+    <div class="builder-tools-head">
+        <span class="builder-tools-title">@BuilderText.Prompts</span>
+        <button type="button" class="link" aria-label="@BuilderText.NewPrompt" data-testid="new-prompt" @onclick="() => OnNewPrompt.InvokeAsync()">+</button>
+    </div>
+    <ul class="builder-files" data-testid="prompts">
+        @foreach (var prompt in Prompts)
+        {
+            <li>
+                <button type="button" class="builder-file" aria-current="@(View == ServerView.Prompt && prompt.Name == SelectedPrompt ? "true" : null)" data-prompt="@prompt.Name" @onclick="() => OnSelectPrompt.InvokeAsync(prompt.Name)">@prompt.Name</button>
+            </li>
+        }
+    </ul>
+    <hr class="builder-rule" />
+    <button type="button" class="builder-file" aria-current="@(View == ServerView.Test ? "true" : null)" data-testid="open-test" @onclick="() => OnView.InvokeAsync(ServerView.Test)">@BuilderText.ToolTest</button>
+    <button type="button" class="builder-file" aria-current="@(View == ServerView.Releases ? "true" : null)" data-testid="open-releases" @onclick="() => OnView.InvokeAsync(ServerView.Releases)">@BuilderText.Releases</button>
+    <button type="button" class="builder-file" aria-current="@(View == ServerView.Logs ? "true" : null)" data-testid="open-logs" @onclick="() => OnView.InvokeAsync(ServerView.Logs)">@BuilderText.Logs</button>
+    <button type="button" class="builder-file" aria-current="@(View == ServerView.Settings ? "true" : null)" data-testid="open-settings" @onclick="() => OnView.InvokeAsync(ServerView.Settings)">@BuilderText.Settings</button>
+</nav>
+
+@code {
+    private bool _adding;
+    private bool _busy;
+    private string _name = string.Empty;
+    private string? _error;
+
+    [Parameter, EditorRequired]
+    public IReadOnlyList<string> Files { get; set; } = [];
+
+    [Parameter]
+    public IReadOnlyList<string> FormTools { get; set; } = [];
+
+    [Parameter]
+    public string? SelectedForm { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnSelectForm { get; set; }
+
+    [Parameter]
+    public EventCallback OnNewForm { get; set; }
+
+    [Parameter]
+    public EventCallback OnImport { get; set; }
+
+    [Parameter]
+    public IReadOnlyList<BuilderResource> Resources { get; set; } = [];
+
+    [Parameter]
+    public string? SelectedResource { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnSelectResource { get; set; }
+
+    [Parameter]
+    public EventCallback OnNewResource { get; set; }
+
+    [Parameter]
+    public IReadOnlyList<BuilderPrompt> Prompts { get; set; } = [];
+
+    [Parameter]
+    public string? SelectedPrompt { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnSelectPrompt { get; set; }
+
+    [Parameter]
+    public EventCallback OnNewPrompt { get; set; }
+
+    [Parameter]
+    public string? Selected { get; set; }
+
+    [Parameter]
+    public ServerView View { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnSelect { get; set; }
+
+    [Parameter]
+    public EventCallback<ServerView> OnView { get; set; }
+
+    [Parameter, EditorRequired]
+    public EventCallback<string> OnCreate { get; set; }
+
+    private bool IsOpen(string path) => View == ServerView.Editor && path == Selected;
+
+    private static bool IsTool(string path) => path.EndsWith(".py", StringComparison.OrdinalIgnoreCase);
+
+    private static string Name(string path) => path["mcp/".Length..];
+
+    private void Toggle()
+    {
+        _adding = !_adding;
+        _error = null;
+    }
+
+    private async Task AddAsync()
+    {
+        _busy = true;
+        _error = null;
+        try
+        {
+            await OnCreate.InvokeAsync(_name);
+            _name = string.Empty;
+            _adding = false;
+        }
+        catch (PanelException failure)
+        {
+            _error = failure.Message;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

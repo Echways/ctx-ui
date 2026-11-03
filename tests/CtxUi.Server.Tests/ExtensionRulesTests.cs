@@ -23,7 +23,8 @@ public class ExtensionRulesTests
     public void A_contract_is_compatible_only_at_the_host_major_and_up_to_its_minor()
     {
         Assert.True(ExtensionRules.IsCompatible("1.0"));
-        Assert.False(ExtensionRules.IsCompatible("1.1"));
+        Assert.True(ExtensionRules.IsCompatible("1.1"));
+        Assert.False(ExtensionRules.IsCompatible("1.2"));
         Assert.False(ExtensionRules.IsCompatible("2.0"));
         Assert.False(ExtensionRules.IsCompatible("0.9"));
         Assert.False(ExtensionRules.IsCompatible("abc"));

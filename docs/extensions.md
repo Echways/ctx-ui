@@ -135,7 +135,19 @@ context.Panel
 An exception shows an error message and is logged. To show your own message, throw
 `Enfilade.PanelException`. `AddSheet` opens a block in a side sheet and passes the
 row as `Context`; the sheet closes with its close word, Escape or a click outside.
-A row context is built only on click, so the menu costs nothing until it is used.
+A row context is built only on click, so the menu costs nothing until it is used,
+unless the action has a `When` predicate.
+
+`When` scopes the next `AddAction` or `AddSheet` to a synchronous
+`Func<TContext, bool>` predicate. The row menu and the page buttons show such an action
+only when the predicate returns true for the row. Keep it fast and in memory: it runs on
+every render. A predicate that throws hides its action and is logged.
+
+```csharp
+context.Panel.In(PanelSlots.InboundActions)
+    .When(inbound => known.Contains(inbound.Id))
+    .AddAction(() => Text.Open, Open);
+```
 
 ### Look and styles
 
@@ -169,7 +181,21 @@ await data.SetClientEnabledAsync(clients[0].Id, false);
 var days = await data.UsageDaysAsync(from, to, clients[0].Id);
 ```
 
-Changes take effect in the gateway at once.
+Since API `1.1` an extension can also create HTTP inbounds and link clients to
+them. `SetInboundClientsAsync` replaces the clients of one inbound and leaves
+their other inbounds untouched:
+
+```csharp
+await data.AddHttpInboundAsync(new HttpInboundDraft("built", "Built", "https://mcp.example.com/mcp"));
+await data.SetInboundClientsAsync("built", [clients[0].Id]);
+var linked = await data.InboundClientsAsync("built");
+await data.RemoveInboundAsync("built");
+```
+
+A taken slug, an invalid address or an unknown client throws `Enfilade.PanelException`
+with the localized message of the panel, so an extension can catch it and show the
+reason. The core exception types stay out of reach of extensions. Changes take effect
+in the gateway at once.
 
 ### Services and settings
 
@@ -240,7 +266,7 @@ Keep other files of the extension in `context.DataDirectory`.
 
 ## Versions and compatibility
 
-The manifest of a package records the extension API version, currently `1.0`. A
+The manifest of a package records the extension API version, currently `1.1`. A
 server loads an extension when the major version equals its own and the minor
 version is not higher. An incompatible extension is skipped with an error in the
 log and the server keeps working.
@@ -274,6 +300,16 @@ Assert.DoesNotContain("fail:", panel.Log);
 runs ctx-ui commands against the same data. The panel speaks Russian unless `Language`
 says otherwise. Data lives in a temporary folder, the port is free, an administrator is
 created for you.
+
+## Examples
+
+- To start a new extension, use the template from
+  [Your first extension in 5 minutes](#your-first-extension-in-5-minutes):
+  `dotnet new ctxui-extension`.
+- The [server builder](builder.md) is a large real example, built only on the
+  public contract: [`extensions/builder/CtxUi.Builder`](../extensions/builder/CtxUi.Builder).
+  It shows sections and pages, slots on the inbounds page, a database, hosted
+  services, endpoints and the inbound methods of `IPanelData`.
 
 ## Install, update, remove
 

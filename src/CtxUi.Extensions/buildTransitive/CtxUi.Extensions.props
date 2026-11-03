@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <EnableDynamicLoading>true</EnableDynamicLoading>
-    <CtxUiExtensionApi>1.0</CtxUiExtensionApi>
+    <CtxUiExtensionApi>1.1</CtxUiExtensionApi>
   </PropertyGroup>
 
 </Project>

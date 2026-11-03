@@ -13,6 +13,13 @@ public sealed record ClientSummary(
 
 public sealed record InboundSummary(Guid Id, string Slug, string Name, bool Enabled, DateTimeOffset CreatedAt);
 
+public sealed record HttpInboundDraft(
+    string Slug,
+    string Name,
+    string Url,
+    IReadOnlyDictionary<string, string>? UpstreamHeaders = null,
+    bool ForwardIdentity = false);
+
 public sealed record ApiKeySummary(Guid Id, string Name);
 
 public sealed record UsageDay(DateOnly Day, Guid ClientId, Guid InboundId, int Calls, int ToolCalls, int Errors, int Refused, long DurationMs);

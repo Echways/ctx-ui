@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <PackageReference Include="ModelContextProtocol.Core" />
+    <ProjectReference Include="..\..\..\..\src\CtxUi.Extensions.Testing\CtxUi.Extensions.Testing.csproj" />
+    <ProjectReference Include="..\..\CtxUi.Builder\CtxUi.Builder.csproj" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+  <Target Name="PublishBuilderExtension" AfterTargets="Build">
+    <MSBuild Projects="..\..\CtxUi.Builder\CtxUi.Builder.csproj" Targets="Publish" Properties="NoBuild=true;Configuration=$(Configuration);PublishDir=$(TargetDir)extensions/builder/" />
+  </Target>
+
+</Project>

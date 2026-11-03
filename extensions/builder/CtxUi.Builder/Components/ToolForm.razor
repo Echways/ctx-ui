@@ -1,0 +1,202 @@
+@implements IUnsavedForm
+@inject ServerCatalog Catalog
+
+<div class="builder-tool-form" data-testid="tool-form">
+    @if (_conflict)
+    {
+        <div class="builder-conflict" role="alert" data-testid="form-conflict">
+            <p class="warn-t">@BuilderText.DraftChangedElsewhere</p>
+            <button type="button" class="link" data-testid="form-load-new-version" @onclick="() => OnReload.InvokeAsync()">@BuilderText.LoadNewVersion</button>
+            <button type="button" class="link" data-testid="form-keep-mine" @onclick="RetryAsync">@(_pending == PendingAction.Save ? BuilderText.KeepMine : BuilderText.RetryOnNewVersion)</button>
+        </div>
+    }
+    @if (_error is not null)
+    {
+        <p class="bad-t" role="alert" data-testid="form-error">@_error</p>
+    }
+    <Form Model="_draft" OnSubmit="SaveAsync" Submit="@BuilderText.SaveTool" Done="@BuilderText.ToolSaved">
+        <Field For="() => _draft.Name" Label="@BuilderText.ToolName" Disabled="@(Tool is not null)" />
+        <Field For="() => _draft.Method" Label="@BuilderText.ToolMethod" Options="Methods" />
+        <Field For="() => _draft.Path" Label="@BuilderText.ToolPath" />
+        <Field For="() => _draft.Description" Label="@BuilderText.ToolDescription" Lines="3" />
+        @if (_draft.LacksDescription)
+        {
+            <p class="warn-t" data-testid="description-warning">@BuilderText.ToolDescriptionEmpty</p>
+        }
+        <h3 class="builder-subtitle">@BuilderText.Parameters</h3>
+        @foreach (var row in _draft.Parameters)
+        {
+            <div class="builder-parameter" @key="row" data-testid="parameter-row">
+                <Field For="() => row.Name" Label="@BuilderText.ParameterName" />
+                <Field For="() => row.Type" Label="@BuilderText.ParameterType" Options="TypeOptions" />
+                <Field For="() => row.Place" Label="@BuilderText.ParameterPlace" Options="PlaceOptions" />
+                <Field For="() => row.Required" Label="@BuilderText.ParameterRequired" Disabled="@(row.Place == ParameterPlace.Path)" />
+                <Field For="() => row.DefaultText" Label="@BuilderText.ParameterDefault" />
+                <Field For="() => row.Description" Label="@BuilderText.ToolDescription" />
+                <button type="button" class="link" data-testid="remove-parameter" @onclick="() => _draft.Parameters.Remove(row)">@BuilderText.RemoveParameter</button>
+            </div>
+        }
+        <div class="builder-actions">
+            <button type="button" class="link" data-testid="add-parameter" @onclick="AddParameter">@BuilderText.AddParameter</button>
+        </div>
+        <h3 class="builder-subtitle">@BuilderText.ResponseSchemaLabel</h3>
+        <Field For="() => _draft.ResponseExample" Label="@BuilderText.ResponseExample" Lines="6" />
+        <div class="builder-actions">
+            <Button Kind="ButtonKind.Quiet" OnClick="BuildSchema" Refresh="false" data-testid="build-schema">@BuilderText.GenerateSchema</Button>
+            @if (_draft.ResponseSchema is not null)
+            {
+                <button type="button" class="link" data-testid="clear-schema" @onclick="ClearSchema">@BuilderText.ClearSchema</button>
+            }
+        </div>
+        @if (_draft.ResponseSchema is not null)
+        {
+            <pre class="builder-log" data-testid="response-schema">@OpenApiDraft.Serialize(_draft.ResponseSchema)</pre>
+        }
+    </Form>
+    @if (Tool is not null)
+    {
+        <div class="builder-actions">
+            <Button Kind="ButtonKind.Quiet" OnClick="ConvertAsync" Refresh="false" Done="@BuilderText.ConvertedToCode" data-testid="convert-to-code"
+                    Confirm="@(new Confirm(string.Format(BuilderText.ConvertToCodeQuestion, Tool.Name), BuilderText.ConvertToCodeWarning, BuilderText.ConvertToCodeYes, Danger: true))">@BuilderText.ConvertToCode</Button>
+            <Button Kind="ButtonKind.Danger" OnClick="DeleteAsync" Refresh="false" Done="@BuilderText.ToolDeleted" data-testid="delete-tool"
+                    Confirm="@(new Confirm(string.Format(BuilderText.DeleteToolQuestion, Tool.Name), BuilderText.DeleteToolWarning, BuilderText.DeleteTool, Danger: true))">@BuilderText.DeleteTool</Button>
+        </div>
+    }
+</div>
+
+@code {
+    private static readonly IReadOnlyList<Option<string>> Methods = [.. OpenApiDraft.Methods.Select(method => new Option<string>(method.ToUpperInvariant(), method.ToUpperInvariant()))];
+
+    private static IReadOnlyList<Option<string>> TypeOptions =>
+        [.. OpenApiDraft.Types.Select(type => new Option<string>(type, type)), new Option<string>(OpenApiDraft.ComplexType, BuilderText.ParameterTypeComplex)];
+
+    private static IReadOnlyList<Option<ParameterPlace>> PlaceOptions =>
+    [
+        new(ParameterPlace.Path, BuilderText.PlacePath),
+        new(ParameterPlace.Query, BuilderText.PlaceQuery),
+        new(ParameterPlace.Header, BuilderText.PlaceHeader),
+        new(ParameterPlace.Body, BuilderText.PlaceBody),
+    ];
+
+    private enum PendingAction { Save, Delete, Convert }
+
+    private ToolFormDraft _draft = new();
+    private PendingAction _pending;
+    private string? _error;
+    private bool _conflict;
+
+    [Parameter, EditorRequired]
+    public Guid ServerId { get; set; }
+
+    [Parameter]
+    public FormTool? Tool { get; set; }
+
+    [Parameter, EditorRequired]
+    public long Revision { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnSaved { get; set; }
+
+    [Parameter]
+    public EventCallback OnDeleted { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnConverted { get; set; }
+
+    [Parameter]
+    public EventCallback OnReload { get; set; }
+
+    private string _baseline = string.Empty;
+
+    public bool HasUnsavedChanges => DraftSnapshot.Of(_draft) != _baseline;
+
+    protected override void OnInitialized()
+    {
+        _draft = Tool is null ? new ToolFormDraft() : ToolFormDraft.From(Tool);
+        _baseline = DraftSnapshot.Of(_draft);
+    }
+
+    private void AddParameter() => _draft.Parameters.Add(new ParameterRow());
+
+    private void BuildSchema() => _draft.ResponseSchema = ResponseSchema.FromExample(_draft.ResponseExample ?? string.Empty);
+
+    private void ClearSchema() => _draft.ResponseSchema = null;
+
+    private async Task SaveAsync()
+    {
+        _error = null;
+        var tool = _draft.ToTool();
+        await RunAsync(PendingAction.Save, () => Catalog.SaveFormToolAsync(ServerId, tool, Tool is null, Revision, CancellationToken.None));
+        await OnSaved.InvokeAsync(tool.Name);
+    }
+
+    private async Task ConvertAsync()
+    {
+        string? path = null;
+        await RunAsync(PendingAction.Convert, async () =>
+        {
+            var converted = await Catalog.ConvertToCodeAsync(ServerId, Tool!.Name, Revision, CancellationToken.None);
+            path = converted.Path;
+            return converted.Revision;
+        });
+        await OnConverted.InvokeAsync(path!);
+    }
+
+    private async Task DeleteAsync()
+    {
+        await RunAsync(PendingAction.Delete, () => Catalog.DeleteFormToolAsync(ServerId, Tool!.Name, Revision, CancellationToken.None));
+        await OnDeleted.InvokeAsync();
+    }
+
+    private async Task RunAsync(PendingAction action, Func<Task<long>> run)
+    {
+        try
+        {
+            await run();
+        }
+        catch (DraftConflictException)
+        {
+            _pending = action;
+            _conflict = true;
+            throw new PanelException(BuilderText.DraftChangedElsewhere);
+        }
+
+        _conflict = false;
+    }
+
+    private async Task RetryAsync()
+    {
+        _error = null;
+        try
+        {
+            var current = await Catalog.DraftAsync(ServerId, CancellationToken.None);
+            switch (_pending)
+            {
+                case PendingAction.Delete:
+                    await Catalog.DeleteFormToolAsync(ServerId, Tool!.Name, current.Revision, CancellationToken.None);
+                    _conflict = false;
+                    await OnDeleted.InvokeAsync();
+                    break;
+                case PendingAction.Convert:
+                    var converted = await Catalog.ConvertToCodeAsync(ServerId, Tool!.Name, current.Revision, CancellationToken.None);
+                    _conflict = false;
+                    await OnConverted.InvokeAsync(converted.Path);
+                    break;
+                default:
+                    var tool = _draft.ToTool();
+                    await Catalog.SaveFormToolAsync(ServerId, tool, Tool is null, current.Revision, CancellationToken.None);
+                    _conflict = false;
+                    await OnSaved.InvokeAsync(tool.Name);
+                    break;
+            }
+        }
+        catch (DraftConflictException)
+        {
+            _error = BuilderText.DraftChangedElsewhere;
+        }
+        catch (PanelException failure)
+        {
+            _error = failure.Message;
+        }
+    }
+}

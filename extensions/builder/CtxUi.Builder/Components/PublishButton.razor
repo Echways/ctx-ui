@@ -1,0 +1,81 @@
+@implements IDisposable
+@inject PublishQueue Queue
+@inject ReleaseReader Reader
+
+<div class="builder-publish">
+    <span class="builder-publish-state" role="status" data-testid="publish-state">@StateText</span>
+    @if (_status?.State == ServerRunState.NeedsReactivation)
+    {
+        <Button Kind="ButtonKind.Quiet" OnClick="ReactivateAsync" Refresh="false" data-testid="reactivate">@BuilderText.Reactivate</Button>
+    }
+    <Button Kind="ButtonKind.Quiet" OnClick="() => PublishAsync(PublishMode.BuildOnly)" Refresh="false" Disabled="Building" data-testid="build-only">@BuilderText.PublishBuildOnly</Button>
+    <Button OnClick="() => PublishAsync(PublishMode.Activate)" Refresh="false" Disabled="Building" data-testid="publish">@BuilderText.Publish</Button>
+</div>
+
+@code {
+    private ServerStatus? _status;
+
+    [Parameter, EditorRequired]
+    public Guid ServerId { get; set; }
+
+    [Parameter]
+    public Func<Task<bool>>? Prepare { get; set; }
+
+    private bool Building => _status?.State == ServerRunState.Building;
+
+    private string StateText => _status switch
+    {
+        null => string.Empty,
+        { State: ServerRunState.Running } status => string.Format(BuilderText.StateRunning, status.ActiveNumber),
+        { State: ServerRunState.Building, ActiveNumber: { } active } status => string.Format(BuilderText.StateBuildingWhileRunning, active, status.BuildingNumber),
+        { State: ServerRunState.Building } status => string.Format(BuilderText.StateBuilding, status.BuildingNumber),
+        { State: ServerRunState.RunnerUnavailable } => BuilderText.StateRunnerUnavailable,
+        { State: ServerRunState.NeedsReactivation } status => string.Format(BuilderText.StateNeedsReactivation, status.ActiveNumber),
+        _ => BuilderText.StateNoRelease,
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        Queue.Changed += OnChanged;
+        await LoadAsync();
+    }
+
+    public void Dispose() => Queue.Changed -= OnChanged;
+
+    private async Task LoadAsync() => _status = await Reader.StatusAsync(ServerId, CancellationToken.None);
+
+    private void OnChanged(Guid serverId)
+    {
+        if (serverId == ServerId)
+            _ = RefreshAsync();
+    }
+
+    private async Task RefreshAsync()
+    {
+        try
+        {
+            await InvokeAsync(async () =>
+            {
+                await LoadAsync();
+                StateHasChanged();
+            });
+        }
+        catch (ObjectDisposedException)
+        {
+        }
+    }
+
+    private async Task PublishAsync(PublishMode mode)
+    {
+        if (Prepare is not null && !await Prepare())
+            throw new PanelException(BuilderText.UnsavedBlocked);
+        await Queue.PublishAsync(ServerId, mode, CancellationToken.None);
+        await LoadAsync();
+    }
+
+    private async Task ReactivateAsync()
+    {
+        await Queue.ApplySettingsAsync(ServerId, CancellationToken.None);
+        await LoadAsync();
+    }
+}

@@ -1,0 +1,93 @@
+@implements IAsyncDisposable
+@inject RunnerClient Runner
+@inject RunnerSettings Settings
+@inject ReleaseReader Reader
+
+<div class="builder-logs">
+    <Pane Title="@BuilderText.LogsRuntime" Hint="@string.Format(BuilderText.LogsLineLimit, LogBuffer.MaxLines)">
+        @if (_failure is not null)
+        {
+            <p class="bad-t" role="alert" data-testid="logs-failure">@_failure</p>
+        }
+        <pre class="builder-log" data-testid="runtime-log">@(_lines.Count == 0 ? BuilderText.LogsEmpty : string.Join('\n', _lines))</pre>
+    </Pane>
+    <Pane Title="@BuilderText.LogsLastBuild">
+        <pre class="builder-log" data-testid="build-log">@(string.IsNullOrEmpty(_buildLog) ? BuilderText.NoBuildLog : _buildLog)</pre>
+    </Pane>
+</div>
+
+@code {
+    private static readonly TimeSpan RenderInterval = TimeSpan.FromMilliseconds(250);
+
+    private readonly CancellationTokenSource _stop = new();
+    private readonly LogBuffer _buffer = new();
+    private IReadOnlyList<string> _lines = [];
+    private string? _buildLog;
+    private string? _failure;
+    private bool _dirty;
+    private Task _follow = Task.CompletedTask;
+
+    [Parameter, EditorRequired]
+    public Guid ServerId { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _buildLog = (await Reader.ListAsync(ServerId, CancellationToken.None)).FirstOrDefault(release => release.BuildLog.Length > 0)?.BuildLog;
+        if (!Settings.IsComplete)
+        {
+            _failure = string.Format(BuilderText.RunnerNotConfigured, string.Join(", ", Settings.Missing));
+            return;
+        }
+
+        _follow = Task.WhenAll(ReadAsync(_stop.Token), RenderAsync(_stop.Token));
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        await _stop.CancelAsync();
+        await _follow;
+        _stop.Dispose();
+    }
+
+    private async Task ReadAsync(CancellationToken ct)
+    {
+        try
+        {
+            await foreach (var chunk in Runner.LogsAsync(ServerId, LogBuffer.MaxLines, true, ct))
+            {
+                _buffer.Append(chunk);
+                _dirty = true;
+            }
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch (RunnerException failure)
+        {
+            _failure = string.Format(BuilderText.LogsUnavailable, failure.Message);
+            _dirty = true;
+        }
+    }
+
+    private async Task RenderAsync(CancellationToken ct)
+    {
+        using var timer = new PeriodicTimer(RenderInterval);
+        try
+        {
+            while (await timer.WaitForNextTickAsync(ct))
+            {
+                if (!_dirty)
+                    continue;
+                _dirty = false;
+                _lines = _buffer.Lines;
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch (ObjectDisposedException)
+        {
+        }
+    }
+}

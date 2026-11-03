@@ -1,0 +1,151 @@
+@inject ToolTestRunner Runner
+
+@if (_loading)
+{
+    <Placeholder />
+}
+else if (_target is null)
+{
+    <EmptyState Title="@BuilderText.ToolTestNoTargetTitle" Hint="@BuilderText.ToolTestNoTargetHint" />
+}
+else
+{
+    <div class="builder-tester" data-testid="tool-tester">
+        <div class="builder-actions">
+            <span class="note" data-testid="test-target">@(_target.IsCandidate ? string.Format(BuilderText.ToolTestTargetCandidate, _target.Number) : string.Format(BuilderText.ToolTestTargetActive, _target.Number))</span>
+            <Button Kind="ButtonKind.Quiet" OnClick="ReloadAsync" Refresh="false" data-testid="test-reload">@BuilderText.ToolTestReload</Button>
+        </div>
+        @if (_error is not null)
+        {
+            <p class="bad-t" role="alert" data-testid="test-error">@_error</p>
+        }
+        else if (_tools.Count == 0)
+        {
+            <p class="note" data-testid="test-no-tools">@BuilderText.ToolTestNoTools</p>
+        }
+        else
+        {
+            <MudSelect T="string" Label="@BuilderText.ToolTestTool" Value="_tool" ValueChanged="Choose" data-testid="test-tool">
+                @foreach (var tool in _tools)
+                {
+                    <MudSelectItem Value="tool.Name">@tool.Name</MudSelectItem>
+                }
+            </MudSelect>
+            @if (Selected?.Description is { Length: > 0 } description)
+            {
+                <p class="note">@description</p>
+            }
+            <Form @key="_tool" Model="_arguments" OnSubmit="CallAsync" Submit="@BuilderText.ToolTestCall">
+                @foreach (var field in _arguments.Fields)
+                {
+                    <div class="builder-argument" data-testid="test-argument">
+                        @if (field.IsBoolean)
+                        {
+                            <Field For="() => field.Text" Label="@Label(field)" Hint="@field.Description" Options="BooleanOptions" />
+                        }
+                        else if (field.IsJson)
+                        {
+                            <Field For="() => field.Text" Label="@Label(field)" Hint="@field.Description" Lines="4" />
+                        }
+                        else
+                        {
+                            <Field For="() => field.Text" Label="@Label(field)" Hint="@field.Description" />
+                        }
+                    </div>
+                }
+            </Form>
+        }
+        @if (_outcome is not null)
+        {
+            <div class="builder-test-result" data-testid="test-result">
+                <div class="builder-actions">
+                    <Tag Tone="@(_outcome.IsError ? Tone.Bad : Tone.Good)">@(_outcome.IsError ? BuilderText.ToolTestError : BuilderText.ToolTestOk)</Tag>
+                    <span class="note" data-testid="test-elapsed">@string.Format(BuilderText.ToolTestElapsed, _outcome.Elapsed.TotalMilliseconds)</span>
+                </div>
+                @if (_outcome.ProxyRefused)
+                {
+                    <p class="warn-t" role="alert" data-testid="proxy-refused">@BuilderText.ToolTestProxyRefused</p>
+                    @if (OnOpenSettings.HasDelegate)
+                    {
+                        <button type="button" class="link" data-testid="open-settings-hint" @onclick="() => OnOpenSettings.InvokeAsync()">@BuilderText.ToolTestOpenSettings</button>
+                    }
+                }
+                <pre class="builder-log" data-testid="test-output">@(_outcome.Text.Length == 0 ? BuilderText.ToolTestNoOutput : _outcome.Text)</pre>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private static readonly IReadOnlyList<Option<string?>> BooleanOptions =
+        [new(string.Empty, string.Empty), new("true", "true"), new("false", "false")];
+
+    private IReadOnlyList<ToolInfo> _tools = [];
+    private ArgumentSet _arguments = new();
+    private ToolTarget? _target;
+    private ToolCallOutcome? _outcome;
+    private string? _tool;
+    private string? _error;
+    private bool _loading = true;
+
+    [Parameter, EditorRequired]
+    public Guid ServerId { get; set; }
+
+    [Parameter]
+    public EventCallback OnOpenSettings { get; set; }
+
+    private ToolInfo? Selected => _tools.FirstOrDefault(tool => tool.Name == _tool);
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+        _loading = false;
+    }
+
+    private static string Label(ArgumentField field) =>
+        field.IsJson ? $"{field.Name} ({BuilderText.ToolArgumentJsonHint}){(field.Required ? " *" : string.Empty)}" : field.Required ? $"{field.Name} *" : field.Name;
+
+    private async Task LoadAsync()
+    {
+        _outcome = null;
+        _error = null;
+        _tools = [];
+        _tool = null;
+        _arguments = new ArgumentSet();
+        _target = await Runner.TargetAsync(ServerId, CancellationToken.None);
+        if (_target is null)
+            return;
+
+        try
+        {
+            _tools = await Runner.ListAsync(ServerId, _target, CancellationToken.None);
+        }
+        catch (PanelException failure)
+        {
+            _error = failure.Message;
+            return;
+        }
+
+        Choose(_tools.FirstOrDefault()?.Name);
+    }
+
+    private async Task ReloadAsync()
+    {
+        await LoadAsync();
+        StateHasChanged();
+    }
+
+    private void Choose(string? name)
+    {
+        _tool = name;
+        _outcome = null;
+        _arguments = Selected is { } tool ? ArgumentSet.From(tool.InputSchema) : new ArgumentSet();
+    }
+
+    private async Task CallAsync()
+    {
+        _outcome = null;
+        var arguments = _arguments.ToArguments();
+        _outcome = await Runner.CallAsync(ServerId, _target!, _tool!, arguments, CancellationToken.None);
+    }
+}

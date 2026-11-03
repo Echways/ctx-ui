@@ -93,6 +93,8 @@ internal sealed partial class BuilderSession : IAsyncDisposable
         await form.GetByLabel("Tool name", new() { Exact = true }).FillAsync(name);
         await form.GetByLabel("Method", new() { Exact = true }).ClickAsync();
         await Page.GetByRole(AriaRole.Option, new() { Name = method, Exact = true }).ClickAsync();
+        await Expect(Page.GetByRole(AriaRole.Listbox)).ToBeHiddenAsync();
+        await Expect(form.GetByLabel("Method", new() { Exact = true })).ToHaveValueAsync(method);
         await form.GetByLabel("Path", new() { Exact = true }).First.FillAsync(path);
         await form.GetByLabel("Description", new() { Exact = true }).First.FillAsync(description);
         await form.GetByTestId("add-parameter").ClickAsync();
@@ -100,6 +102,7 @@ internal sealed partial class BuilderSession : IAsyncDisposable
         await row.GetByLabel("Name", new() { Exact = true }).FillAsync(pathParameter);
         await row.GetByLabel("Where", new() { Exact = true }).ClickAsync();
         await Page.GetByRole(AriaRole.Option, new() { Name = "Path", Exact = true }).ClickAsync();
+        await Expect(Page.GetByRole(AriaRole.Listbox)).ToBeHiddenAsync();
         await form.GetByRole(AriaRole.Button, new() { Name = "Save", Exact = true }).ClickAsync();
         await Expect(Page.Locator($"[data-form-tool='{name}']")).ToBeVisibleAsync();
     }

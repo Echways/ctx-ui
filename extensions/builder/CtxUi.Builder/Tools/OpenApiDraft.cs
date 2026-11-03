@@ -41,6 +41,8 @@ public static partial class OpenApiDraft
 
     public static IReadOnlyList<FormTool> Read(string openApiJson)
     {
+        if (string.IsNullOrWhiteSpace(openApiJson))
+            return [];
         var root = Parse(openApiJson);
         var tools = new List<FormTool>();
         foreach (var (name, path, method, operation, pathItem) in Operations(root))

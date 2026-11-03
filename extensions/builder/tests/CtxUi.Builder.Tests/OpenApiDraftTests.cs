@@ -214,6 +214,11 @@ public sealed class OpenApiDraftTests
         Assert.Equal(BuilderText.OpenApiInvalid, failure.Message);
     }
 
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void Blank_document_has_no_tools(string blank) => Assert.Empty(OpenApiDraft.Read(blank));
+
     [Fact]
     public void Operation_without_operation_id_is_read_under_a_generated_name()
     {

@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.Json.Nodes;
 using CtxUi.Builder.Contracts;
 using CtxUi.Builder.Servers;
 using CtxUi.Builder.Tools;
@@ -33,6 +34,20 @@ public sealed class OpenApiCatalogTests : IClassFixture<CatalogHarness>
         Assert.Equal(before + 1, revision);
         Assert.Equal(revision, draft.Revision);
         Assert.Equal("get_forecast", Assert.Single(OpenApiDraft.Read(draft.OpenApiJson!)).Name);
+    }
+
+    [Fact]
+    public async Task Files_and_the_api_document_share_the_project_size_limit()
+    {
+        var id = await ServerAsync();
+        var half = (int)(ProjectFiles.MaxProjectBytes / 2);
+        var document = JsonNode.Parse(OpenApiDraft.Upsert(string.Empty, Tool()))!;
+        document["x-padding"] = new string('a', half);
+        await Catalog.SaveOpenApiAsync(id, document.ToJsonString(), (await Catalog.DraftAsync(id, default)).Revision, default);
+
+        var failure = await Assert.ThrowsAsync<PanelException>(() => Catalog.SaveFileAsync(id, "mcp/data.txt", new string('b', half + 1), 0, default));
+
+        Assert.Equal(BuilderText.ProjectTooLarge, failure.Message);
     }
 
     [Fact]

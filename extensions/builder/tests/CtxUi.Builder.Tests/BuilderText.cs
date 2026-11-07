@@ -22,6 +22,8 @@ internal static class BuilderText
 
     public static string InboundSlugTaken => Read();
 
+    public static string ProjectTooLarge => Read();
+
     public static string PublishBaseUrlRequired => Read();
 
     public static string PublishBusy => Read();

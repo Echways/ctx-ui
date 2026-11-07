@@ -1,3 +1,4 @@
+using System.Buffers.Text;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -48,7 +49,7 @@ public sealed partial class ServerCatalog(IDbContextFactory<BuilderDatabase> dat
         if (await database.Servers.AnyAsync(server => server.Slug == slug, ct))
             throw new PanelException(BuilderText.SlugTaken);
 
-        if (import is not null && import.Files.FirstOrDefault(file => file.Path == "openapi.json") is { Content: { } document })
+        if (import is not null && import.Files.FirstOrDefault(file => file.Path == ProjectFiles.OpenApiPath) is { Content: { } document })
         {
             try
             {
@@ -60,7 +61,7 @@ public sealed partial class ServerCatalog(IDbContextFactory<BuilderDatabase> dat
             }
         }
 
-        if (import is not null && import.Files.FirstOrDefault(file => file.Path == "builder.json") is { Content: { } builder })
+        if (import is not null && import.Files.FirstOrDefault(file => file.Path == ProjectFiles.BuilderPath) is { Content: { } builder })
         {
             try
             {
@@ -83,7 +84,7 @@ public sealed partial class ServerCatalog(IDbContextFactory<BuilderDatabase> dat
             MemoryMb = limits.MemoryMb,
             CpuLimit = limits.Cpus,
             PidsLimit = limits.Pids,
-            RouteSecretSealed = box.Seal(Base64Url(RandomNumberGenerator.GetBytes(RouteSecretBytes))),
+            RouteSecretSealed = box.Seal(Base64Url.EncodeToString(RandomNumberGenerator.GetBytes(RouteSecretBytes))),
             CreatedAt = now,
         };
         database.Servers.Add(server);
@@ -152,7 +153,7 @@ public sealed partial class ServerCatalog(IDbContextFactory<BuilderDatabase> dat
     {
         OpenApiDraft.Parse(openApiJson);
         await RequireServerAsync(database, id, ct);
-        await RequireRoomAsync(database, id, null, Encoding.UTF8.GetByteCount(openApiJson), ct);
+        await RequireRoomAsync(database, id, ProjectFiles.OpenApiPath, Encoding.UTF8.GetByteCount(openApiJson), ct);
         var now = clock.GetUtcNow();
         var updated = await database.Drafts.Where(draft => draft.ServerId == id && draft.Revision == expectedRevision).ExecuteUpdateAsync(setters => setters
             .SetProperty(draft => draft.OpenApiJson, openApiJson)
@@ -193,7 +194,7 @@ public sealed partial class ServerCatalog(IDbContextFactory<BuilderDatabase> dat
 
         var (openApiJson, python) = OpenApiDraft.ConvertToCode(draft.OpenApiJson ?? string.Empty, toolName);
         var path = OpenApiDraft.ToolFilePath(toolName);
-        await RequireRoomAsync(database, id, path, Encoding.UTF8.GetByteCount(openApiJson) + Encoding.UTF8.GetByteCount(python), ct);
+        await RequireRoomAsync(database, id, ProjectFiles.OpenApiPath, Encoding.UTF8.GetByteCount(openApiJson) + Encoding.UTF8.GetByteCount(python), ct);
 
         await using var transaction = await database.Database.BeginTransactionAsync(ct);
         var now = clock.GetUtcNow();
@@ -437,7 +438,7 @@ public sealed partial class ServerCatalog(IDbContextFactory<BuilderDatabase> dat
 
         var model = change(BuilderDocument.Read(draft.BuilderJson));
         var json = model.IsEmpty ? null : BuilderDocument.Write(model);
-        await RequireRoomAsync(database, id, null, Encoding.UTF8.GetByteCount(json ?? string.Empty) + Encoding.UTF8.GetByteCount(draft.OpenApiJson ?? string.Empty), ct);
+        await RequireRoomAsync(database, id, ProjectFiles.BuilderPath, Encoding.UTF8.GetByteCount(json ?? string.Empty), ct);
 
         var now = clock.GetUtcNow();
         var updated = await database.Drafts.Where(candidate => candidate.ServerId == id && candidate.Revision == expectedRevision).ExecuteUpdateAsync(setters => setters
@@ -476,11 +477,13 @@ public sealed partial class ServerCatalog(IDbContextFactory<BuilderDatabase> dat
             throw new PanelException(string.Format(BuilderText.CodeToolNameTaken, clash));
     }
 
-    private static async Task RequireRoomAsync(BuilderDatabase database, Guid id, string? replacedPath, long addedBytes, CancellationToken ct)
+    private static async Task RequireRoomAsync(BuilderDatabase database, Guid id, string replacedPath, long addedBytes, CancellationToken ct)
     {
-        var otherBytes = await database.Database
-            .SqlQuery<long>($"SELECT COALESCE(SUM(LENGTH(CAST(Content AS BLOB))), 0) AS Value FROM Files WHERE ServerId = {id} AND Path <> {replacedPath ?? string.Empty}")
-            .SingleAsync(ct);
+        var otherBytes = await database.Database.SqlQuery<long>($"""
+            SELECT COALESCE((SELECT SUM(LENGTH(CAST(Content AS BLOB))) FROM Files WHERE ServerId = {id} AND Path <> {replacedPath}), 0)
+                + COALESCE((SELECT LENGTH(CAST(OpenApiJson AS BLOB)) FROM Drafts WHERE ServerId = {id} AND {replacedPath} <> {ProjectFiles.OpenApiPath}), 0)
+                + COALESCE((SELECT LENGTH(CAST(BuilderJson AS BLOB)) FROM Drafts WHERE ServerId = {id} AND {replacedPath} <> {ProjectFiles.BuilderPath}), 0) AS Value
+            """).SingleAsync(ct);
         if (otherBytes + addedBytes > ProjectFiles.MaxProjectBytes)
             throw new PanelException(BuilderText.ProjectTooLarge);
     }
@@ -500,10 +503,10 @@ public sealed partial class ServerCatalog(IDbContextFactory<BuilderDatabase> dat
             bytes += Encoding.UTF8.GetByteCount(content);
             switch (ProjectFiles.ValidatePath(path))
             {
-                case "openapi.json":
+                case ProjectFiles.OpenApiPath:
                     draft.OpenApiJson = content;
                     break;
-                case "builder.json":
+                case ProjectFiles.BuilderPath:
                     draft.BuilderJson = content;
                     break;
                 default:
@@ -544,6 +547,4 @@ public sealed partial class ServerCatalog(IDbContextFactory<BuilderDatabase> dat
         var stored = new StoredAuth(input.Kind, input.Kind == ApiAuthKind.Header ? input.HeaderName : null, input.Kind == ApiAuthKind.Basic ? input.Username?.Trim() : null, secret);
         return box.Seal(JsonSerializer.Serialize(stored));
     }
-
-    private static string Base64Url(byte[] bytes) => Convert.ToBase64String(bytes).TrimEnd('=').Replace('+', '-').Replace('/', '_');
 }

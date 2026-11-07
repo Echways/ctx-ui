@@ -15,10 +15,10 @@ public static partial class ProjectFiles
     public const long MaxProjectBytes = 16 * 1024 * 1024;
     public const int MaxArchiveEntries = 2000;
     public const string FastMcpVersion = "4.1.4";
+    public const string OpenApiPath = "openapi.json";
+    public const string BuilderPath = "builder.json";
 
     private const string ProjectRoot = "mcp/";
-    private const string OpenApiPath = "openapi.json";
-    private const string BuilderPath = "builder.json";
     private const string FastMcpPath = "fastmcp.json";
     private const string MainPath = "main.py";
     private const string PythonVersion = "3.13";

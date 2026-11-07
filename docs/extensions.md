@@ -221,7 +221,7 @@ administrator or an API key.
 ### Start-up work
 
 Implement `IExtensionInitializer` and register it. It runs once at start, before
-the server accepts requests, in its own scope.
+the server accepts requests. Initializers run one after another in one scope.
 
 ```csharp
 context.Services.AddScoped<IExtensionInitializer, ImportDefaults>();
@@ -234,7 +234,9 @@ context.AddDatabase<ReportsDatabase>();
 ```
 
 This registers the context on SQLite in `<DataDirectory>/data.db` and applies
-migrations at every start. Add the design package and a factory to create migrations:
+migrations at every start. Both the scoped context and `IDbContextFactory<TContext>`
+are available; Blazor components should take the factory and create a context per
+operation, because a component scope lives as long as the browser tab. Add the design package and a factory to create migrations:
 
 ```xml
 <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.*" PrivateAssets="all" />

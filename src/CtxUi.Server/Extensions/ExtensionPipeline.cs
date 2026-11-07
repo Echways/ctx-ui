@@ -72,14 +72,9 @@ public static class ExtensionPipeline
 
     public static async Task InitializeExtensionsAsync(IServiceProvider services, CancellationToken ct)
     {
-        int count;
-        await using (var counting = services.CreateAsyncScope())
-            count = counting.ServiceProvider.GetServices<IExtensionInitializer>().Count();
-
-        for (var index = 0; index < count; index++)
+        await using var scope = services.CreateAsyncScope();
+        foreach (var initializer in scope.ServiceProvider.GetServices<IExtensionInitializer>())
         {
-            await using var scope = services.CreateAsyncScope();
-            var initializer = scope.ServiceProvider.GetServices<IExtensionInitializer>().ElementAt(index);
             try
             {
                 await initializer.InitializeAsync(ct);

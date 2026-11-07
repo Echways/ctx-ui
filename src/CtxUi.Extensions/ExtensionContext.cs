@@ -31,7 +31,7 @@ public sealed class ExtensionContext
     public ExtensionContext AddDatabase<TContext>() where TContext : DbContext
     {
         var connection = new SqliteConnectionStringBuilder { DataSource = Path.Combine(DataDirectory, DatabaseFile) }.ToString();
-        Services.AddDbContext<TContext>(options => options.UseSqlite(connection));
+        Services.AddDbContextFactory<TContext>(options => options.UseSqlite(connection));
         Services.AddScoped<IExtensionInitializer, DatabaseInitializer<TContext>>();
         return this;
     }

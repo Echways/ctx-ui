@@ -4,7 +4,6 @@ using CtxUi.Builder.Runner;
 using CtxUi.Extensions;
 using Enfilade;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
@@ -18,7 +17,7 @@ public sealed class PublishQueue : BackgroundService, IExtensionInitializer
     private readonly PublishTimings _timings;
     private readonly RunnerSettings _settings;
     private readonly ReleaseArchives _archives;
-    private readonly IServiceScopeFactory _scopes;
+    private readonly IDbContextFactory<BuilderDatabase> _databases;
     private readonly ILogger<PublishQueue> _log;
     private readonly Channel<Job> _jobs = Channel.CreateUnbounded<Job>();
     private readonly object _gate = new();
@@ -28,13 +27,13 @@ public sealed class PublishQueue : BackgroundService, IExtensionInitializer
     private readonly HashSet<Guid> _deleting = [];
     private readonly HashSet<Guid> _connecting = [];
 
-    public PublishQueue(PublishPipeline pipeline, RunnerSettings settings, PublishTimings timings, ReleaseArchives archives, IServiceScopeFactory scopes, ILogger<PublishQueue> log)
+    public PublishQueue(PublishPipeline pipeline, RunnerSettings settings, PublishTimings timings, ReleaseArchives archives, IDbContextFactory<BuilderDatabase> databases, ILogger<PublishQueue> log)
     {
         _pipeline = pipeline;
         _settings = settings;
         _timings = timings;
         _archives = archives;
-        _scopes = scopes;
+        _databases = databases;
         _log = log;
         _pipeline.Changed += Raise;
     }
@@ -167,8 +166,7 @@ public sealed class PublishQueue : BackgroundService, IExtensionInitializer
     {
         try
         {
-            await using var scope = _scopes.CreateAsyncScope();
-            var database = scope.ServiceProvider.GetRequiredService<BuilderDatabase>();
+            await using var database = await _databases.CreateDbContextAsync(ct);
             var servers = await database.Servers.AsNoTracking().Where(server => server.ActiveReleaseId != null).Select(server => server.Id).ToListAsync(ct);
             foreach (var serverId in servers.Where(serverId => !IsBusy(serverId)))
                 TryEnqueue(serverId, token => _pipeline.RepairActivationAsync(serverId, token));
@@ -190,8 +188,7 @@ public sealed class PublishQueue : BackgroundService, IExtensionInitializer
 
     private async Task<(bool Active, bool Connected)> ConnectionStateAsync(Guid serverId, CancellationToken ct)
     {
-        await using var scope = _scopes.CreateAsyncScope();
-        var database = scope.ServiceProvider.GetRequiredService<BuilderDatabase>();
+        await using var database = await _databases.CreateDbContextAsync(ct);
         var state = await database.Servers.AsNoTracking().Where(server => server.Id == serverId)
             .Select(server => new { server.ActiveReleaseId, server.InboundId }).SingleOrDefaultAsync(ct);
         return (state?.ActiveReleaseId is not null, state?.InboundId is not null);

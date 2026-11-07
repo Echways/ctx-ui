@@ -6,7 +6,7 @@ namespace CtxUi.Builder.Publishing;
 
 public sealed record ToolTarget(int Number, int? Route, bool IsCandidate);
 
-public sealed class ToolTestRunner(IToolInspector inspector, ReleaseReader releases)
+public sealed class ToolTestRunner(IToolInspector inspector, ReleaseCatalog releases)
 {
     private static readonly TimeSpan CallTimeout = TimeSpan.FromSeconds(60);
 

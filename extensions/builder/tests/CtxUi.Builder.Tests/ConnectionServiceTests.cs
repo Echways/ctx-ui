@@ -1,7 +1,9 @@
 using CtxUi.Builder.Contracts;
+using CtxUi.Builder.Data;
 using CtxUi.Builder.Publishing;
 using CtxUi.Builder.Servers;
 using Enfilade;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace CtxUi.Builder.Tests;
@@ -449,11 +451,7 @@ public sealed class ConnectionServiceTests
         var inbound = await harness.ConnectAsync(server, "weather-mcp");
         var fresh = new ConnectedInbounds();
 
-        await harness.WithScopeAsync(async services =>
-        {
-            await new ConnectedInboundsLoader(fresh, services.GetRequiredService<IServiceScopeFactory>()).InitializeAsync(default);
-            return true;
-        });
+        await new ConnectedInboundsLoader(fresh, harness.Services.GetRequiredService<IDbContextFactory<BuilderDatabase>>()).InitializeAsync(default);
 
         Assert.True(fresh.Contains(inbound.Id));
     }

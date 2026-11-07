@@ -11,7 +11,7 @@ using Microsoft.Extensions.Logging;
 namespace CtxUi.Builder.Servers;
 
 public sealed class ConnectionService(
-    BuilderDatabase database,
+    IDbContextFactory<BuilderDatabase> databases,
     IPanelData data,
     RunnerClient runner,
     RunnerSettings settings,
@@ -51,6 +51,7 @@ public sealed class ConnectionService(
     public async Task<Guid?> FindServerIdAsync(InboundSummary inbound, CancellationToken ct)
     {
         var id = inbound.Id.ToString();
+        await using var database = await databases.CreateDbContextAsync(ct);
         var found = await database.Servers.AsNoTracking().Where(server => server.InboundId == id).Select(server => (Guid?)server.Id).FirstOrDefaultAsync(ct);
         if (found is null)
             connected.Remove(inbound.Id);
@@ -71,6 +72,7 @@ public sealed class ConnectionService(
                 connected.Remove(inbound.Id);
             }
 
+            await using var database = await databases.CreateDbContextAsync(ct);
             var releases = await database.Releases.AsNoTracking().Where(release => release.ServerId == serverId).Select(release => release.Id).ToListAsync(ct);
             await database.Servers.Where(known => known.Id == serverId).ExecuteDeleteAsync(ct);
             RemoveArchives(releases);
@@ -101,6 +103,7 @@ public sealed class ConnectionService(
             if (clients.Count > 0)
                 await data.SetInboundClientsAsync(inbound.Slug, clients, ct);
             var previous = server.InboundId;
+            await using var database = await databases.CreateDbContextAsync(ct);
             var updated = await database.Servers.Where(known => known.Id == serverId && known.InboundId == previous)
                 .ExecuteUpdateAsync(setters => setters.SetProperty(known => known.InboundId, inbound.Id.ToString()), ct);
             if (updated == 0)
@@ -161,9 +164,12 @@ public sealed class ConnectionService(
     private static InboundSummary? OwnInbound(BuilderServer server, IReadOnlyList<InboundSummary> inbounds) =>
         server.InboundId is null ? null : inbounds.FirstOrDefault(inbound => inbound.Id.ToString() == server.InboundId);
 
-    private async Task<BuilderServer> FindServerAsync(Guid serverId, CancellationToken ct) =>
-        await database.Servers.AsNoTracking().SingleOrDefaultAsync(server => server.Id == serverId, ct)
-        ?? throw new PanelException(BuilderText.ServerNotFound);
+    private async Task<BuilderServer> FindServerAsync(Guid serverId, CancellationToken ct)
+    {
+        await using var database = await databases.CreateDbContextAsync(ct);
+        return await database.Servers.AsNoTracking().SingleOrDefaultAsync(server => server.Id == serverId, ct)
+            ?? throw new PanelException(BuilderText.ServerNotFound);
+    }
 
     private void RequireConfigured()
     {

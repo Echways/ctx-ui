@@ -34,7 +34,7 @@ public sealed class BuilderEntry : IPanelExtension
                 client.DefaultRequestHeaders.TryAddWithoutValidation(HeaderNames.Authorization, $"Bearer {settings.Token}");
         });
         context.Services.AddSingleton<SecretBox>();
-        context.Services.AddScoped<ServerCatalog>();
+        context.Services.AddSingleton<ServerCatalog>();
         context.Services.AddScoped<PendingImports>();
         context.Services.AddSingleton(connected);
         context.Services.AddSingleton<IExtensionInitializer, ConnectedInboundsLoader>();

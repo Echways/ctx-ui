@@ -19,22 +19,16 @@ public sealed record ReleaseView(
     bool CanRollback,
     string? Error,
     string BuildLog,
-    string? FastMcpVersion,
     IReadOnlyList<string> Tools,
     IReadOnlyList<string> RemovedTools);
 
-public sealed class ReleaseCatalog(BuilderDatabase database, RunnerSettings settings, RunnerClient runner)
+public sealed class ReleaseCatalog(IDbContextFactory<BuilderDatabase> databases, RunnerSettings settings, RunnerClient runner)
 {
     private static readonly TimeSpan RunnerTimeout = TimeSpan.FromSeconds(5);
 
     public async Task<ServerStatus> StatusAsync(Guid serverId, CancellationToken ct)
     {
-        var activeId = await database.Servers.AsNoTracking().Where(server => server.Id == serverId).Select(server => server.ActiveReleaseId).SingleOrDefaultAsync(ct);
-        var numbers = await database.Releases.AsNoTracking().Where(release => release.ServerId == serverId && (release.Id == activeId || release.Status == ReleaseState.Building))
-            .Select(release => new { release.Id, release.Number, release.Status }).ToListAsync(ct);
-        var active = numbers.Where(release => release.Id == activeId).Select(release => (int?)release.Number).SingleOrDefault();
-        var building = numbers.Where(release => release.Status == ReleaseState.Building).Select(release => (int?)release.Number).FirstOrDefault();
-
+        var (active, building) = await NumbersAsync(serverId, ct);
         if (building is not null)
             return new ServerStatus(ServerRunState.Building, active, building);
         if (active is null)
@@ -45,6 +39,7 @@ public sealed class ReleaseCatalog(BuilderDatabase database, RunnerSettings sett
 
     public async Task<ToolTarget?> TestTargetAsync(Guid serverId, CancellationToken ct)
     {
+        await using var database = await databases.CreateDbContextAsync(ct);
         var candidate = await database.Releases.AsNoTracking()
             .Where(release => release.ServerId == serverId && release.Status == ReleaseState.Candidate)
             .OrderByDescending(release => release.Number)
@@ -63,6 +58,7 @@ public sealed class ReleaseCatalog(BuilderDatabase database, RunnerSettings sett
 
     public async Task<IReadOnlyList<ReleaseView>> ListAsync(Guid serverId, CancellationToken ct)
     {
+        await using var database = await databases.CreateDbContextAsync(ct);
         var activeId = await database.Servers.AsNoTracking().Where(server => server.Id == serverId).Select(server => server.ActiveReleaseId).SingleOrDefaultAsync(ct);
         var releases = await database.Releases.AsNoTracking().Where(release => release.ServerId == serverId).OrderBy(release => release.Number).ToListAsync(ct);
 
@@ -84,13 +80,33 @@ public sealed class ReleaseCatalog(BuilderDatabase database, RunnerSettings sett
                 !isActive && release.Status is ReleaseState.Retired or ReleaseState.Candidate,
                 release.Error,
                 release.BuildLog ?? string.Empty,
-                release.FastMcpVersion,
                 tools,
                 removed));
         }
 
         views.Reverse();
         return views;
+    }
+
+    public async Task<string?> LatestBuildLogAsync(Guid serverId, CancellationToken ct)
+    {
+        await using var database = await databases.CreateDbContextAsync(ct);
+        return await database.Releases.AsNoTracking()
+            .Where(release => release.ServerId == serverId && release.BuildLog != null && release.BuildLog != "")
+            .OrderByDescending(release => release.Number)
+            .Select(release => release.BuildLog)
+            .FirstOrDefaultAsync(ct);
+    }
+
+    private async Task<(int? Active, int? Building)> NumbersAsync(Guid serverId, CancellationToken ct)
+    {
+        await using var database = await databases.CreateDbContextAsync(ct);
+        var activeId = await database.Servers.AsNoTracking().Where(server => server.Id == serverId).Select(server => server.ActiveReleaseId).SingleOrDefaultAsync(ct);
+        var numbers = await database.Releases.AsNoTracking().Where(release => release.ServerId == serverId && (release.Id == activeId || release.Status == ReleaseState.Building))
+            .Select(release => new { release.Id, release.Number, release.Status }).ToListAsync(ct);
+        return (
+            numbers.Where(release => release.Id == activeId).Select(release => (int?)release.Number).SingleOrDefault(),
+            numbers.Where(release => release.Status == ReleaseState.Building).Select(release => (int?)release.Number).FirstOrDefault());
     }
 
     private async Task<ServerRunState> RunnerRoutesAsync(Guid serverId, int active, CancellationToken ct)

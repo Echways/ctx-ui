@@ -5,7 +5,6 @@ using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using CtxUi.Builder.Contracts;
-using CtxUi.Builder.Data;
 using CtxUi.Builder.Publishing;
 using CtxUi.Builder.Runner;
 using CtxUi.Builder.Servers;
@@ -14,7 +13,6 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Hosting.Server.Features;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace CtxUi.Builder.Tests;
@@ -37,10 +35,9 @@ public sealed class BuilderEndpointsTests
         {
             var builder = WebApplication.CreateBuilder();
             builder.WebHost.UseUrls("http://127.0.0.1:0");
-            builder.Services.AddDbContext<BuilderDatabase>(options => options.UseSqlite($"Data Source={Path.Combine(harness.DataDirectory, "data.db")}"));
-            builder.Services.AddScoped(provider => new ServerCatalog(provider.GetRequiredService<BuilderDatabase>(), harness.Box, TimeProvider.System));
+            builder.Services.AddSingleton(harness.Services.GetRequiredService<ServerCatalog>());
             builder.Services.AddSingleton(harness.Services.GetRequiredService<PublishQueue>());
-            builder.Services.AddSingleton(harness.Services.GetRequiredService<ReleaseReader>());
+            builder.Services.AddTransient(_ => harness.Services.GetRequiredService<ReleaseCatalog>());
             builder.Services.AddSingleton(harness.Services.GetRequiredService<RunnerSettings>());
             var app = builder.Build();
             BuilderEndpoints.Map(app);

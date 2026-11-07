@@ -1,6 +1,6 @@
 @implements IDisposable
 @inject PublishQueue Queue
-@inject ReleaseReader Reader
+@inject ReleaseCatalog Releases
 
 @if (_releases is null)
 {
@@ -60,7 +60,7 @@ else
 
     public void Dispose() => Queue.Changed -= OnChanged;
 
-    private async Task LoadAsync() => _releases = await Reader.ListAsync(ServerId, CancellationToken.None);
+    private async Task LoadAsync() => _releases = await Releases.ListAsync(ServerId, CancellationToken.None);
 
     private void OnChanged(Guid serverId)
     {

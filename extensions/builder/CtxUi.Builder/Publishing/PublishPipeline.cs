@@ -14,6 +14,8 @@ namespace CtxUi.Builder.Publishing;
 
 public sealed class PublishPipeline(
     IServiceScopeFactory scopes,
+    IDbContextFactory<BuilderDatabase> databases,
+    ServerCatalog catalog,
     RunnerSettings settings,
     ReleaseArchives archives,
     IToolInspector inspector,
@@ -33,8 +35,6 @@ public sealed class PublishPipeline(
 
         public RunnerClient Runner { get; } = scope.ServiceProvider.GetRequiredService<RunnerClient>();
 
-        public ServerCatalog Catalog { get; } = scope.ServiceProvider.GetRequiredService<ServerCatalog>();
-
         public ValueTask DisposeAsync() => scope.DisposeAsync();
     }
 
@@ -46,14 +46,14 @@ public sealed class PublishPipeline(
         if (await HasBuildingReleaseAsync(run, ct))
             throw new PanelException(BuilderText.PublishBusy);
 
-        var draft = await run.Catalog.DraftAsync(serverId, ct);
+        var draft = await catalog.DraftAsync(serverId, ct);
         if (draft.OpenApiJson is not null && string.IsNullOrWhiteSpace(draft.BaseUrl))
             throw new PanelException(BuilderText.PublishBaseUrlRequired);
 
         ServerState state;
         try
         {
-            await run.Runner.PutServerAsync(serverId, (await run.Catalog.LaunchAsync(serverId, null, ct)).Spec, ct);
+            await run.Runner.PutServerAsync(serverId, (await catalog.LaunchAsync(serverId, null, ct)).Spec, ct);
             state = await run.Runner.ServerAsync(serverId, ct);
         }
         catch (RunnerException failure)
@@ -108,9 +108,9 @@ public sealed class PublishPipeline(
 
     public async Task MarkInterruptedAsync(CancellationToken ct)
     {
-        await using var scope = scopes.CreateAsyncScope();
-        var database = scope.ServiceProvider.GetRequiredService<BuilderDatabase>();
-        var building = await database.Releases.AsNoTracking().Where(release => release.Status == ReleaseState.Building).OrderBy(release => release.ServerId).ToListAsync(ct);
+        List<Release> building;
+        await using (var database = await databases.CreateDbContextAsync(ct))
+            building = await database.Releases.AsNoTracking().Where(release => release.Status == ReleaseState.Building).OrderBy(release => release.ServerId).ToListAsync(ct);
         var runnerReachable = settings.IsComplete;
         foreach (var release in building)
         {
@@ -252,7 +252,7 @@ public sealed class PublishPipeline(
     private async Task<IReadOnlyList<ToolInfo>> StartAndCheckAsync(Run run, Release release, CancellationToken ct)
     {
         var number = release.Number;
-        var launch = await run.Catalog.LaunchAsync(run.ServerId, release.BaseUrl, ct);
+        var launch = await catalog.LaunchAsync(run.ServerId, release.BaseUrl, ct);
         await run.Runner.PutServerAsync(run.ServerId, launch.Spec, ct);
         await SendAsync(run, launch.Spec, () => run.Runner.StartReleaseAsync(run.ServerId, number, launch.Start, ct), ct);
         var status = await PollAsync(run, number, status => status.State is ReleaseState.Candidate or ReleaseState.Failed, timings.StartTimeout, BuilderText.StartTimedOut, false, ct);
@@ -289,7 +289,7 @@ public sealed class PublishPipeline(
 
     private async Task<ServerLaunch> PutSpecAsync(Run run, CancellationToken ct)
     {
-        var launch = await run.Catalog.LaunchAsync(run.ServerId, null, ct);
+        var launch = await catalog.LaunchAsync(run.ServerId, null, ct);
         await run.Runner.PutServerAsync(run.ServerId, launch.Spec, ct);
         return launch;
     }

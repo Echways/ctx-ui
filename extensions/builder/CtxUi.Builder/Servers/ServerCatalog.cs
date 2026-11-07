@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CtxUi.Builder.Servers;
 
-public sealed partial class ServerCatalog(BuilderDatabase database, SecretBox box, TimeProvider clock)
+public sealed partial class ServerCatalog(IDbContextFactory<BuilderDatabase> databases, SecretBox box, TimeProvider clock)
 {
     private const int RouteSecretBytes = 32;
     private const int MinimumMemoryMb = 6;
@@ -56,6 +56,7 @@ public sealed partial class ServerCatalog(BuilderDatabase database, SecretBox bo
             throw new PanelException(BuilderText.SlugInvalid);
         if (string.IsNullOrWhiteSpace(name))
             throw new PanelException(BuilderText.NameRequired);
+        await using var database = await databases.CreateDbContextAsync(ct);
         if (await database.Servers.AnyAsync(server => server.Slug == slug, ct))
             throw new PanelException(BuilderText.SlugTaken);
 
@@ -105,41 +106,39 @@ public sealed partial class ServerCatalog(BuilderDatabase database, SecretBox bo
         }
         catch (DbUpdateException)
         {
-            database.ChangeTracker.Clear();
-            if (await database.Servers.AnyAsync(other => other.Slug == slug, ct))
+            if (await SlugExistsAsync(slug, ct))
                 throw new PanelException(BuilderText.SlugTaken);
             throw;
         }
 
-        database.ChangeTracker.Clear();
-
         return server;
     }
 
-    public async Task<IReadOnlyList<BuilderServer>> ListAsync(CancellationToken ct) =>
-        await database.Servers.AsNoTracking().OrderBy(server => server.Slug).ToListAsync(ct);
+    public async Task<IReadOnlyList<BuilderServer>> ListAsync(CancellationToken ct)
+    {
+        await using var database = await databases.CreateDbContextAsync(ct);
+        return await database.Servers.AsNoTracking().OrderBy(server => server.Slug).ToListAsync(ct);
+    }
 
-    public async Task<ServerDraft> DraftAsync(Guid id, CancellationToken ct) =>
-        await database.Drafts.AsNoTracking().Include(draft => draft.Files).SingleOrDefaultAsync(draft => draft.ServerId == id, ct)
-        ?? throw new PanelException(BuilderText.ServerNotFound);
+    public async Task<ServerDraft> DraftAsync(Guid id, CancellationToken ct)
+    {
+        await using var database = await databases.CreateDbContextAsync(ct);
+        return await DraftAsync(database, id, ct);
+    }
 
     public async Task<long> SaveFileAsync(Guid id, string path, string content, long expectedRevision, CancellationToken ct)
     {
         if (!path.StartsWith(ProjectRoot, StringComparison.Ordinal))
             throw new PanelException(BuilderText.PathInvalid);
         path = ProjectPath(path);
-        await RequireServerAsync(id, ct);
-        await RequireNoFormToolClashAsync(id, path, content, ct);
-
-        var otherBytes = await database.Database
-            .SqlQuery<long>($"SELECT COALESCE(SUM(LENGTH(CAST(Content AS BLOB))), 0) AS Value FROM Files WHERE ServerId = {id} AND Path <> {path}")
-            .SingleAsync(ct);
-        if (otherBytes + Encoding.UTF8.GetByteCount(content) > ProjectFiles.MaxProjectBytes)
-            throw new PanelException(BuilderText.ProjectTooLarge);
+        await using var database = await databases.CreateDbContextAsync(ct);
+        await RequireServerAsync(database, id, ct);
+        await RequireNoFormToolClashAsync(database, id, path, content, ct);
+        await RequireRoomAsync(database, id, path, Encoding.UTF8.GetByteCount(content), ct);
 
         var revision = expectedRevision + 1;
         if (expectedRevision == 0)
-            await InsertFileAsync(id, path, content, ct);
+            await InsertFileAsync(database, id, path, content, ct);
         else
         {
             var updated = await database.Files
@@ -157,9 +156,15 @@ public sealed partial class ServerCatalog(BuilderDatabase database, SecretBox bo
 
     public async Task<long> SaveOpenApiAsync(Guid id, string openApiJson, long expectedRevision, CancellationToken ct)
     {
+        await using var database = await databases.CreateDbContextAsync(ct);
+        return await SaveOpenApiAsync(database, id, openApiJson, expectedRevision, ct);
+    }
+
+    private async Task<long> SaveOpenApiAsync(BuilderDatabase database, Guid id, string openApiJson, long expectedRevision, CancellationToken ct)
+    {
         OpenApiDraft.Parse(openApiJson);
-        await RequireServerAsync(id, ct);
-        await RequireRoomAsync(id, null, Encoding.UTF8.GetByteCount(openApiJson), ct);
+        await RequireServerAsync(database, id, ct);
+        await RequireRoomAsync(database, id, null, Encoding.UTF8.GetByteCount(openApiJson), ct);
         var now = clock.GetUtcNow();
         var updated = await database.Drafts.Where(draft => draft.ServerId == id && draft.Revision == expectedRevision).ExecuteUpdateAsync(setters => setters
             .SetProperty(draft => draft.OpenApiJson, openApiJson)
@@ -170,34 +175,37 @@ public sealed partial class ServerCatalog(BuilderDatabase database, SecretBox bo
 
     public async Task<long> SaveFormToolAsync(Guid id, FormTool tool, bool isNew, long expectedRevision, CancellationToken ct)
     {
-        var draft = await DraftAsync(id, ct);
+        await using var database = await databases.CreateDbContextAsync(ct);
+        var draft = await DraftAsync(database, id, ct);
         if (draft.Revision != expectedRevision)
             throw new DraftConflictException(BuilderText.DraftChangedElsewhere);
 
         var document = draft.OpenApiJson ?? string.Empty;
         if (CodeToolNames.From(draft.Files.Select(file => (file.Path, file.Content))).Contains(tool.Name) || (isNew && OpenApiDraft.Names(document).Contains(tool.Name)))
             throw new PanelException(string.Format(BuilderText.ToolNameTaken, tool.Name));
-        return await SaveOpenApiAsync(id, OpenApiDraft.Upsert(document, tool), expectedRevision, ct);
+        return await SaveOpenApiAsync(database, id, OpenApiDraft.Upsert(document, tool), expectedRevision, ct);
     }
 
     public async Task<long> DeleteFormToolAsync(Guid id, string toolName, long expectedRevision, CancellationToken ct)
     {
-        var draft = await DraftAsync(id, ct);
+        await using var database = await databases.CreateDbContextAsync(ct);
+        var draft = await DraftAsync(database, id, ct);
         if (draft.Revision != expectedRevision)
             throw new DraftConflictException(BuilderText.DraftChangedElsewhere);
-        return await SaveOpenApiAsync(id, OpenApiDraft.Remove(draft.OpenApiJson ?? string.Empty, toolName), expectedRevision, ct);
+        return await SaveOpenApiAsync(database, id, OpenApiDraft.Remove(draft.OpenApiJson ?? string.Empty, toolName), expectedRevision, ct);
     }
 
     public async Task<(string Path, long Revision)> ConvertToCodeAsync(Guid id, string toolName, long expectedRevision, CancellationToken ct)
     {
-        await RequireServerAsync(id, ct);
+        await using var database = await databases.CreateDbContextAsync(ct);
+        await RequireServerAsync(database, id, ct);
         var draft = await database.Drafts.AsNoTracking().SingleAsync(draft => draft.ServerId == id, ct);
         if (draft.Revision != expectedRevision)
             throw new DraftConflictException(BuilderText.DraftChangedElsewhere);
 
         var (openApiJson, python) = OpenApiDraft.ConvertToCode(draft.OpenApiJson ?? string.Empty, toolName);
         var path = OpenApiDraft.ToolFilePath(toolName);
-        await RequireRoomAsync(id, path, Encoding.UTF8.GetByteCount(openApiJson) + Encoding.UTF8.GetByteCount(python), ct);
+        await RequireRoomAsync(database, id, path, Encoding.UTF8.GetByteCount(openApiJson) + Encoding.UTF8.GetByteCount(python), ct);
 
         await using var transaction = await database.Database.BeginTransactionAsync(ct);
         var now = clock.GetUtcNow();
@@ -210,7 +218,7 @@ public sealed partial class ServerCatalog(BuilderDatabase database, SecretBox bo
 
         try
         {
-            await InsertFileAsync(id, path, python, ct);
+            await InsertFileAsync(database, id, path, python, ct);
         }
         catch (DraftConflictException)
         {
@@ -225,13 +233,14 @@ public sealed partial class ServerCatalog(BuilderDatabase database, SecretBox bo
     {
         if (selected.Count == 0)
             throw new PanelException(BuilderText.ImportNothingSelected);
-        var draft = await DraftAsync(id, ct);
+        await using var database = await databases.CreateDbContextAsync(ct);
+        var draft = await DraftAsync(database, id, ct);
         if (draft.Revision != expectedRevision)
             throw new DraftConflictException(BuilderText.DraftChangedElsewhere);
 
         var reserved = CodeToolNames.From(draft.Files.Select(file => (file.Path, file.Content)));
         var merged = OpenApiDraft.Merge(draft.OpenApiJson ?? string.Empty, OpenApiImport.Select(api, selected), reserved);
-        return await SaveOpenApiAsync(id, merged, expectedRevision, ct);
+        return await SaveOpenApiAsync(database, id, merged, expectedRevision, ct);
     }
 
     public Task<long> SaveResourceAsync(Guid id, BuilderResource resource, string? replacing, long expectedRevision, CancellationToken ct) =>
@@ -258,7 +267,8 @@ public sealed partial class ServerCatalog(BuilderDatabase database, SecretBox bo
             throw new PanelException(BuilderText.SecretNameInvalid);
         if (string.IsNullOrEmpty(value))
             throw new PanelException(BuilderText.SecretValueRequired);
-        await RequireServerAsync(id, ct);
+        await using var database = await databases.CreateDbContextAsync(ct);
+        await RequireServerAsync(database, id, ct);
 
         var sealedValue = box.Seal(value);
         var updated = await database.Secrets
@@ -269,7 +279,6 @@ public sealed partial class ServerCatalog(BuilderDatabase database, SecretBox bo
 
         database.Secrets.Add(new ServerSecret { ServerId = id, Name = name, ValueSealed = sealedValue });
         await database.SaveChangesAsync(ct);
-        database.ChangeTracker.Clear();
     }
 
     public async Task SetAccessAsync(Guid id, NetworkAccess access, ServerLimits limits, CancellationToken ct)
@@ -279,7 +288,8 @@ public sealed partial class ServerCatalog(BuilderDatabase database, SecretBox bo
         if (limits.MemoryMb < MinimumMemoryMb || !double.IsFinite(limits.Cpus) || limits.Cpus < MinimumCpus || limits.Pids < 1)
             throw new PanelException(BuilderText.LimitsInvalid);
 
-        await RequireServerAsync(id, ct);
+        await using var database = await databases.CreateDbContextAsync(ct);
+        await RequireServerAsync(database, id, ct);
         await database.Servers.Where(server => server.Id == id).ExecuteUpdateAsync(setters => setters
             .SetProperty(server => server.NetworkAccess, access)
             .SetProperty(server => server.MemoryMb, limits.MemoryMb)
@@ -289,6 +299,7 @@ public sealed partial class ServerCatalog(BuilderDatabase database, SecretBox bo
 
     public async Task<ServerSettingsView> SettingsAsync(Guid id, CancellationToken ct)
     {
+        await using var database = await databases.CreateDbContextAsync(ct);
         var server = await database.Servers.AsNoTracking().SingleOrDefaultAsync(server => server.Id == id, ct)
             ?? throw new PanelException(BuilderText.ServerNotFound);
         var draft = await database.Drafts.AsNoTracking().SingleAsync(draft => draft.ServerId == id, ct);
@@ -313,7 +324,8 @@ public sealed partial class ServerCatalog(BuilderDatabase database, SecretBox bo
     public async Task<long> SetApiAsync(Guid id, string? baseUrl, ApiAuthInput auth, long expectedRevision, CancellationToken ct)
     {
         var uri = ParseBaseUrl(baseUrl);
-        await RequireServerAsync(id, ct);
+        await using var database = await databases.CreateDbContextAsync(ct);
+        await RequireServerAsync(database, id, ct);
         var sealedAuth = SealAuth(auth, OpenAuth((await database.Drafts.AsNoTracking().SingleAsync(draft => draft.ServerId == id, ct)).ApiAuthSealed));
         var address = uri?.ToString().TrimEnd('/');
         var now = clock.GetUtcNow();
@@ -338,7 +350,8 @@ public sealed partial class ServerCatalog(BuilderDatabase database, SecretBox bo
             throw new PanelException(failure.Message);
         }
 
-        await RequireServerAsync(id, ct);
+        await using var database = await databases.CreateDbContextAsync(ct);
+        await RequireServerAsync(database, id, ct);
         var joined = lines.Count == 0 ? null : string.Join('\n', lines);
         var now = clock.GetUtcNow();
         var updated = await database.Drafts.Where(draft => draft.ServerId == id && draft.SettingsRevision == expectedRevision).ExecuteUpdateAsync(setters => setters
@@ -366,6 +379,7 @@ public sealed partial class ServerCatalog(BuilderDatabase database, SecretBox bo
 
     public async Task<string> RouteSecretAsync(Guid id, CancellationToken ct)
     {
+        await using var database = await databases.CreateDbContextAsync(ct);
         var server = await database.Servers.AsNoTracking().SingleOrDefaultAsync(server => server.Id == id, ct)
             ?? throw new PanelException(BuilderText.ServerNotFound);
         return box.Open(server.RouteSecretSealed);
@@ -373,6 +387,7 @@ public sealed partial class ServerCatalog(BuilderDatabase database, SecretBox bo
 
     public async Task<ServerLaunch> LaunchAsync(Guid id, string? baseUrl, CancellationToken ct)
     {
+        await using var database = await databases.CreateDbContextAsync(ct);
         var server = await database.Servers.AsNoTracking().SingleOrDefaultAsync(server => server.Id == id, ct)
             ?? throw new PanelException(BuilderText.ServerNotFound);
         var draft = await database.Drafts.AsNoTracking().SingleAsync(draft => draft.ServerId == id, ct);
@@ -393,9 +408,10 @@ public sealed partial class ServerCatalog(BuilderDatabase database, SecretBox bo
 
     public async Task<ProjectExport> ExportAsync(Guid id, CancellationToken ct)
     {
+        await using var database = await databases.CreateDbContextAsync(ct);
         var server = await database.Servers.AsNoTracking().SingleOrDefaultAsync(server => server.Id == id, ct)
             ?? throw new PanelException(BuilderText.ServerNotFound);
-        var draft = await DraftAsync(id, ct);
+        var draft = await DraftAsync(database, id, ct);
         try
         {
             return new ProjectExport($"{server.Slug}.tar.gz", await ProjectFiles.SnapshotAsync(draft, draft.Files, ProjectFiles.FastMcpVersion, ct));
@@ -416,7 +432,17 @@ public sealed partial class ServerCatalog(BuilderDatabase database, SecretBox bo
     private StoredAuth? OpenAuth(string? sealedAuth) =>
         sealedAuth is null ? null : JsonSerializer.Deserialize<StoredAuth>(box.Open(sealedAuth));
 
-    private async Task InsertFileAsync(Guid id, string path, string content, CancellationToken ct)
+    private static async Task<ServerDraft> DraftAsync(BuilderDatabase database, Guid id, CancellationToken ct) =>
+        await database.Drafts.AsNoTracking().Include(draft => draft.Files).SingleOrDefaultAsync(draft => draft.ServerId == id, ct)
+        ?? throw new PanelException(BuilderText.ServerNotFound);
+
+    private async Task<bool> SlugExistsAsync(string slug, CancellationToken ct)
+    {
+        await using var database = await databases.CreateDbContextAsync(ct);
+        return await database.Servers.AnyAsync(server => server.Slug == slug, ct);
+    }
+
+    private static async Task InsertFileAsync(BuilderDatabase database, Guid id, string path, string content, CancellationToken ct)
     {
         database.Files.Add(new DraftFile { ServerId = id, Path = path, Content = content, Revision = 1 });
         try
@@ -427,22 +453,19 @@ public sealed partial class ServerCatalog(BuilderDatabase database, SecretBox bo
         {
             throw new DraftConflictException(BuilderText.DraftChangedElsewhere);
         }
-        finally
-        {
-            database.ChangeTracker.Clear();
-        }
     }
 
     private async Task<long> ChangeBuilderDocumentAsync(Guid id, Func<BuilderDocumentModel, BuilderDocumentModel> change, long expectedRevision, CancellationToken ct)
     {
-        await RequireServerAsync(id, ct);
+        await using var database = await databases.CreateDbContextAsync(ct);
+        await RequireServerAsync(database, id, ct);
         var draft = await database.Drafts.AsNoTracking().SingleAsync(draft => draft.ServerId == id, ct);
         if (draft.Revision != expectedRevision)
             throw new DraftConflictException(BuilderText.DraftChangedElsewhere);
 
         var model = change(BuilderDocument.Read(draft.BuilderJson));
         var json = model.IsEmpty ? null : BuilderDocument.Write(model);
-        await RequireRoomAsync(id, null, Encoding.UTF8.GetByteCount(json ?? string.Empty) + Encoding.UTF8.GetByteCount(draft.OpenApiJson ?? string.Empty), ct);
+        await RequireRoomAsync(database, id, null, Encoding.UTF8.GetByteCount(json ?? string.Empty) + Encoding.UTF8.GetByteCount(draft.OpenApiJson ?? string.Empty), ct);
 
         var now = clock.GetUtcNow();
         var updated = await database.Drafts.Where(candidate => candidate.ServerId == id && candidate.Revision == expectedRevision).ExecuteUpdateAsync(setters => setters
@@ -452,7 +475,7 @@ public sealed partial class ServerCatalog(BuilderDatabase database, SecretBox bo
         return updated == 0 ? throw new DraftConflictException(BuilderText.DraftChangedElsewhere) : expectedRevision + 1;
     }
 
-    private async Task RequireNoFormToolClashAsync(Guid id, string path, string content, CancellationToken ct)
+    private static async Task RequireNoFormToolClashAsync(BuilderDatabase database, Guid id, string path, string content, CancellationToken ct)
     {
         if (!path.EndsWith(".py", StringComparison.OrdinalIgnoreCase))
             return;
@@ -481,7 +504,7 @@ public sealed partial class ServerCatalog(BuilderDatabase database, SecretBox bo
             throw new PanelException(string.Format(BuilderText.CodeToolNameTaken, clash));
     }
 
-    private async Task RequireRoomAsync(Guid id, string? replacedPath, long addedBytes, CancellationToken ct)
+    private static async Task RequireRoomAsync(BuilderDatabase database, Guid id, string? replacedPath, long addedBytes, CancellationToken ct)
     {
         var otherBytes = await database.Database
             .SqlQuery<long>($"SELECT COALESCE(SUM(LENGTH(CAST(Content AS BLOB))), 0) AS Value FROM Files WHERE ServerId = {id} AND Path <> {replacedPath ?? string.Empty}")
@@ -490,7 +513,7 @@ public sealed partial class ServerCatalog(BuilderDatabase database, SecretBox bo
             throw new PanelException(BuilderText.ProjectTooLarge);
     }
 
-    private async Task RequireServerAsync(Guid id, CancellationToken ct)
+    private static async Task RequireServerAsync(BuilderDatabase database, Guid id, CancellationToken ct)
     {
         if (!await database.Servers.AnyAsync(server => server.Id == id, ct))
             throw new PanelException(BuilderText.ServerNotFound);

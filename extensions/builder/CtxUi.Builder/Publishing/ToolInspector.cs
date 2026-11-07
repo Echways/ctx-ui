@@ -5,16 +5,14 @@ using CtxUi.Builder.Contracts;
 using CtxUi.Builder.Runner;
 using CtxUi.Builder.Servers;
 using Enfilade;
-using Microsoft.Extensions.DependencyInjection;
 using ModelContextProtocol;
 using ModelContextProtocol.Client;
 using ModelContextProtocol.Protocol;
 
 namespace CtxUi.Builder.Publishing;
 
-public sealed class ToolInspector(RunnerSettings settings, IHttpClientFactory http, IServiceScopeFactory scopes) : IToolInspector
+public sealed class ToolInspector(RunnerSettings settings, IHttpClientFactory http, ServerCatalog catalog) : IToolInspector
 {
-
     private static readonly string[] ProxyRefusalMarkers = ["ERR_ACCESS_DENIED", "ERR_ACL", "X-Squid-Error", "squid", "The requested URL could not be retrieved"];
 
     public static bool IsProxyRefusal(string text) =>
@@ -51,10 +49,7 @@ public sealed class ToolInspector(RunnerSettings settings, IHttpClientFactory ht
         if (!settings.IsComplete)
             throw new PanelException(string.Format(BuilderText.RunnerNotConfigured, string.Join(", ", settings.Missing)));
 
-        string secret;
-        await using (var scope = scopes.CreateAsyncScope())
-            secret = await scope.ServiceProvider.GetRequiredService<ServerCatalog>().RouteSecretAsync(serverId, ct);
-
+        var secret = await catalog.RouteSecretAsync(serverId, ct);
         var path = release is null ? $"s/{serverId}/mcp" : $"s/{serverId}/r/{release}/mcp";
         var options = new HttpClientTransportOptions
         {

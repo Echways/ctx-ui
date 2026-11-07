@@ -23,7 +23,7 @@ public static class BuilderEndpoints
         group.MapGet("/servers/{id:guid}/export", ExportAsync);
     }
 
-    private static async Task<IResult> ListAsync(ServerCatalog catalog, ReleaseReader releases, CancellationToken ct)
+    private static async Task<IResult> ListAsync(ServerCatalog catalog, ReleaseCatalog releases, CancellationToken ct)
     {
         var servers = await catalog.ListAsync(ct);
         var statuses = await Task.WhenAll(servers.Select(server => releases.StatusAsync(server.Id, ct)));
@@ -38,7 +38,7 @@ public static class BuilderEndpoints
             server.InboundId)));
     }
 
-    private static async Task<IResult> DetailsAsync(Guid id, ServerCatalog catalog, ReleaseReader releases, CancellationToken ct)
+    private static async Task<IResult> DetailsAsync(Guid id, ServerCatalog catalog, ReleaseCatalog releases, CancellationToken ct)
     {
         var settings = await catalog.SettingsAsync(id, ct);
         var status = await releases.StatusAsync(id, ct);

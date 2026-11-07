@@ -160,7 +160,7 @@ public sealed class PublishHarness : IAsyncDisposable
     public ToolInspector CreateInspector(string ingressUrl) => new(
         new RunnerSettings("http://runner:8091", ingressUrl, "token"),
         _services.GetRequiredService<IHttpClientFactory>(),
-        _services.GetRequiredService<IServiceScopeFactory>());
+        _services.GetRequiredService<ServerCatalog>());
 
     public Task<InboundSummary> ConnectAsync(Guid serverId, string slug, string name = "Weather", bool forwardIdentity = false, params Guid[] clients) =>
         WithScopeAsync(services => services.GetRequiredService<ConnectionService>().ConnectAsync(serverId, slug, name, forwardIdentity, clients, default));
@@ -204,9 +204,9 @@ public sealed class PublishHarness : IAsyncDisposable
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddSingleton(TimeProvider.System);
-        services.AddDbContext<BuilderDatabase>(options => options.UseSqlite($"Data Source={Path.Combine(_directory, "data.db")}"));
+        services.AddDbContextFactory<BuilderDatabase>(options => options.UseSqlite($"Data Source={Path.Combine(_directory, "data.db")}"));
         services.AddSingleton(Box);
-        services.AddScoped<ServerCatalog>();
+        services.AddSingleton<ServerCatalog>();
         services.AddSingleton(configured
             ? new RunnerSettings("http://runner:8091", "http://runner:8090", "token")
             : new RunnerSettings(null, null, null));

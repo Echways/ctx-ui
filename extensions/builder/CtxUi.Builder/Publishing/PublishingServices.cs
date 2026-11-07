@@ -17,9 +17,8 @@ public static class PublishingServices
         services.AddSingleton<PublishQueue>();
         services.AddHostedService(provider => provider.GetRequiredService<PublishQueue>());
         services.AddSingleton<IExtensionInitializer>(provider => provider.GetRequiredService<PublishQueue>());
-        services.AddScoped<ReleaseCatalog>();
-        services.AddSingleton<ReleaseReader>();
-        services.AddSingleton<ToolTestRunner>();
+        services.AddTransient<ReleaseCatalog>();
+        services.AddTransient<ToolTestRunner>();
         return services;
     }
 }

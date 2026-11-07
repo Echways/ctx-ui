@@ -1,7 +1,7 @@
 @implements IAsyncDisposable
 @inject RunnerClient Runner
 @inject RunnerSettings Settings
-@inject ReleaseReader Reader
+@inject ReleaseCatalog Releases
 
 <div class="builder-logs">
     <Pane Title="@BuilderText.LogsRuntime" Hint="@string.Format(BuilderText.LogsLineLimit, LogBuffer.MaxLines)">
@@ -32,7 +32,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        _buildLog = (await Reader.ListAsync(ServerId, CancellationToken.None)).FirstOrDefault(release => release.BuildLog.Length > 0)?.BuildLog;
+        _buildLog = await Releases.LatestBuildLogAsync(ServerId, CancellationToken.None);
         if (!Settings.IsComplete)
         {
             _failure = string.Format(BuilderText.RunnerNotConfigured, string.Join(", ", Settings.Missing));

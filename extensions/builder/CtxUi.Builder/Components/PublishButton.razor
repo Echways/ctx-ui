@@ -1,6 +1,6 @@
 @implements IDisposable
 @inject PublishQueue Queue
-@inject ReleaseReader Reader
+@inject ReleaseCatalog Releases
 
 <div class="builder-publish">
     <span class="builder-publish-state" role="status" data-testid="publish-state">@StateText</span>
@@ -42,7 +42,7 @@
 
     public void Dispose() => Queue.Changed -= OnChanged;
 
-    private async Task LoadAsync() => _status = await Reader.StatusAsync(ServerId, CancellationToken.None);
+    private async Task LoadAsync() => _status = await Releases.StatusAsync(ServerId, CancellationToken.None);
 
     private void OnChanged(Guid serverId)
     {

@@ -1,4 +1,5 @@
-@inject PanelActions Actions
+@inject PanelBackend Backend
+@inject Act Act
 @inject IDialogService Dialogs
 
 <details class="provider" open="@(Stored is not null)">
@@ -74,14 +75,14 @@
     private async Task SaveAsync()
     {
         var setup = new ProviderSetup(Info.Name, _clientId, string.IsNullOrWhiteSpace(_secret) ? null : _secret, _issuer, _title);
-        if (await Actions.ApplyAsync(services => services.GetRequiredService<SignInSettingsService>().SetProviderAsync(setup), string.Format(PanelText.ProviderSaved, Name)))
+        if (await Act.RunAsync(() => Backend.ChangeAsync(services => services.GetRequiredService<SignInSettingsService>().SetProviderAsync(setup)), string.Format(PanelText.ProviderSaved, Name)))
             await OnChanged.InvokeAsync();
     }
 
     private async Task SwitchAsync(bool enabled)
     {
-        await Actions.ApplyAsync(
-            services => services.GetRequiredService<SignInSettingsService>().SetProviderEnabledAsync(Info.Name, enabled),
+        await Act.RunAsync(
+            () => Backend.ChangeAsync(services => services.GetRequiredService<SignInSettingsService>().SetProviderEnabledAsync(Info.Name, enabled)),
             string.Format(PanelText.ProviderEnabledDone, Name));
         await OnChanged.InvokeAsync();
     }
@@ -91,8 +92,8 @@
         if (!await Dialogs.ConfirmAsync(string.Format(PanelText.ProviderRemoveQuestion, Name), PanelText.ProviderRemoveWarning, PanelText.Delete, true))
             return;
 
-        await Actions.ApplyAsync(
-            services => services.GetRequiredService<SignInSettingsService>().RemoveProviderAsync(Info.Name),
+        await Act.RunAsync(
+            () => Backend.ChangeAsync(services => services.GetRequiredService<SignInSettingsService>().RemoveProviderAsync(Info.Name)),
             string.Format(PanelText.ProviderRemoved, Name));
         await OnChanged.InvokeAsync();
     }

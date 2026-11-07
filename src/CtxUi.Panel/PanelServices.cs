@@ -50,7 +50,6 @@ public static partial class PanelServices
         services.AddSingleton<PanelGate>();
         services.AddSingleton<PanelBackend>();
         services.AddSingleton<IPanelData, PanelData>();
-        services.AddScoped<PanelActions>();
         services.AddScoped<IBlockSheets, BlockSheets>();
         services.AddIdentityCore<Admin>(options =>
             {

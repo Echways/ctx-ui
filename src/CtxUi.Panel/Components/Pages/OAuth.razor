@@ -2,7 +2,7 @@
 @using Microsoft.Extensions.Options
 @inject PanelLayout Layout
 @inject PanelBackend Backend
-@inject PanelActions Actions
+@inject Act Act
 @inject IDialogService Dialogs
 @inject IOptions<PanelOptions> Options
 @inject TimeProvider Clock
@@ -157,7 +157,7 @@ else
 
     private async Task UpdateAsync(SignInSettingsUpdate update, string done)
     {
-        await Actions.ApplyAsync(services => services.GetRequiredService<SignInSettingsService>().UpdateAsync(update, PublicUrl), done);
+        await Act.RunAsync(() => Backend.ChangeAsync(services => services.GetRequiredService<SignInSettingsService>().UpdateAsync(update, PublicUrl)), done);
         await LoadAsync();
     }
 

@@ -2,7 +2,7 @@
 @inject PanelLayout Layout
 @inject PanelBackend Backend
 @inject IDialogService Dialogs
-@inject PanelActions Actions
+@inject Act Act
 @inject TimeProvider Clock
 @inject ViewerTime Viewer
 
@@ -87,8 +87,8 @@ else
         if (!await Dialogs.ConfirmAsync(string.Format(PanelText.RevokeQuestion, key.Name), PanelText.RevokeWarning, PanelText.Revoke, true))
             return;
 
-        await Actions.ApplyAsync(
-            services => services.GetRequiredService<ApiKeyService>().RemoveAsync(key.Name), string.Format(PanelText.KeyRevoked, key.Name));
+        await Act.RunAsync(
+            () => Backend.ChangeAsync(services => services.GetRequiredService<ApiKeyService>().RemoveAsync(key.Name)), string.Format(PanelText.KeyRevoked, key.Name));
         await LoadAsync();
     }
 

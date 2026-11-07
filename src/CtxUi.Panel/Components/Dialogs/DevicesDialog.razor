@@ -1,5 +1,5 @@
 @inject PanelBackend Backend
-@inject PanelActions Actions
+@inject Act Act
 @inject IDialogService Dialogs
 @inject TimeProvider Clock
 @inject ViewerTime Viewer
@@ -117,8 +117,8 @@
 
     private async Task DisconnectAsync(Device device)
     {
-        await Actions.ApplyAsync(
-            services => services.GetRequiredService<DeviceService>().RevokeAsync(Id, device.Id, DeviceRevocation.Admin),
+        await Act.RunAsync(
+            () => Backend.ChangeAsync(services => services.GetRequiredService<DeviceService>().RevokeAsync(Id, device.Id, DeviceRevocation.Admin)),
             string.Format(PanelText.DeviceDisconnected, device.Name));
         await LoadAsync();
     }
@@ -128,8 +128,8 @@
         if (!await Dialogs.ConfirmAsync(string.Format(PanelText.DisconnectAllQuestion, _name), PanelText.DisconnectAllWarning, PanelText.DisconnectAll, true))
             return;
 
-        await Actions.ApplyAsync(
-            services => services.GetRequiredService<DeviceService>().RevokeAllAsync(Id, DeviceRevocation.Admin),
+        await Act.RunAsync(
+            () => Backend.ChangeAsync(services => services.GetRequiredService<DeviceService>().RevokeAllAsync(Id, DeviceRevocation.Admin)),
             PanelText.AllDevicesDisconnected);
         await LoadAsync();
     }
@@ -139,8 +139,8 @@
         if (!await Dialogs.ConfirmAsync(string.Format(PanelText.UnlinkQuestion, $"{LinkTitle(link)} · {link.Display}"), PanelText.UnlinkWarning, PanelText.Unlink, true))
             return;
 
-        await Actions.ApplyAsync(
-            services => services.GetRequiredService<ClientLinkService>().UnlinkAsync(Id, link.Id),
+        await Act.RunAsync(
+            () => Backend.ChangeAsync(services => services.GetRequiredService<ClientLinkService>().UnlinkAsync(Id, link.Id)),
             string.Format(PanelText.LinkRemoved, LinkTitle(link)));
         await LoadAsync();
     }

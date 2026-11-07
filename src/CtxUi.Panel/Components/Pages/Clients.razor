@@ -2,7 +2,7 @@
 @inject PanelLayout Layout
 @inject PanelBackend Backend
 @inject IDialogService Dialogs
-@inject PanelActions Actions
+@inject Act Act
 @inject TimeProvider Clock
 @inject ViewerTime Viewer
 
@@ -141,15 +141,15 @@ else
 
     private async Task SwitchAsync(Client client, bool enabled)
     {
-        await Actions.ApplyAsync(
-            OnClient(client, clients => clients.SetEnabledAsync(client.Id, enabled)),
+        await Act.RunAsync(
+            () => Backend.ChangeAsync(OnClient(client, clients => clients.SetEnabledAsync(client.Id, enabled))),
             string.Format(enabled ? PanelText.ClientEnabled : PanelText.ClientDisabled, client.Name));
         await LoadAsync();
     }
 
     private async Task ResetAsync(Client client)
     {
-        await Actions.ApplyAsync(OnClient(client, clients => clients.ResetQuotaAsync(client.Id)), string.Format(PanelText.QuotaReset, client.Name));
+        await Act.RunAsync(() => Backend.ChangeAsync(OnClient(client, clients => clients.ResetQuotaAsync(client.Id))), string.Format(PanelText.QuotaReset, client.Name));
         await LoadAsync();
     }
 
@@ -200,7 +200,7 @@ else
         if (!await Dialogs.ConfirmAsync(string.Format(PanelText.ReissueQuestion, client.Name), warning, PanelText.ReissueYes))
             return;
 
-        await Actions.ApplyAsync(OnClient(client, clients => clients.ReissueAsync(client.Id)), string.Format(PanelText.TokenReissued, client.Name));
+        await Act.RunAsync(() => Backend.ChangeAsync(OnClient(client, clients => clients.ReissueAsync(client.Id))), string.Format(PanelText.TokenReissued, client.Name));
         await LoadAsync();
         if (_clients!.Any(known => known.Id == client.Id))
             await ConnectAsync(client, true);
@@ -210,7 +210,7 @@ else
     {
         if (await Dialogs.ConfirmAsync(string.Format(PanelText.RemoveClientQuestion, client.Name), PanelText.RemoveClientWarning, PanelText.Delete, true))
         {
-            await Actions.ApplyAsync(OnClient(client, clients => clients.RemoveAsync(client.Id)), string.Format(PanelText.ClientRemoved, client.Name));
+            await Act.RunAsync(() => Backend.ChangeAsync(OnClient(client, clients => clients.RemoveAsync(client.Id))), string.Format(PanelText.ClientRemoved, client.Name));
             await LoadAsync();
         }
     }

@@ -2,7 +2,7 @@
 @inject PanelLayout Layout
 @inject PanelBackend Backend
 @inject IDialogService Dialogs
-@inject PanelActions Actions
+@inject Act Act
 @inject TimeProvider Clock
 @inject NavigationManager Navigation
 
@@ -130,8 +130,8 @@ else
 
     private async Task SwitchAsync(Inbound inbound, bool enabled)
     {
-        await Actions.ApplyAsync(
-            services => services.GetRequiredService<InboundService>().SetEnabledAsync(inbound.Slug, enabled),
+        await Act.RunAsync(
+            () => Backend.ChangeAsync(services => services.GetRequiredService<InboundService>().SetEnabledAsync(inbound.Slug, enabled)),
             string.Format(enabled ? PanelText.InboundEnabled : PanelText.InboundDisabled, inbound.Slug));
         await LoadAsync();
     }
@@ -142,8 +142,8 @@ else
         if (await Dialogs.ConfirmAsync(string.Format(PanelText.RemoveInboundQuestion, slug), string.Format(PanelText.RemoveInboundWarning, slug, row.Clients),
                 PanelText.Delete, true))
         {
-            await Actions.ApplyAsync(
-                services => services.GetRequiredService<InboundService>().RemoveAsync(slug), string.Format(PanelText.InboundRemoved, slug));
+            await Act.RunAsync(
+                () => Backend.ChangeAsync(services => services.GetRequiredService<InboundService>().RemoveAsync(slug)), string.Format(PanelText.InboundRemoved, slug));
             await LoadAsync();
         }
     }

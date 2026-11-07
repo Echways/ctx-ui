@@ -40,7 +40,7 @@ public sealed class ConnectionService(
         var inbound = OwnInbound(server, await data.InboundsAsync(ct));
         if (inbound is not null)
             connected.Add(inbound.Id);
-        else if (Guid.TryParse(server.InboundId, out var stale))
+        else if (server.InboundId is { } stale)
             connected.Remove(stale);
         return inbound;
     }
@@ -50,9 +50,8 @@ public sealed class ConnectionService(
 
     public async Task<Guid?> FindServerIdAsync(InboundSummary inbound, CancellationToken ct)
     {
-        var id = inbound.Id.ToString();
         await using var database = await databases.CreateDbContextAsync(ct);
-        var found = await database.Servers.AsNoTracking().Where(server => server.InboundId == id).Select(server => (Guid?)server.Id).FirstOrDefaultAsync(ct);
+        var found = await database.Servers.AsNoTracking().Where(server => server.InboundId == inbound.Id).Select(server => (Guid?)server.Id).FirstOrDefaultAsync(ct);
         if (found is null)
             connected.Remove(inbound.Id);
         return found;
@@ -105,7 +104,7 @@ public sealed class ConnectionService(
             var previous = server.InboundId;
             await using var database = await databases.CreateDbContextAsync(ct);
             var updated = await database.Servers.Where(known => known.Id == serverId && known.InboundId == previous)
-                .ExecuteUpdateAsync(setters => setters.SetProperty(known => known.InboundId, inbound.Id.ToString()), ct);
+                .ExecuteUpdateAsync(setters => setters.SetProperty(known => known.InboundId, inbound.Id), ct);
             if (updated == 0)
                 throw await database.Servers.AnyAsync(known => known.Id == serverId, ct) ? Failures.Conflict(BuilderText.ConnectionAlreadyConnected) : Failures.ServerNotFound();
         }
@@ -162,7 +161,7 @@ public sealed class ConnectionService(
     }
 
     private static InboundSummary? OwnInbound(BuilderServer server, IReadOnlyList<InboundSummary> inbounds) =>
-        server.InboundId is null ? null : inbounds.FirstOrDefault(inbound => inbound.Id.ToString() == server.InboundId);
+        server.InboundId is null ? null : inbounds.FirstOrDefault(inbound => inbound.Id == server.InboundId);
 
     private async Task<BuilderServer> FindServerAsync(Guid serverId, CancellationToken ct)
     {

@@ -178,7 +178,7 @@ public sealed class PublishHarness : IAsyncDisposable
     public Task<bool> ServerExistsAsync(Guid serverId) =>
         WithScopeAsync(services => services.GetRequiredService<BuilderDatabase>().Servers.AsNoTracking().AnyAsync(server => server.Id == serverId));
 
-    public Task SetInboundIdAsync(Guid serverId, string? inboundId) =>
+    public Task SetInboundIdAsync(Guid serverId, Guid? inboundId) =>
         WithScopeAsync(async services =>
         {
             await services.GetRequiredService<BuilderDatabase>().Servers.Where(server => server.Id == serverId)

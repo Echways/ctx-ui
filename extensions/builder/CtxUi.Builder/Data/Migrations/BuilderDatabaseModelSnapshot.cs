@@ -15,7 +15,7 @@ namespace CtxUi.Builder.Data.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "10.0.13");
+            modelBuilder.HasAnnotation("ProductVersion", "10.0.14");
 
             modelBuilder.Entity("CtxUi.Builder.Data.BuilderServer", b =>
                 {
@@ -32,7 +32,7 @@ namespace CtxUi.Builder.Data.Migrations
                     b.Property<long>("CreatedAt")
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("InboundId")
+                    b.Property<Guid?>("InboundId")
                         .HasColumnType("TEXT");
 
                     b.Property<int>("MemoryMb")

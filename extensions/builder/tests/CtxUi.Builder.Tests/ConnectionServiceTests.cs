@@ -27,7 +27,7 @@ public sealed class ConnectionServiceTests
         Assert.Equal($"http://runner:8090/s/{server}/mcp", draft.Url);
         Assert.Equal(await harness.RouteSecretAsync(server), Assert.Single(draft.UpstreamHeaders!, header => header.Key == RouteSecret.Header).Value);
         Assert.Equal([first.Id], harness.Data.Links["weather-mcp"]);
-        Assert.Equal(inbound.Id.ToString(), (await harness.ServerAsync(server)).InboundId);
+        Assert.Equal(inbound.Id, (await harness.ServerAsync(server)).InboundId);
         Assert.Equal(inbound, await harness.FindInboundAsync(server));
     }
 
@@ -251,7 +251,7 @@ public sealed class ConnectionServiceTests
 
         Assert.Equal(BuilderText.ConnectionBusy, refused?.Message);
         Assert.Equal([inbound.Id], harness.Data.Inbounds.Select(known => known.Id));
-        Assert.Equal(inbound.Id.ToString(), (await harness.ServerAsync(server)).InboundId);
+        Assert.Equal(inbound.Id, (await harness.ServerAsync(server)).InboundId);
     }
 
     [Fact]
@@ -260,7 +260,7 @@ public sealed class ConnectionServiceTests
         await using var harness = await PublishHarness.CreateAsync();
         var server = await harness.CreateServerAsync();
         var client = harness.Data.AddClient("first");
-        var other = Guid.NewGuid().ToString();
+        var other = Guid.NewGuid();
         harness.Data.DuringAdd = () => harness.SetInboundIdAsync(server, other);
 
         var failure = await Assert.ThrowsAsync<PanelException>(() => harness.ConnectAsync(server, "weather-mcp", "Weather", false, client.Id));

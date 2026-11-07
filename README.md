@@ -1,5 +1,18 @@
 <div align="center">
 
+# ctx-ui
+
+**A gateway and web panel for sharing access to MCP servers.**
+Put a remote MCP server behind your own address, hand out tokens with an expiry date and limits, and see who calls what.
+
+**English** · [Русский](README.ru.md)
+
+[![Release](https://img.shields.io/github/v/release/Echways/ctx-ui)](https://github.com/Echways/ctx-ui/releases/latest)
+[![CI](https://github.com/Echways/ctx-ui/actions/workflows/ci.yml/badge.svg)](https://github.com/Echways/ctx-ui/actions/workflows/ci.yml)
+[![License](https://img.shields.io/badge/license-GPL--3.0-blue)](LICENSE)
+
+</div>
+
 ## Why ctx-ui
 
 An MCP server is usually one URL and one shared secret. ctx-ui puts a layer between that server and the people who use it, so access can be given, limited and withdrawn one client at a time.

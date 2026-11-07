@@ -1,6 +1,6 @@
 # Installation
 
-**English** · [Русский](ru/install.md)
+[English](install.md) · [Русский](../ru/install.md) · [Documentation](README.md)
 
 Two methods: binary + systemd, or Docker + Caddy. Same program, same
 `ctx-ui` command.
@@ -129,7 +129,7 @@ and data stay; `update` starts the service again.
 
 ```bash
 sudo ctx-ui update           # latest release
-sudo ctx-ui update 0.2.0     # specific version
+sudo ctx-ui update 0.1.4     # specific version
 ctx-ui version               # installed version
 ```
 
@@ -168,7 +168,7 @@ Requires Docker Compose, a domain pointing at the server, open ports 80 and
 443. Caddy obtains the certificate.
 
 ```bash
-VERSION=0.1.0
+VERSION=0.1.4
 curl -fsSL https://github.com/Echways/ctx-ui/releases/download/v$VERSION/ctx-ui-$VERSION-docker.tar.gz | tar -xz
 cd ctx-ui
 cp .env.example .env
@@ -177,7 +177,7 @@ cp .env.example .env
 `.env`:
 
 ```
-CTX_UI_VERSION=0.1.0
+CTX_UI_VERSION=0.1.4
 CTX_UI_DOMAIN=mcp.example.com
 ```
 
@@ -197,7 +197,7 @@ volume.
 In the `ctx-ui` directory:
 
 ```bash
-sed -i 's/^CTX_UI_VERSION=.*/CTX_UI_VERSION=0.2.0/' .env && docker compose up -d
+sed -i 's/^CTX_UI_VERSION=.*/CTX_UI_VERSION=0.1.4/' .env && docker compose up -d
 ```
 
 Compose pulls the new image and recreates the container; data stays in the
@@ -215,7 +215,7 @@ volume.
 missing or empty. Never copy the database file of a running service: SQLite
 keeps recent changes in `ctx-ui.db-wal`, and a plain copy may be
 inconsistent. Without `keys/` the stored tokens and upstream headers cannot be
-decrypted; see [configuration.md](configuration.md#data-directory).
+decrypted; see [Configuration](configuration.md#data-directory).
 
 Binary (the command runs as the `ctx-ui` user, so it needs a directory that
 user can write):

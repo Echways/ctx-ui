@@ -1,11 +1,8 @@
 # Server builder
 
-The builder is a panel extension. It builds MCP servers on FastMCP in the panel,
-runs each one in its own isolated Docker container and connects it as an HTTP
-inbound, so it reaches clients like any other server. Tokens, limits, journal,
-metrics and OAuth work for built servers without extra settings.
+[English](builder.md) · [Русский](../ru/builder.md) · [Documentation](README.md)
 
-[English](builder.md) · [Русский](ru/builder.md)
+The builder is a panel extension. It builds MCP servers on FastMCP in the panel, runs each one in its own isolated Docker container and connects it as an HTTP inbound, so it reaches clients like any other server. Tokens, limits, journal, metrics and OAuth work for built servers without extra settings.
 
 The builder is not part of ctx-ui. Without it the panel shows no trace of it, and
 the main image and the systemd install need neither Python nor Docker.
@@ -68,7 +65,7 @@ release page as the source of the assets.
 
 ```bash
 curl -fsSL https://github.com/Echways/ctx-ui/releases/latest/download/builder-install.sh \
-    | sudo bash -s -- --version 0.2.0
+    | sudo bash -s -- --version 0.1.4
 ```
 
 Run the command again to update: the token and the built servers are kept. `--remove`
@@ -197,7 +194,7 @@ Use it when you do not want the script. Download from the release page
 systemd install:
 
 ```bash
-export CTXB_VERSION=0.2.0
+export CTXB_VERSION=0.1.4
 export CTXB_RUNNER_TOKEN=$(openssl rand -hex 32)
 docker compose -f builder-compose.yaml up -d
 ```
@@ -212,7 +209,7 @@ CtxUi__Extensions__builder__RunnerToken=<the same token>
 ```
 
 ```bash
-sudo ctx-ui extension install builder-0.2.0.zip
+sudo ctx-ui extension install builder-0.1.4.zip
 sudo systemctl restart ctx-ui
 ```
 
@@ -220,7 +217,7 @@ Docker install: put `builder-compose.yaml` and `builder-compose.docker.yaml` nex
 the `compose.yaml` of ctx-ui and add to `.env`:
 
 ```
-CTXB_VERSION=0.2.0
+CTXB_VERSION=0.1.4
 CTXB_RUNNER_TOKEN=<64 hex digits>
 COMPOSE_FILE=compose.yaml:builder-compose.yaml:builder-compose.docker.yaml
 ```
@@ -232,7 +229,7 @@ Then:
 
 ```bash
 docker compose up -d
-docker compose cp builder-0.2.0.zip ctx-ui:/tmp/builder.zip
+docker compose cp builder-0.1.4.zip ctx-ui:/tmp/builder.zip
 docker compose exec ctx-ui ctx-ui extension install /tmp/builder.zip
 docker compose restart ctx-ui
 ```
@@ -269,7 +266,7 @@ Other Runner settings, in the `environment` of the `runner` service:
 ## API for CI
 
 The extension has endpoints under `/<panel>/extensions/builder/`. They need an API key
-in `Authorization: Bearer ctxk_…`, as in the [REST API](../README.md#rest-api).
+in `Authorization: Bearer ctxk_…`, as in the [REST API](api.md).
 
 | Request | Result |
 | --- | --- |

@@ -1,28 +1,47 @@
+<div align="center">
+
 # ctx-ui
 
-**English** · [Русский](docs/ru/README.md)
+**A gateway and web panel for sharing access to MCP servers.**
+Put a remote MCP server behind your own address, hand out tokens with an expiry date and limits, and see who calls what.
 
-A gateway and web panel for sharing access to MCP servers, modelled on 3x-ui.
-An inbound is an address (`/mcp/<slug>`) backed by a remote MCP server. A
-client is a token with an expiry date, a set of inbounds and limits.
+**English** · [Русский](README.ru.md)
 
-Supports streamable HTTP inbounds, per-client limits and quotas, a call
-log, a web panel, a CLI and a REST API with Swagger UI.
+[![Release](https://img.shields.io/github/v/release/Echways/ctx-ui)](https://github.com/Echways/ctx-ui/releases/latest)
+[![CI](https://github.com/Echways/ctx-ui/actions/workflows/ci.yml/badge.svg)](https://github.com/Echways/ctx-ui/actions/workflows/ci.yml)
+[![License](https://img.shields.io/badge/license-GPL--3.0-blue)](LICENSE)
 
-## Install
+</div>
 
-Binary + systemd, Linux x86_64/aarch64:
+```bash
+sudo ctx-ui admin add admin
+sudo ctx-ui inbound add learn --url https://learn.microsoft.com/api/mcp
+sudo ctx-ui client add "Ivanov 4419" --inbound learn --expires 2027-07-01
+```
+
+## Why ctx-ui
+
+An MCP server is usually one URL and one shared secret. ctx-ui puts a layer between that server and the people who use it, so access can be given, limited and withdrawn one client at a time.
+
+- **One address per server.** An inbound is `/mcp/<slug>`, backed by a remote MCP server over streamable HTTP. The upstream address and its secret headers never reach a client.
+- **A token per client.** Each client has its own token, an expiry date and a set of inbounds. Reissue or disable it without touching anyone else.
+- **Limits that behave.** Request rate, concurrent requests and a quota of tool calls per period. An exhausted quota arrives as a tool result, so the model tells the user instead of failing the connection.
+- **Sign-in in the browser.** Claude, ChatGPT and Cursor connect with the server address alone. People sign in with the client's key, Google, GitHub or any OpenID Connect provider. Off by default.
+- **A panel that shows what happens.** Overview, metrics with response-time percentiles, a call log, devices, API keys. It lives under a random secret path.
+- **Everything is scriptable.** A CLI and a REST API with Swagger UI cover the whole panel. Changes reach the running gateway within a second.
+- **Extensible.** Panel extensions add sections, blocks and actions from a zip archive, without rebuilding ctx-ui.
+- **Servers without leaving the panel.** The optional builder creates FastMCP servers from forms or code, runs each in an isolated Docker container and connects it as an inbound.
+- **Simple to run.** One binary with systemd or Docker with Caddy, on Linux x86_64 and aarch64. English and Russian throughout.
+
+## Installation
+
+Binary and systemd:
 
 ```bash
 curl -fsSL https://github.com/Echways/ctx-ui/releases/latest/download/install.sh | sudo bash
 ```
 
-Update to the latest release: `sudo ctx-ui update`. Stop the service:
-`sudo ctx-ui down`, start it again: `sudo ctx-ui up`. Remove everything,
-settings and data included: `sudo ctx-ui uninstall`.
-
-Docker + Caddy, removal, backup: [docs/install.md](docs/install.md).
-The service does not terminate TLS; put Caddy or nginx in front.
+Requires Linux x86_64 or aarch64 with systemd. The service speaks plain HTTP: put Caddy or nginx in front for TLS. Docker with Caddy, updating, removal and backup are in [Installation](docs/en/install.md).
 
 ## Quick start
 
@@ -32,257 +51,47 @@ sudo ctx-ui inbound add learn --url https://learn.microsoft.com/api/mcp
 sudo ctx-ui client add "Ivanov 4419" --inbound learn --expires 2027-07-01
 ```
 
-`admin add` prints the login, a one-time password and the secret panel
-address. `client add` prints the token and the connection addresses. In
-Docker prefix commands with `docker compose exec ctx-ui`.
+`admin add` prints the login, a one-time password and the secret address of the panel. `client add` prints the token and the connection addresses. Under Docker, prefix commands with `docker compose exec ctx-ui`.
 
-Program output, gateway errors and the API are in English. Set
-`CtxUi__Language=ru` for Russian; see
-[configuration.md](docs/configuration.md#language).
-
-## Connecting a client
-
-| Method | Address |
-| --- | --- |
-| header `Authorization: Bearer <token>` | `https://<host>/mcp/<slug>` |
-| token in the path, for clients without custom headers | `https://<host>/k/<token>/mcp/<slug>` |
+Connect a client with the token in a header:
 
 ```bash
 claude mcp add --transport http learn https://mcp.example.com/mcp/learn \
     --header "Authorization: Bearer tnk_..."
 ```
 
-A path with a token is a credential: treat it as a password.
+More in [Getting started](docs/en/getting-started.md).
 
-## Browser sign-in (OAuth)
+## What is included
 
-Apps such as Claude, ChatGPT and Cursor can connect with the server address
-alone and sign in in the browser, without copying a key. It is **off by
-default**: while off, nothing changes and `/.well-known/*` and `/connect/*`
-answer 404. Turn it on with `ctx-ui oauth on` or in the panel; it needs a
-public address with `https://`.
-
-| Way to sign in | What the person does |
-| --- | --- |
-| the client's key | pastes it on the sign-in page once |
-| Google, GitHub, GitLab, Microsoft, Yandex, VK ID, Discord, Telegram or any OpenID Connect provider | uses an account an administrator linked with a one-time invite link |
-
-Each browser is a device; a client can have a device limit, and
-administrators disconnect devices at any time. Details, providers and
-troubleshooting: [docs/oauth.md](docs/oauth.md).
-
-## Panel
-
-Served only under a random 16-character path; any other path gets 404.
-It speaks the `CtxUi__Language` language until an administrator picks one; the
-button in the top bar (and the link under the sign-in form) switches between
-English and Russian, the choice is kept in a cookie for a year.
-
-| Section | Contents |
-| --- | --- |
-| Overview | active clients, calls and upstream failures over 24 h; per-inbound and daily totals |
-| Metrics | 24 hours, 7, 30 or 90 days: calls, errors, response time p50/p95/p99, traffic, the clients' path from the first call to a tool answer, breakdowns by inbound, tool, method, client and device, frequent errors with HTTP status, gateway refusals by reason; any row narrows the view down to that client, inbound or tool |
-| Inbounds | create, edit, enable/disable, delete |
-| Clients | create, edit, enable/disable, search, connection window, new token, quota reset |
-| Log | recent calls with HTTP status, filter by client |
-| API keys | issue, revoke, link to Swagger UI |
-| OAuth | browser sign-in switch, providers, defaults for devices |
-
-Changes apply to the gateway immediately. The connection window shows the
-token, addresses and a ready-to-send message for the client.
-
-Request timeout (default 300 s, 1–3600) and request body limit (default
-4 MB, 1 KB–64 MB) of an inbound are set only in the panel.
-
-Sign-in: the password is generated (20 characters), shown once, stored as a
-hash. 5 failed attempts lock the login for 15 minutes. The session cookie
-lives 7 days with sliding expiration.
-
-## CLI
-
-Changes made by the CLI reach a running service within `RefreshInterval`
-(1 s). No restart needed.
-
-### admin
-
-| Command | Effect |
-| --- | --- |
-| `admin add <login>` | create an administrator; prints password and panel address |
-| `admin password <login>` | new password; closes sessions, lifts lockout |
-| `admin list` | list with lockout state |
-| `admin remove <login>` | delete |
-| `admin path [--new]` | show panel address; `--new` generates a new one, active after restart |
-
-Login: 1–64 characters, `A-Z a-z 0-9 . _ -`.
-
-### inbound
-
-| Command | Effect |
-| --- | --- |
-| `inbound add <slug> --url <url>` | add an inbound for a streamable HTTP MCP server |
-| `inbound list` | slug, state, URL |
-| `inbound enable\|disable <slug>` | toggle without deleting |
-| `inbound remove <slug>` | delete, revoking it from all clients |
-
-`add` options: `--name <text>` display name (default: slug);
-`--header Name=value` upstream header, repeatable, stored encrypted;
-`--forward-identity` send client identity headers upstream.
-
-Slug: 1–64 characters, `a-z 0-9 -`, no leading or trailing hyphen.
-
-### client
-
-| Command | Effect |
-| --- | --- |
-| `client add <name> --inbound <slug>` | issue a client; prints token and addresses |
-| `client show <name>` | token, addresses, limits, quota usage |
-| `client set <name>` | change expiry, inbounds, limits |
-| `client reset <name>` | zero the quota counter, restart the period |
-| `client reissue <name>` | new token; the old one stops working |
-| `client list` | name, state, expiry, last use, quota, inbounds |
-| `client devices <name>` | devices with apps, sign-in method, last use, IP and state |
-| `client device-off <name> <id>\|--all` | disconnect a device (id or its first characters) or all of them |
-| `client invite <name>` | one-time link that binds an outside account; valid 7 days |
-| `client links <name>` | accounts linked to the client |
-| `client unlink <name> <provider>` | remove the links of a provider |
-| `client enable\|disable <name>` | toggle without deleting |
-| `client remove <name>` | delete |
-
-Options for `add` and `set`:
-
-| Option | Meaning |
-| --- | --- |
-| `--inbound <slug>` | repeatable; in `set` replaces the whole set |
-| `--expires YYYY-MM-DD` | access closes at 00:00 UTC of that day; `never` in `set` removes expiry |
-| `--meta key=value` | `add` only; repeatable; sent as `X-Mcp-Meta-<key>` |
-| `--rate N` | requests per minute |
-| `--concurrency N` | simultaneous `POST` requests |
-| `--quota N` | `tools/call` per period |
-| `--reset-days N` | quota period length; without it the quota is one-off |
-| `--devices N` | device limit for browser sign-in; `none` in `set` removes it |
-| `--direct-key on\|off` | whether the key works in a header and an address, or only for signing in |
-
-In `set`, `none` removes a limit. Omitted options keep their values.
-
-Name: 1–100 characters, unique ignoring case, no control characters. Quote
-names with spaces.
-
-### usage
-
-| Command | Effect |
-| --- | --- |
-| `usage days [--days N]` | daily totals, last N days (default 7, max 3650) |
-| `usage log [--limit N]` | recent calls, newest first (default 50, max 1000) |
-
-Both accept `--client <name>`. Times are UTC. Data reaches the database every
-`FlushInterval` (5 s), so it lags slightly.
-
-### oauth
-
-| Command | Effect |
-| --- | --- |
-| `oauth status` | state, server metadata address, defaults, providers with their return addresses; warns when the public address rules OAuth out |
-| `oauth on\|off` | turn browser sign-in on or off; `off` warns about clients without a direct key |
-| `oauth key on\|off` | allow or forbid signing in with a key |
-| `oauth set [--idle-days N] [--self-revoke on\|off] [--devices N\|none] [--direct-key on\|off]` | idle period of devices, self-service disconnecting, defaults for new clients |
-| `oauth provider set <name> --client-id <id>` | add or change a provider |
-| `oauth provider on\|off\|remove <name>` | enable, disable, remove |
-| `oauth provider list` | configured providers |
-
-`provider set` takes the secret from `--client-secret`, from the standard
-input with `--client-secret-stdin`, or from `CTX_UI_PROVIDER_SECRET`; for oidc
-add `--issuer <https://…>` and `--title <text>`. Names: `google`, `microsoft`,
-`github`, `gitlab`, `yandex`, `vkid`, `discord`, `telegram`, `oidc`.
-
-### apikey
-
-| Command | Effect |
-| --- | --- |
-| `apikey add <name>` | issue a REST API key; prints it once with the API and Swagger addresses |
-| `apikey list` | name, key prefix, issue date |
-| `apikey remove <name>` | revoke; requests with the key get 401 at once |
-
-Name: 1–64 characters, `A-Z a-z 0-9 . _ -`.
-
-## REST API
-
-Lives under the panel's secret path, like the panel itself:
-
-| Address | What |
-| --- | --- |
-| `https://<host>/<secret>/api/v1/…` | API, key in `Authorization: Bearer ctxk_…` |
-| `https://<host>/<secret>/swagger/` | Swagger UI, "Authorize" takes the key |
-| `https://<host>/<secret>/openapi/v1.json` | OpenAPI 3.1 document |
-
-| Resource | Methods |
-| --- | --- |
-| `inbounds`, `inbounds/{slug}` | list, get, `PUT` creates or replaces, `enable`, `disable`, `DELETE` |
-| `clients`, `clients/{id}` | list (`?name=` finds one), get, `POST` issues, `PATCH` changes, `connection`, `enable`, `disable`, `reset-quota`, `reissue`, `DELETE` |
-| `clients/{id}/devices`, `…/devices/{deviceId}` | list devices, `DELETE` disconnects one or all |
-| `clients/{id}/invite`, `clients/{id}/links`, `…/links/{linkId}`, `…/links/{provider}` | `POST` issues an invite link, list links, `DELETE` unlinks one account or every account of a provider |
-| `oauth`, `oauth/providers/{name}` | settings (`PATCH`), providers (`PUT`, `enable`, `disable`, `DELETE`); secrets are never returned |
-| `usage/days`, `usage/log`, `overview`, `metrics` | daily totals, recent calls, the panel's overview, the Metrics page (`days`, `clientId`, `inboundId`, `tool`) |
-
-Errors are `application/problem+json`: 400 wrong input, 401 no or unknown
-key, 404 no such object, 409 the token cannot be shown (`keys/` lost). The
-`detail` text is the same as the CLI prints. Changes reach the gateway at
-once.
-
-```bash
-curl -H "Authorization: Bearer ctxk_..." https://mcp.example.com/<secret>/api/v1/clients
-```
-
-A panel session does not open the API: browsers send the cookie with
-requests from any site.
-
-## Limits
-
-Each limit is optional; unset means unlimited.
-
-| Limit | Counts | When exceeded |
-| --- | --- | --- |
-| `--rate` | all requests, token bucket | HTTP 429, `Retry-After: <seconds until next>` |
-| `--concurrency` | in-flight `POST` | HTTP 429 after waiting up to 1 s for a slot, `Retry-After: 1` |
-| `--quota` | `tools/call` per period | HTTP 200, tool result with `isError: true` and reset time |
-
-The quota is spent only by `tools/call`. With an exhausted quota the client
-still connects and lists tools; the refusal is a tool result, so the model
-relays it to the user. Calls the upstream answered with HTTP ≥ 400 or did not
-answer are refunded.
-
-```bash
-sudo ctx-ui client set "Ivanov 4419" --quota 500 --reset-days 30 --rate 60
-sudo ctx-ui client set "Ivanov 4419" --rate none
-```
-
-## Gateway responses
-
-| Status | `error` | Cause |
-| --- | --- | --- |
-| 401 | `token_missing` | no token |
-| 401 | `token_unknown` | token not found |
-| 401 | `client_disabled` | client disabled |
-| 401 | `client_expired` | expiry passed |
-| 404 | `inbound_not_found` | no such inbound, disabled, or not granted |
-| 429 | `rate_limited`, `too_many_concurrent` | limit exceeded |
-| 413 | `body_too_large` | body over the inbound's limit |
-| 400 | JSON-RPC `-32600` | body is not valid JSON-RPC or batch > 100 |
-
-## What the upstream receives
-
-The client's request with its token removed, plus the inbound's headers.
-With `--forward-identity`: `X-Mcp-Client-Id`, `X-Mcp-Client-Name`,
-`X-Mcp-Meta-<key>`, values percent-encoded UTF-8. Client-sent headers with
-these names are stripped.
+| Area | Highlights |
+| ---- | ---------- |
+| Gateway | Streamable HTTP inbounds, per-client tokens, expiry, header and path authentication. |
+| Limits | Rate, concurrency, tool-call quota with a reset period, request timeout and body size. |
+| Browser sign-in | OAuth for MCP apps, nine sign-in providers, invite links, devices with a limit. |
+| Panel | Overview, metrics, call log, clients, inbounds, API keys, English and Russian. |
+| CLI | `admin`, `inbound`, `client`, `usage`, `oauth`, `apikey`, `backup`, `extension`. |
+| REST API | The whole panel under `/api/v1`, OpenAPI 3.1 document, Swagger UI. |
+| Extensions | Sections, slots, actions, endpoints, hosted services and a database, with a project template and browser tests. |
+| Builder | FastMCP servers from forms, OpenAPI import or code; isolated containers; versions and rollback. |
+| Operations | Install, update and uninstall with one command, consistent backup of a running service. |
 
 ## Documentation
 
-- [Installation](docs/install.md)
-- [Configuration](docs/configuration.md)
-- [Browser sign-in (OAuth)](docs/oauth.md)
-- [Panel extensions](docs/extensions.md)
-- [Server builder](docs/builder.md)
+| | |
+| - | - |
+| [Getting started](docs/en/getting-started.md) | Installation, the first client, connecting an app |
+| [Installation](docs/en/install.md) | systemd, Docker, TLS, updating, backup |
+| [Configuration](docs/en/configuration.md) | Variables, language, data directory |
+| [Panel](docs/en/panel.md) | Sections, sign-in, security |
+| [CLI](docs/en/cli.md) | Every command and option |
+| [REST API](docs/en/api.md) | Resources, errors, Swagger |
+| [Gateway](docs/en/gateway.md) | Authentication, limits, responses, upstream |
+| [Browser sign-in (OAuth)](docs/en/oauth.md) | Devices, invites, providers |
+| [Panel extensions](docs/en/extensions.md) | Building and installing extensions |
+| [Server builder](docs/en/builder.md) | FastMCP servers in the panel |
+| [Troubleshooting](docs/en/troubleshooting.md) | Common problems and what to check |
 
 ## License
 
-GPL-3.0.
+[GPL-3.0](LICENSE)

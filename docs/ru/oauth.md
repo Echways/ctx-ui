@@ -1,6 +1,6 @@
 # Вход через браузер (OAuth)
 
-[English](../oauth.md) · **Русский**
+[English](../en/oauth.md) · [Русский](oauth.md) · [Документация](README.md)
 
 По умолчанию выключен. Пока он выключен, `/.well-known/*` и `/connect/*`
 отвечают пустым 404, а всё остальное работает как прежде.
@@ -105,7 +105,7 @@ claude mcp add --transport http learn https://mcp.example.com/mcp/learn
 - `curl https://<host>/.well-known/oauth-authorization-server` должен вернуть
   JSON, где `issuer` — этот адрес. Пустой 404 означает, что OAuth выключен.
 - За прокси задайте `CtxUi__TrustedProxies` (см.
-  [configuration.md](configuration.md)), иначе у всех устройств в записи будет
+  [Настройки](configuration.md#переменные)), иначе у всех устройств в записи будет
   адрес прокси. Прокси должен передавать `X-Forwarded-For` и
   `X-Forwarded-Proto`.
 - `ctx-ui oauth status` печатает состояние, адрес метаданных сервера и адрес

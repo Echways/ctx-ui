@@ -1,3 +1,18 @@
+<div align="center">
+
+# ctx-ui
+
+**Шлюз доступа к MCP-серверам.**
+Один адрес перед удалённым MCP-сервером и свой токен, срок действия и лимиты для каждого клиента. Всё управляется из панели, CLI и REST API.
+
+[English](README.md) · **Русский**
+
+[![Release](https://img.shields.io/github/v/release/Echways/ctx-ui)](https://github.com/Echways/ctx-ui/releases/latest)
+[![CI](https://github.com/Echways/ctx-ui/actions/workflows/ci.yml/badge.svg)](https://github.com/Echways/ctx-ui/actions/workflows/ci.yml)
+[![License](https://img.shields.io/badge/license-GPL--3.0-blue)](LICENSE)
+
+</div>
+
 ## Зачем ctx-ui
 
 MCP-сервер обычно — один адрес и один общий секрет. ctx-ui ставит между этим сервером и людьми прослойку, чтобы доступ можно было выдавать, ограничивать и отзывать для каждого клиента отдельно.

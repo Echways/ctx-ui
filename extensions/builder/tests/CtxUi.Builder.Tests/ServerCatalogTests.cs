@@ -75,6 +75,8 @@ public sealed class ServerCatalogTests : IClassFixture<CatalogHarness>
         var file = Assert.Single(draft.Files);
         Assert.Equal(("mcp/tools/hello.py", "b", 2L), (file.Path, file.Content, file.Revision));
         Assert.Equal(2, draft.Revision);
+        var single = await Catalog.FileAsync(server.Id, "mcp/tools/hello.py", default);
+        Assert.Equal(("b", 2L), (single.Content, single.Revision));
     }
 
     [Fact]

@@ -115,6 +115,13 @@ public sealed partial class ServerCatalog(IDbContextFactory<BuilderDatabase> dat
         return await DraftAsync(database, id, ct);
     }
 
+    public async Task<DraftFile> FileAsync(Guid id, string path, CancellationToken ct)
+    {
+        await using var database = await databases.CreateDbContextAsync(ct);
+        return await database.Files.AsNoTracking().SingleOrDefaultAsync(file => file.ServerId == id && file.Path == path, ct)
+            ?? throw Failures.ServerNotFound();
+    }
+
     public async Task<long> SaveFileAsync(Guid id, string path, string content, long expectedRevision, CancellationToken ct)
     {
         if (!path.StartsWith(ProjectRoot, StringComparison.Ordinal))

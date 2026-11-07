@@ -4,13 +4,21 @@ using CtxUi.Builder.Contracts;
 
 namespace CtxUi.Builder.Runner;
 
-public sealed class RunnerRequestException(int status, string message) : Exception(message)
+public sealed class RunnerRequestException(int status, string message, string? type = null) : Exception(message)
 {
     public int Status { get; } = status;
+
+    public string? Type { get; } = type;
 
     public static RunnerRequestException NotFound(string message) => new(StatusCodes.Status404NotFound, message);
 
     public static RunnerRequestException Conflict(string message) => new(StatusCodes.Status409Conflict, message);
+
+    public static RunnerRequestException UnknownServer(Guid id) =>
+        new(StatusCodes.Status404NotFound, $"Server {id} is not known. Send its specification with PUT first.", RunnerProblems.SpecRequired);
+
+    public static RunnerRequestException SpecMissing(Guid id) =>
+        new(StatusCodes.Status409Conflict, $"The specification of server {id} is not known. Send it with PUT first.", RunnerProblems.SpecRequired);
 }
 
 public sealed class ReleaseRecord(int number, ReleaseState state)
@@ -164,7 +172,7 @@ public sealed class ServerRegistry(CancellationToken stopping)
     public ServerRecord? Find(Guid id) => _servers.GetValueOrDefault(id);
 
     public ServerRecord Require(Guid id) =>
-        Find(id) ?? throw RunnerRequestException.NotFound($"Server {id} is not known. Send its specification with PUT first.");
+        Find(id) ?? throw RunnerRequestException.UnknownServer(id);
 
     public ServerRecord? Remove(Guid id) => _servers.TryRemove(id, out var server) ? server : null;
 }

@@ -137,7 +137,7 @@ public static class RunnerEndpoints
         }
         catch (RunnerRequestException failure) when (!context.Response.HasStarted)
         {
-            await WriteProblemAsync(context, failure.Status, failure.Message);
+            await WriteProblemAsync(context, failure.Status, failure.Message, failure.Type);
         }
         catch (BuilderObjectRefusedException failure) when (!context.Response.HasStarted)
         {
@@ -149,10 +149,10 @@ public static class RunnerEndpoints
         }
     }
 
-    private static async Task WriteProblemAsync(HttpContext context, int status, string detail)
+    private static async Task WriteProblemAsync(HttpContext context, int status, string detail, string? type = null)
     {
         context.Response.StatusCode = status;
-        await context.Response.WriteAsJsonAsync(new ProblemDetails { Status = status, Detail = detail }, options: null, contentType: "application/problem+json");
+        await context.Response.WriteAsJsonAsync(new ProblemDetails { Status = status, Detail = detail, Type = type }, options: null, contentType: "application/problem+json");
     }
 
     private static void MapControl(WebApplication app)

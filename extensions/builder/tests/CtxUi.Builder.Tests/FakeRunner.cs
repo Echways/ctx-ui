@@ -181,7 +181,7 @@ public sealed partial class FakeRunner : HttpMessageHandler
         }
 
         if (!KnowsSpec)
-            return Problem(HttpStatusCode.Conflict, "The specification of server is not known. Send it with PUT before a build.");
+            return Problem(HttpStatusCode.Conflict, "The specification of server is not known.", RunnerProblems.SpecRequired);
         if (Releases.Values.Any(entry => entry.State == ReleaseState.Building))
             return Problem(HttpStatusCode.Conflict, "A release of this server is still building. Only one build runs at a time.");
         if (Releases.TryGetValue(number, out var existing) && existing.State != ReleaseState.Failed)
@@ -249,8 +249,8 @@ public sealed partial class FakeRunner : HttpMessageHandler
 
     private static HttpResponseMessage Json<T>(T value) => new(HttpStatusCode.OK) { Content = JsonContent.Create(value) };
 
-    private static HttpResponseMessage Problem(HttpStatusCode status, string detail) =>
-        new(status) { Content = JsonContent.Create(new ProblemDetails { Status = (int)status, Detail = detail }) };
+    private static HttpResponseMessage Problem(HttpStatusCode status, string detail, string? type = null) =>
+        new(status) { Content = JsonContent.Create(new ProblemDetails { Status = (int)status, Detail = detail, Type = type }) };
 
     [GeneratedRegex(@"^/v1/servers/(?<server>[0-9a-f-]{36})(/releases/(?<number>\d+))?(/(?<action>[a-z]+))?$")]
     private static partial Regex RoutePattern();

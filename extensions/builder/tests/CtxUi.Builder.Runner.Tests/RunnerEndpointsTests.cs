@@ -3,6 +3,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using CtxUi.Builder.Contracts;
 using Microsoft.AspNetCore.DataProtection.KeyManagement;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
@@ -217,6 +218,7 @@ public sealed class RunnerEndpointsTests
         Assert.Equal(HttpStatusCode.NotFound, start.StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, state.StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, status.StatusCode);
+        Assert.Equal(RunnerProblems.SpecRequired, (await build.Content.ReadFromJsonAsync<ProblemDetails>())!.Type);
     }
 
     [Fact]

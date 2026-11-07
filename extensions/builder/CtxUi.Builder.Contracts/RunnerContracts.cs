@@ -26,3 +26,8 @@ public static class RouteSecret
 {
     public const string Header = "X-Builder-Route-Secret";
 }
+
+public static class RunnerProblems
+{
+    public const string SpecRequired = "urn:ctx-ui:builder:spec-required";
+}

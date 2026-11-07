@@ -28,7 +28,7 @@ public sealed class ReleaseRunner(
         string hash;
         lock (server.Sync)
         {
-            spec = server.Spec ?? throw RunnerRequestException.Conflict($"The specification of server {id} is not known. Send it with PUT before a start.");
+            spec = server.Spec ?? throw RunnerRequestException.SpecMissing(id);
             release = server.RequireRelease(number);
             if (!release.Runnable || release.EnvironmentHash is null)
             {

@@ -291,7 +291,7 @@ public sealed class PublishPipeline(
         {
             await send();
         }
-        catch (RunnerException failure) when (failure.Status == HttpStatusCode.Conflict && failure.Message.Contains("PUT", StringComparison.Ordinal))
+        catch (RunnerException failure) when (failure.Problem == RunnerProblems.SpecRequired)
         {
             await run.Runner.PutServerAsync(run.ServerId, spec, ct);
             await send();

@@ -23,7 +23,7 @@ public sealed class ReleaseBuilder(
         ReleaseRecord release;
         lock (server.Sync)
         {
-            spec = server.Spec ?? throw RunnerRequestException.Conflict($"The specification of server {id} is not known. Send it with PUT before a build.");
+            spec = server.Spec ?? throw RunnerRequestException.SpecMissing(id);
             if (server.BuildingRelease is { } running)
             {
                 throw RunnerRequestException.Conflict($"Release {running} of this server is still building. Only one build runs at a time.");

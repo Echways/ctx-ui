@@ -111,23 +111,23 @@ public sealed class RunnerClient(HttpClient http)
 
         using (response)
         {
-            throw new RunnerException(response.StatusCode, await FailureMessageAsync(response, ct));
+            var problem = await ProblemOfAsync(response, ct);
+            var message = string.IsNullOrWhiteSpace(problem?.Detail) ? $"The runner answered {(int)response.StatusCode} {response.StatusCode}." : problem.Detail;
+            throw new RunnerException(response.StatusCode, message, problem: problem?.Type);
         }
     }
 
-    private static async Task<string> FailureMessageAsync(HttpResponseMessage response, CancellationToken ct)
+    private static async Task<ProblemDetails?> ProblemOfAsync(HttpResponseMessage response, CancellationToken ct)
     {
-        var fallback = $"The runner answered {(int)response.StatusCode} {response.StatusCode}.";
         if (response.StatusCode == HttpStatusCode.Unauthorized)
-            return fallback;
+            return null;
         try
         {
-            var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>(ct);
-            return string.IsNullOrWhiteSpace(problem?.Detail) ? fallback : problem.Detail;
+            return await response.Content.ReadFromJsonAsync<ProblemDetails>(ct);
         }
         catch (Exception failure) when (failure is System.Text.Json.JsonException or HttpRequestException or IOException or NotSupportedException)
         {
-            return fallback;
+            return null;
         }
     }
 }

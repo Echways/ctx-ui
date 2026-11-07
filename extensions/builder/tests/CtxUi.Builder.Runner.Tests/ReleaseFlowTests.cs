@@ -1,8 +1,10 @@
 using System.Net;
+using System.Net.Http.Json;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using CtxUi.Builder.Contracts;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Time.Testing;
 
 namespace CtxUi.Builder.Runner.Tests;
@@ -702,7 +704,7 @@ public sealed class ReleaseFlowTests
         Assert.Equal(HttpStatusCode.NotFound, unknown.StatusCode);
         using var withoutSpec = await restarted.PostStartAsync(1);
         Assert.Equal(HttpStatusCode.Conflict, withoutSpec.StatusCode);
-        Assert.Contains("PUT", await withoutSpec.Content.ReadAsStringAsync(), StringComparison.Ordinal);
+        Assert.Equal(RunnerProblems.SpecRequired, (await withoutSpec.Content.ReadFromJsonAsync<ProblemDetails>())!.Type);
 
         await restarted.PutSpecAsync();
         using var unknownStart = await restarted.PostStartAsync(2);

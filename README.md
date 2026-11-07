@@ -1,5 +1,3 @@
-<div align="center">
-
 ## Why ctx-ui
 
 An MCP server is usually one URL and one shared secret. ctx-ui puts a layer between that server and the people who use it, so access can be given, limited and withdrawn one client at a time.

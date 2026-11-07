@@ -9,10 +9,14 @@ public class ApiUsageTests
 {
     private static readonly DateTimeOffset Start = new(2026, 10, 12, 10, 0, 0, TimeSpan.Zero);
 
-    private const string ToolCall = """{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"echo","arguments":{}}}""";
+    private const string ToolCall =
+        """{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"echo","arguments":{}}}""";
 
-    private static Task<GatewayHost> StartAtAsync() =>
-        GatewayHost.StartAsync(builder => builder.Services.AddSingleton<TimeProvider>(new FakeTimeProvider(Start)));
+    private static Task<GatewayHost> StartAtAsync()
+    {
+        return GatewayHost.StartAsync(builder =>
+            builder.Services.AddSingleton<TimeProvider>(new FakeTimeProvider(Start)));
+    }
 
     private static async Task<JsonElement> LogAsync(ApiClient api, string query = "")
     {
@@ -87,7 +91,8 @@ public class ApiUsageTests
 
         Assert.Equal(0, (await LogAsync(api)).GetArrayLength());
         Assert.Equal(0, (await ApiClient.ReadAsync(await api.GetAsync("api/v1/usage/days"))).GetArrayLength());
-        Assert.Equal(0, (await ApiClient.ReadAsync(await api.GetAsync("api/v1/overview"))).GetProperty("clients").GetInt32());
+        Assert.Equal(0,
+            (await ApiClient.ReadAsync(await api.GetAsync("api/v1/overview"))).GetProperty("clients").GetInt32());
     }
 
     [Fact]
@@ -103,7 +108,9 @@ public class ApiUsageTests
         await Eventually.TrueAsync(async () => (await LogAsync(api)).GetArrayLength() == 1, "вызов попал в журнал");
 
         var all = await ApiClient.ReadAsync(await api.GetAsync("api/v1/metrics"));
-        var narrowed = await ApiClient.ReadAsync(await api.GetAsync($"api/v1/metrics?days=1&clientId={issued.Client.Id}&tool=echo"));
+        var narrowed =
+            await ApiClient.ReadAsync(
+                await api.GetAsync($"api/v1/metrics?days=1&clientId={issued.Client.Id}&tool=echo"));
 
         Assert.Equal(7, all.GetProperty("period").GetProperty("days").GetInt32());
         Assert.Equal(2, all.GetProperty("clientsWithAccess").GetInt32());

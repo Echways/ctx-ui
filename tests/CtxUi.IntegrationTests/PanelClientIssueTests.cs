@@ -20,16 +20,17 @@ public class PanelClientIssueTests
         await using var session = await PanelSession.SignInAsync(gateway);
         var page = await OpenClientsAsync(session);
 
-        await page.GetByRole(AriaRole.Button, new() { Name = "Добавить клиента" }).ClickAsync();
+        await page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Добавить клиента" }).ClickAsync();
         await Field(page, "Имя").FillAsync("Иванов 4419");
         await Dialog(page).GetByLabel("echo").CheckAsync();
         await AddAsync(page);
 
         await Expect(Dialog(page)).ToContainTextAsync("Подключение: Иванов 4419");
-        var token = (await Dialog(page).GetByLabel("Токен", new() { Exact = true }).TextContentAsync())!;
+        var token = (await Dialog(page).GetByLabel("Токен", new LocatorGetByLabelOptions { Exact = true })
+            .TextContentAsync())!;
         using var allowed = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/echo", token));
         using var other = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/docs", token));
-        await Dialog(page).GetByRole(AriaRole.Button, new() { Name = "Закрыть" }).ClickAsync();
+        await Dialog(page).GetByRole(AriaRole.Button, new LocatorGetByRoleOptions { Name = "Закрыть" }).ClickAsync();
 
         Assert.Equal(HttpStatusCode.OK, allowed.StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, other.StatusCode);
@@ -47,7 +48,7 @@ public class PanelClientIssueTests
         await using var session = await PanelSession.SignInAsync(gateway);
         var page = await OpenClientsAsync(session);
 
-        await page.GetByRole(AriaRole.Button, new() { Name = "Добавить клиента" }).ClickAsync();
+        await page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Добавить клиента" }).ClickAsync();
         await Field(page, "Имя").FillAsync("Иванов");
         await Dialog(page).GetByLabel("echo").CheckAsync();
         await Dialog(page).GetByLabel("docs").CheckAsync();
@@ -68,7 +69,8 @@ public class PanelClientIssueTests
         Assert.Equal("50", stored.Metadata["storage-mb"]);
         Assert.Contains(
             "Доступ действует до 2099-12-31 (UTC).\nВызовов инструментов: 500 каждые 30 дн.",
-            await Dialog(page).GetByLabel("Сообщение для клиента", new() { Exact = true }).TextContentAsync());
+            await Dialog(page).GetByLabel("Сообщение для клиента", new LocatorGetByLabelOptions { Exact = true })
+                .TextContentAsync());
     }
 
     [Fact]
@@ -79,7 +81,7 @@ public class PanelClientIssueTests
         await gateway.AddClientAsync("Петров", ["echo"]);
         await using var session = await PanelSession.SignInAsync(gateway);
         var page = await OpenClientsAsync(session);
-        await page.GetByRole(AriaRole.Button, new() { Name = "Добавить клиента" }).ClickAsync();
+        await page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Добавить клиента" }).ClickAsync();
 
         await Field(page, "Имя").FillAsync("Иванов");
         await AddAsync(page);

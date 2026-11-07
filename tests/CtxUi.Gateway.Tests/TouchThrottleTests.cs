@@ -7,7 +7,10 @@ public class TouchThrottleTests
     private readonly Guid _client = Guid.NewGuid();
 
     [Fact]
-    public void First_request_of_a_client_is_recorded() => Assert.True(_throttle.ShouldTouch(_client, Start));
+    public void First_request_of_a_client_is_recorded()
+    {
+        Assert.True(_throttle.ShouldTouch(_client, Start));
+    }
 
     [Fact]
     public void Requests_inside_the_interval_are_skipped()

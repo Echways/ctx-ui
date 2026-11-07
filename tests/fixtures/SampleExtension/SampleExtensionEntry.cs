@@ -17,7 +17,7 @@ public sealed class SampleExtensionEntry : IPanelExtension
     private static readonly string[] Sections =
     [
         PanelSections.Overview, PanelSections.Metrics, PanelSections.Inbounds, PanelSections.Clients,
-        PanelSections.Journal, PanelSections.OAuth, PanelSections.ApiKeys,
+        PanelSections.Journal, PanelSections.OAuth, PanelSections.ApiKeys
     ];
 
     private bool _database;
@@ -48,7 +48,8 @@ public sealed class SampleExtensionEntry : IPanelExtension
         if (context.Configuration.GetValue<bool>("BoomBlock"))
             context.Panel.In(PanelSlots.PageTop(PanelSections.Clients)).AddBlock<BoomBlock>();
         if (context.Configuration.GetValue<bool>("BoomAction"))
-            context.Panel.In(PanelSlots.ClientActions).AddAction(() => "Boom", _ => throw new InvalidOperationException("Sample action failure"));
+            context.Panel.In(PanelSlots.ClientActions).AddAction(() => "Boom",
+                _ => throw new InvalidOperationException("Sample action failure"));
     }
 
     public void MapEndpoints(IEndpointRouteBuilder endpoints)
@@ -67,7 +68,8 @@ public sealed class SampleExtensionEntry : IPanelExtension
         }
     }
 
-    private static void Reshape(PanelEditor panel) =>
+    private static void Reshape(PanelEditor panel)
+    {
         panel
             .AddSection<SamplePage>(() => SampleText.Section, PanelPosition.After(PanelSections.Overview))
             .Hide(PanelSections.Journal)
@@ -77,28 +79,33 @@ public sealed class SampleExtensionEntry : IPanelExtension
                 look.Brand = "Sample brand";
                 look.Accent = "#123456";
             });
+    }
 
     private static void FillSlots(PanelEditor panel)
     {
         foreach (var section in Sections)
-        {
             panel
                 .In(PanelSlots.PageTop(section)).AddBlock<TopBlock>()
                 .In(PanelSlots.PageBottom(section)).AddBlock<BottomBlock>()
-                .In(PanelSlots.PageActions(section)).AddAction(() => "Page action", args => Say(args.Services, $"page:{args.Context.Section}"));
-        }
+                .In(PanelSlots.PageActions(section)).AddAction(() => "Page action",
+                    args => Say(args.Services, $"page:{args.Context.Section}"));
 
         panel
-            .In(PanelSlots.PageBottom(PanelSections.ApiKeys)).AddBlock<OrderTwoBlock>(order: 2)
-            .In(PanelSlots.PageBottom(PanelSections.ApiKeys)).AddBlock<OrderOneBlock>(order: 1)
+            .In(PanelSlots.PageBottom(PanelSections.ApiKeys)).AddBlock<OrderTwoBlock>(2)
+            .In(PanelSlots.PageBottom(PanelSections.ApiKeys)).AddBlock<OrderOneBlock>(1)
             .In(PanelSlots.ClientSheet).AddBlock<ClientSheetBlock>()
             .In(PanelSlots.InboundSheet).AddBlock<InboundSheetBlock>()
-            .In(PanelSlots.ClientActions).AddAction(() => "Show client", args => Say(args.Services, $"client:{args.Context.Name}"))
+            .In(PanelSlots.ClientActions).AddAction(() => "Show client",
+                args => Say(args.Services, $"client:{args.Context.Name}"))
             .In(PanelSlots.ClientActions).AddSheet<ActionSheet>(() => "Open sheet", client => $"Sheet of {client.Name}")
-            .In(PanelSlots.ClientActions).AddSheet<BoomSheet>(() => "Open broken sheet", client => $"Broken sheet of {client.Name}")
-            .In(PanelSlots.ClientActions).AddAction(() => "Turn off", args => args.Services.GetRequiredService<IPanelData>().SetClientEnabledAsync(args.Context.Id, false))
-            .In(PanelSlots.InboundActions).AddAction(() => "Show inbound", args => Say(args.Services, $"inbound:{args.Context.Slug}"))
-            .In(PanelSlots.ApiKeyActions).AddAction(() => "Show key", args => Say(args.Services, $"key:{args.Context.Name}"));
+            .In(PanelSlots.ClientActions)
+            .AddSheet<BoomSheet>(() => "Open broken sheet", client => $"Broken sheet of {client.Name}")
+            .In(PanelSlots.ClientActions).AddAction(() => "Turn off",
+                args => args.Services.GetRequiredService<IPanelData>().SetClientEnabledAsync(args.Context.Id, false))
+            .In(PanelSlots.InboundActions).AddAction(() => "Show inbound",
+                args => Say(args.Services, $"inbound:{args.Context.Slug}"))
+            .In(PanelSlots.ApiKeyActions)
+            .AddAction(() => "Show key", args => Say(args.Services, $"key:{args.Context.Name}"));
     }
 
     private static Task Say(IServiceProvider services, string text)

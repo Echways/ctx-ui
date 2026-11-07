@@ -4,8 +4,11 @@ namespace CtxUi.IntegrationTests;
 
 public class ExtensionServicesTests
 {
-    private static Task<GatewayHost> StartAsync(string flag) =>
-        SampleExtensionHost.StartAsync(new Dictionary<string, string> { [$"CtxUi:Extensions:sample:{flag}"] = "true" });
+    private static Task<GatewayHost> StartAsync(string flag)
+    {
+        return SampleExtensionHost.StartAsync(new Dictionary<string, string>
+        { [$"CtxUi:Extensions:sample:{flag}"] = "true" });
+    }
 
     [Fact]
     public async Task An_endpoint_of_an_extension_needs_an_administrator_or_an_api_key()
@@ -16,7 +19,8 @@ public class ExtensionServicesTests
         using var withKey = await ApiClient.IssueAsync(gateway);
         using var panel = new PanelClient(gateway);
         using var signedIn = await panel.SignInAsync("root", admin.Password);
-        using var withCookie = new HttpClient(new HttpClientHandler { CookieContainer = panel.Cookies }) { BaseAddress = new Uri(gateway.PanelUrl) };
+        using var withCookie = new HttpClient(new HttpClientHandler { CookieContainer = panel.Cookies })
+        { BaseAddress = new Uri(gateway.PanelUrl) };
 
         using var closed = await anonymous.GetAsync("extensions/sample/ping");
         using var byKey = await withKey.GetAsync("extensions/sample/ping");
@@ -44,7 +48,9 @@ public class ExtensionServicesTests
         await using var gateway = await StartAsync("Database");
         using (var api = await ApiClient.IssueAsync(gateway))
         using (var written = await api.PostAsync("extensions/sample/notes", "запись"))
+        {
             Assert.Equal(HttpStatusCode.OK, written.StatusCode);
+        }
 
         await gateway.RestartAsync();
 

@@ -1,14 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="all" />
-    <PackageReference Include="OpenIddict.EntityFrameworkCore" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite"/>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="all"/>
+    <PackageReference Include="OpenIddict.EntityFrameworkCore"/>
   </ItemGroup>
 
   <ItemGroup>
     <EmbeddedResource Update="CoreText.resx" StronglyTypedLanguage="CSharp" StronglyTypedClassName="CoreText"
-                      StronglyTypedNamespace="CtxUi.Core" StronglyTypedFileName="$(IntermediateOutputPath)CoreText.Designer.cs" />
+                      StronglyTypedNamespace="CtxUi.Core" StronglyTypedFileName="$(IntermediateOutputPath)CoreText.Designer.cs"/>
   </ItemGroup>
 
 </Project>

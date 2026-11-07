@@ -2,9 +2,19 @@ using CtxUi.Builder.Contracts;
 
 namespace CtxUi.Builder.Servers;
 
-public enum ApiAuthKind { None, Bearer, Header, Basic }
+public enum ApiAuthKind
+{
+    None,
+    Bearer,
+    Header,
+    Basic
+}
 
-public sealed record ApiAuthInput(ApiAuthKind Kind, string? HeaderName = null, string? Username = null, string? Secret = null);
+public sealed record ApiAuthInput(
+    ApiAuthKind Kind,
+    string? HeaderName = null,
+    string? Username = null,
+    string? Secret = null);
 
 public sealed record ServerSettingsView(
     Guid ServerId,

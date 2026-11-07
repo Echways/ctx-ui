@@ -8,7 +8,13 @@ public sealed class SecretBox(IDataProtectionProvider provider)
 
     private readonly IDataProtector _protector = provider.CreateProtector(Purpose);
 
-    public string Seal(string value) => _protector.Protect(value);
+    public string Seal(string value)
+    {
+        return _protector.Protect(value);
+    }
 
-    public string Open(string sealedValue) => _protector.Unprotect(sealedValue);
+    public string Open(string sealedValue)
+    {
+        return _protector.Unprotect(sealedValue);
+    }
 }

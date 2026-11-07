@@ -12,7 +12,8 @@ public static class Backup
 
     private static readonly string[] DatabaseSidecars = [".db-wal", ".db-shm", ".db-journal"];
 
-    public static async Task WriteAsync(CtxUiDbContext db, string dataDir, string extensionsDir, string target, CancellationToken ct)
+    public static async Task WriteAsync(CtxUiDbContext db, string dataDir, string extensionsDir, string target,
+        CancellationToken ct)
     {
         if (File.Exists(target) || (Directory.Exists(target) && Directory.EnumerateFileSystemEntries(target).Any()))
             throw new DomainException(string.Format(ServerText.BackupTargetNotEmpty, target));
@@ -36,7 +37,8 @@ public static class Backup
     private static void CopyExtensions(string from, string to)
     {
         ServiceRegistration.CreatePrivateDirectory(to);
-        foreach (var extension in Directory.EnumerateDirectories(from).Where(directory => !Path.GetFileName(directory).StartsWith('.')))
+        foreach (var extension in Directory.EnumerateDirectories(from)
+                     .Where(directory => !Path.GetFileName(directory).StartsWith('.')))
             CopyTree(extension, Path.Combine(to, Path.GetFileName(extension)));
     }
 
@@ -69,7 +71,8 @@ public static class Backup
 
     private static async Task CopyDatabaseAsync(string from, string to, CancellationToken ct)
     {
-        await using var connection = new SqliteConnection(new SqliteConnectionStringBuilder { DataSource = from, Pooling = false }.ToString());
+        await using var connection =
+            new SqliteConnection(new SqliteConnectionStringBuilder { DataSource = from, Pooling = false }.ToString());
         await connection.OpenAsync(ct);
         await using var vacuum = connection.CreateCommand();
         vacuum.CommandText = "VACUUM INTO @copy";

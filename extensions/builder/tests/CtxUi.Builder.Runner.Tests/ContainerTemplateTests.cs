@@ -11,14 +11,21 @@ public sealed class ContainerTemplateTests
     private static readonly Guid Id = Guid.Parse("0f8fad5b-d9cb-469f-a165-70867728950e");
     private const string Secret = "route-secret-value-123";
     private const string Hash = "0123456789abcdef0123";
-    private static readonly RunnerOptions Options = new("token", "10.0.0.2", "ctx-ui-builder-runtime:1", "ctx-ui-builder-egress", "10.213.0.0/16", null);
 
-    private static ServerSpec Spec(NetworkAccess access) => new(access, new ServerLimits(), Secret);
+    private static readonly RunnerOptions Options = new("token", "10.0.0.2", "ctx-ui-builder-runtime:1",
+        "ctx-ui-builder-egress", "10.213.0.0/16", null);
+
+    private static ServerSpec Spec(NetworkAccess access)
+    {
+        return new ServerSpec(access, new ServerLimits(), Secret);
+    }
 
     private static readonly IReadOnlyDictionary<string, string> NoEnvironment = new Dictionary<string, string>();
 
-    private static Dictionary<string, string> Env(CreateContainerParameters created) =>
-        created.Env.Select(entry => entry.Split('=', 2)).ToDictionary(parts => parts[0], parts => parts[1]);
+    private static Dictionary<string, string> Env(CreateContainerParameters created)
+    {
+        return created.Env.Select(entry => entry.Split('=', 2)).ToDictionary(parts => parts[0], parts => parts[1]);
+    }
 
     [Theory]
     [InlineData(NetworkAccess.InternetOnly)]
@@ -107,14 +114,17 @@ public sealed class ContainerTemplateTests
         var network = ContainerTemplate.Network(Id, NetworkAccess.FullNetwork, "10.213.0.16/28");
         Assert.False(network.Internal);
         Assert.Equal("ctxb-0f8fad5bd9cb469fa16570867728950e-full", network.Name);
-        Assert.DoesNotContain("com.docker.network.bridge.gateway_mode_ipv4", network.Options ?? new Dictionary<string, string>());
+        Assert.DoesNotContain("com.docker.network.bridge.gateway_mode_ipv4",
+            network.Options ?? new Dictionary<string, string>());
     }
 
     [Fact]
     public void Network_name_helper_separates_the_two_accesses()
     {
-        Assert.Equal("ctxb-0f8fad5bd9cb469fa16570867728950e-internet", ContainerTemplate.NetworkName(Id, NetworkAccess.InternetOnly));
-        Assert.Equal("ctxb-0f8fad5bd9cb469fa16570867728950e-full", ContainerTemplate.NetworkName(Id, NetworkAccess.FullNetwork));
+        Assert.Equal("ctxb-0f8fad5bd9cb469fa16570867728950e-internet",
+            ContainerTemplate.NetworkName(Id, NetworkAccess.InternetOnly));
+        Assert.Equal("ctxb-0f8fad5bd9cb469fa16570867728950e-full",
+            ContainerTemplate.NetworkName(Id, NetworkAccess.FullNetwork));
     }
 
     [Theory]
@@ -147,9 +157,11 @@ public sealed class ContainerTemplateTests
         Assert.DoesNotContain(entries, entry => entry.StartsWith("no_proxy=*", StringComparison.Ordinal));
         Assert.DoesNotContain(entries, entry => entry.StartsWith("LD_PRELOAD=", StringComparison.OrdinalIgnoreCase));
         Assert.DoesNotContain(entries, entry => entry.StartsWith("PATH=", StringComparison.OrdinalIgnoreCase));
-        Assert.DoesNotContain(entries, entry => entry.Equals("FASTMCP_STATELESS_HTTP=false", StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(entries,
+            entry => entry.Equals("FASTMCP_STATELESS_HTTP=false", StringComparison.OrdinalIgnoreCase));
         Assert.Contains("API_KEY=kept", entries);
-        Assert.Single(entries, entry => entry.StartsWith("FASTMCP_STATELESS_HTTP=", StringComparison.OrdinalIgnoreCase));
+        Assert.Single(entries,
+            entry => entry.StartsWith("FASTMCP_STATELESS_HTTP=", StringComparison.OrdinalIgnoreCase));
         if (access == NetworkAccess.InternetOnly)
         {
             Assert.Contains("https_proxy=http://ctx-ui-builder-egress:3128", entries);
@@ -215,8 +227,10 @@ public sealed class ContainerTemplateTests
     public void Container_runtime_is_passed_only_from_options()
     {
         var plain = ContainerTemplate.Server(Id, 1, Hash, Spec(NetworkAccess.InternetOnly), NoEnvironment, Options);
-        var sandboxed = ContainerTemplate.Server(Id, 1, Hash, Spec(NetworkAccess.InternetOnly), NoEnvironment, Options with { ContainerRuntime = "runsc" });
-        var sandboxedBuild = ContainerTemplate.Build(Id, 1, Hash, Spec(NetworkAccess.InternetOnly), Options with { ContainerRuntime = "runsc" });
+        var sandboxed = ContainerTemplate.Server(Id, 1, Hash, Spec(NetworkAccess.InternetOnly), NoEnvironment,
+            Options with { ContainerRuntime = "runsc" });
+        var sandboxedBuild = ContainerTemplate.Build(Id, 1, Hash, Spec(NetworkAccess.InternetOnly),
+            Options with { ContainerRuntime = "runsc" });
 
         Assert.Null(plain.HostConfig.Runtime);
         Assert.Equal("runsc", sandboxed.HostConfig.Runtime);
@@ -279,7 +293,8 @@ public sealed class ContainerTemplateTests
     {
         var spec = new ServerSpec(NetworkAccess.InternetOnly, new ServerLimits(memoryMb, cpus, pids), Secret);
 
-        Assert.Throws<ArgumentOutOfRangeException>(() => ContainerTemplate.Server(Id, 1, Hash, spec, NoEnvironment, Options));
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            ContainerTemplate.Server(Id, 1, Hash, spec, NoEnvironment, Options));
         Assert.Throws<ArgumentOutOfRangeException>(() => ContainerTemplate.Build(Id, 1, Hash, spec, Options));
     }
 

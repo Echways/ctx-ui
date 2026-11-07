@@ -14,7 +14,8 @@ public static class DeviceNames
             return ConnectText.UnknownDevice;
 
         var info = Parser.Parse(userAgent);
-        var parts = new[] { info.UA.Family, info.OS.Family }.Where(part => part is not (null or "" or Unrecognized)).ToList();
+        var parts = new[] { info.UA.Family, info.OS.Family }.Where(part => part is not (null or "" or Unrecognized))
+            .ToList();
         return parts.Count == 0 ? ConnectText.UnknownDevice : string.Join(" · ", parts);
     }
 }

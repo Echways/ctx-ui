@@ -1,6 +1,12 @@
 namespace CtxUi.Builder.Publishing;
 
-public sealed record PublishTimings(TimeSpan PollInterval, TimeSpan BuildTimeout, TimeSpan StartTimeout, TimeSpan CheckTimeout, TimeSpan OutageTolerance, TimeSpan RepairInterval)
+public sealed record PublishTimings(
+    TimeSpan PollInterval,
+    TimeSpan BuildTimeout,
+    TimeSpan StartTimeout,
+    TimeSpan CheckTimeout,
+    TimeSpan OutageTolerance,
+    TimeSpan RepairInterval)
 {
     public static PublishTimings Default { get; } = new(
         TimeSpan.FromSeconds(2),

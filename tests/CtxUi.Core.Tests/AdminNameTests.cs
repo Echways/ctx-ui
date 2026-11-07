@@ -9,15 +9,22 @@ public class AdminNameTests
     [InlineData("a")]
     [InlineData("Ivan.Petrov")]
     [InlineData("admin_2-b")]
-    public void Latin_letters_digits_dot_dash_and_underscore_are_accepted(string name) =>
+    public void Latin_letters_digits_dot_dash_and_underscore_are_accepted(string name)
+    {
         Assert.Equal(name, AdminName.Parse(name));
+    }
 
     [Fact]
-    public void Surrounding_spaces_are_dropped() => Assert.Equal("root", AdminName.Parse("  root\n"));
+    public void Surrounding_spaces_are_dropped()
+    {
+        Assert.Equal("root", AdminName.Parse("  root\n"));
+    }
 
     [Fact]
-    public void Longest_name_is_64_characters() =>
+    public void Longest_name_is_64_characters()
+    {
         Assert.Equal(new string('a', 64), AdminName.Parse(new string('a', 64)));
+    }
 
     [Theory]
     [InlineData(null)]
@@ -37,5 +44,8 @@ public class AdminNameTests
     }
 
     [Fact]
-    public void Key_ignores_case() => Assert.Equal(AdminName.Key("Root"), AdminName.Key("rOOT"));
+    public void Key_ignores_case()
+    {
+        Assert.Equal(AdminName.Key("Root"), AdminName.Key("rOOT"));
+    }
 }

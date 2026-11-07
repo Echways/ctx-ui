@@ -10,26 +10,26 @@ public static class SubnetAllocator
 
     public static string Next(string pool, IReadOnlyCollection<string> taken)
     {
-        var (poolStart, poolEnd) = Range(pool) ?? throw new ArgumentException($"Subnet pool '{pool}' is not an IPv4 network.", nameof(pool));
+        var (poolStart, poolEnd) = Range(pool) ??
+                                   throw new ArgumentException($"Subnet pool '{pool}' is not an IPv4 network.",
+                                       nameof(pool));
         if (poolEnd - poolStart + 1 < BlockSize)
-        {
-            throw new ArgumentException($"Subnet pool '{pool}' is smaller than a /{BlockPrefix} network.", nameof(pool));
-        }
+            throw new ArgumentException($"Subnet pool '{pool}' is smaller than a /{BlockPrefix} network.",
+                nameof(pool));
 
         var occupied = taken.Select(Range).OfType<(uint Start, uint End)>().ToList();
         for (var start = poolStart; start <= poolEnd - (BlockSize - 1); start += BlockSize)
         {
             var end = start + BlockSize - 1;
             if (!occupied.Any(range => range.Start <= end && start <= range.End))
-            {
                 return $"{ToAddress(start)}/{BlockPrefix}";
-            }
 
             if (end == uint.MaxValue)
                 break;
         }
 
-        throw new InvalidOperationException($"The subnet pool {pool} has no free /{BlockPrefix} network left. Enlarge the pool or remove unused servers.");
+        throw new InvalidOperationException(
+            $"The subnet pool {pool} has no free /{BlockPrefix} network left. Enlarge the pool or remove unused servers.");
     }
 
     private static (uint Start, uint End)? Range(string cidr)
@@ -40,9 +40,7 @@ public static class SubnetAllocator
             || address.AddressFamily != AddressFamily.InterNetwork
             || !int.TryParse(parts[1], out var prefix)
             || prefix is < 0 or > 32)
-        {
             return null;
-        }
 
         var value = System.Buffers.Binary.BinaryPrimitives.ReadUInt32BigEndian(address.GetAddressBytes());
         var mask = prefix == 0 ? 0u : uint.MaxValue << (32 - prefix);

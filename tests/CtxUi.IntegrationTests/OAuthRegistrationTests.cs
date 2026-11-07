@@ -15,21 +15,30 @@ public class OAuthRegistrationTests
     private const string Challenge = "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM";
     private const string Callback = "http://127.0.0.1/callback";
 
-    private static Task<GatewayHost> StartAsync(string? publicUrlSuffix = null) => StartAsync(_ => { }, publicUrlSuffix);
+    private static Task<GatewayHost> StartAsync(string? publicUrlSuffix = null)
+    {
+        return StartAsync(_ => { }, publicUrlSuffix);
+    }
 
-    private static Task<GatewayHost> StartAsync(Action<WebApplicationBuilder> configure, string? publicUrlSuffix = null) =>
-        OAuthHarness.StartAsync(
+    private static Task<GatewayHost> StartAsync(Action<WebApplicationBuilder> configure, string? publicUrlSuffix = null)
+    {
+        return OAuthHarness.StartAsync(
             builder =>
             {
                 builder.Services.AddSingleton<IMetadataAddressPolicy, LoopbackMetadataPolicy>();
                 configure(builder);
             },
             publicUrlSuffix);
+    }
 
-    private static HttpClient Browser(GatewayHost gateway) =>
-        new(new HttpClientHandler { AllowAutoRedirect = false }) { BaseAddress = new Uri(gateway.BaseUrl) };
+    private static HttpClient Browser(GatewayHost gateway)
+    {
+        return new HttpClient(new HttpClientHandler { AllowAutoRedirect = false })
+        { BaseAddress = new Uri(gateway.BaseUrl) };
+    }
 
-    private static string Authorize(string clientId, string redirectUri, string? resource, string scope = "mcp offline_access")
+    private static string Authorize(string clientId, string redirectUri, string? resource,
+        string scope = "mcp offline_access")
     {
         var query = new Dictionary<string, string?>
         {
@@ -39,7 +48,7 @@ public class OAuthRegistrationTests
             ["scope"] = scope,
             ["state"] = "s1",
             ["code_challenge"] = Challenge,
-            ["code_challenge_method"] = "S256",
+            ["code_challenge_method"] = "S256"
         };
         if (resource is not null)
             query["resource"] = resource;
@@ -63,7 +72,7 @@ public class OAuthRegistrationTests
             ["redirect_uris"] = redirectUris,
             ["token_endpoint_auth_method"] = "none",
             ["grant_types"] = new[] { "authorization_code", "refresh_token" },
-            ["response_types"] = new[] { "code" },
+            ["response_types"] = new[] { "code" }
         });
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         return (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("client_id").GetString()!;
@@ -78,8 +87,10 @@ public class OAuthRegistrationTests
         metadata.For("http://localhost/callback");
         using var browser = Browser(gateway);
 
-        using var first = await browser.GetAsync(Authorize(metadata.Url, "http://localhost:3118/callback", gateway.Issuer + "/mcp/echo"));
-        using var second = await browser.GetAsync(Authorize(metadata.Url, "http://localhost:4000/callback", gateway.Issuer + "/mcp/echo"));
+        using var first = await browser.GetAsync(Authorize(metadata.Url, "http://localhost:3118/callback",
+            gateway.Issuer + "/mcp/echo"));
+        using var second = await browser.GetAsync(Authorize(metadata.Url, "http://localhost:4000/callback",
+            gateway.Issuer + "/mcp/echo"));
 
         Assert.Equal(HttpStatusCode.Found, first.StatusCode);
         Assert.StartsWith("/connect/signin?returnUrl=", first.Headers.Location!.OriginalString);
@@ -96,7 +107,8 @@ public class OAuthRegistrationTests
         metadata.For("https://claude.ai/api/mcp/auth_callback");
         using var browser = Browser(gateway);
 
-        using var response = await browser.GetAsync(Authorize(metadata.Url, "https://evil.example.org/callback", gateway.Issuer + "/mcp/echo"));
+        using var response = await browser.GetAsync(Authorize(metadata.Url, "https://evil.example.org/callback",
+            gateway.Issuer + "/mcp/echo"));
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         Assert.Contains("redirect_uri", await response.Content.ReadAsStringAsync());
@@ -108,10 +120,12 @@ public class OAuthRegistrationTests
         await using var metadata = await MetadataHost.StartAsync();
         await using var gateway = await StartAsync();
         await gateway.AddInboundAsync("echo", "https://mcp.example.org/mcp");
-        metadata.Document = """{"client_id":"https://claude.ai/other","client_name":"Claude","redirect_uris":["http://localhost/callback"]}""";
+        metadata.Document =
+            """{"client_id":"https://claude.ai/other","client_name":"Claude","redirect_uris":["http://localhost/callback"]}""";
         using var browser = Browser(gateway);
 
-        using var response = await browser.GetAsync(Authorize(metadata.Url, "http://localhost:3118/callback", gateway.Issuer + "/mcp/echo"));
+        using var response = await browser.GetAsync(Authorize(metadata.Url, "http://localhost:3118/callback",
+            gateway.Issuer + "/mcp/echo"));
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         var page = await response.Content.ReadAsStringAsync();
@@ -128,7 +142,8 @@ public class OAuthRegistrationTests
         metadata.For("http://localhost/callback");
         using var browser = Browser(gateway);
 
-        using var response = await browser.GetAsync(Authorize(metadata.Url, "http://localhost:3118/callback", gateway.Issuer + "/mcp/echo"));
+        using var response = await browser.GetAsync(Authorize(metadata.Url, "http://localhost:3118/callback",
+            gateway.Issuer + "/mcp/echo"));
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         Assert.Contains("client_id", await response.Content.ReadAsStringAsync());
@@ -155,22 +170,30 @@ public class OAuthRegistrationTests
 
         using var response = await gateway.Http.PostAsJsonAsync(
             "/connect/register",
-            new Dictionary<string, object> { ["client_name"] = "Claude Code", ["redirect_uris"] = new[] { "http://localhost:3118/callback" } });
+            new Dictionary<string, object>
+            { ["client_name"] = "Claude Code", ["redirect_uris"] = new[] { "http://localhost:3118/callback" } });
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         var json = await response.Content.ReadFromJsonAsync<JsonElement>();
         Assert.Equal("Claude Code", json.GetProperty("client_name").GetString());
         Assert.Equal("none", json.GetProperty("token_endpoint_auth_method").GetString());
-        Assert.Equal(["http://localhost:3118/callback"], json.GetProperty("redirect_uris").EnumerateArray().Select(uri => uri.GetString()));
-        Assert.Equal(["authorization_code", "refresh_token"], json.GetProperty("grant_types").EnumerateArray().Select(type => type.GetString()));
+        Assert.Equal(["http://localhost:3118/callback"],
+            json.GetProperty("redirect_uris").EnumerateArray().Select(uri => uri.GetString()));
+        Assert.Equal(["authorization_code", "refresh_token"],
+            json.GetProperty("grant_types").EnumerateArray().Select(type => type.GetString()));
         Assert.Equal(["code"], json.GetProperty("response_types").EnumerateArray().Select(type => type.GetString()));
         Assert.False(json.TryGetProperty("client_secret", out _));
     }
 
     [Theory]
-    [InlineData("""{"client_name":"Bad","redirect_uris":["http://localhost/cb"],"token_endpoint_auth_method":"private_key_jwt"}""", "invalid_client_metadata")]
-    [InlineData("""{"client_name":"Bad","redirect_uris":["http://localhost/cb"],"grant_types":["client_credentials"]}""", "invalid_client_metadata")]
-    [InlineData("""{"client_name":"Bad","redirect_uris":["http://localhost/cb"],"response_types":["token"]}""", "invalid_client_metadata")]
+    [InlineData(
+        """{"client_name":"Bad","redirect_uris":["http://localhost/cb"],"token_endpoint_auth_method":"private_key_jwt"}""",
+        "invalid_client_metadata")]
+    [InlineData(
+        """{"client_name":"Bad","redirect_uris":["http://localhost/cb"],"grant_types":["client_credentials"]}""",
+        "invalid_client_metadata")]
+    [InlineData("""{"client_name":"Bad","redirect_uris":["http://localhost/cb"],"response_types":["token"]}""",
+        "invalid_client_metadata")]
     [InlineData("""{"client_name":"Bad","redirect_uris":[]}""", "invalid_redirect_uri")]
     [InlineData("""{"client_name":"Bad","redirect_uris":["http://example.org/cb"]}""", "invalid_redirect_uri")]
     [InlineData("""{"client_name":"Bad","redirect_uris":["javascript:alert(1)"]}""", "invalid_redirect_uri")]
@@ -196,11 +219,13 @@ public class OAuthRegistrationTests
             new Dictionary<string, object>
             {
                 ["client_name"] = "Many",
-                ["redirect_uris"] = Enumerable.Range(1, 11).Select(port => $"http://localhost:{port}/callback").ToArray(),
+                ["redirect_uris"] = Enumerable.Range(1, 11).Select(port => $"http://localhost:{port}/callback")
+                    .ToArray()
             });
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        Assert.Equal("invalid_redirect_uri", (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("error").GetString());
+        Assert.Equal("invalid_redirect_uri",
+            (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("error").GetString());
     }
 
     [Fact]
@@ -210,10 +235,15 @@ public class OAuthRegistrationTests
 
         using var response = await gateway.Http.PostAsJsonAsync(
             "/connect/register",
-            new Dictionary<string, object> { ["client_name"] = new string('a', 20_000), ["redirect_uris"] = new[] { "http://localhost/callback" } });
+            new Dictionary<string, object>
+            {
+                ["client_name"] = new string('a', 20_000),
+                ["redirect_uris"] = new[] { "http://localhost/callback" }
+            });
 
         Assert.Equal(HttpStatusCode.RequestEntityTooLarge, response.StatusCode);
-        Assert.Equal("invalid_client_metadata", (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("error").GetString());
+        Assert.Equal("invalid_client_metadata",
+            (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("error").GetString());
     }
 
     [Fact]
@@ -223,7 +253,11 @@ public class OAuthRegistrationTests
 
         using var response = await gateway.Http.PostAsJsonAsync(
             "/connect/register",
-            new Dictionary<string, object> { ["client_name"] = "  Claude\n\u0000Code  " + new string('x', 200), ["redirect_uris"] = new[] { "http://localhost/callback" } });
+            new Dictionary<string, object>
+            {
+                ["client_name"] = "  Claude\n\u0000Code  " + new string('x', 200),
+                ["redirect_uris"] = new[] { "http://localhost/callback" }
+            });
 
         var name = (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("client_name").GetString()!;
         Assert.StartsWith("Claude Code x", name);
@@ -237,7 +271,8 @@ public class OAuthRegistrationTests
         await gateway.AddInboundAsync("echo", "https://mcp.example.org/mcp");
         using var browser = Browser(gateway);
 
-        using var response = await browser.GetAsync(Authorize("nobody", OAuthFlow.Callback, gateway.Issuer + "/mcp/echo"));
+        using var response =
+            await browser.GetAsync(Authorize("nobody", OAuthFlow.Callback, gateway.Issuer + "/mcp/echo"));
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         Assert.Equal("text/html", response.Content.Headers.ContentType?.MediaType);
@@ -249,7 +284,7 @@ public class OAuthRegistrationTests
     [Fact]
     public async Task Resource_matches_ignoring_scheme_and_host_case_and_trailing_slash_of_public_url()
     {
-        await using var gateway = await StartAsync(publicUrlSuffix: "/");
+        await using var gateway = await StartAsync("/");
         await gateway.AddInboundAsync("echo", "https://mcp.example.org/mcp");
         var clientId = await RegisterAsync(gateway, "Claude Code", Callback);
         using var browser = Browser(gateway);
@@ -267,7 +302,8 @@ public class OAuthRegistrationTests
         await using var gateway = await StartAsync();
         await gateway.AddInboundAsync("echo", "https://mcp.example.org/mcp");
         await gateway.AddInboundAsync("docs", "https://mcp.example.org/mcp");
-        await gateway.ArrangeAsync(services => services.GetRequiredService<InboundService>().SetEnabledAsync("docs", false));
+        await gateway.ArrangeAsync(services =>
+            services.GetRequiredService<InboundService>().SetEnabledAsync("docs", false));
         var clientId = await RegisterAsync(gateway, "Claude Code", Callback);
         using var browser = Browser(gateway);
 
@@ -290,7 +326,8 @@ public class OAuthRegistrationTests
         using var browser = Browser(gateway);
 
         using var missing = await browser.GetAsync(Authorize(clientId, Callback, null));
-        using var twice = await browser.GetAsync(Authorize(clientId, Callback, gateway.Issuer + "/mcp/echo") + "&resource=" + Uri.EscapeDataString(gateway.Issuer + "/mcp/docs"));
+        using var twice = await browser.GetAsync(Authorize(clientId, Callback, gateway.Issuer + "/mcp/echo") +
+                                                 "&resource=" + Uri.EscapeDataString(gateway.Issuer + "/mcp/docs"));
 
         Assert.Equal("invalid_target", RedirectError(missing, Callback));
         Assert.Equal("invalid_target", RedirectError(twice, Callback));
@@ -302,17 +339,19 @@ public class OAuthRegistrationTests
         await using var gateway = await StartAsync();
         var clientId = await RegisterAsync(gateway, "Claude Code", Callback);
 
-        using var response = await gateway.Http.PostAsync("/connect/token", new FormUrlEncodedContent(new Dictionary<string, string>
-        {
-            ["grant_type"] = "authorization_code",
-            ["client_id"] = clientId,
-            ["code"] = "not-a-code",
-            ["redirect_uri"] = Callback,
-            ["code_verifier"] = "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk",
-        }));
+        using var response = await gateway.Http.PostAsync("/connect/token", new FormUrlEncodedContent(
+            new Dictionary<string, string>
+            {
+                ["grant_type"] = "authorization_code",
+                ["client_id"] = clientId,
+                ["code"] = "not-a-code",
+                ["redirect_uri"] = Callback,
+                ["code_verifier"] = "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk"
+            }));
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        Assert.Equal("invalid_target", (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("error").GetString());
+        Assert.Equal("invalid_target",
+            (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("error").GetString());
     }
 
     [Fact]
@@ -322,10 +361,13 @@ public class OAuthRegistrationTests
         await using var gateway = await StartAsync();
         var dcr = await RegisterAsync(gateway, "Cursor", "cursor://anysphere.cursor-mcp/oauth/callback", Callback);
         metadata.For("http://localhost/callback");
-        var cimdKnown = await gateway.ChangeAsync(services => services.GetRequiredService<RegisteredApps>().EnsureFromDocumentAsync(metadata.Url, default));
+        var cimdKnown = await gateway.ChangeAsync(services =>
+            services.GetRequiredService<RegisteredApps>().EnsureFromDocumentAsync(metadata.Url, default));
 
-        var dynamic = await gateway.ChangeAsync(services => services.GetRequiredService<RegisteredApps>().IdentityAsync(dcr, default));
-        var document = await gateway.ChangeAsync(services => services.GetRequiredService<RegisteredApps>().IdentityAsync(metadata.Url, default));
+        var dynamic = await gateway.ChangeAsync(services =>
+            services.GetRequiredService<RegisteredApps>().IdentityAsync(dcr, default));
+        var document = await gateway.ChangeAsync(services =>
+            services.GetRequiredService<RegisteredApps>().IdentityAsync(metadata.Url, default));
 
         Assert.True(cimdKnown);
         Assert.StartsWith(AppIdentity.DynamicPrefix, dynamic!.Key);
@@ -335,7 +377,8 @@ public class OAuthRegistrationTests
         Assert.Equal(metadata.Url, document!.Key);
         Assert.Equal("Claude Code", document.Name);
         Assert.True(document.LoopbackOnly);
-        Assert.Null(await gateway.ChangeAsync(services => services.GetRequiredService<RegisteredApps>().IdentityAsync("nobody", default)));
+        Assert.Null(await gateway.ChangeAsync(services =>
+            services.GetRequiredService<RegisteredApps>().IdentityAsync("nobody", default)));
     }
 
     [Fact]
@@ -354,7 +397,7 @@ public class OAuthRegistrationTests
         Assert.Equal(1, removed);
         var apps = await gateway.ChangeAsync(async services =>
             (await services.GetRequiredService<RegisteredApps>().IdentityAsync(old, default),
-             await services.GetRequiredService<RegisteredApps>().IdentityAsync(fresh, default)));
+                await services.GetRequiredService<RegisteredApps>().IdentityAsync(fresh, default)));
         Assert.Null(apps.Item1);
         Assert.NotNull(apps.Item2);
     }

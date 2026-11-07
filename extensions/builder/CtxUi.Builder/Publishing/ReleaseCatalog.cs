@@ -6,7 +6,14 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CtxUi.Builder.Publishing;
 
-public enum ServerRunState { NoRelease, Running, Building, RunnerUnavailable, NeedsReactivation }
+public enum ServerRunState
+{
+    NoRelease,
+    Running,
+    Building,
+    RunnerUnavailable,
+    NeedsReactivation
+}
 
 public sealed record ServerStatus(ServerRunState State, int? ActiveNumber, int? BuildingNumber);
 
@@ -22,7 +29,10 @@ public sealed record ReleaseView(
     IReadOnlyList<string> Tools,
     IReadOnlyList<string> RemovedTools);
 
-public sealed class ReleaseCatalog(IDbContextFactory<BuilderDatabase> databases, RunnerSettings settings, RunnerClient runner)
+public sealed class ReleaseCatalog(
+    IDbContextFactory<BuilderDatabase> databases,
+    RunnerSettings settings,
+    RunnerClient runner)
 {
     private static readonly TimeSpan RunnerTimeout = TimeSpan.FromSeconds(5);
 
@@ -59,8 +69,10 @@ public sealed class ReleaseCatalog(IDbContextFactory<BuilderDatabase> databases,
     public async Task<IReadOnlyList<ReleaseView>> ListAsync(Guid serverId, CancellationToken ct)
     {
         await using var database = await databases.CreateDbContextAsync(ct);
-        var activeId = await database.Servers.AsNoTracking().Where(server => server.Id == serverId).Select(server => server.ActiveReleaseId).SingleOrDefaultAsync(ct);
-        var releases = await database.Releases.AsNoTracking().Where(release => release.ServerId == serverId).OrderBy(release => release.Number).ToListAsync(ct);
+        var activeId = await database.Servers.AsNoTracking().Where(server => server.Id == serverId)
+            .Select(server => server.ActiveReleaseId).SingleOrDefaultAsync(ct);
+        var releases = await database.Releases.AsNoTracking().Where(release => release.ServerId == serverId)
+            .OrderBy(release => release.Number).ToListAsync(ct);
 
         var views = new List<ReleaseView>(releases.Count);
         IReadOnlyList<string>? previous = null;
@@ -101,12 +113,15 @@ public sealed class ReleaseCatalog(IDbContextFactory<BuilderDatabase> databases,
     private async Task<(int? Active, int? Building)> NumbersAsync(Guid serverId, CancellationToken ct)
     {
         await using var database = await databases.CreateDbContextAsync(ct);
-        var activeId = await database.Servers.AsNoTracking().Where(server => server.Id == serverId).Select(server => server.ActiveReleaseId).SingleOrDefaultAsync(ct);
-        var numbers = await database.Releases.AsNoTracking().Where(release => release.ServerId == serverId && (release.Id == activeId || release.Status == ReleaseState.Building))
+        var activeId = await database.Servers.AsNoTracking().Where(server => server.Id == serverId)
+            .Select(server => server.ActiveReleaseId).SingleOrDefaultAsync(ct);
+        var numbers = await database.Releases.AsNoTracking().Where(release =>
+                release.ServerId == serverId && (release.Id == activeId || release.Status == ReleaseState.Building))
             .Select(release => new { release.Id, release.Number, release.Status }).ToListAsync(ct);
         return (
             numbers.Where(release => release.Id == activeId).Select(release => (int?)release.Number).SingleOrDefault(),
-            numbers.Where(release => release.Status == ReleaseState.Building).Select(release => (int?)release.Number).FirstOrDefault());
+            numbers.Where(release => release.Status == ReleaseState.Building).Select(release => (int?)release.Number)
+                .FirstOrDefault());
     }
 
     private async Task<ServerRunState> RunnerRoutesAsync(Guid serverId, int active, CancellationToken ct)
@@ -125,7 +140,8 @@ public sealed class ReleaseCatalog(IDbContextFactory<BuilderDatabase> databases,
         {
             return ServerRunState.NeedsReactivation;
         }
-        catch (Exception failure) when (failure is RunnerException or OperationCanceledException && !ct.IsCancellationRequested)
+        catch (Exception failure) when (failure is RunnerException or OperationCanceledException &&
+                                        !ct.IsCancellationRequested)
         {
             return ServerRunState.RunnerUnavailable;
         }

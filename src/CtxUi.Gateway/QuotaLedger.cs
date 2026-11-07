@@ -4,7 +4,12 @@ using CtxUi.Core.Routing;
 
 namespace CtxUi.Gateway;
 
-public readonly record struct QuotaCharge(bool Accepted, DateTimeOffset PeriodStart, int Calls, int? Limit, DateTimeOffset? ResetsAt);
+public readonly record struct QuotaCharge(
+    bool Accepted,
+    DateTimeOffset PeriodStart,
+    int Calls,
+    int? Limit,
+    DateTimeOffset? ResetsAt);
 
 public sealed class QuotaLedger
 {
@@ -59,7 +64,6 @@ public sealed class QuotaLedger
     {
         var changed = new List<(Counter Counter, StoredUsage Usage)>();
         foreach (var (clientId, counter) in _counters)
-        {
             lock (counter.Gate)
             {
                 if (!counter.Dirty || counter.Since is not { } since)
@@ -68,7 +72,6 @@ public sealed class QuotaLedger
                 counter.Dirty = false;
                 changed.Add((counter, new StoredUsage(clientId, since, counter.Used)));
             }
-        }
 
         if (changed.Count == 0)
             return;
@@ -80,10 +83,10 @@ public sealed class QuotaLedger
         catch
         {
             foreach (var (counter, _) in changed)
-            {
                 lock (counter.Gate)
+                {
                     counter.Dirty = true;
-            }
+                }
 
             throw;
         }

@@ -37,7 +37,7 @@ internal sealed class RunnerStack : IAsyncDisposable
     {
         ["CtxUi:Extensions:builder:RunnerUrl"] = ControlUrl,
         ["CtxUi:Extensions:builder:RunnerIngressUrl"] = IngressUrl,
-        ["CtxUi:Extensions:builder:RunnerToken"] = Token,
+        ["CtxUi:Extensions:builder:RunnerToken"] = Token
     };
 
     public static string RuntimeImage => $"{ImagePrefix}runtime:{Tag}";
@@ -62,7 +62,10 @@ internal sealed class RunnerStack : IAsyncDisposable
         }
     }
 
-    public void Track(Guid serverId) => _servers.Add(serverId);
+    public void Track(Guid serverId)
+    {
+        _servers.Add(serverId);
+    }
 
     public async Task RemoveServersAsync()
     {
@@ -80,16 +83,21 @@ internal sealed class RunnerStack : IAsyncDisposable
     {
         await RemoveServersAsync();
         if (_composed)
-            await Shell.TryRunAsync("docker", ["compose", "-p", Project, "-f", ComposeFile, "down"], ComposeEnvironment);
+            await Shell.TryRunAsync("docker", ["compose", "-p", Project, "-f", ComposeFile, "down"],
+                ComposeEnvironment);
         _gate.Dispose();
     }
 
     private static string ComposeFile => Path.Combine(BuilderEnvironment.Root, "deploy", "builder", "compose.yaml");
 
-    private Dictionary<string, string> ComposeEnvironment => new() { ["CTX_UI_VERSION"] = Tag, ["CTXB_RUNNER_TOKEN"] = Token };
+    private Dictionary<string, string> ComposeEnvironment =>
+        new() { ["CTX_UI_VERSION"] = Tag, ["CTXB_RUNNER_TOKEN"] = Token };
 
-    private Task<string> Compose(params string[] arguments) =>
-        Shell.RunAsync("docker", ["compose", "-p", Project, "-f", ComposeFile, .. arguments], ComposeEnvironment);
+    private Task<string> Compose(params string[] arguments)
+    {
+        return Shell.RunAsync("docker", ["compose", "-p", Project, "-f", ComposeFile, .. arguments],
+            ComposeEnvironment);
+    }
 
     private static async Task RequireFreeAsync()
     {
@@ -105,14 +113,17 @@ internal sealed class RunnerStack : IAsyncDisposable
                 continue;
             }
 
-            throw new InvalidOperationException($"Port {port} on 127.0.0.1 is already in use, the builder flow tests need it for the Runner");
+            throw new InvalidOperationException(
+                $"Port {port} on 127.0.0.1 is already in use, the builder flow tests need it for the Runner");
         }
 
-        foreach (var (kind, name) in new[] { ("container", "ctxb-runner"), ("container", "ctxb-egress"), ("network", ControlNetwork) })
+        foreach (var (kind, name) in new[]
+                     { ("container", "ctxb-runner"), ("container", "ctxb-egress"), ("network", ControlNetwork) })
         {
             var (code, _) = await Shell.TryRunAsync("docker", [kind, "inspect", name]);
             if (code == 0)
-                throw new InvalidOperationException($"A {kind} named {name} already exists, the builder flow tests need its name for the Runner");
+                throw new InvalidOperationException(
+                    $"A {kind} named {name} already exists, the builder flow tests need its name for the Runner");
         }
     }
 
@@ -121,8 +132,13 @@ internal sealed class RunnerStack : IAsyncDisposable
         var root = BuilderEnvironment.Root;
         var builder = Path.Combine(root, "extensions", "builder");
         await Shell.RunAsync("docker", ["build", "-q", "-t", RuntimeImage, Path.Combine(builder, "runtime")]);
-        await Shell.RunAsync("docker", ["build", "-q", "-t", $"{ImagePrefix}egress:{Tag}", Path.Combine(builder, "egress")]);
-        await Shell.RunAsync("docker", ["build", "-q", "-t", $"{ImagePrefix}runner:{Tag}", "--build-arg", $"VERSION={ExtensionVersion}", "-f", Path.Combine(builder, "CtxUi.Builder.Runner", "Dockerfile"), root]);
+        await Shell.RunAsync("docker",
+            ["build", "-q", "-t", $"{ImagePrefix}egress:{Tag}", Path.Combine(builder, "egress")]);
+        await Shell.RunAsync("docker",
+        [
+            "build", "-q", "-t", $"{ImagePrefix}runner:{Tag}", "--build-arg", $"VERSION={ExtensionVersion}", "-f",
+            Path.Combine(builder, "CtxUi.Builder.Runner", "Dockerfile"), root
+        ]);
     }
 
     private async Task WaitUntilHealthyAsync()
@@ -169,9 +185,11 @@ internal sealed class RunnerStack : IAsyncDisposable
         }
     }
 
-    private static async Task RemoveByLabelAsync(string listKind, string[] listFlags, string removeKind, string[] removeFlags, Guid id)
+    private static async Task RemoveByLabelAsync(string listKind, string[] listFlags, string removeKind,
+        string[] removeFlags, Guid id)
     {
-        var (_, listed) = await Shell.TryRunAsync("docker", [listKind, .. listFlags, "-q", "--filter", $"label={Label}={id}"]);
+        var (_, listed) =
+            await Shell.TryRunAsync("docker", [listKind, .. listFlags, "-q", "--filter", $"label={Label}={id}"]);
         var identifiers = listed.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         if (identifiers.Length > 0)
             await Shell.TryRunAsync("docker", [removeKind, .. removeFlags, .. identifiers]);

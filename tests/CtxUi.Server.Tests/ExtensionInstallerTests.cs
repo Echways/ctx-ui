@@ -14,12 +14,18 @@ public sealed class ExtensionInstallerTests : IDisposable
 
     private ExtensionInstaller Installer => new(Extensions, Data);
 
-    public void Dispose() => Directory.Delete(_root, recursive: true);
+    public void Dispose()
+    {
+        Directory.Delete(_root, true);
+    }
 
     private static string SampleFolder => Path.Combine(AppContext.BaseDirectory, "extensions", "sample");
 
-    private static string Manifest(string id = "sample", string version = "1.0.0", string api = "1.0") =>
-        $$"""{ "id": "{{id}}", "name": "Sample", "version": "{{version}}", "api": "{{api}}", "assembly": "SampleExtension" }""";
+    private static string Manifest(string id = "sample", string version = "1.0.0", string api = "1.0")
+    {
+        return
+            $$"""{ "id": "{{id}}", "name": "Sample", "version": "{{version}}", "api": "{{api}}", "assembly": "SampleExtension" }""";
+    }
 
     private string Archive(params (string Name, string Text)[] entries)
     {
@@ -54,7 +60,10 @@ public sealed class ExtensionInstallerTests : IDisposable
         return path;
     }
 
-    private string GoodArchive(string version = "1.0.0") => SampleArchive(Manifest(version: version), ("installed.txt", version));
+    private string GoodArchive(string version = "1.0.0")
+    {
+        return SampleArchive(Manifest(version: version), ("installed.txt", version));
+    }
 
     private void InstallFolder(string name, string? manifest = null)
     {
@@ -113,15 +122,15 @@ public sealed class ExtensionInstallerTests : IDisposable
         string[] broken =
         [
             Archive(("SampleExtension.dll", "x")),
-            Archive(("extension.json", Manifest(id: "Bad/Id")), ("SampleExtension.dll", "x")),
-            Archive(("extension.json", Manifest(id: "login")), ("SampleExtension.dll", "x")),
+            Archive(("extension.json", Manifest("Bad/Id")), ("SampleExtension.dll", "x")),
+            Archive(("extension.json", Manifest("login")), ("SampleExtension.dll", "x")),
             Archive(("extension.json", Manifest(api: "2.0")), ("SampleExtension.dll", "x")),
             Archive(("extension.json", Manifest())),
             Archive(("extension.json", Manifest()), ("SampleExtension.dll", "not an assembly")),
-            SampleArchive(Manifest(id: "other")),
+            SampleArchive(Manifest("other")),
             Archive(("extension.json", "not json")),
             corrupt,
-            Path.Combine(_root, "missing.zip"),
+            Path.Combine(_root, "missing.zip")
         ];
 
         foreach (var archive in broken)
@@ -151,13 +160,13 @@ public sealed class ExtensionInstallerTests : IDisposable
         Installer.Install(GoodArchive());
         Directory.CreateDirectory(data);
 
-        Installer.Remove("sample", purge: false);
+        Installer.Remove("sample", false);
 
         Assert.False(Directory.Exists(Path.Combine(Extensions, "sample")));
         Assert.True(Directory.Exists(data));
 
         Installer.Install(GoodArchive());
-        Installer.Remove("sample", purge: true);
+        Installer.Remove("sample", true);
 
         Assert.False(Directory.Exists(data));
     }
@@ -169,7 +178,7 @@ public sealed class ExtensionInstallerTests : IDisposable
     {
         Directory.CreateDirectory(Path.Combine(Data, "data"));
 
-        var failure = Assert.Throws<DomainException>(() => Installer.Remove(id, purge: true));
+        var failure = Assert.Throws<DomainException>(() => Installer.Remove(id, true));
 
         Assert.Contains(id, failure.Message, StringComparison.Ordinal);
         Assert.True(Directory.Exists(Path.Combine(Data, "data")));
@@ -199,7 +208,7 @@ public sealed class ExtensionInstallerTests : IDisposable
                 ["off"] = ExtensionState.Disabled,
                 ["old"] = ExtensionState.Incompatible,
                 ["routes"] = ExtensionState.Invalid,
-                ["sample"] = ExtensionState.Ok,
+                ["sample"] = ExtensionState.Ok
             },
             statuses.ToDictionary(pair => pair.Key, pair => pair.Value.State));
         Assert.Contains("/sample", statuses["routes"].Problem, StringComparison.Ordinal);
@@ -207,5 +216,8 @@ public sealed class ExtensionInstallerTests : IDisposable
     }
 
     [Fact]
-    public void Scan_of_a_missing_folder_is_empty() => Assert.Empty(ExtensionCatalog.Scan(new CtxUiOptions { DataDir = Data }));
+    public void Scan_of_a_missing_folder_is_empty()
+    {
+        Assert.Empty(ExtensionCatalog.Scan(new CtxUiOptions { DataDir = Data }));
+    }
 }

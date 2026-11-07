@@ -20,9 +20,17 @@ public sealed class RunnerSettings
 
     public bool IsComplete => Missing.Count == 0;
 
-    private static string[] MissingNames(bool url, bool ingressUrl, bool token) =>
-        [.. new[] { (url, "RunnerUrl"), (ingressUrl, "RunnerIngressUrl"), (token, "RunnerToken") }.Where(setting => setting.Item1).Select(setting => setting.Item2)];
+    private static string[] MissingNames(bool url, bool ingressUrl, bool token)
+    {
+        return
+        [
+            .. new[] { (url, "RunnerUrl"), (ingressUrl, "RunnerIngressUrl"), (token, "RunnerToken") }
+                .Where(setting => setting.Item1).Select(setting => setting.Item2)
+        ];
+    }
 
-    private static Uri? Absolute(string? value) =>
-        Uri.TryCreate(value, UriKind.Absolute, out var uri) && uri.Scheme is "http" or "https" ? uri : null;
+    private static Uri? Absolute(string? value)
+    {
+        return Uri.TryCreate(value, UriKind.Absolute, out var uri) && uri.Scheme is "http" or "https" ? uri : null;
+    }
 }

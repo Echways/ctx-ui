@@ -7,14 +7,17 @@
 <div class="builder-editor">
     <div class="builder-editor-bar">
         <span class="builder-editor-path">@Path</span>
-        <span class="builder-editor-state" role="status" data-state="@_state.ToString().ToLowerInvariant()" data-testid="save-state">@StateText</span>
+        <span class="builder-editor-state" role="status" data-state="@_state.ToString().ToLowerInvariant()"
+              data-testid="save-state">@StateText</span>
     </div>
     @if (_state == SaveState.Conflict)
     {
         <div class="builder-conflict" role="alert" data-testid="conflict">
             <p class="warn-t">@BuilderText.DraftChangedElsewhere</p>
-            <button type="button" class="link" data-testid="load-new-version" @onclick="LoadNewVersionAsync">@BuilderText.LoadNewVersion</button>
-            <button type="button" class="link" data-testid="keep-mine" @onclick="KeepMineAsync">@BuilderText.KeepMine</button>
+            <button type="button" class="link" data-testid="load-new-version"
+                    @onclick="LoadNewVersionAsync">@BuilderText.LoadNewVersion</button>
+            <button type="button" class="link" data-testid="keep-mine"
+                    @onclick="KeepMineAsync">@BuilderText.KeepMine</button>
         </div>
     }
     else if (_error is not null)
@@ -27,7 +30,14 @@
 @code {
     private const int QuietMilliseconds = 800;
 
-    private enum SaveState { Saved, Pending, Saving, Conflict, Failed }
+    private enum SaveState
+    {
+        Saved,
+        Pending,
+        Saving,
+        Conflict,
+        Failed
+    }
 
     private readonly SemaphoreSlim _gate = new(1, 1);
     private ElementReference _host;
@@ -40,17 +50,13 @@
     private bool _dirty;
     private bool _disposed;
 
-    [Parameter, EditorRequired]
-    public Guid ServerId { get; set; }
+    [Parameter][EditorRequired] public Guid ServerId { get; set; }
 
-    [Parameter, EditorRequired]
-    public string Path { get; set; } = string.Empty;
+    [Parameter][EditorRequired] public string Path { get; set; } = string.Empty;
 
-    [Parameter, EditorRequired]
-    public string Content { get; set; } = string.Empty;
+    [Parameter][EditorRequired] public string Content { get; set; } = string.Empty;
 
-    [Parameter, EditorRequired]
-    public long Revision { get; set; }
+    [Parameter][EditorRequired] public long Revision { get; set; }
 
     private string StateText => _state switch
     {
@@ -58,10 +64,13 @@
         SaveState.Pending => BuilderText.StateUnsaved,
         SaveState.Saving => BuilderText.StateSaving,
         SaveState.Conflict => BuilderText.StateConflict,
-        _ => BuilderText.StateFailed,
+        _ => BuilderText.StateFailed
     };
 
-    protected override void OnInitialized() => _revision = Revision;
+    protected override void OnInitialized()
+    {
+        _revision = Revision;
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -73,20 +82,23 @@
     }
 
     [JSInvokable]
-    public Task EditorChanged() => InvokeAsync(() =>
+    public Task EditorChanged()
     {
-        _dirty = true;
-        _quiet?.Cancel();
-        _quiet?.Dispose();
-        _quiet = null;
-        if (_state == SaveState.Conflict)
-            return;
+        return InvokeAsync(() =>
+        {
+            _dirty = true;
+            _quiet?.Cancel();
+            _quiet?.Dispose();
+            _quiet = null;
+            if (_state == SaveState.Conflict)
+                return;
 
-        _state = SaveState.Pending;
-        _quiet = new CancellationTokenSource();
-        _ = SaveAfterQuietAsync(_quiet.Token);
-        StateHasChanged();
-    });
+            _state = SaveState.Pending;
+            _quiet = new CancellationTokenSource();
+            _ = SaveAfterQuietAsync(_quiet.Token);
+            StateHasChanged();
+        });
+    }
 
     public async Task<bool> TryFlushAsync()
     {
@@ -173,7 +185,10 @@
         await SaveAsync();
     }
 
-    private Task<DraftFile> LatestAsync() => Catalog.FileAsync(ServerId, Path, CancellationToken.None);
+    private Task<DraftFile> LatestAsync()
+    {
+        return Catalog.FileAsync(ServerId, Path, CancellationToken.None);
+    }
 
     public async ValueTask DisposeAsync()
     {
@@ -198,4 +213,5 @@
             _self?.Dispose();
         }
     }
+
 }

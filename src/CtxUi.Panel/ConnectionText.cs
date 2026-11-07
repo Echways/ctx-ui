@@ -6,15 +6,23 @@ namespace CtxUi.Panel;
 
 public static class ConnectionText
 {
-    public static string Address(string publicUrl, string slug) => $"{publicUrl.TrimEnd('/')}/mcp/{slug}";
+    public static string Address(string publicUrl, string slug)
+    {
+        return $"{publicUrl.TrimEnd('/')}/mcp/{slug}";
+    }
 
-    public static string AddressWithToken(string publicUrl, string token, string slug) =>
-        $"{publicUrl.TrimEnd('/')}/k/{token}/mcp/{slug}";
+    public static string AddressWithToken(string publicUrl, string token, string slug)
+    {
+        return $"{publicUrl.TrimEnd('/')}/k/{token}/mcp/{slug}";
+    }
 
-    public static IReadOnlyList<string> Slugs(Client client) =>
-        client.Inbounds.Select(link => link.Inbound!.Slug).Order(StringComparer.Ordinal).ToList();
+    public static IReadOnlyList<string> Slugs(Client client)
+    {
+        return client.Inbounds.Select(link => link.Inbound!.Slug).Order(StringComparer.Ordinal).ToList();
+    }
 
-    public static string Message(string publicUrl, Client client, string token, ConnectionMode? mode = null, string? inviteUrl = null)
+    public static string Message(string publicUrl, Client client, string token, ConnectionMode? mode = null,
+        string? inviteUrl = null)
     {
         mode ??= ConnectionMode.Off;
         var text = new StringBuilder();
@@ -53,7 +61,9 @@ public static class ConnectionText
         text.Append($"{validity}\n");
         if (client.QuotaCalls is { } quota)
         {
-            var period = client.ResetEveryDays is { } days ? string.Format(PanelText.MessageQuotaEvery, days) : PanelText.MessageQuotaOnce;
+            var period = client.ResetEveryDays is { } days
+                ? string.Format(PanelText.MessageQuotaEvery, days)
+                : PanelText.MessageQuotaOnce;
             text.Append($"{string.Format(PanelText.MessageQuota, quota, period)}\n");
         }
 

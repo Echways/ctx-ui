@@ -22,7 +22,7 @@
         { State: ServerRunState.Building } status => string.Format(BuilderText.StateBuilding, status.BuildingNumber),
         { State: ServerRunState.RunnerUnavailable } => BuilderText.StateRunnerUnavailable,
         { State: ServerRunState.NeedsReactivation } status => string.Format(BuilderText.StateNeedsReactivation, status.ActiveNumber),
-        _ => BuilderText.StateNoRelease,
+        _ => BuilderText.StateNoRelease
     };
 
     protected override async Task OnInitializedAsync()
@@ -32,4 +32,5 @@
         _server = await Catalog.SettingsAsync(id, CancellationToken.None);
         _status = await Releases.StatusAsync(id, CancellationToken.None);
     }
+
 }

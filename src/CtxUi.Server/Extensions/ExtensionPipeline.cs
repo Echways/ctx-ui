@@ -9,7 +9,8 @@ public static class ExtensionPipeline
 {
     private const string Assets = "wwwroot";
 
-    internal static void Register(PanelLayout layout, IServiceCollection services, ExtensionCatalog catalog, IConfiguration section)
+    internal static void Register(PanelLayout layout, IServiceCollection services, ExtensionCatalog catalog,
+        IConfiguration section)
     {
         foreach (var extension in catalog.Loaded)
         {
@@ -45,7 +46,7 @@ public static class ExtensionPipeline
                 app.UseStaticFiles(new StaticFileOptions
                 {
                     FileProvider = new PhysicalFileProvider(assets),
-                    RequestPath = $"/_content/{extension.Manifest.Assembly}",
+                    RequestPath = $"/_content/{extension.Manifest.Assembly}"
                 });
         }
 
@@ -56,7 +57,8 @@ public static class ExtensionPipeline
     {
         foreach (var extension in catalog.Loaded)
         {
-            var group = app.MapGroup($"/extensions/{extension.Manifest.Id}").RequireAuthorization(ApiServices.ExtensionsPolicy);
+            var group = app.MapGroup($"/extensions/{extension.Manifest.Id}")
+                .RequireAuthorization(ApiServices.ExtensionsPolicy);
             try
             {
                 extension.Entry.MapEndpoints(group);
@@ -74,7 +76,6 @@ public static class ExtensionPipeline
     {
         await using var scope = services.CreateAsyncScope();
         foreach (var initializer in scope.ServiceProvider.GetServices<IExtensionInitializer>())
-        {
             try
             {
                 await initializer.InitializeAsync(ct);
@@ -83,7 +84,6 @@ public static class ExtensionPipeline
             {
                 throw Failed(OwnerOf(initializer), failure);
             }
-        }
     }
 
     private static string OwnerOf(IExtensionInitializer initializer)
@@ -95,6 +95,9 @@ public static class ExtensionPipeline
             .FirstOrDefault()?.Name ?? type.FullName!;
     }
 
-    internal static InvalidOperationException Failed(string id, Exception failure) =>
-        new(string.Format(ServerText.ExtensionStartFailed, id, failure.Message), failure);
+    internal static InvalidOperationException Failed(string id, Exception failure)
+    {
+        return new InvalidOperationException(string.Format(ServerText.ExtensionStartFailed, id, failure.Message),
+            failure);
+    }
 }

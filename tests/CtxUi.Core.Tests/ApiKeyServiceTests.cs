@@ -6,7 +6,10 @@ namespace CtxUi.Core.Tests;
 
 public class ApiKeyServiceTests
 {
-    private static ApiKeyService Keys(TestDatabase database) => new(database.NewContext(), new FakeTimeProvider(TestData.Now));
+    private static ApiKeyService Keys(TestDatabase database)
+    {
+        return new ApiKeyService(database.NewContext(), new FakeTimeProvider(TestData.Now));
+    }
 
     [Fact]
     public async Task Issued_key_is_stored_only_as_hash_and_prefix()

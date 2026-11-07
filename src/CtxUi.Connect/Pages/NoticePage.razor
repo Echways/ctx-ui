@@ -11,18 +11,13 @@
 </ConnectPage>
 
 @code {
-    [CascadingParameter]
-    private HttpContext Http { get; set; } = default!;
+    [CascadingParameter] private HttpContext Http { get; set; } = default!;
 
-    [Parameter]
-    public string? Title { get; set; }
+    [Parameter] public string? Title { get; set; }
 
-    [Parameter, EditorRequired]
-    public string Text { get; set; } = "";
+    [Parameter][EditorRequired] public string Text { get; set; } = "";
 
-    [Parameter]
-    public string? Detail { get; set; }
+    [Parameter] public string? Detail { get; set; }
 
-    [Parameter]
-    public bool BackToSignIn { get; set; } = true;
+    [Parameter] public bool BackToSignIn { get; set; } = true;
 }

@@ -85,11 +85,11 @@ public class PanelClientActionTests
 
         await RowMenu.ChooseAsync(Row(page, "Иванов"), "Удалить");
         await Expect(Dialog(page)).ToContainTextAsync("Удалить клиента «Иванов»?");
-        await Dialog(page).GetByRole(AriaRole.Button, new() { Name = "Отмена" }).ClickAsync();
+        await Dialog(page).GetByRole(AriaRole.Button, new LocatorGetByRoleOptions { Name = "Отмена" }).ClickAsync();
         using var kept = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/echo", issued.Token));
 
         await RowMenu.ChooseAsync(Row(page, "Иванов"), "Удалить");
-        await Dialog(page).GetByRole(AriaRole.Button, new() { Name = "Удалить" }).ClickAsync();
+        await Dialog(page).GetByRole(AriaRole.Button, new LocatorGetByRoleOptions { Name = "Удалить" }).ClickAsync();
         await Expect(Row(page, "Иванов")).ToHaveCountAsync(0);
         using var gone = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/echo", issued.Token));
 

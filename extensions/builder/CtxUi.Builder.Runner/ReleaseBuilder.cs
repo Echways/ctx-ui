@@ -25,14 +25,12 @@ public sealed class ReleaseBuilder(
         {
             spec = server.Spec ?? throw RunnerRequestException.SpecMissing(id);
             if (server.BuildingRelease is { } running)
-            {
-                throw RunnerRequestException.Conflict($"Release {running} of this server is still building. Only one build runs at a time.");
-            }
+                throw RunnerRequestException.Conflict(
+                    $"Release {running} of this server is still building. Only one build runs at a time.");
 
-            if (server.Releases.TryGetValue(number, out var existing) && (existing.State != ReleaseState.Failed || existing.Runnable))
-            {
+            if (server.Releases.TryGetValue(number, out var existing) &&
+                (existing.State != ReleaseState.Failed || existing.Runnable))
                 throw RunnerRequestException.Conflict($"Release {number} already exists with state {existing.State}.");
-            }
 
             release = new ReleaseRecord(number, ReleaseState.Building);
             server.Releases[number] = release;
@@ -58,19 +56,23 @@ public sealed class ReleaseBuilder(
         }
         catch (Exception failure)
         {
-            logger.LogWarning(failure, "Build of release {Release} of server {Server} failed", release.Number, server.Id);
+            logger.LogWarning(failure, "Build of release {Release} of server {Server} failed", release.Number,
+                server.Id);
             if (!ct.IsCancellationRequested)
                 await RemoveFailedBuildAsync(server.Id, release, attempt);
 
             lock (server.Sync)
             {
                 server.BuildingRelease = null;
-                release.MarkFailed(failure is OperationCanceledException ? "The build was cancelled." : failure.Message);
+                release.MarkFailed(failure is OperationCanceledException
+                    ? "The build was cancelled."
+                    : failure.Message);
             }
         }
     }
 
-    private async Task<string> BuildAsync(Guid id, ReleaseRecord release, ServerSpec spec, byte[] archive, BuildAttempt attempt, CancellationToken ct)
+    private async Task<string> BuildAsync(Guid id, ReleaseRecord release, ServerSpec spec, byte[] archive,
+        BuildAttempt attempt, CancellationToken ct)
     {
         var hash = ProjectArchive.EnvironmentHash(archive);
         release.SetEnvironmentHash(hash);
@@ -121,7 +123,7 @@ public sealed class ReleaseBuilder(
         await engine.CreateContainerAsync(id, parameters, ct);
         try
         {
-            await using var body = new MemoryStream(archive, writable: false);
+            await using var body = new MemoryStream(archive, false);
             await engine.ExtractArchiveAsync(id, parameters.Name, CodePath, body, ct);
             return await engine.ReadFileAsync(id, parameters.Name, LockFilePath, MaxLockFileBytes, ct);
         }
@@ -131,7 +133,8 @@ public sealed class ReleaseBuilder(
         }
     }
 
-    private async Task<string> RunBuildContainerAsync(Guid id, ReleaseRecord release, string hash, ServerSpec spec, CancellationToken ct)
+    private async Task<string> RunBuildContainerAsync(Guid id, ReleaseRecord release, string hash, ServerSpec spec,
+        CancellationToken ct)
     {
         var parameters = ContainerTemplate.Build(id, release.Number, hash, spec, options);
         using var timeout = new CancellationTokenSource(BuildTimeout, time);
@@ -146,12 +149,10 @@ public sealed class ReleaseBuilder(
             var exitCode = await engine.WaitContainerAsync(id, parameters.Name, linked.Token);
             await logs;
             if (exitCode != 0)
-            {
                 throw new InvalidOperationException($"Installing the dependencies failed with exit code {exitCode}.");
-            }
 
             var lockFile = await engine.ReadFileAsync(id, parameters.Name, LockFilePath, MaxLockFileBytes, ct)
-                ?? throw new InvalidOperationException("The build finished without writing a lock file.");
+                           ?? throw new InvalidOperationException("The build finished without writing a lock file.");
             await engine.RemoveContainerAsync(id, parameters.Name, ct);
             return lockFile;
         }
@@ -165,10 +166,7 @@ public sealed class ReleaseBuilder(
     {
         try
         {
-            await foreach (var chunk in engine.ReadLogsAsync(id, container, null, true, ct))
-            {
-                release.AppendLog(chunk);
-            }
+            await foreach (var chunk in engine.ReadLogsAsync(id, container, null, true, ct)) release.AppendLog(chunk);
         }
         catch (OperationCanceledException)
         {
@@ -183,7 +181,8 @@ public sealed class ReleaseBuilder(
     {
         try
         {
-            await engine.RemoveContainerAsync(id, ContainerTemplate.BuildContainerName(id, release.Number), CancellationToken.None);
+            await engine.RemoveContainerAsync(id, ContainerTemplate.BuildContainerName(id, release.Number),
+                CancellationToken.None);
             if (attempt.CodeVolume is { } code)
                 await engine.RemoveVolumeAsync(id, code, CancellationToken.None);
 
@@ -192,7 +191,8 @@ public sealed class ReleaseBuilder(
         }
         catch (Exception failure)
         {
-            logger.LogWarning("Cleaning up the failed build of release {Release} of server {Server} failed: {Reason}", release.Number, id, failure.Message);
+            logger.LogWarning("Cleaning up the failed build of release {Release} of server {Server} failed: {Reason}",
+                release.Number, id, failure.Message);
         }
     }
 

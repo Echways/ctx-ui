@@ -6,13 +6,15 @@ namespace CtxUi.Builder.Runner.Tests;
 
 public sealed class ProjectArchiveTests
 {
-    private static string Hash(string environment) =>
-        ProjectArchive.EnvironmentHash(Project.Archive("{\"environment\":" + environment + "}"));
+    private static string Hash(string environment)
+    {
+        return ProjectArchive.EnvironmentHash(Project.Archive("{\"environment\":" + environment + "}"));
+    }
 
     private static byte[] WithEntry(TarEntry entry)
     {
         using var compressed = new MemoryStream();
-        using (var gzip = new GZipStream(compressed, CompressionLevel.Fastest, leaveOpen: true))
+        using (var gzip = new GZipStream(compressed, CompressionLevel.Fastest, true))
         using (var tar = new TarWriter(gzip))
         {
             tar.WriteEntry(new PaxTarEntry(TarEntryType.RegularFile, "fastmcp.json")

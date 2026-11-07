@@ -18,5 +18,8 @@ public static partial class ApiKeyName
         return name;
     }
 
-    public static string Key(string name) => name.ToUpperInvariant();
+    public static string Key(string name)
+    {
+        return name.ToUpperInvariant();
+    }
 }

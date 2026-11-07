@@ -4,8 +4,11 @@ namespace CtxUi.Builder.Tests;
 
 public sealed class TextTests
 {
-    private static HashSet<string> Names(string file) =>
-        XDocument.Load(Path.Combine(AppContext.BaseDirectory, file)).Descendants("data").Select(data => data.Attribute("name")!.Value).ToHashSet();
+    private static HashSet<string> Names(string file)
+    {
+        return XDocument.Load(Path.Combine(AppContext.BaseDirectory, file)).Descendants("data")
+            .Select(data => data.Attribute("name")!.Value).ToHashSet();
+    }
 
     [Fact]
     public void Russian_text_covers_every_english_key()

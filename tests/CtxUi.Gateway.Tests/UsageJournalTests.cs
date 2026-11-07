@@ -29,14 +29,22 @@ public sealed class UsageJournalTests : IAsyncDisposable
             .AddScoped<UsageStore>()
             .BuildServiceProvider();
         using (var scope = _services.CreateScope())
+        {
             scope.ServiceProvider.GetRequiredService<CtxUiDbContext>().Database.Migrate();
+        }
 
         _journal = new UsageJournal(_services.GetRequiredService<IServiceScopeFactory>(), _logs);
     }
 
-    private static UsageRecord Call(string tool) => new(Client, Inbound, Now, "tools/call", tool, 10, UsageOutcome.Ok);
+    private static UsageRecord Call(string tool)
+    {
+        return new UsageRecord(Client, Inbound, Now, "tools/call", tool, 10, UsageOutcome.Ok);
+    }
 
-    private static UsageRecord Refusal() => new(Client, Inbound, Now, null, null, 0, UsageOutcome.RateLimited);
+    private static UsageRecord Refusal()
+    {
+        return new UsageRecord(Client, Inbound, Now, null, null, 0, UsageOutcome.RateLimited);
+    }
 
     private async Task<T> ReadAsync<T>(Func<UsageStore, Task<T>> read)
     {
@@ -144,16 +152,24 @@ public sealed class UsageJournalTests : IAsyncDisposable
         public ConcurrentQueue<string> Lines { get; } = new();
 
         public IDisposable? BeginScope<TState>(TState state)
-            where TState : notnull => null;
+            where TState : notnull
+        {
+            return null;
+        }
 
-        public bool IsEnabled(LogLevel logLevel) => true;
+        public bool IsEnabled(LogLevel logLevel)
+        {
+            return true;
+        }
 
         public void Log<TState>(
             LogLevel logLevel,
             EventId eventId,
             TState state,
             Exception? exception,
-            Func<TState, Exception?, string> formatter) =>
+            Func<TState, Exception?, string> formatter)
+        {
             Lines.Enqueue(formatter(state, exception));
+        }
     }
 }

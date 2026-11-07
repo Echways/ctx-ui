@@ -16,18 +16,20 @@ public sealed record RunnerOptions(
 
     public static RunnerOptions FromEnvironment(IReadOnlyDictionary<string, string?> variables)
     {
-        string Required(string name) => variables.GetValueOrDefault(name) is { Length: > 0 } value
-            ? value
-            : throw new InvalidOperationException($"The environment variable {name} is required.");
+        string Required(string name)
+        {
+            return variables.GetValueOrDefault(name) is { Length: > 0 } value
+                ? value
+                : throw new InvalidOperationException($"The environment variable {name} is required.");
+        }
 
         var bindAddress = Required("RUNNER_BIND");
         if (!IPAddress.TryParse(bindAddress, out var parsed)
             || parsed.Equals(IPAddress.Any)
             || parsed.Equals(IPAddress.IPv6Any)
             || parsed.AddressFamily is not (AddressFamily.InterNetwork or AddressFamily.InterNetworkV6))
-        {
-            throw new InvalidOperationException($"RUNNER_BIND must be the address of one interface, got '{bindAddress}'.");
-        }
+            throw new InvalidOperationException(
+                $"RUNNER_BIND must be the address of one interface, got '{bindAddress}'.");
 
         return new RunnerOptions(
             Required("RUNNER_TOKEN"),

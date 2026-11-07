@@ -30,7 +30,8 @@ public sealed class BuilderEntry : IPanelExtension
             client.BaseAddress = settings.Url;
             client.Timeout = Timeout.InfiniteTimeSpan;
             if (settings.Token is not null)
-                client.DefaultRequestHeaders.TryAddWithoutValidation(HeaderNames.Authorization, $"Bearer {settings.Token}");
+                client.DefaultRequestHeaders.TryAddWithoutValidation(HeaderNames.Authorization,
+                    $"Bearer {settings.Token}");
         });
         context.Services.AddSingleton<SecretBox>();
         context.Services.AddSingleton<ServerCatalog>();
@@ -44,18 +45,22 @@ public sealed class BuilderEntry : IPanelExtension
         context.Panel
             .AddCaption(() => BuilderText.Caption)
             .AddSection<ServersPage>(() => BuilderText.Servers)
-            .In(PanelSlots.InboundActions).When(inbound => connected.Contains(inbound.Id)).AddAction(() => BuilderText.OpenInBuilder, OpenInBuilderAsync)
+            .In(PanelSlots.InboundActions).When(inbound => connected.Contains(inbound.Id))
+            .AddAction(() => BuilderText.OpenInBuilder, OpenInBuilderAsync)
             .In(PanelSlots.InboundSheet).AddBlock<InboundBuilderBlock>()
             .AddStylesheet("builder.css");
     }
 
-    public void MapEndpoints(IEndpointRouteBuilder endpoints) => BuilderEndpoints.Map(endpoints);
+    public void MapEndpoints(IEndpointRouteBuilder endpoints)
+    {
+        BuilderEndpoints.Map(endpoints);
+    }
 
     private static async Task OpenInBuilderAsync(PanelActionArgs<InboundSummary> args)
     {
         var connections = args.Services.GetRequiredService<ConnectionService>();
         var serverId = await connections.FindServerIdAsync(args.Context, CancellationToken.None)
-            ?? throw new PanelException(BuilderText.InboundNotBuilt);
+                       ?? throw new PanelException(BuilderText.InboundNotBuilt);
         args.Services.GetRequiredService<NavigationManager>().NavigateTo($"builder/{serverId}");
     }
 }

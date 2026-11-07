@@ -31,7 +31,8 @@ public class PanelAccessTests
         using var panel = new PanelClient(gateway);
 
         using var response = await gateway.Http.SendAsync(
-            new HttpRequestMessage(HttpMethod.Get, panel.Root + "?from=bookmark"), HttpCompletionOption.ResponseHeadersRead);
+            new HttpRequestMessage(HttpMethod.Get, panel.Root + "?from=bookmark"),
+            HttpCompletionOption.ResponseHeadersRead);
 
         Assert.Equal(panel.Root + "/login", response.RequestMessage!.RequestUri!.AbsolutePath);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -45,7 +46,8 @@ public class PanelAccessTests
     public async Task Addresses_under_the_gateway_path_never_reach_the_panel(string path)
     {
         await using var gateway = await GatewayHost.StartAsync();
-        using var http = new HttpClient(new HttpClientHandler { AllowAutoRedirect = false }) { BaseAddress = new Uri(gateway.BaseUrl) };
+        using var http = new HttpClient(new HttpClientHandler { AllowAutoRedirect = false })
+        { BaseAddress = new Uri(gateway.BaseUrl) };
 
         using var response = await http.GetAsync(path);
 

@@ -8,9 +8,18 @@ public static class DeviceMarker
 
     private static readonly PrefixedSecret Secret = new(Prefix, 43);
 
-    public static string Generate() => Secret.Generate();
+    public static string Generate()
+    {
+        return Secret.Generate();
+    }
 
-    public static bool IsWellFormed([NotNullWhen(true)] string? value) => Secret.IsWellFormed(value);
+    public static bool IsWellFormed([NotNullWhen(true)] string? value)
+    {
+        return Secret.IsWellFormed(value);
+    }
 
-    public static string Hash(string marker) => PrefixedSecret.Hash(marker);
+    public static string Hash(string marker)
+    {
+        return PrefixedSecret.Hash(marker);
+    }
 }

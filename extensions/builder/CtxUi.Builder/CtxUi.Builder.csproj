@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk.Razor">
 
-  <Import Project="..\..\..\src\CtxUi.Extensions\buildTransitive\CtxUi.Extensions.props" />
+  <Import Project="..\..\..\src\CtxUi.Extensions\buildTransitive\CtxUi.Extensions.props"/>
 
   <PropertyGroup>
     <CtxUiExtensionId>builder</CtxUiExtensionId>
@@ -10,24 +10,24 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <FrameworkReference Include="Microsoft.AspNetCore.App" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="all" />
-    <PackageReference Include="ModelContextProtocol.Core" />
-    <PackageReference Include="Microsoft.OpenApi" />
-    <PackageReference Include="NJsonSchema" />
-    <ProjectReference Include="..\..\..\src\CtxUi.Extensions\CtxUi.Extensions.csproj" />
-    <ProjectReference Include="..\CtxUi.Builder.Contracts\CtxUi.Builder.Contracts.csproj" />
+    <FrameworkReference Include="Microsoft.AspNetCore.App"/>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="all"/>
+    <PackageReference Include="ModelContextProtocol.Core"/>
+    <PackageReference Include="Microsoft.OpenApi"/>
+    <PackageReference Include="NJsonSchema"/>
+    <ProjectReference Include="..\..\..\src\CtxUi.Extensions\CtxUi.Extensions.csproj"/>
+    <ProjectReference Include="..\CtxUi.Builder.Contracts\CtxUi.Builder.Contracts.csproj"/>
   </ItemGroup>
 
   <ItemGroup>
     <EmbeddedResource Update="BuilderText.resx" StronglyTypedLanguage="CSharp" StronglyTypedClassName="BuilderText"
-                      StronglyTypedNamespace="CtxUi.Builder" StronglyTypedFileName="$(IntermediateOutputPath)BuilderText.Designer.cs" />
+                      StronglyTypedNamespace="CtxUi.Builder" StronglyTypedFileName="$(IntermediateOutputPath)BuilderText.Designer.cs"/>
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="..\runtime\main.py" LogicalName="runtime.main.py" />
+    <EmbeddedResource Include="..\runtime\main.py" LogicalName="runtime.main.py"/>
   </ItemGroup>
 
-  <Import Project="..\..\..\src\CtxUi.Extensions\buildTransitive\CtxUi.Extensions.targets" />
+  <Import Project="..\..\..\src\CtxUi.Extensions\buildTransitive\CtxUi.Extensions.targets"/>
 
 </Project>

@@ -12,10 +12,12 @@ public class PanelShellTests
         await using var session = await PanelSession.SignInAsync(gateway);
         var navigation = session.Page.GetByRole(AriaRole.Navigation);
 
-        await navigation.GetByRole(AriaRole.Link, new() { Name = "Журнал" }).ClickAsync();
+        await navigation.GetByRole(AriaRole.Link, new LocatorGetByRoleOptions { Name = "Журнал" }).ClickAsync();
 
-        await Expect(navigation.GetByRole(AriaRole.Link, new() { Name = "Журнал" })).ToHaveAttributeAsync("aria-current", "page");
-        await Expect(navigation.GetByRole(AriaRole.Link, new() { Name = "Обзор" })).Not.ToHaveAttributeAsync("aria-current", "page");
+        await Expect(navigation.GetByRole(AriaRole.Link, new LocatorGetByRoleOptions { Name = "Журнал" }))
+            .ToHaveAttributeAsync("aria-current", "page");
+        await Expect(navigation.GetByRole(AriaRole.Link, new LocatorGetByRoleOptions { Name = "Обзор" })).Not
+            .ToHaveAttributeAsync("aria-current", "page");
     }
 
     [Fact]
@@ -25,10 +27,12 @@ public class PanelShellTests
         await using var session = await PanelSession.SignInAsync(gateway);
         var page = session.Page;
         await page.SetViewportSizeAsync(390, 844);
-        await Expect(page.GetByRole(AriaRole.Navigation).GetByRole(AriaRole.Link, new() { Name = "Клиенты" })).ToBeInViewportAsync();
+        await Expect(page.GetByRole(AriaRole.Navigation)
+            .GetByRole(AriaRole.Link, new LocatorGetByRoleOptions { Name = "Клиенты" })).ToBeInViewportAsync();
 
-        await page.GetByRole(AriaRole.Banner).GetByRole(AriaRole.Button, new() { Name = "root" }).ClickAsync();
-        await page.GetByRole(AriaRole.Menuitem, new() { Name = "Выйти" }).ClickAsync();
+        await page.GetByRole(AriaRole.Banner).GetByRole(AriaRole.Button, new LocatorGetByRoleOptions { Name = "root" })
+            .ClickAsync();
+        await page.GetByRole(AriaRole.Menuitem, new PageGetByRoleOptions { Name = "Выйти" }).ClickAsync();
 
         await Expect(page.GetByText("Выйти из панели?")).ToBeVisibleAsync();
     }
@@ -42,10 +46,11 @@ public class PanelShellTests
 
         await page.GotoAsync("no-such-page");
 
-        await Expect(page.GetByRole(AriaRole.Heading, new() { Name = "Такой страницы нет" })).ToBeVisibleAsync();
+        await Expect(page.GetByRole(AriaRole.Heading, new PageGetByRoleOptions { Name = "Такой страницы нет" }))
+            .ToBeVisibleAsync();
         await Expect(page).ToHaveTitleAsync("Страница не найдена · ctx-ui");
-        await page.GetByRole(AriaRole.Link, new() { Name = "Вернуться на главную" }).ClickAsync();
-        await Expect(page.GetByRole(AriaRole.Heading, new() { Name = "Обзор" })).ToBeVisibleAsync();
+        await page.GetByRole(AriaRole.Link, new PageGetByRoleOptions { Name = "Вернуться на главную" }).ClickAsync();
+        await Expect(page.GetByRole(AriaRole.Heading, new PageGetByRoleOptions { Name = "Обзор" })).ToBeVisibleAsync();
     }
 
     [Fact]
@@ -77,12 +82,13 @@ public class PanelShellTests
             "Бот проверки домашних заданий",
             ["learn", "docs", "github"],
             new DateTimeOffset(2099, 1, 1, 0, 0, 0, TimeSpan.Zero),
-            limits: new CtxUi.Core.Clients.ClientLimits(QuotaCalls: 5000));
+            limits: new Core.Clients.ClientLimits(QuotaCalls: 5000));
         await using var session = await PanelSession.SignInAsync(gateway);
         var page = session.Page;
         await page.SetViewportSizeAsync(768, 900);
 
-        await page.GetByRole(AriaRole.Navigation).GetByRole(AriaRole.Link, new() { Name = "Клиенты" }).ClickAsync();
+        await page.GetByRole(AriaRole.Navigation)
+            .GetByRole(AriaRole.Link, new LocatorGetByRoleOptions { Name = "Клиенты" }).ClickAsync();
         await Expect(page.GetByRole(AriaRole.Row)).ToHaveCountAsync(2);
 
         Assert.Equal(0, await page.EvaluateAsync<int>("scrollTo(innerWidth, scrollY) ?? scrollX"));
@@ -93,7 +99,8 @@ public class PanelShellTests
     {
         await using var gateway = await GatewayHost.StartAsync();
         await using var session = await PanelSession.SignInAsync(gateway);
-        var link = session.Page.GetByRole(AriaRole.Navigation).GetByRole(AriaRole.Link, new() { Name = "Клиенты" });
+        var link = session.Page.GetByRole(AriaRole.Navigation)
+            .GetByRole(AriaRole.Link, new LocatorGetByRoleOptions { Name = "Клиенты" });
 
         await link.FocusAsync();
         await session.Page.Keyboard.PressAsync("Shift+Tab");

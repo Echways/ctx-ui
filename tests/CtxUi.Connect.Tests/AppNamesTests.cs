@@ -10,7 +10,10 @@ public class AppNamesTests
     [InlineData("Cur\u0000sor\r\nIDE", "Cur sor IDE")]
     [InlineData("Evil‮edoC", "Evil edoC")]
     [InlineData(null, "")]
-    public void Names_are_cleaned(string? given, string expected) => Assert.Equal(expected, AppNames.Clean(given));
+    public void Names_are_cleaned(string? given, string expected)
+    {
+        Assert.Equal(expected, AppNames.Clean(given));
+    }
 
     [Fact]
     public void Long_names_are_cut()

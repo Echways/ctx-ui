@@ -12,7 +12,7 @@ internal enum CallGrouping
     Tool,
     Method,
     Client,
-    Device,
+    Device
 }
 
 internal sealed record CallGroup(string? Key, string? Sub, CallStats Stats);
@@ -30,7 +30,8 @@ internal sealed class EventScope
 
     private static readonly string Forwarded = Outcomes(UsageRecord.IsForwarded);
 
-    private static readonly string Problems = Outcomes(outcome => UsageRecord.IsForwarded(outcome) && outcome != UsageOutcome.Ok);
+    private static readonly string Problems =
+        Outcomes(outcome => UsageRecord.IsForwarded(outcome) && outcome != UsageOutcome.Ok);
 
     private readonly CtxUiDbContext _db;
     private readonly Timeline _timeline;
@@ -60,7 +61,9 @@ internal sealed class EventScope
         }
 
         _events = string.Join(" AND ", events);
-        _refusals = filter.Tool is null ? string.Join(" AND ", [$"\"Minute\" >= {_from}", $"\"Minute\" < {until}", .. owners]) : null;
+        _refusals = filter.Tool is null
+            ? string.Join(" AND ", [$"\"Minute\" >= {_from}", $"\"Minute\" < {until}", .. owners])
+            : null;
     }
 
     public async Task<List<CallGroup>> CallsAsync(CallGrouping grouping, CancellationToken ct)
@@ -69,40 +72,41 @@ internal sealed class EventScope
         {
             CallGrouping.All => ("NULL", "NULL", ""),
             CallGrouping.Inbound => ("\"InboundId\"", "NULL", ""),
-            CallGrouping.Tool => ("\"InboundId\"", "\"Tool\"", $" AND \"Method\" = '{UsageRecord.ToolsCall}' AND \"Tool\" IS NOT NULL"),
+            CallGrouping.Tool => ("\"InboundId\"", "\"Tool\"",
+                $" AND \"Method\" = '{UsageRecord.ToolsCall}' AND \"Tool\" IS NOT NULL"),
             CallGrouping.Method => ("\"Method\"", "NULL", ""),
             CallGrouping.Client => ("\"ClientId\"", "NULL", ""),
             CallGrouping.Device => ("\"DeviceId\"", "NULL", " AND \"DeviceId\" IS NOT NULL"),
-            _ => throw new ArgumentOutOfRangeException(nameof(grouping)),
+            _ => throw new ArgumentOutOfRangeException(nameof(grouping))
         };
         var rows = await QueryAsync<CallRow>($"""
-            WITH "Scoped" AS (
-                SELECT {key} AS "Key", {sub} AS "Sub", "ClientId", "Method", "Outcome", "DurationMs", "RequestBytes", "ResponseBytes", "At"
-                FROM "UsageEvents"
-                WHERE {_events} AND "Outcome" IN ({Forwarded}){only}
-            ), "Ranked" AS (
-                SELECT *,
-                    ROW_NUMBER() OVER (PARTITION BY "Key", "Sub" ORDER BY "DurationMs") AS "Rank",
-                    COUNT(*) OVER (PARTITION BY "Key", "Sub") AS "Total"
-                FROM "Scoped"
-            )
-            SELECT "Key", "Sub",
-                COUNT(*) AS "Calls",
-                COUNT(CASE WHEN "Method" = '{UsageRecord.ToolsCall}' THEN 1 END) AS "ToolCalls",
-                COUNT(CASE WHEN "Outcome" = {(int)UsageOutcome.UpstreamFailed} THEN 1 END) AS "Failures",
-                COUNT(CASE WHEN "Outcome" = {(int)UsageOutcome.UpstreamRejected} THEN 1 END) AS "Rejected",
-                COUNT(CASE WHEN "Outcome" = {(int)UsageOutcome.ClientAborted} THEN 1 END) AS "Aborted",
-                COUNT(DISTINCT "ClientId") AS "Clients",
-                SUM("RequestBytes") AS "RequestBytes",
-                SUM("ResponseBytes") AS "ResponseBytes",
-                MIN(CASE WHEN "Rank" * 100 >= "Total" * 50 THEN "DurationMs" END) AS "P50",
-                MIN(CASE WHEN "Rank" * 100 >= "Total" * 95 THEN "DurationMs" END) AS "P95",
-                MIN(CASE WHEN "Rank" * 100 >= "Total" * 99 THEN "DurationMs" END) AS "P99",
-                MAX("DurationMs") AS "Slowest",
-                MAX("At") AS "LastAt"
-            FROM "Ranked"
-            GROUP BY "Key", "Sub"
-            """, ct);
+                                              WITH "Scoped" AS (
+                                                  SELECT {key} AS "Key", {sub} AS "Sub", "ClientId", "Method", "Outcome", "DurationMs", "RequestBytes", "ResponseBytes", "At"
+                                                  FROM "UsageEvents"
+                                                  WHERE {_events} AND "Outcome" IN ({Forwarded}){only}
+                                              ), "Ranked" AS (
+                                                  SELECT *,
+                                                      ROW_NUMBER() OVER (PARTITION BY "Key", "Sub" ORDER BY "DurationMs") AS "Rank",
+                                                      COUNT(*) OVER (PARTITION BY "Key", "Sub") AS "Total"
+                                                  FROM "Scoped"
+                                              )
+                                              SELECT "Key", "Sub",
+                                                  COUNT(*) AS "Calls",
+                                                  COUNT(CASE WHEN "Method" = '{UsageRecord.ToolsCall}' THEN 1 END) AS "ToolCalls",
+                                                  COUNT(CASE WHEN "Outcome" = {(int)UsageOutcome.UpstreamFailed} THEN 1 END) AS "Failures",
+                                                  COUNT(CASE WHEN "Outcome" = {(int)UsageOutcome.UpstreamRejected} THEN 1 END) AS "Rejected",
+                                                  COUNT(CASE WHEN "Outcome" = {(int)UsageOutcome.ClientAborted} THEN 1 END) AS "Aborted",
+                                                  COUNT(DISTINCT "ClientId") AS "Clients",
+                                                  SUM("RequestBytes") AS "RequestBytes",
+                                                  SUM("ResponseBytes") AS "ResponseBytes",
+                                                  MIN(CASE WHEN "Rank" * 100 >= "Total" * 50 THEN "DurationMs" END) AS "P50",
+                                                  MIN(CASE WHEN "Rank" * 100 >= "Total" * 95 THEN "DurationMs" END) AS "P95",
+                                                  MIN(CASE WHEN "Rank" * 100 >= "Total" * 99 THEN "DurationMs" END) AS "P99",
+                                                  MAX("DurationMs") AS "Slowest",
+                                                  MAX("At") AS "LastAt"
+                                              FROM "Ranked"
+                                              GROUP BY "Key", "Sub"
+                                              """, ct);
 
         return rows.Select(row => new CallGroup(row.Key, row.Sub, row.ToStats())).ToList();
     }
@@ -111,13 +115,13 @@ internal sealed class EventScope
     {
         var length = ((long)_timeline.Length.TotalMilliseconds).ToString(CultureInfo.InvariantCulture);
         var rows = (await QueryAsync<SlotRow>($"""
-                SELECT ("At" - {_from}) / {length} AS "Index",
-                    COUNT(*) AS "Calls",
-                    COUNT(CASE WHEN "Outcome" = {(int)UsageOutcome.UpstreamFailed} THEN 1 END) AS "Failures"
-                FROM "UsageEvents"
-                WHERE {_events} AND "Outcome" IN ({Forwarded})
-                GROUP BY "Index"
-                """, ct))
+                                               SELECT ("At" - {_from}) / {length} AS "Index",
+                                                   COUNT(*) AS "Calls",
+                                                   COUNT(CASE WHEN "Outcome" = {(int)UsageOutcome.UpstreamFailed} THEN 1 END) AS "Failures"
+                                               FROM "UsageEvents"
+                                               WHERE {_events} AND "Outcome" IN ({Forwarded})
+                                               GROUP BY "Index"
+                                               """, ct))
             .ToDictionary(row => row.Index);
 
         return Enumerable.Range(0, _timeline.Count)
@@ -132,11 +136,11 @@ internal sealed class EventScope
         var cases = string.Concat(LatencyBounds.Select((bound, index) =>
             $" WHEN \"DurationMs\" < {bound.ToString(CultureInfo.InvariantCulture)} THEN {index.ToString(CultureInfo.InvariantCulture)}"));
         var rows = (await QueryAsync<BucketRow>($"""
-                SELECT CASE{cases} ELSE {LatencyBounds.Count} END AS "Bucket", COUNT(*) AS "Calls"
-                FROM "UsageEvents"
-                WHERE {_events} AND "Outcome" IN ({Forwarded})
-                GROUP BY "Bucket"
-                """, ct))
+                                                 SELECT CASE{cases} ELSE {LatencyBounds.Count} END AS "Bucket", COUNT(*) AS "Calls"
+                                                 FROM "UsageEvents"
+                                                 WHERE {_events} AND "Outcome" IN ({Forwarded})
+                                                 GROUP BY "Bucket"
+                                                 """, ct))
             .ToDictionary(row => row.Bucket, row => row.Calls);
 
         return Enumerable.Range(0, LatencyBounds.Count + 1)
@@ -150,21 +154,21 @@ internal sealed class EventScope
     public async Task<Funnel> FunnelAsync(CancellationToken ct)
     {
         var row = (await QueryAsync<FunnelRow>($"""
-            SELECT COUNT(*) AS "Seen",
-                COALESCE(SUM("Initialized"), 0) AS "Initialized",
-                COALESCE(SUM("Listed"), 0) AS "Listed",
-                COALESCE(SUM("Called"), 0) AS "Called",
-                COALESCE(SUM("Succeeded"), 0) AS "Succeeded"
-            FROM (
-                SELECT MAX("Method" = 'initialize') AS "Initialized",
-                    MAX("Method" = 'tools/list') AS "Listed",
-                    MAX("Method" = '{UsageRecord.ToolsCall}') AS "Called",
-                    MAX("Method" = '{UsageRecord.ToolsCall}' AND "Outcome" = {(int)UsageOutcome.Ok}) AS "Succeeded"
-                FROM "UsageEvents"
-                WHERE {_events}
-                GROUP BY "ClientId"
-            )
-            """, ct)).Single();
+                                                SELECT COUNT(*) AS "Seen",
+                                                    COALESCE(SUM("Initialized"), 0) AS "Initialized",
+                                                    COALESCE(SUM("Listed"), 0) AS "Listed",
+                                                    COALESCE(SUM("Called"), 0) AS "Called",
+                                                    COALESCE(SUM("Succeeded"), 0) AS "Succeeded"
+                                                FROM (
+                                                    SELECT MAX("Method" = 'initialize') AS "Initialized",
+                                                        MAX("Method" = 'tools/list') AS "Listed",
+                                                        MAX("Method" = '{UsageRecord.ToolsCall}') AS "Called",
+                                                        MAX("Method" = '{UsageRecord.ToolsCall}' AND "Outcome" = {(int)UsageOutcome.Ok}) AS "Succeeded"
+                                                    FROM "UsageEvents"
+                                                    WHERE {_events}
+                                                    GROUP BY "ClientId"
+                                                )
+                                                """, ct)).Single();
 
         return new Funnel(row.Seen, row.Initialized, row.Listed, row.Called, row.Succeeded);
     }
@@ -172,17 +176,18 @@ internal sealed class EventScope
     public async Task<List<ErrorGroup>> ErrorsAsync(int limit, CancellationToken ct)
     {
         var rows = await QueryAsync<ErrorRow>($"""
-            SELECT "InboundId", "Method", "Tool", "Outcome", "Status", COUNT(*) AS "Count", MAX("At") AS "LastAt"
-            FROM "UsageEvents"
-            WHERE {_events} AND "Outcome" IN ({Problems})
-            GROUP BY "InboundId", "Method", "Tool", "Outcome", "Status"
-            ORDER BY "Count" DESC, "LastAt" DESC
-            LIMIT {limit.ToString(CultureInfo.InvariantCulture)}
-            """, ct);
+                                               SELECT "InboundId", "Method", "Tool", "Outcome", "Status", COUNT(*) AS "Count", MAX("At") AS "LastAt"
+                                               FROM "UsageEvents"
+                                               WHERE {_events} AND "Outcome" IN ({Problems})
+                                               GROUP BY "InboundId", "Method", "Tool", "Outcome", "Status"
+                                               ORDER BY "Count" DESC, "LastAt" DESC
+                                               LIMIT {limit.ToString(CultureInfo.InvariantCulture)}
+                                               """, ct);
 
         return rows
             .Select(row => new ErrorGroup(
-                row.InboundId, null, row.Method, row.Tool, row.Outcome, row.Status, row.Count, DateTimeOffset.FromUnixTimeMilliseconds(row.LastAt)))
+                row.InboundId, null, row.Method, row.Tool, row.Outcome, row.Status, row.Count,
+                DateTimeOffset.FromUnixTimeMilliseconds(row.LastAt)))
             .ToList();
     }
 
@@ -191,21 +196,26 @@ internal sealed class EventScope
         var refusals = _refusals is null
             ? ""
             : $"""
-                SELECT "ClientId", "Outcome", "Count" FROM "UsageRefusals" WHERE {_refusals}
-                UNION ALL
-                """;
+               SELECT "ClientId", "Outcome", "Count" FROM "UsageRefusals" WHERE {_refusals}
+               UNION ALL
+               """;
         return QueryAsync<RefusalRow>($"""
-            SELECT "ClientId", "Outcome", SUM("Count") AS "Count"
-            FROM (
-                {refusals}
-                SELECT "ClientId", "Outcome", 1 AS "Count" FROM "UsageEvents" WHERE {_events} AND "Outcome" = {(int)UsageOutcome.QuotaExhausted}
-            )
-            GROUP BY "ClientId", "Outcome"
-            """, ct);
+                                       SELECT "ClientId", "Outcome", SUM("Count") AS "Count"
+                                       FROM (
+                                           {refusals}
+                                           SELECT "ClientId", "Outcome", 1 AS "Count" FROM "UsageEvents" WHERE {_events} AND "Outcome" = {(int)UsageOutcome.QuotaExhausted}
+                                       )
+                                       GROUP BY "ClientId", "Outcome"
+                                       """, ct);
     }
 
-    private static string Outcomes(Func<UsageOutcome, bool> chosen) => string.Join(
-        ", ", Enum.GetValues<UsageOutcome>().Where(chosen).Select(outcome => ((int)outcome).ToString(CultureInfo.InvariantCulture)));
+    private static string Outcomes(Func<UsageOutcome, bool> chosen)
+    {
+        return string.Join(
+            ", ",
+            Enum.GetValues<UsageOutcome>().Where(chosen)
+                .Select(outcome => ((int)outcome).ToString(CultureInfo.InvariantCulture)));
+    }
 
     private string Argument(object value)
     {
@@ -213,8 +223,10 @@ internal sealed class EventScope
         return "{" + (_arguments.Count - 1).ToString(CultureInfo.InvariantCulture) + "}";
     }
 
-    private Task<List<T>> QueryAsync<T>(string sql, CancellationToken ct) =>
-        _db.Database.SqlQueryRaw<T>(sql, [.. _arguments]).ToListAsync(ct);
+    private Task<List<T>> QueryAsync<T>(string sql, CancellationToken ct)
+    {
+        return _db.Database.SqlQueryRaw<T>(sql, [.. _arguments]).ToListAsync(ct);
+    }
 
     private sealed class CallRow
     {
@@ -234,17 +246,20 @@ internal sealed class EventScope
         public int Slowest { get; init; }
         public long LastAt { get; init; }
 
-        public CallStats ToStats() => new(
-            Calls,
-            ToolCalls,
-            Failures,
-            Rejected,
-            Aborted,
-            Clients,
-            RequestBytes,
-            ResponseBytes,
-            new Latency(P50, P95, P99, Slowest),
-            DateTimeOffset.FromUnixTimeMilliseconds(LastAt));
+        public CallStats ToStats()
+        {
+            return new CallStats(
+                Calls,
+                ToolCalls,
+                Failures,
+                Rejected,
+                Aborted,
+                Clients,
+                RequestBytes,
+                ResponseBytes,
+                new Latency(P50, P95, P99, Slowest),
+                DateTimeOffset.FromUnixTimeMilliseconds(LastAt));
+        }
     }
 
     private sealed class SlotRow

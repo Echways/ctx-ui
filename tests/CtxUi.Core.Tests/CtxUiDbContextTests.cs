@@ -55,7 +55,9 @@ public class CtxUiDbContextTests
         }
 
         await using (var db = database.NewContext())
+        {
             Assert.Equal("4419", (await db.Clients.SingleAsync()).Metadata["group"]);
+        }
     }
 
     [Fact]

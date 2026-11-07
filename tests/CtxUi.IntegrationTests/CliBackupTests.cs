@@ -17,19 +17,20 @@ public sealed partial class CliBackupTests : IDisposable
     {
         SqliteConnection.ClearAllPools();
         foreach (var directory in new[] { _dataDir, _backupRoot })
-        {
             try
             {
-                Directory.Delete(directory, recursive: true);
+                Directory.Delete(directory, true);
             }
             catch (IOException)
             {
             }
-        }
     }
 
     [Fact]
-    public void Backup_is_a_cli_command() => Assert.True(Cli.Handles(["backup", "/tmp/copy"]));
+    public void Backup_is_a_cli_command()
+    {
+        Assert.True(Cli.Handles(["backup", "/tmp/copy"]));
+    }
 
     [Fact]
     public async Task Backup_holds_the_database_and_keys_and_restores_into_a_working_installation()
@@ -65,7 +66,8 @@ public sealed partial class CliBackupTests : IDisposable
 
     private static async Task<SqliteConnection> OpenWalAsync(string database)
     {
-        var connection = new SqliteConnection(new SqliteConnectionStringBuilder { DataSource = database, Pooling = false }.ToString());
+        var connection = new SqliteConnection(new SqliteConnectionStringBuilder
+        { DataSource = database, Pooling = false }.ToString());
         await connection.OpenAsync();
         await ExecuteAsync(connection, "PRAGMA journal_mode=WAL");
         await ExecuteAsync(connection, "CREATE TABLE notes (id INTEGER PRIMARY KEY, text TEXT NOT NULL)");
@@ -79,8 +81,10 @@ public sealed partial class CliBackupTests : IDisposable
         return await command.ExecuteScalarAsync();
     }
 
-    private string ExtensionData(params string[] path) =>
-        Path.Combine([_dataDir, "extension-data", "sample", .. path]);
+    private string ExtensionData(params string[] path)
+    {
+        return Path.Combine([_dataDir, "extension-data", "sample", .. path]);
+    }
 
     [Fact]
     public async Task A_backup_holds_a_consistent_copy_of_extension_data()
@@ -104,8 +108,10 @@ public sealed partial class CliBackupTests : IDisposable
 
         Assert.Equal((0, ""), (backup.Code, backup.Error));
         var copied = Path.Combine(target, "extension-data", "sample");
-        Assert.DoesNotContain(Directory.GetFiles(copied), file => file.EndsWith("-wal", StringComparison.Ordinal) || file.EndsWith("-shm", StringComparison.Ordinal));
-        await using var copy = new SqliteConnection(new SqliteConnectionStringBuilder { DataSource = Path.Combine(copied, "data.db"), Pooling = false }.ToString());
+        Assert.DoesNotContain(Directory.GetFiles(copied),
+            file => file.EndsWith("-wal", StringComparison.Ordinal) || file.EndsWith("-shm", StringComparison.Ordinal));
+        await using var copy = new SqliteConnection(new SqliteConnectionStringBuilder
+        { DataSource = Path.Combine(copied, "data.db"), Pooling = false }.ToString());
         await copy.OpenAsync();
         Assert.Equal("ok", await ExecuteAsync(copy, "PRAGMA integrity_check"));
         Assert.True((long)(await ExecuteAsync(copy, "SELECT count(*) FROM notes"))! >= 500);
@@ -134,8 +140,10 @@ public sealed partial class CliBackupTests : IDisposable
         Assert.True(File.Exists(Path.Combine(target, "extensions", "sample", "wwwroot", "sample.css")));
         Assert.True(File.Exists(Path.Combine(target, "extensions", "sample", "wwwroot", ".well-known", "file.txt")));
         Assert.False(Directory.Exists(Path.Combine(target, "extensions", ".install-leftover")));
-        Assert.Equal("keep", await File.ReadAllTextAsync(Path.Combine(target, "extension-data", "sample", "notes.txt")));
-        Assert.Equal("keep too", await File.ReadAllTextAsync(Path.Combine(target, "extension-data", "sample", "nested", "other.txt")));
+        Assert.Equal("keep",
+            await File.ReadAllTextAsync(Path.Combine(target, "extension-data", "sample", "notes.txt")));
+        Assert.Equal("keep too",
+            await File.ReadAllTextAsync(Path.Combine(target, "extension-data", "sample", "nested", "other.txt")));
     }
 
     [Fact]
@@ -157,13 +165,15 @@ public sealed partial class CliBackupTests : IDisposable
     {
         await CliRunner.RunAsync(_dataDir, "inbound", "list");
         Directory.CreateDirectory(ExtensionData());
-        await File.WriteAllTextAsync(ExtensionData("cache.db"), "plain text, long enough to read a header from it, plain text, plain text, plain text");
+        await File.WriteAllTextAsync(ExtensionData("cache.db"),
+            "plain text, long enough to read a header from it, plain text, plain text, plain text");
         var target = Path.Combine(_backupRoot, "copy");
 
         var backup = await CliRunner.RunAsync(_dataDir, "backup", target);
 
         Assert.Equal((0, ""), (backup.Code, backup.Error));
-        Assert.StartsWith("plain text", await File.ReadAllTextAsync(Path.Combine(target, "extension-data", "sample", "cache.db")));
+        Assert.StartsWith("plain text",
+            await File.ReadAllTextAsync(Path.Combine(target, "extension-data", "sample", "cache.db")));
     }
 
     [Fact]
@@ -177,6 +187,7 @@ public sealed partial class CliBackupTests : IDisposable
         Assert.Equal((0, ""), (backup.Code, backup.Error));
         Assert.Equal(
             [CoreServices.DatabaseFile, "keys"],
-            Directory.EnumerateFileSystemEntries(target).Select(entry => Path.GetFileName(entry)).Order(StringComparer.Ordinal));
+            Directory.EnumerateFileSystemEntries(target).Select(entry => Path.GetFileName(entry))
+                .Order(StringComparer.Ordinal));
     }
 }

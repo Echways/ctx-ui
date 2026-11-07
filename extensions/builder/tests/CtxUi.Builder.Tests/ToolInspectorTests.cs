@@ -16,16 +16,32 @@ namespace CtxUi.Builder.Tests;
 [McpServerToolType]
 public sealed class InspectorTools
 {
-    public const string SquidPage = "<title>ERROR: Access Denied</title> ERR_ACCESS_DENIED The requested URL could not be retrieved";
+    public const string SquidPage =
+        "<title>ERROR: Access Denied</title> ERR_ACCESS_DENIED The requested URL could not be retrieved";
 
-    [McpServerTool(Name = "echo"), Description("Repeats the text.")]
-    public static string Echo(string text) => $"echo {text}";
+    [McpServerTool(Name = "echo")]
+    [Description("Repeats the text.")]
+    public static string Echo(string text)
+    {
+        return $"echo {text}";
+    }
 
     [McpServerTool(Name = "forbidden")]
-    public static CallToolResult Forbidden() => new() { IsError = true, Content = [new TextContentBlock { Text = $"HTTP error 403: {SquidPage}" }] };
+    public static CallToolResult Forbidden()
+    {
+        return new CallToolResult
+        { IsError = true, Content = [new TextContentBlock { Text = $"HTTP error 403: {SquidPage}" }] };
+    }
 
     [McpServerTool(Name = "broken")]
-    public static CallToolResult Broken() => new() { IsError = true, Content = [new TextContentBlock { Text = "HTTP error 403: Forbidden by the upstream API" }] };
+    public static CallToolResult Broken()
+    {
+        return new CallToolResult
+        {
+            IsError = true,
+            Content = [new TextContentBlock { Text = "HTTP error 403: Forbidden by the upstream API" }]
+        };
+    }
 }
 
 public sealed class ToolInspectorTests
@@ -49,7 +65,8 @@ public sealed class ToolInspectorTests
         {
             var builder = WebApplication.CreateBuilder();
             builder.WebHost.UseUrls("http://127.0.0.1:0");
-            builder.Services.AddMcpServer().WithHttpTransport(options => options.Stateless = true).WithTools<InspectorTools>();
+            builder.Services.AddMcpServer().WithHttpTransport(options => options.Stateless = true)
+                .WithTools<InspectorTools>();
             var app = builder.Build();
             var paths = new List<string>();
             app.Use(async (context, next) =>
@@ -66,11 +83,15 @@ public sealed class ToolInspectorTests
             app.MapMcp("/s/{id:guid}/mcp");
             app.MapMcp("/s/{id:guid}/r/{release:int}/mcp");
             await app.StartAsync();
-            var address = app.Services.GetRequiredService<IServer>().Features.Get<IServerAddressesFeature>()!.Addresses.Single();
+            var address = app.Services.GetRequiredService<IServer>().Features.Get<IServerAddressesFeature>()!.Addresses
+                .Single();
             return new IngressHost(app, address, paths);
         }
 
-        public async ValueTask DisposeAsync() => await _app.DisposeAsync();
+        public async ValueTask DisposeAsync()
+        {
+            await _app.DisposeAsync();
+        }
     }
 
     [Fact]
@@ -82,7 +103,9 @@ public sealed class ToolInspectorTests
 
         var tools = await harness.CreateInspector(ingress.Address).ListAsync(server, null, default);
 
-        Assert.Contains(tools, tool => tool.Name == "echo" && tool.Description == "Repeats the text." && tool.InputSchema.GetProperty("properties").TryGetProperty("text", out _));
+        Assert.Contains(tools,
+            tool => tool.Name == "echo" && tool.Description == "Repeats the text." &&
+                    tool.InputSchema.GetProperty("properties").TryGetProperty("text", out _));
         Assert.All(ingress.Paths, path => Assert.Equal($"/s/{server}/mcp", path));
     }
 
@@ -105,7 +128,8 @@ public sealed class ToolInspectorTests
         var server = await harness.CreateServerAsync();
         await using var ingress = await IngressHost.StartAsync("another-secret");
 
-        await Assert.ThrowsAnyAsync<Exception>(() => harness.CreateInspector(ingress.Address).ListAsync(server, null, default));
+        await Assert.ThrowsAnyAsync<Exception>(() =>
+            harness.CreateInspector(ingress.Address).ListAsync(server, null, default));
     }
 
     [Fact]
@@ -115,7 +139,8 @@ public sealed class ToolInspectorTests
         var server = await harness.CreateServerAsync();
         await using var ingress = await IngressHost.StartAsync(await harness.RouteSecretAsync(server));
 
-        var outcome = await harness.CreateInspector(ingress.Address).CallAsync(server, null, "echo", new JsonObject { ["text"] = "hi" }, default);
+        var outcome = await harness.CreateInspector(ingress.Address)
+            .CallAsync(server, null, "echo", new JsonObject { ["text"] = "hi" }, default);
 
         Assert.False(outcome.IsError);
         Assert.Equal("echo hi", outcome.Text);
@@ -147,16 +172,20 @@ public sealed class ToolInspectorTests
     [InlineData("X-Squid-Error: ERR_ACCESS_DENIED 0", true)]
     [InlineData("HTTP error 403: Forbidden", false)]
     [InlineData("Connection refused", false)]
-    public void Squid_refusals_are_matched_by_their_text(string text, bool expected) =>
+    public void Squid_refusals_are_matched_by_their_text(string text, bool expected)
+    {
         Assert.Equal(expected, ToolInspector.IsProxyRefusal(text));
+    }
 
     [Fact]
     public async Task Without_runner_settings_the_inspector_says_what_is_missing()
     {
-        var inspector = new ToolInspector(new CtxUi.Builder.Runner.RunnerSettings(null, null, null), null!, null!);
+        var inspector = new ToolInspector(new Runner.RunnerSettings(null, null, null), null!, null!);
 
-        var refused = await Assert.ThrowsAsync<Enfilade.PanelException>(() => inspector.ListAsync(Guid.NewGuid(), null, default));
+        var refused =
+            await Assert.ThrowsAsync<Enfilade.PanelException>(() => inspector.ListAsync(Guid.NewGuid(), null, default));
 
-        Assert.Equal(string.Format(BuilderText.RunnerNotConfigured, "RunnerUrl, RunnerIngressUrl, RunnerToken"), refused.Message);
+        Assert.Equal(string.Format(BuilderText.RunnerNotConfigured, "RunnerUrl, RunnerIngressUrl, RunnerToken"),
+            refused.Message);
     }
 }

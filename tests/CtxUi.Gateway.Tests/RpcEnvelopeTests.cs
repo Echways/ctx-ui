@@ -4,7 +4,10 @@ namespace CtxUi.Gateway.Tests;
 
 public class RpcEnvelopeTests
 {
-    private static RpcEnvelope? Read(string json) => RpcEnvelope.Read(Encoding.UTF8.GetBytes(json));
+    private static RpcEnvelope? Read(string json)
+    {
+        return RpcEnvelope.Read(Encoding.UTF8.GetBytes(json));
+    }
 
     private static RpcCall Single(string json)
     {
@@ -17,7 +20,8 @@ public class RpcEnvelopeTests
     [Fact]
     public void Tool_call_gives_id_method_and_tool_name()
     {
-        var call = Single("""{"jsonrpc":"2.0","id":7,"method":"tools/call","params":{"name":"echo","arguments":{"text":"привет"}}}""");
+        var call = Single(
+            """{"jsonrpc":"2.0","id":7,"method":"tools/call","params":{"name":"echo","arguments":{"text":"привет"}}}""");
 
         Assert.Equal(new RpcCall("7", "tools/call", "echo"), call);
         Assert.True(call.IsToolCall);
@@ -28,8 +32,10 @@ public class RpcEnvelopeTests
     [InlineData("""{"id":"ква\"дро","method":"ping"}""", "\"ква\\\"дро\"")]
     [InlineData("""{"id":1.5e3,"method":"ping"}""", "1.5e3")]
     [InlineData("""{"id":-9007199254740993,"method":"ping"}""", "-9007199254740993")]
-    public void Id_is_kept_exactly_as_the_client_wrote_it(string json, string expectedId) =>
+    public void Id_is_kept_exactly_as_the_client_wrote_it(string json, string expectedId)
+    {
         Assert.Equal(expectedId, Single(json).Id);
+    }
 
     [Theory]
     [InlineData("""{"method":"notifications/initialized"}""")]
@@ -86,7 +92,10 @@ public class RpcEnvelopeTests
         Assert.NotNull(envelope);
         Assert.True(envelope.IsBatch);
         Assert.Equal(
-            [new RpcCall("1", "tools/call", "a"), new RpcCall(null, "notifications/progress", null), new RpcCall("\"2\"", "tools/call", "b")],
+            [
+                new RpcCall("1", "tools/call", "a"), new RpcCall(null, "notifications/progress", null),
+                new RpcCall("\"2\"", "tools/call", "b")
+            ],
             envelope.Calls);
         Assert.Equal(2, envelope.ToolCalls);
     }
@@ -94,7 +103,10 @@ public class RpcEnvelopeTests
     [Fact]
     public void Batch_size_is_capped()
     {
-        string Batch(int size) => "[" + string.Join(",", Enumerable.Repeat("""{"id":1,"method":"tools/call"}""", size)) + "]";
+        string Batch(int size)
+        {
+            return "[" + string.Join(",", Enumerable.Repeat("""{"id":1,"method":"tools/call"}""", size)) + "]";
+        }
 
         Assert.Equal(RpcEnvelope.MaxBatch, Read(Batch(RpcEnvelope.MaxBatch))!.ToolCalls);
         Assert.Null(Read(Batch(RpcEnvelope.MaxBatch + 1)));
@@ -118,7 +130,10 @@ public class RpcEnvelopeTests
     [InlineData("""{"id":{"a":1},"method":"ping"}""")]
     [InlineData("""{"id":[1],"method":"ping"}""")]
     [InlineData("""{"id":true,"method":"ping"}""")]
-    public void Anything_that_is_not_a_json_rpc_message_is_rejected(string json) => Assert.Null(Read(json));
+    public void Anything_that_is_not_a_json_rpc_message_is_rejected(string json)
+    {
+        Assert.Null(Read(json));
+    }
 
     [Theory]
     [InlineData("""{"id":1,"method":"ping","method":"tools/call"}""")]
@@ -126,13 +141,19 @@ public class RpcEnvelopeTests
     [InlineData("""{"id":1,"id":2,"method":"tools/call"}""")]
     [InlineData("""{"id":1,"method":"tools/call","params":{},"params":{"name":"echo"}}""")]
     [InlineData("""{"id":1,"method":"tools/call","params":{"name":"a","name":"b"}}""")]
-    public void Message_that_two_parsers_could_read_differently_is_rejected(string json) => Assert.Null(Read(json));
+    public void Message_that_two_parsers_could_read_differently_is_rejected(string json)
+    {
+        Assert.Null(Read(json));
+    }
 
     [Theory]
     [InlineData("""{"id":1,"method":"\ud800"}""")]
     [InlineData("""{"id":1,"method":"tools/call","params":{"name":"\udc00"}}""")]
     [InlineData("""{"id":1,"method":"tools/call","params":{"name":"\ud83d"}}""")]
-    public void Text_with_half_of_a_surrogate_pair_is_rejected(string json) => Assert.Null(Read(json));
+    public void Text_with_half_of_a_surrogate_pair_is_rejected(string json)
+    {
+        Assert.Null(Read(json));
+    }
 
     [Theory]
     [InlineData("""{"id":1,"method":"@"}""")]
@@ -148,8 +169,11 @@ public class RpcEnvelopeTests
     [Fact]
     public void Deeply_nested_arguments_are_read_and_absurd_nesting_is_rejected()
     {
-        string Nested(int depth) =>
-            """{"id":1,"method":"tools/call","params":{"name":"echo","arguments":""" + new string('[', depth) + new string(']', depth) + "}}";
+        string Nested(int depth)
+        {
+            return """{"id":1,"method":"tools/call","params":{"name":"echo","arguments":""" + new string('[', depth) +
+                   new string(']', depth) + "}}";
+        }
 
         Assert.Equal("echo", Single(Nested(200)).Tool);
         Assert.Null(Read(Nested(300)));

@@ -38,7 +38,9 @@ public static class ContainerTemplate
     private const string NoNetwork = "none";
     private const long BytesInMegabyte = 1024L * 1024L;
 
-    private static readonly string[] ServerCommand = ["/env/.venv/bin/fastmcp", "run", "/code/fastmcp.json", "--skip-env", "--no-banner"];
+    private static readonly string[] ServerCommand =
+        ["/env/.venv/bin/fastmcp", "run", "/code/fastmcp.json", "--skip-env", "--no-banner"];
+
     private static readonly string[] BuildCommand = ["python", "/opt/builder/prepare.py"];
 
     private static readonly HashSet<string> ReservedVariables = new(StringComparer.OrdinalIgnoreCase)
@@ -51,12 +53,20 @@ public static class ContainerTemplate
         "LD_PRELOAD"
     };
 
-    public static string RouteSecretHash(string secret) => Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(secret)));
+    public static string RouteSecretHash(string secret)
+    {
+        return Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(secret)));
+    }
 
-    public static string Prefix(Guid id) => $"ctxb-{id:N}";
+    public static string Prefix(Guid id)
+    {
+        return $"ctxb-{id:N}";
+    }
 
-    public static string NetworkName(Guid id, NetworkAccess access) =>
-        $"{Prefix(id)}-{(access == NetworkAccess.InternetOnly ? "internet" : "full")}";
+    public static string NetworkName(Guid id, NetworkAccess access)
+    {
+        return $"{Prefix(id)}-{(access == NetworkAccess.InternetOnly ? "internet" : "full")}";
+    }
 
     public static CreateContainerParameters Server(Guid id, int release, string environmentHash, ServerSpec spec,
         IReadOnlyDictionary<string, string> environment, RunnerOptions options)
@@ -72,10 +82,8 @@ public static class ContainerTemplate
 
         var variables = new Dictionary<string, string>(StringComparer.Ordinal);
         foreach (var (key, value) in environment)
-        {
             if (key.Length > 0 && !key.Contains('=') && !ReservedVariables.Contains(key))
                 variables[key] = value;
-        }
 
         variables["FASTMCP_STATELESS_HTTP"] = "true";
         variables["UV_CACHE_DIR"] = CacheDirectory;
@@ -90,16 +98,17 @@ public static class ContainerTemplate
             variables,
             ServerCommand,
             [
-                VolumeMount(id, CodeVolume(id, release), "/code", readOnly: true),
-                VolumeMount(id, EnvironmentVolume(id, environmentHash), "/env", readOnly: true),
-                VolumeMount(id, DataVolume(id), "/data", readOnly: false),
+                VolumeMount(id, CodeVolume(id, release), "/code", true),
+                VolumeMount(id, EnvironmentVolume(id, environmentHash), "/env", true),
+                VolumeMount(id, DataVolume(id), "/data", false),
                 TmpfsMount()
             ]);
         parameters.HostConfig.RestartPolicy = new RestartPolicy { Name = RestartPolicyKind.UnlessStopped };
         return parameters;
     }
 
-    public static CreateContainerParameters Build(Guid id, int release, string environmentHash, ServerSpec spec, RunnerOptions options)
+    public static CreateContainerParameters Build(Guid id, int release, string environmentHash, ServerSpec spec,
+        RunnerOptions options)
     {
         var labels = Labels(id);
         labels[$"{LabelRoot}.release"] = release.ToString(CultureInfo.InvariantCulture);
@@ -118,9 +127,9 @@ public static class ContainerTemplate
             variables,
             BuildCommand,
             [
-                VolumeMount(id, CodeVolume(id, release), "/code", readOnly: true),
-                VolumeMount(id, EnvironmentVolume(id, environmentHash), "/env", readOnly: false),
-                VolumeMount(id, CacheVolume(id), CacheDirectory, readOnly: false),
+                VolumeMount(id, CodeVolume(id, release), "/code", true),
+                VolumeMount(id, EnvironmentVolume(id, environmentHash), "/env", false),
+                VolumeMount(id, CacheVolume(id), CacheDirectory, false),
                 TmpfsMount()
             ]);
     }
@@ -136,8 +145,8 @@ public static class ContainerTemplate
             labels,
             options,
             [
-                VolumeMount(id, CodeVolume(id, release), "/code", readOnly: false),
-                VolumeMount(id, EnvironmentVolume(id, environmentHash), "/env", readOnly: true)
+                VolumeMount(id, CodeVolume(id, release), "/code", false),
+                VolumeMount(id, EnvironmentVolume(id, environmentHash), "/env", true)
             ]);
     }
 
@@ -156,14 +165,12 @@ public static class ContainerTemplate
     public static void EnsureSafeLimits(ServerLimits limits)
     {
         if (limits.MemoryMb < MinimumMemoryMb)
-        {
-            throw new ArgumentOutOfRangeException(nameof(limits), limits.MemoryMb, $"Memory limit must be at least {MinimumMemoryMb} MB.");
-        }
+            throw new ArgumentOutOfRangeException(nameof(limits), limits.MemoryMb,
+                $"Memory limit must be at least {MinimumMemoryMb} MB.");
 
         if (!double.IsFinite(limits.Cpus) || limits.Cpus < MinimumCpus)
-        {
-            throw new ArgumentOutOfRangeException(nameof(limits), limits.Cpus, $"CPU limit must be a finite number of at least {MinimumCpus.ToString(CultureInfo.InvariantCulture)}.");
-        }
+            throw new ArgumentOutOfRangeException(nameof(limits), limits.Cpus,
+                $"CPU limit must be a finite number of at least {MinimumCpus.ToString(CultureInfo.InvariantCulture)}.");
 
         if (limits.Pids < 1)
             throw new ArgumentOutOfRangeException(nameof(limits), limits.Pids, "Process limit must be at least 1.");
@@ -181,29 +188,44 @@ public static class ContainerTemplate
         };
 
         if (access == NetworkAccess.InternetOnly)
-        {
             parameters.Options = new Dictionary<string, string> { [GatewayModeOption] = "isolated" };
-        }
 
         return parameters;
     }
 
-    public static string BuildContainerName(Guid id, int release) => $"{Prefix(id)}-b{release}";
+    public static string BuildContainerName(Guid id, int release)
+    {
+        return $"{Prefix(id)}-b{release}";
+    }
 
-    public static string CodeVolume(Guid id, int release) => $"{Prefix(id)}-code-{release}";
+    public static string CodeVolume(Guid id, int release)
+    {
+        return $"{Prefix(id)}-code-{release}";
+    }
 
-    public static string EnvironmentVolume(Guid id, string environmentHash) =>
-        $"{Prefix(id)}-env-{environmentHash[..Math.Min(EnvironmentHashLength, environmentHash.Length)]}";
+    public static string EnvironmentVolume(Guid id, string environmentHash)
+    {
+        return $"{Prefix(id)}-env-{environmentHash[..Math.Min(EnvironmentHashLength, environmentHash.Length)]}";
+    }
 
-    public static string CacheVolume(Guid id) => $"{Prefix(id)}-uvcache";
+    public static string CacheVolume(Guid id)
+    {
+        return $"{Prefix(id)}-uvcache";
+    }
 
-    public static string DataVolume(Guid id) => $"{Prefix(id)}-data";
+    public static string DataVolume(Guid id)
+    {
+        return $"{Prefix(id)}-data";
+    }
 
-    public static VolumesCreateParameters Volume(Guid id, string name) =>
-        new() { Name = name, Labels = Labels(id) };
+    public static VolumesCreateParameters Volume(Guid id, string name)
+    {
+        return new VolumesCreateParameters { Name = name, Labels = Labels(id) };
+    }
 
     private static CreateContainerParameters Create(string name, Guid id, ServerSpec spec, RunnerOptions options,
-        Dictionary<string, string> labels, Dictionary<string, string> variables, IList<string> command, IList<Mount> mounts)
+        Dictionary<string, string> labels, Dictionary<string, string> variables, IList<string> command,
+        IList<Mount> mounts)
     {
         EnsureSafeLimits(spec.Limits);
         var memory = spec.Limits.MemoryMb * BytesInMegabyte;
@@ -213,7 +235,8 @@ public static class ContainerTemplate
             Image = options.RuntimeImage,
             User = User,
             Cmd = command,
-            Env = variables.OrderBy(pair => pair.Key, StringComparer.Ordinal).Select(pair => $"{pair.Key}={pair.Value}").ToList(),
+            Env = variables.OrderBy(pair => pair.Key, StringComparer.Ordinal).Select(pair => $"{pair.Key}={pair.Value}")
+                .ToList(),
             Labels = labels,
             HostConfig = new HostConfig
             {
@@ -237,8 +260,10 @@ public static class ContainerTemplate
         };
     }
 
-    private static CreateContainerParameters NeverStarted(string name, Dictionary<string, string> labels, RunnerOptions options, IList<Mount> mounts) =>
-        new()
+    private static CreateContainerParameters NeverStarted(string name, Dictionary<string, string> labels,
+        RunnerOptions options, IList<Mount> mounts)
+    {
+        return new CreateContainerParameters
         {
             Name = name,
             Image = options.RuntimeImage,
@@ -254,6 +279,7 @@ public static class ContainerTemplate
                 Mounts = mounts
             }
         };
+    }
 
     private static void AddProxy(Dictionary<string, string> variables, NetworkAccess access, RunnerOptions options)
     {
@@ -268,10 +294,14 @@ public static class ContainerTemplate
         variables["no_proxy"] = NoProxy;
     }
 
-    private static Dictionary<string, string> Labels(Guid id) => new() { [LabelRoot] = id.ToString() };
+    private static Dictionary<string, string> Labels(Guid id)
+    {
+        return new Dictionary<string, string> { [LabelRoot] = id.ToString() };
+    }
 
-    private static Mount VolumeMount(Guid id, string source, string target, bool readOnly) =>
-        new()
+    private static Mount VolumeMount(Guid id, string source, string target, bool readOnly)
+    {
+        return new Mount
         {
             Type = "volume",
             Source = source,
@@ -279,6 +309,10 @@ public static class ContainerTemplate
             ReadOnly = readOnly,
             VolumeOptions = new VolumeOptions { Labels = Labels(id) }
         };
+    }
 
-    private static Mount TmpfsMount() => new() { Type = "tmpfs", Target = "/tmp" };
+    private static Mount TmpfsMount()
+    {
+        return new Mount { Type = "tmpfs", Target = "/tmp" };
+    }
 }

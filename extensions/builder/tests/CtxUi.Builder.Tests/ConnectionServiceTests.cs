@@ -25,7 +25,8 @@ public sealed class ConnectionServiceTests
         Assert.Equal("Weather", draft.Name);
         Assert.True(draft.ForwardIdentity);
         Assert.Equal($"http://runner:8090/s/{server}/mcp", draft.Url);
-        Assert.Equal(await harness.RouteSecretAsync(server), Assert.Single(draft.UpstreamHeaders!, header => header.Key == RouteSecret.Header).Value);
+        Assert.Equal(await harness.RouteSecretAsync(server),
+            Assert.Single(draft.UpstreamHeaders!, header => header.Key == RouteSecret.Header).Value);
         Assert.Equal([first.Id], harness.Data.Links["weather-mcp"]);
         Assert.Equal(inbound.Id, (await harness.ServerAsync(server)).InboundId);
         Assert.Equal(inbound, await harness.FindInboundAsync(server));
@@ -54,7 +55,8 @@ public sealed class ConnectionServiceTests
         var client = harness.Data.AddClient("first");
         harness.Data.AddInbound("weather-mcp");
 
-        var failure = await Assert.ThrowsAsync<PanelException>(() => harness.ConnectAsync(server, "weather-mcp", "Weather", false, client.Id));
+        var failure = await Assert.ThrowsAsync<PanelException>(() =>
+            harness.ConnectAsync(server, "weather-mcp", "Weather", false, client.Id));
 
         Assert.Equal(BuilderText.InboundSlugTaken, failure.Message);
         Assert.Null((await harness.ServerAsync(server)).InboundId);
@@ -82,7 +84,8 @@ public sealed class ConnectionServiceTests
         await using var harness = await PublishHarness.CreateAsync();
         var server = await harness.CreateServerAsync();
 
-        await Assert.ThrowsAsync<PanelException>(() => harness.ConnectAsync(server, "weather-mcp", "Weather", false, Guid.NewGuid()));
+        await Assert.ThrowsAsync<PanelException>(() =>
+            harness.ConnectAsync(server, "weather-mcp", "Weather", false, Guid.NewGuid()));
 
         Assert.Empty(harness.Data.Inbounds);
         Assert.Null((await harness.ServerAsync(server)).InboundId);
@@ -104,12 +107,13 @@ public sealed class ConnectionServiceTests
     [Fact]
     public async Task Incomplete_runner_settings_stop_the_connection_with_the_missing_names()
     {
-        await using var harness = await PublishHarness.CreateAsync(configured: false);
+        await using var harness = await PublishHarness.CreateAsync(false);
         var server = await harness.CreateServerAsync();
 
         var failure = await Assert.ThrowsAsync<PanelException>(() => harness.ConnectAsync(server, "weather-mcp"));
 
-        Assert.Equal(string.Format(BuilderText.RunnerNotConfigured, "RunnerUrl, RunnerIngressUrl, RunnerToken"), failure.Message);
+        Assert.Equal(string.Format(BuilderText.RunnerNotConfigured, "RunnerUrl, RunnerIngressUrl, RunnerToken"),
+            failure.Message);
         Assert.Empty(harness.Data.Inbounds);
     }
 
@@ -171,7 +175,8 @@ public sealed class ConnectionServiceTests
 
         var failure = await Assert.ThrowsAsync<PanelException>(() => harness.DeleteServerAsync(server));
 
-        Assert.Equal(string.Format(BuilderText.RunnerDeleteFailed, "The runner could not remove the server."), failure.Message);
+        Assert.Equal(string.Format(BuilderText.RunnerDeleteFailed, "The runner could not remove the server."),
+            failure.Message);
         Assert.Single(harness.Data.Inbounds);
         Assert.True(await harness.ServerExistsAsync(server));
         Assert.True(File.Exists(harness.Archives.PathOf(release.Id)));
@@ -263,7 +268,8 @@ public sealed class ConnectionServiceTests
         var other = Guid.NewGuid();
         harness.Data.DuringAdd = () => harness.SetInboundIdAsync(server, other);
 
-        var failure = await Assert.ThrowsAsync<PanelException>(() => harness.ConnectAsync(server, "weather-mcp", "Weather", false, client.Id));
+        var failure = await Assert.ThrowsAsync<PanelException>(() =>
+            harness.ConnectAsync(server, "weather-mcp", "Weather", false, client.Id));
 
         Assert.Equal(BuilderText.ConnectionAlreadyConnected, failure.Message);
         Assert.Empty(harness.Data.Inbounds);
@@ -333,7 +339,9 @@ public sealed class ConnectionServiceTests
         await harness.WaitIdleAsync(server);
         harness.Queue.ReserveForDeletion(server);
 
-        var publish = await Assert.ThrowsAsync<PanelException>(() => harness.Queue.PublishAsync(server, PublishMode.Activate, default));
+        var publish =
+            await Assert.ThrowsAsync<PanelException>(() =>
+                harness.Queue.PublishAsync(server, PublishMode.Activate, default));
         var rollback = await Assert.ThrowsAsync<PanelException>(() => harness.Queue.RollbackAsync(server, 1, default));
         var settings = Assert.Throws<PanelException>(() => harness.Queue.ApplySettings(server));
 
@@ -368,7 +376,7 @@ public sealed class ConnectionServiceTests
         await harness.PublishAndWaitAsync(server);
         await harness.WaitIdleAsync(server);
         harness.Queue.ReserveForDeletion(server);
-        harness.Runner.Restart(loseMarker: true);
+        harness.Runner.Restart(true);
 
         await Task.Delay(300);
 
@@ -451,7 +459,8 @@ public sealed class ConnectionServiceTests
         var inbound = await harness.ConnectAsync(server, "weather-mcp");
         var fresh = new ConnectedInbounds();
 
-        await new ConnectedInboundsLoader(fresh, harness.Services.GetRequiredService<IDbContextFactory<BuilderDatabase>>()).InitializeAsync(default);
+        await new ConnectedInboundsLoader(fresh,
+            harness.Services.GetRequiredService<IDbContextFactory<BuilderDatabase>>()).InitializeAsync(default);
 
         Assert.True(fresh.Contains(inbound.Id));
     }

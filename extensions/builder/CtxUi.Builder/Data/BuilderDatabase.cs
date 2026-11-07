@@ -31,8 +31,10 @@ public sealed class BuilderDatabase(DbContextOptions<BuilderDatabase> options) :
         {
             draft.HasKey(entity => entity.ServerId);
             draft.Property(entity => entity.UpdatedAt).HasConversion(new DateTimeOffsetToBinaryConverter());
-            draft.HasOne<BuilderServer>().WithOne().HasForeignKey<ServerDraft>(entity => entity.ServerId).OnDelete(DeleteBehavior.Cascade);
-            draft.HasMany(entity => entity.Files).WithOne().HasForeignKey(file => file.ServerId).OnDelete(DeleteBehavior.Cascade);
+            draft.HasOne<BuilderServer>().WithOne().HasForeignKey<ServerDraft>(entity => entity.ServerId)
+                .OnDelete(DeleteBehavior.Cascade);
+            draft.HasMany(entity => entity.Files).WithOne().HasForeignKey(file => file.ServerId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         model.Entity<DraftFile>(file =>
@@ -46,7 +48,8 @@ public sealed class BuilderDatabase(DbContextOptions<BuilderDatabase> options) :
         {
             secret.HasKey(entity => new { entity.ServerId, entity.Name });
             secret.Property(entity => entity.Name).HasMaxLength(64);
-            secret.HasOne<BuilderServer>().WithMany().HasForeignKey(entity => entity.ServerId).OnDelete(DeleteBehavior.Cascade);
+            secret.HasOne<BuilderServer>().WithMany().HasForeignKey(entity => entity.ServerId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         model.Entity<Release>(release =>
@@ -56,7 +59,8 @@ public sealed class BuilderDatabase(DbContextOptions<BuilderDatabase> options) :
             release.Property(entity => entity.Status).HasConversion<string>().HasMaxLength(16);
             release.Property(entity => entity.CreatedAt).HasConversion(new DateTimeOffsetToBinaryConverter());
             release.Property(entity => entity.FinishedAt).HasConversion(new DateTimeOffsetToBinaryConverter());
-            release.HasOne<BuilderServer>().WithMany().HasForeignKey(entity => entity.ServerId).OnDelete(DeleteBehavior.Cascade);
+            release.HasOne<BuilderServer>().WithMany().HasForeignKey(entity => entity.ServerId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

@@ -10,6 +10,7 @@ using var probe = new HttpServerProbe();
 
 var app = RunnerEndpoints.BuildApp(
     args,
-    new RunnerDependencies(RunnerOptions.FromEnvironment(variables), RunnerPorts.Default, docker, probe, TimeProvider.System));
+    new RunnerDependencies(RunnerOptions.FromEnvironment(variables), RunnerPorts.Default, docker, probe,
+        TimeProvider.System));
 
 await app.RunAsync();

@@ -14,12 +14,16 @@ public static class OwnCookies
 
     private static readonly string[] Chunked = [Session, ConnectSession, DeviceMarker, External];
 
-    public static bool Contains(string name) =>
-        Chunked.Any(own => name == own || IsChunk(name, own + "C"))
-        || name.StartsWith(FrameworkPrefix, StringComparison.Ordinal);
+    public static bool Contains(string name)
+    {
+        return Chunked.Any(own => name == own || IsChunk(name, own + "C"))
+               || name.StartsWith(FrameworkPrefix, StringComparison.Ordinal);
+    }
 
-    private static bool IsChunk(string name, string chunk) =>
-        name.Length > chunk.Length
-        && name.StartsWith(chunk, StringComparison.Ordinal)
-        && !name.AsSpan(chunk.Length).ContainsAnyExceptInRange('0', '9');
+    private static bool IsChunk(string name, string chunk)
+    {
+        return name.Length > chunk.Length
+               && name.StartsWith(chunk, StringComparison.Ordinal)
+               && !name.AsSpan(chunk.Length).ContainsAnyExceptInRange('0', '9');
+    }
 }

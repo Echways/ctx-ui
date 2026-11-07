@@ -21,7 +21,8 @@ public sealed class ConnectionService(
     ConnectedInbounds connected,
     ILogger<ConnectionService> log)
 {
-    public async Task<InboundSummary> ConnectAsync(Guid serverId, string slug, string name, bool forwardIdentity, IReadOnlyCollection<Guid> clients, CancellationToken ct)
+    public async Task<InboundSummary> ConnectAsync(Guid serverId, string slug, string name, bool forwardIdentity,
+        IReadOnlyCollection<Guid> clients, CancellationToken ct)
     {
         RequireConfigured();
         queue.ReserveForConnection(serverId);
@@ -45,13 +46,16 @@ public sealed class ConnectionService(
         return inbound;
     }
 
-    public async Task<InboundSummary?> FindInboundAsync(Guid serverId, CancellationToken ct) =>
-        await FindInboundAsync(await FindServerAsync(serverId, ct), ct);
+    public async Task<InboundSummary?> FindInboundAsync(Guid serverId, CancellationToken ct)
+    {
+        return await FindInboundAsync(await FindServerAsync(serverId, ct), ct);
+    }
 
     public async Task<Guid?> FindServerIdAsync(InboundSummary inbound, CancellationToken ct)
     {
         await using var database = await databases.CreateDbContextAsync(ct);
-        var found = await database.Servers.AsNoTracking().Where(server => server.InboundId == inbound.Id).Select(server => (Guid?)server.Id).FirstOrDefaultAsync(ct);
+        var found = await database.Servers.AsNoTracking().Where(server => server.InboundId == inbound.Id)
+            .Select(server => (Guid?)server.Id).FirstOrDefaultAsync(ct);
         if (found is null)
             connected.Remove(inbound.Id);
         return found;
@@ -72,7 +76,8 @@ public sealed class ConnectionService(
             }
 
             await using var database = await databases.CreateDbContextAsync(ct);
-            var releases = await database.Releases.AsNoTracking().Where(release => release.ServerId == serverId).Select(release => release.Id).ToListAsync(ct);
+            var releases = await database.Releases.AsNoTracking().Where(release => release.ServerId == serverId)
+                .Select(release => release.Id).ToListAsync(ct);
             await database.Servers.Where(known => known.Id == serverId).ExecuteDeleteAsync(ct);
             RemoveArchives(releases);
         }
@@ -82,10 +87,13 @@ public sealed class ConnectionService(
         }
     }
 
-    public string? AddressOf(Guid serverId) =>
-        settings.IngressUrl is null ? null : $"{settings.IngressUrl.ToString().TrimEnd('/')}/s/{serverId}/mcp";
+    public string? AddressOf(Guid serverId)
+    {
+        return settings.IngressUrl is null ? null : $"{settings.IngressUrl.ToString().TrimEnd('/')}/s/{serverId}/mcp";
+    }
 
-    private async Task<InboundSummary> ConnectCoreAsync(Guid serverId, string slug, string name, bool forwardIdentity, IReadOnlyCollection<Guid> clients, CancellationToken ct)
+    private async Task<InboundSummary> ConnectCoreAsync(Guid serverId, string slug, string name, bool forwardIdentity,
+        IReadOnlyCollection<Guid> clients, CancellationToken ct)
     {
         var server = await FindServerAsync(serverId, ct);
         var inbounds = await data.InboundsAsync(ct);
@@ -96,7 +104,11 @@ public sealed class ConnectionService(
         if (inbounds.Any(inbound => inbound.Slug == wanted))
             throw new PanelException(BuilderText.InboundSlugTaken);
 
-        var inbound = await AddInboundAsync(new HttpInboundDraft(wanted, name.Trim(), AddressOf(serverId)!, new Dictionary<string, string> { [RouteSecret.Header] = box.Open(server.RouteSecretSealed) }, forwardIdentity), ct);
+        var inbound =
+            await AddInboundAsync(
+                new HttpInboundDraft(wanted, name.Trim(), AddressOf(serverId)!,
+                    new Dictionary<string, string> { [RouteSecret.Header] = box.Open(server.RouteSecretSealed) },
+                    forwardIdentity), ct);
         try
         {
             if (clients.Count > 0)
@@ -106,7 +118,9 @@ public sealed class ConnectionService(
             var updated = await database.Servers.Where(known => known.Id == serverId && known.InboundId == previous)
                 .ExecuteUpdateAsync(setters => setters.SetProperty(known => known.InboundId, inbound.Id), ct);
             if (updated == 0)
-                throw await database.Servers.AnyAsync(known => known.Id == serverId, ct) ? Failures.Conflict(BuilderText.ConnectionAlreadyConnected) : Failures.ServerNotFound();
+                throw await database.Servers.AnyAsync(known => known.Id == serverId, ct)
+                    ? Failures.Conflict(BuilderText.ConnectionAlreadyConnected)
+                    : Failures.ServerNotFound();
         }
         catch
         {
@@ -148,7 +162,6 @@ public sealed class ConnectionService(
     private void RemoveArchives(IEnumerable<Guid> releases)
     {
         foreach (var release in releases)
-        {
             try
             {
                 archives.Remove(release);
@@ -157,22 +170,24 @@ public sealed class ConnectionService(
             {
                 log.LogWarning(failure, "The archive of release {Release} could not be removed.", release);
             }
-        }
     }
 
-    private static InboundSummary? OwnInbound(BuilderServer server, IReadOnlyList<InboundSummary> inbounds) =>
-        server.InboundId is null ? null : inbounds.FirstOrDefault(inbound => inbound.Id == server.InboundId);
+    private static InboundSummary? OwnInbound(BuilderServer server, IReadOnlyList<InboundSummary> inbounds)
+    {
+        return server.InboundId is null ? null : inbounds.FirstOrDefault(inbound => inbound.Id == server.InboundId);
+    }
 
     private async Task<BuilderServer> FindServerAsync(Guid serverId, CancellationToken ct)
     {
         await using var database = await databases.CreateDbContextAsync(ct);
         return await database.Servers.AsNoTracking().SingleOrDefaultAsync(server => server.Id == serverId, ct)
-            ?? throw Failures.ServerNotFound();
+               ?? throw Failures.ServerNotFound();
     }
 
     private void RequireConfigured()
     {
         if (!settings.IsComplete)
-            throw new PanelException(string.Format(BuilderText.RunnerNotConfigured, string.Join(", ", settings.Missing)));
+            throw new PanelException(
+                string.Format(BuilderText.RunnerNotConfigured, string.Join(", ", settings.Missing)));
     }
 }

@@ -26,20 +26,26 @@ public static class UsageEndpoints
 {
     public static void MapUsage(this RouteGroupBuilder api)
     {
-        api.MapGet("/overview", OverviewAsync).WithTags("usage").WithSummary("Same as the Overview page: the last day and the last 7 days");
+        api.MapGet("/overview", OverviewAsync).WithTags("usage")
+            .WithSummary("Same as the Overview page: the last day and the last 7 days");
         api.MapGet("/metrics", MetricsAsync).WithTags("usage")
-            .WithSummary("Metrics of a period, optionally narrowed to a client, an inbound and a tool; days are 1, 7, 30 or 90 within the log retention, 7 by default");
+            .WithSummary(
+                "Metrics of a period, optionally narrowed to a client, an inbound and a tool; days are 1, 7, 30 or 90 within the log retention, 7 by default");
         var usage = api.MapGroup("/usage").WithTags("usage");
         usage.MapGet("/days", DaysAsync).WithSummary("Daily totals, UTC; days from 1 to 3650, 7 by default");
         usage.MapGet("/log", LogAsync).WithSummary("Recent calls, newest first; limit from 1 to 1000, 50 by default");
     }
 
-    private static async Task<Ok<Overview>> OverviewAsync(OverviewService overview, CancellationToken ct) =>
-        TypedResults.Ok(await overview.LoadAsync(ct));
+    private static async Task<Ok<Overview>> OverviewAsync(OverviewService overview, CancellationToken ct)
+    {
+        return TypedResults.Ok(await overview.LoadAsync(ct));
+    }
 
     private static async Task<Ok<MetricsReport>> MetricsAsync(
-        int? days, Guid? clientId, Guid? inboundId, string? tool, MetricsService metrics, CancellationToken ct) =>
-        TypedResults.Ok(await metrics.LoadAsync(new MetricsFilter(clientId, inboundId, tool), days, ct));
+        int? days, Guid? clientId, Guid? inboundId, string? tool, MetricsService metrics, CancellationToken ct)
+    {
+        return TypedResults.Ok(await metrics.LoadAsync(new MetricsFilter(clientId, inboundId, tool), days, ct));
+    }
 
     private static async Task<Ok<List<DailyTotal>>> DaysAsync(
         Guid? clientId, int? days, UsageStore usage, ClientService clients, TimeProvider clock, CancellationToken ct)
@@ -51,7 +57,8 @@ public static class UsageEndpoints
     }
 
     private static async Task<Ok<List<UsageLine>>> LogAsync(
-        Guid? clientId, int? limit, UsageStore usage, ClientService clients, InboundService inbounds, CancellationToken ct)
+        Guid? clientId, int? limit, UsageStore usage, ClientService clients, InboundService inbounds,
+        CancellationToken ct)
     {
         var count = InRange("limit", limit ?? UsageStore.DefaultLines, UsageStore.MaxLines);
         await EnsureClientAsync(clients, clientId, ct);
@@ -82,6 +89,10 @@ public static class UsageEndpoints
             await clients.GetAsync(id, ct);
     }
 
-    private static int InRange(string name, int value, int max) =>
-        value >= 1 && value <= max ? value : throw new DomainException(string.Format(ServerText.NumberInRange, name, max));
+    private static int InRange(string name, int value, int max)
+    {
+        return value >= 1 && value <= max
+            ? value
+            : throw new DomainException(string.Format(ServerText.NumberInRange, name, max));
+    }
 }

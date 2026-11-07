@@ -9,19 +9,30 @@ public sealed class RunnerAvailabilityTests
 {
     private sealed class StubHandler(Func<HttpResponseMessage> respond) : HttpMessageHandler
     {
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>
-            Task.FromResult(respond());
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request,
+            CancellationToken cancellationToken)
+        {
+            return Task.FromResult(respond());
+        }
     }
 
-    private static RunnerAvailability Create(RunnerSettings settings, Func<HttpResponseMessage> respond) =>
-        new(settings, new RunnerClient(new HttpClient(new StubHandler(respond)) { BaseAddress = new Uri("http://runner:8091/") }));
+    private static RunnerAvailability Create(RunnerSettings settings, Func<HttpResponseMessage> respond)
+    {
+        return new RunnerAvailability(settings,
+            new RunnerClient(new HttpClient(new StubHandler(respond))
+            { BaseAddress = new Uri("http://runner:8091/") }));
+    }
 
-    private static RunnerSettings Complete() => new("http://runner:8091", "http://runner:8090", "token");
+    private static RunnerSettings Complete()
+    {
+        return new RunnerSettings("http://runner:8091", "http://runner:8090", "token");
+    }
 
     [Fact]
     public async Task Missing_settings_are_named_and_no_request_is_sent()
     {
-        var availability = Create(new RunnerSettings(null, "http://runner:8090", null), () => throw new InvalidOperationException());
+        var availability = Create(new RunnerSettings(null, "http://runner:8090", null),
+            () => throw new InvalidOperationException());
 
         var report = await availability.CheckAsync(default);
 
@@ -34,7 +45,8 @@ public sealed class RunnerAvailabilityTests
     [Fact]
     public async Task Matching_version_is_ready()
     {
-        var availability = Create(Complete(), () => JsonResponse(new RunnerHealth(RunnerAvailability.ExtensionVersion, "29.0", true)));
+        var availability = Create(Complete(),
+            () => JsonResponse(new RunnerHealth(RunnerAvailability.ExtensionVersion, "29.0", true)));
 
         var report = await availability.CheckAsync(default);
 
@@ -89,5 +101,8 @@ public sealed class RunnerAvailabilityTests
         Assert.DoesNotContain("secret-token", new RunnerSettings("http://a", "http://b", "secret-token").ToString());
     }
 
-    private static HttpResponseMessage JsonResponse<T>(T value) => new(HttpStatusCode.OK) { Content = JsonContent.Create(value) };
+    private static HttpResponseMessage JsonResponse<T>(T value)
+    {
+        return new HttpResponseMessage(HttpStatusCode.OK) { Content = JsonContent.Create(value) };
+    }
 }

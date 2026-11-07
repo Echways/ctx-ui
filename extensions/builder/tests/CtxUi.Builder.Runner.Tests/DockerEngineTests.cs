@@ -34,7 +34,10 @@ internal sealed partial class StubDockerApi : IAsyncDisposable
 
     public Uri Address => new(_app.Urls.First());
 
-    private StubDockerApi(WebApplication app) => _app = app;
+    private StubDockerApi(WebApplication app)
+    {
+        _app = app;
+    }
 
     public static async Task<StubDockerApi> StartAsync()
     {
@@ -148,7 +151,7 @@ internal sealed partial class StubDockerApi : IAsyncDisposable
         context.Response.Headers["X-Docker-Container-Path-Stat"] = Convert.ToBase64String(Encoding.UTF8.GetBytes(stat));
         context.Response.ContentType = "application/x-tar";
         using var tarred = new MemoryStream();
-        await using (var tar = new TarWriter(tarred, TarEntryFormat.Ustar, leaveOpen: true))
+        await using (var tar = new TarWriter(tarred, TarEntryFormat.Ustar, true))
         {
             await tar.WriteEntryAsync(new UstarTarEntry(TarEntryType.RegularFile, "requirements.lock")
             {
@@ -159,7 +162,8 @@ internal sealed partial class StubDockerApi : IAsyncDisposable
         await context.Response.Body.WriteAsync(tarred.ToArray());
     }
 
-    private static async Task WriteLabelled<T>(HttpContext context, Dictionary<string, Dictionary<string, string>> objects, string name, Func<Dictionary<string, string>, T> shape)
+    private static async Task WriteLabelled<T>(HttpContext context,
+        Dictionary<string, Dictionary<string, string>> objects, string name, Func<Dictionary<string, string>, T> shape)
     {
         if (!objects.TryGetValue(name, out var labels))
         {
@@ -171,7 +175,10 @@ internal sealed partial class StubDockerApi : IAsyncDisposable
         await context.Response.WriteAsJsonAsync(shape(labels));
     }
 
-    public async ValueTask DisposeAsync() => await _app.DisposeAsync();
+    public async ValueTask DisposeAsync()
+    {
+        await _app.DisposeAsync();
+    }
 
     [GeneratedRegex(@"^/v\d+\.\d+")]
     private static partial Regex VersionPrefix();
@@ -212,7 +219,10 @@ public sealed class DockerEngineTests : IAsyncLifetime
         await _api.DisposeAsync();
     }
 
-    private static Dictionary<string, string> Owned(string owner) => new() { [BuilderLabels.Root] = owner };
+    private static Dictionary<string, string> Owned(string owner)
+    {
+        return new Dictionary<string, string> { [BuilderLabels.Root] = owner };
+    }
 
     public static TheoryData<string> ForeignLabels => new()
     {
@@ -254,7 +264,8 @@ public sealed class DockerEngineTests : IAsyncLifetime
             () => _engine.RemoveVolumeAsync(Server, name, ct),
             () => _engine.RemoveNetworkAsync(Server, name, ct),
             () => _engine.NetworkExistsAsync(Server, name, ct),
-            () => _engine.EnsureVolumeAsync(Server, new VolumesCreateParameters { Name = name, Labels = Owned(Server.ToString()) }, ct),
+            () => _engine.EnsureVolumeAsync(Server,
+                new VolumesCreateParameters { Name = name, Labels = Owned(Server.ToString()) }, ct),
             async () =>
             {
                 await foreach (var _ in _engine.ReadLogsAsync(Server, name, null, false, ct))
@@ -280,8 +291,10 @@ public sealed class DockerEngineTests : IAsyncLifetime
     {
         Seed();
 
-        await Assert.ThrowsAsync<BuilderObjectRefusedException>(() => _engine.ConnectAsync(Server, network, container, CancellationToken.None));
-        await Assert.ThrowsAsync<BuilderObjectRefusedException>(() => _engine.DisconnectAsync(Server, network, container, CancellationToken.None));
+        await Assert.ThrowsAsync<BuilderObjectRefusedException>(() =>
+            _engine.ConnectAsync(Server, network, container, CancellationToken.None));
+        await Assert.ThrowsAsync<BuilderObjectRefusedException>(() =>
+            _engine.DisconnectAsync(Server, network, container, CancellationToken.None));
 
         Assert.Empty(_api.Mutations);
     }
@@ -289,7 +302,8 @@ public sealed class DockerEngineTests : IAsyncLifetime
     [Theory]
     [InlineData("mine")]
     [InlineData("system")]
-    public async Task Connect_allows_this_servers_and_system_containers_and_never_takes_the_default_route(string container)
+    public async Task Connect_allows_this_servers_and_system_containers_and_never_takes_the_default_route(
+        string container)
     {
         Seed();
 
@@ -353,10 +367,12 @@ public sealed class DockerEngineTests : IAsyncLifetime
         Seed();
         var ct = CancellationToken.None;
 
-        await _engine.EnsureVolumeAsync(Server, new VolumesCreateParameters { Name = "mine", Labels = Owned(Server.ToString()) }, ct);
+        await _engine.EnsureVolumeAsync(Server,
+            new VolumesCreateParameters { Name = "mine", Labels = Owned(Server.ToString()) }, ct);
         Assert.Empty(_api.Mutations);
 
-        await _engine.EnsureVolumeAsync(Server, new VolumesCreateParameters { Name = "new", Labels = Owned(Server.ToString()) }, ct);
+        await _engine.EnsureVolumeAsync(Server,
+            new VolumesCreateParameters { Name = "new", Labels = Owned(Server.ToString()) }, ct);
         Assert.Contains("POST /volumes/create", _api.Mutations);
     }
 
@@ -381,8 +397,8 @@ public sealed class DockerEngineTests : IAsyncLifetime
         _api.ArchiveContent = new byte[32 * 1024 * 1024];
         _api.ArchiveStatSize = statSize;
 
-        var failure = await Assert.ThrowsAsync<BuilderFileTooLargeException>(
-            () => _engine.ReadFileAsync(Server, "mine", "/env/requirements.lock", 1024 * 1024, CancellationToken.None));
+        var failure = await Assert.ThrowsAsync<BuilderFileTooLargeException>(() =>
+            _engine.ReadFileAsync(Server, "mine", "/env/requirements.lock", 1024 * 1024, CancellationToken.None));
 
         Assert.Contains("/env/requirements.lock", failure.Message, StringComparison.Ordinal);
     }
@@ -392,8 +408,17 @@ public sealed class DockerEngineTests : IAsyncLifetime
     {
         _api.ListedNetworks =
         [
-            new { Name = "foreign", Id = "1", Labels = new Dictionary<string, string>(), Containers = new Dictionary<string, object> { ["c"] = new { Name = "secret-container" } }, IPAM = new { Config = new[] { new { Subnet = "10.1.0.0/16", Gateway = "10.1.0.1" } } } },
-            new { Name = "no-ipam", Id = "2", Labels = new Dictionary<string, string>(), Containers = new Dictionary<string, object>(), IPAM = new { Config = Array.Empty<object>() } }
+            new
+            {
+                Name = "foreign", Id = "1", Labels = new Dictionary<string, string>(),
+                Containers = new Dictionary<string, object> { ["c"] = new { Name = "secret-container" } },
+                IPAM = new { Config = new[] { new { Subnet = "10.1.0.0/16", Gateway = "10.1.0.1" } } }
+            },
+            new
+            {
+                Name = "no-ipam", Id = "2", Labels = new Dictionary<string, string>(),
+                Containers = new Dictionary<string, object>(), IPAM = new { Config = Array.Empty<object>() }
+            }
         ];
 
         var subnets = await _engine.ListSubnetsAsync(CancellationToken.None);
@@ -407,7 +432,12 @@ public sealed class DockerEngineTests : IAsyncLifetime
     {
         _api.ListedVolumes =
         [
-            new { Name = "marker", Labels = new Dictionary<string, string> { [BuilderLabels.Role] = BuilderLabels.ActivationRole, [BuilderLabels.Activation] = "3" } },
+            new
+            {
+                Name = "marker",
+                Labels = new Dictionary<string, string>
+                    { [BuilderLabels.Role] = BuilderLabels.ActivationRole, [BuilderLabels.Activation] = "3" }
+            },
             new { Name = "plain", Labels = (Dictionary<string, string>?)null }
         ];
 
@@ -426,7 +456,8 @@ public sealed class DockerEngineTests : IAsyncLifetime
 
         Assert.True(await _engine.RequireSystemContainerAsync("system", ct));
         await Assert.ThrowsAsync<BuilderObjectRefusedException>(() => _engine.RequireSystemContainerAsync("mine", ct));
-        await Assert.ThrowsAsync<BuilderObjectRefusedException>(() => _engine.RequireSystemContainerAsync("unlabelled", ct));
+        await Assert.ThrowsAsync<BuilderObjectRefusedException>(() =>
+            _engine.RequireSystemContainerAsync("unlabelled", ct));
         await Assert.ThrowsAsync<BuilderObjectRefusedException>(() => _engine.RequireSystemContainerAsync("gone", ct));
     }
 }

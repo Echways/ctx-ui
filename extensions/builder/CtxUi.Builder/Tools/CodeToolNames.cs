@@ -10,7 +10,8 @@ public static partial class CodeToolNames
     [GeneratedRegex(@"^[ \t]*(?:async[ \t]+)?def[ \t]+(?<function>\w+)", RegexOptions.Multiline)]
     private static partial Regex Function();
 
-    [GeneratedRegex(@"^[ \t]*from[ \t]+fastmcp(?:\.tools)?[ \t]+import[ \t]+(?<names>\([^)]*\)|[^\n]*)", RegexOptions.Multiline)]
+    [GeneratedRegex(@"^[ \t]*from[ \t]+fastmcp(?:\.tools)?[ \t]+import[ \t]+(?<names>\([^)]*\)|[^\n]*)",
+        RegexOptions.Multiline)]
     private static partial Regex FromImport();
 
     [GeneratedRegex(@"\btool[ \t\r\n]+as[ \t\r\n]+(?<alias>\w+)")]
@@ -25,14 +26,17 @@ public static partial class CodeToolNames
     public static IReadOnlySet<string> From(IEnumerable<(string Path, string Content)> files)
     {
         var names = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var (_, content) in files.Where(file => file.Path.StartsWith("mcp/", StringComparison.Ordinal) && file.Path.EndsWith(".py", StringComparison.OrdinalIgnoreCase)))
+        foreach (var (_, content) in files.Where(file =>
+                     file.Path.StartsWith("mcp/", StringComparison.Ordinal) &&
+                     file.Path.EndsWith(".py", StringComparison.OrdinalIgnoreCase)))
             Collect(content, names);
         return names;
     }
 
     private static void Collect(string content, HashSet<string> names)
     {
-        var aliases = FromImport().Matches(content).SelectMany(match => Alias().Matches(match.Groups["names"].Value)).Select(match => match.Groups["alias"].Value).ToHashSet();
+        var aliases = FromImport().Matches(content).SelectMany(match => Alias().Matches(match.Groups["names"].Value))
+            .Select(match => match.Groups["alias"].Value).ToHashSet();
         foreach (Match decorator in Decorator().Matches(content))
         {
             var dotted = decorator.Groups["dotted"].Value.Replace(" ", string.Empty).Replace("\t", string.Empty);
@@ -44,7 +48,9 @@ public static partial class CodeToolNames
             var function = Function().Match(content, end);
             if (!function.Success)
                 continue;
-            names.Add(arguments is null ? function.Groups["function"].Value : ExplicitName(arguments) ?? function.Groups["function"].Value);
+            names.Add(arguments is null
+                ? function.Groups["function"].Value
+                : ExplicitName(arguments) ?? function.Groups["function"].Value);
         }
     }
 
@@ -77,7 +83,6 @@ public static partial class CodeToolNames
 
         var depth = 0;
         for (var cursor = index; cursor < text.Length; cursor++)
-        {
             switch (text[cursor])
             {
                 case '"' or '\'':
@@ -98,7 +103,6 @@ public static partial class CodeToolNames
 
                     break;
             }
-        }
 
         end = text.Length;
         return null;
@@ -110,7 +114,6 @@ public static partial class CodeToolNames
         var depth = 0;
         var start = 0;
         for (var cursor = 0; cursor < arguments.Length; cursor++)
-        {
             switch (arguments[cursor])
             {
                 case '"' or '\'':
@@ -130,7 +133,6 @@ public static partial class CodeToolNames
                     start = cursor + 1;
                     break;
             }
-        }
 
         if (arguments[start..].Trim().Length > 0)
             parts.Add(arguments[start..]);
@@ -150,7 +152,8 @@ public static partial class CodeToolNames
                 continue;
             }
 
-            if (text[cursor] == quote && (!triple || (cursor + 2 < text.Length && text[cursor + 1] == quote && text[cursor + 2] == quote)))
+            if (text[cursor] == quote &&
+                (!triple || (cursor + 2 < text.Length && text[cursor + 1] == quote && text[cursor + 2] == quote)))
                 return cursor + (triple ? 3 : 1);
             if (!triple && text[cursor] == '\n')
                 return cursor;

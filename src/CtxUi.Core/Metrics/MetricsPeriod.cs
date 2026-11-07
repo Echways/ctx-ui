@@ -13,7 +13,7 @@ public sealed record MetricsPeriod(int Days, TimeSpan SlotLength)
         Day,
         new(7, TimeSpan.FromHours(2)),
         new(30, TimeSpan.FromHours(8)),
-        new(90, TimeSpan.FromDays(1)),
+        new(90, TimeSpan.FromDays(1))
     ];
 
     public int Slots => (int)(TimeSpan.FromDays(Days) / SlotLength);
@@ -24,5 +24,8 @@ public sealed record MetricsPeriod(int Days, TimeSpan SlotLength)
         return kept.Count == 0 ? [Day] : kept;
     }
 
-    public Timeline TimelineAt(DateTimeOffset now) => Timeline.Ending(now, SlotLength, Slots);
+    public Timeline TimelineAt(DateTimeOffset now)
+    {
+        return Timeline.Ending(now, SlotLength, Slots);
+    }
 }

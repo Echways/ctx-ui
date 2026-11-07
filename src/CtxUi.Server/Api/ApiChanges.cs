@@ -18,11 +18,13 @@ public sealed class ApiChanges(IRoutingRefresh routing) : IEndpointFilter
         }
         catch (NotFoundException exception)
         {
-            return TypedResults.Problem(statusCode: StatusCodes.Status404NotFound, detail: Words.Sentence(exception.Message));
+            return TypedResults.Problem(statusCode: StatusCodes.Status404NotFound,
+                detail: Words.Sentence(exception.Message));
         }
         catch (DomainException exception)
         {
-            return TypedResults.Problem(statusCode: StatusCodes.Status400BadRequest, detail: Words.Sentence(exception.Message));
+            return TypedResults.Problem(statusCode: StatusCodes.Status400BadRequest,
+                detail: Words.Sentence(exception.Message));
         }
     }
 }

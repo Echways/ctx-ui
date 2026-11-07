@@ -16,7 +16,8 @@ public sealed class PanelEditor
         _assemblyName = assemblyName;
     }
 
-    public PanelEditor AddSection<TPage>(Func<string> title, PanelPosition? at = null, Action<SectionSetup>? setup = null)
+    public PanelEditor AddSection<TPage>(Func<string> title, PanelPosition? at = null,
+        Action<SectionSetup>? setup = null)
         where TPage : IComponent
     {
         _lastAdded = _layout.InsertSection<TPage>(PanelSections.Of<TPage>(), title, setup, at, _lastAdded);
@@ -59,9 +60,15 @@ public sealed class PanelEditor
         return this;
     }
 
-    public PanelBlockSlotEditor<TContext> In<TContext>(PanelSlot<TContext> slot) => new(this, _layout.Slots, slot.Name);
+    public PanelBlockSlotEditor<TContext> In<TContext>(PanelSlot<TContext> slot)
+    {
+        return new PanelBlockSlotEditor<TContext>(this, _layout.Slots, slot.Name);
+    }
 
-    public PanelActionSlotEditor<TContext> In<TContext>(PanelActionSlot<TContext> slot) => new(this, _layout.Slots, slot.Name);
+    public PanelActionSlotEditor<TContext> In<TContext>(PanelActionSlot<TContext> slot)
+    {
+        return new PanelActionSlotEditor<TContext>(this, _layout.Slots, slot.Name);
+    }
 
     public PanelEditor Customize(Action<PanelLook> look)
     {

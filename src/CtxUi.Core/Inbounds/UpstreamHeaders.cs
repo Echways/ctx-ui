@@ -11,7 +11,7 @@ public static partial class UpstreamHeaders
 
     private static readonly HashSet<string> Forbidden = new(StringComparer.OrdinalIgnoreCase)
     {
-        "Host", "Connection", "Content-Length", "Content-Type", "Transfer-Encoding", "Upgrade",
+        "Host", "Connection", "Content-Length", "Content-Type", "Transfer-Encoding", "Upgrade"
     };
 
     [GeneratedRegex(@"\A[A-Za-z0-9!#$%&'*+.^_`|~-]+\z")]
@@ -38,12 +38,16 @@ public static partial class UpstreamHeaders
         return headers;
     }
 
-    public static bool IsIdentity(string name) =>
-        name.StartsWith(ClientPrefix, StringComparison.OrdinalIgnoreCase) ||
-        name.StartsWith(MetaPrefix, StringComparison.OrdinalIgnoreCase);
+    public static bool IsIdentity(string name)
+    {
+        return name.StartsWith(ClientPrefix, StringComparison.OrdinalIgnoreCase) ||
+               name.StartsWith(MetaPrefix, StringComparison.OrdinalIgnoreCase);
+    }
 
-    public static string? Seal(ISecretVault vault, IReadOnlyDictionary<string, string> headers) =>
-        headers.Count == 0 ? null : vault.Seal(JsonSerializer.Serialize(headers));
+    public static string? Seal(ISecretVault vault, IReadOnlyDictionary<string, string> headers)
+    {
+        return headers.Count == 0 ? null : vault.Seal(JsonSerializer.Serialize(headers));
+    }
 
     public static IReadOnlyDictionary<string, string>? Open(ISecretVault vault, string? sealedHeaders)
     {

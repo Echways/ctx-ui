@@ -29,7 +29,8 @@ public sealed record ClientMetadataDocument(
             var uris = new List<string>();
             foreach (var redirect in redirects.EnumerateArray())
             {
-                if (redirect.ValueKind != JsonValueKind.String || !Registration.RedirectUris.TryParse(redirect.GetString(), out _))
+                if (redirect.ValueKind != JsonValueKind.String ||
+                    !Registration.RedirectUris.TryParse(redirect.GetString(), out _))
                     return null;
 
                 uris.Add(redirect.GetString()!);
@@ -47,8 +48,12 @@ public sealed record ClientMetadataDocument(
         }
     }
 
-    private static string? Text(JsonElement root, string name) =>
-        root.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
+    private static string? Text(JsonElement root, string name)
+    {
+        return root.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String
+            ? value.GetString()
+            : null;
+    }
 
     private static TimeSpan CacheLifetime(CacheControlHeaderValue? cache)
     {

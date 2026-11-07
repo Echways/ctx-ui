@@ -8,14 +8,17 @@ public sealed class CliOAuthTests : IDisposable
 {
     private readonly string _dataDir = Directory.CreateTempSubdirectory("ctx-ui-cli-").FullName;
 
-    private Task<(int Code, string Output, string Error)> RunAsync(params string[] args) => CliRunner.RunAsync(_dataDir, args);
+    private Task<(int Code, string Output, string Error)> RunAsync(params string[] args)
+    {
+        return CliRunner.RunAsync(_dataDir, args);
+    }
 
     public void Dispose()
     {
         SqliteConnection.ClearAllPools();
         try
         {
-            Directory.Delete(_dataDir, recursive: true);
+            Directory.Delete(_dataDir, true);
         }
         catch (IOException)
         {
@@ -23,7 +26,10 @@ public sealed class CliOAuthTests : IDisposable
     }
 
     [Fact]
-    public void Oauth_is_a_cli_command() => Assert.True(Cli.Handles(["oauth", "status"]));
+    public void Oauth_is_a_cli_command()
+    {
+        Assert.True(Cli.Handles(["oauth", "status"]));
+    }
 
     [Fact]
     public async Task Status_shows_oauth_off_by_default()
@@ -63,7 +69,8 @@ public sealed class CliOAuthTests : IDisposable
     [Fact]
     public async Task Set_changes_device_settings_and_defaults()
     {
-        var set = await RunAsync("oauth", "set", "--idle-days", "14", "--self-revoke", "off", "--devices", "3", "--direct-key", "off");
+        var set = await RunAsync("oauth", "set", "--idle-days", "14", "--self-revoke", "off", "--devices", "3",
+            "--direct-key", "off");
         var status = await RunAsync("oauth", "status");
 
         Assert.Equal(0, set.Code);
@@ -109,7 +116,8 @@ public sealed class CliOAuthTests : IDisposable
     [Fact]
     public async Task Provider_set_reads_the_secret_from_stdin()
     {
-        var first = await CliRunner.RunWithInputAsync("from-stdin\n", _dataDir, "oauth", "provider", "set", "github", "--client-id", "gh-id", "--client-secret-stdin");
+        var first = await CliRunner.RunWithInputAsync("from-stdin\n", _dataDir, "oauth", "provider", "set", "github",
+            "--client-id", "gh-id", "--client-secret-stdin");
         var again = await RunAsync("oauth", "provider", "set", "github", "--client-id", "gh-id-2");
         var listed = await RunAsync("oauth", "provider", "list");
 

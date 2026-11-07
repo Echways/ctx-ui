@@ -11,7 +11,10 @@ public class UsageStoreTests
     private static readonly Guid Docs = Guid.Parse("44444444-4444-4444-4444-444444444444");
     private static readonly DateOnly Today = new(2026, 10, 12);
 
-    private static UsageStore Store(TestDatabase database) => new(database.NewContext());
+    private static UsageStore Store(TestDatabase database)
+    {
+        return new UsageStore(database.NewContext());
+    }
 
     private static UsageRecord Call(
         UsageOutcome outcome = UsageOutcome.Ok,
@@ -20,11 +23,16 @@ public class UsageStoreTests
         int durationMs = 100,
         DateTimeOffset? at = null,
         Guid? client = null,
-        Guid? inbound = null) =>
-        new(client ?? Ivanov, inbound ?? Echo, at ?? TestData.Now, method, tool, durationMs, outcome);
+        Guid? inbound = null)
+    {
+        return new UsageRecord(client ?? Ivanov, inbound ?? Echo, at ?? TestData.Now, method, tool, durationMs,
+            outcome);
+    }
 
-    private static async Task<UsageDaily> SingleDayAsync(TestDatabase database) =>
-        await database.NewContext().UsageDays.AsNoTracking().SingleAsync();
+    private static async Task<UsageDaily> SingleDayAsync(TestDatabase database)
+    {
+        return await database.NewContext().UsageDays.AsNoTracking().SingleAsync();
+    }
 
     [Fact]
     public async Task Forwarded_call_is_written_to_the_log_and_to_the_daily_row()
@@ -52,7 +60,9 @@ public class UsageStoreTests
         await using var database = await TestDatabase.CreateAsync();
 
         await Store(database).AppendAsync([Call(), Call(method: "tools/list", tool: null)]);
-        await Store(database).AppendAsync([Call(UsageOutcome.UpstreamFailed), Call(UsageOutcome.UpstreamRejected), Call(UsageOutcome.ClientAborted)]);
+        await Store(database).AppendAsync([
+            Call(UsageOutcome.UpstreamFailed), Call(UsageOutcome.UpstreamRejected), Call(UsageOutcome.ClientAborted)
+        ]);
 
         var daily = await SingleDayAsync(database);
         Assert.Equal((5, 4, 1, 0, 500L), (daily.Calls, daily.ToolCalls, daily.Errors, daily.Refused, daily.DurationMs));
@@ -66,8 +76,8 @@ public class UsageStoreTests
 
         await Store(database).AppendAsync(
         [
-            Call(UsageOutcome.RateLimited, method: null, tool: null, durationMs: 0),
-            Call(UsageOutcome.ConcurrencyLimited, method: null, tool: null, durationMs: 0),
+            Call(UsageOutcome.RateLimited, null, null, 0),
+            Call(UsageOutcome.ConcurrencyLimited, null, null, 0)
         ]);
 
         Assert.Empty(await Store(database).RecentAsync(null, 10));
@@ -100,7 +110,7 @@ public class UsageStoreTests
             Call(at: sameInstantInMoscow),
             Call(at: lastSecond.AddSeconds(1)),
             Call(at: lastSecond, client: Petrov),
-            Call(at: lastSecond, inbound: Docs),
+            Call(at: lastSecond, inbound: Docs)
         ]);
 
         var rows = await database.NewContext().UsageDays.AsNoTracking().ToListAsync();
@@ -118,7 +128,7 @@ public class UsageStoreTests
             Call(at: TestData.Now.AddDays(-2)),
             Call(at: TestData.Now.AddDays(-1)),
             Call(at: TestData.Now.AddDays(-1), client: Petrov, inbound: Docs, durationMs: 300),
-            Call(UsageOutcome.RateLimited, method: null, at: TestData.Now, client: Petrov),
+            Call(UsageOutcome.RateLimited, null, at: TestData.Now, client: Petrov)
         ]);
 
         var everyone = await Store(database).DailyAsync(null, Today.AddDays(-1));
@@ -127,7 +137,8 @@ public class UsageStoreTests
         Assert.Equal([Today.AddDays(-1), Today], everyone.Select(total => total.Day));
         Assert.Equal(new DailyTotal(Today.AddDays(-1), 2, 2, 0, 0, 400), everyone[0]);
         Assert.Equal(new DailyTotal(Today, 0, 0, 0, 1, 0), everyone[1]);
-        Assert.Equal([new DailyTotal(Today.AddDays(-1), 1, 1, 0, 0, 300), new DailyTotal(Today, 0, 0, 0, 1, 0)], petrov);
+        Assert.Equal([new DailyTotal(Today.AddDays(-1), 1, 1, 0, 0, 300), new DailyTotal(Today, 0, 0, 0, 1, 0)],
+            petrov);
     }
 
     [Fact]
@@ -138,7 +149,7 @@ public class UsageStoreTests
         [
             Call(tool: "first"),
             Call(tool: "second", client: Petrov),
-            Call(tool: "third"),
+            Call(tool: "third")
         ]);
 
         var lastTwo = await Store(database).RecentAsync(null, 2);
@@ -156,7 +167,7 @@ public class UsageStoreTests
         [
             Call(tool: "old", at: TestData.Now.AddDays(-31)),
             Call(tool: "edge", at: TestData.Now.AddDays(-30)),
-            Call(tool: "fresh", at: TestData.Now),
+            Call(tool: "fresh", at: TestData.Now)
         ]);
 
         var removed = await Store(database).PruneAsync(TestData.Now.AddDays(-30));
@@ -174,7 +185,8 @@ public class UsageStoreTests
         await Store(database).AppendAsync([]);
         await Store(database).AppendAsync([Call()]);
 
-        Assert.Equal(0, await database.NewContext().RoutingStates.AsNoTracking().Select(state => state.Revision).SingleAsync());
+        Assert.Equal(0,
+            await database.NewContext().RoutingStates.AsNoTracking().Select(state => state.Revision).SingleAsync());
     }
 
     [Fact]
@@ -195,7 +207,9 @@ public class UsageStoreTests
     {
         await using var database = await TestDatabase.CreateAsync();
 
-        await Store(database).AppendAsync([Call(UsageOutcome.UpstreamFailed) with { Status = 504, RequestBytes = 120, ResponseBytes = 3_000_000_000 }]);
+        await Store(database).AppendAsync([
+            Call(UsageOutcome.UpstreamFailed) with { Status = 504, RequestBytes = 120, ResponseBytes = 3_000_000_000 }
+        ]);
 
         var usage = Assert.Single(await Store(database).RecentAsync(null, 10));
         Assert.Equal((504, 120, 3_000_000_000L), (usage.Status, usage.RequestBytes, usage.ResponseBytes));
@@ -209,16 +223,16 @@ public class UsageStoreTests
 
         await Store(database).AppendAsync(
         [
-            Call(UsageOutcome.RateLimited, method: null, tool: null, at: minute),
-            Call(UsageOutcome.RateLimited, method: null, tool: null, at: minute.AddSeconds(20)),
-            Call(UsageOutcome.ConcurrencyLimited, method: null, tool: null, at: minute),
-            Call(UsageOutcome.RateLimited, method: null, tool: null, at: minute, client: Petrov),
+            Call(UsageOutcome.RateLimited, null, null, at: minute),
+            Call(UsageOutcome.RateLimited, null, null, at: minute.AddSeconds(20)),
+            Call(UsageOutcome.ConcurrencyLimited, null, null, at: minute),
+            Call(UsageOutcome.RateLimited, null, null, at: minute, client: Petrov)
         ]);
         await Store(database).AppendAsync(
         [
-            Call(UsageOutcome.RateLimited, method: null, tool: null, at: minute.AddSeconds(25)),
-            Call(UsageOutcome.RateLimited, method: null, tool: null, at: minute.AddMinutes(1)),
-            Call(),
+            Call(UsageOutcome.RateLimited, null, null, at: minute.AddSeconds(25)),
+            Call(UsageOutcome.RateLimited, null, null, at: minute.AddMinutes(1)),
+            Call()
         ]);
 
         var rows = await database.NewContext().UsageRefusals.AsNoTracking().ToListAsync();
@@ -227,7 +241,7 @@ public class UsageStoreTests
                 (TestData.Now, Ivanov, UsageOutcome.RateLimited, 3),
                 (TestData.Now, Ivanov, UsageOutcome.ConcurrencyLimited, 1),
                 (TestData.Now, Petrov, UsageOutcome.RateLimited, 1),
-                (TestData.Now.AddMinutes(1), Ivanov, UsageOutcome.RateLimited, 1),
+                (TestData.Now.AddMinutes(1), Ivanov, UsageOutcome.RateLimited, 1)
             ],
             rows.OrderBy(row => row.Minute).ThenBy(row => row.ClientId == Petrov).ThenBy(row => row.Outcome)
                 .Select(row => (row.Minute, row.ClientId, row.Outcome, row.Count)));
@@ -240,8 +254,8 @@ public class UsageStoreTests
         await using var database = await TestDatabase.CreateAsync();
         await Store(database).AppendAsync(
         [
-            Call(UsageOutcome.RateLimited, method: null, tool: null, at: TestData.Now.AddDays(-31)),
-            Call(UsageOutcome.RateLimited, method: null, tool: null),
+            Call(UsageOutcome.RateLimited, null, null, at: TestData.Now.AddDays(-31)),
+            Call(UsageOutcome.RateLimited, null, null)
         ]);
 
         var removed = await Store(database).PruneAsync(TestData.Now.AddDays(-30));

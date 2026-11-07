@@ -16,9 +16,15 @@ public static class PanelSections
 
     private static readonly string[] BuiltInPages = [Overview, Metrics, Inbounds, Clients, Journal, OAuth, ApiKeys];
 
-    public static string Of<TPage>() =>
-        typeof(TPage).GetCustomAttributes<RouteAttribute>().FirstOrDefault()?.Template.TrimStart('/')
-        ?? throw new InvalidOperationException($"{typeof(TPage).FullName} has no @page route to name a panel section by");
+    public static string Of<TPage>()
+    {
+        return typeof(TPage).GetCustomAttributes<RouteAttribute>().FirstOrDefault()?.Template.TrimStart('/')
+               ?? throw new InvalidOperationException(
+                   $"{typeof(TPage).FullName} has no @page route to name a panel section by");
+    }
 
-    internal static bool IsBuiltInPage(string section) => BuiltInPages.Contains(section);
+    internal static bool IsBuiltInPage(string section)
+    {
+        return BuiltInPages.Contains(section);
+    }
 }

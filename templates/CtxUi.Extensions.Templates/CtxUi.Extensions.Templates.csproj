@@ -13,7 +13,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="content/**/*" Exclude="content/**/MyExtension.csproj" Pack="true" PackagePath="content/" />
+    <None Include="content/**/*" Exclude="content/**/MyExtension.csproj" Pack="true" PackagePath="content/"/>
   </ItemGroup>
 
   <Target Name="StampExtensionVersion" BeforeTargets="_GetPackageFiles">
@@ -21,9 +21,9 @@
       <StampedProject>$(IntermediateOutputPath)MyExtension.csproj</StampedProject>
     </PropertyGroup>
     <WriteLinesToFile File="$(StampedProject)" Overwrite="true"
-                      Lines="$([System.IO.File]::ReadAllText('content/ctxui-extension/MyExtension.csproj').Replace('CTXUI_EXTENSIONS_VERSION', '$(Version)'))" />
+                      Lines="$([System.IO.File]::ReadAllText('content/ctxui-extension/MyExtension.csproj').Replace('CTXUI_EXTENSIONS_VERSION', '$(Version)'))"/>
     <ItemGroup>
-      <None Include="$(StampedProject)" Pack="true" PackagePath="content/ctxui-extension/MyExtension.csproj" />
+      <None Include="$(StampedProject)" Pack="true" PackagePath="content/ctxui-extension/MyExtension.csproj"/>
     </ItemGroup>
   </Target>
 

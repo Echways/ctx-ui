@@ -6,7 +6,8 @@ public sealed class PublicContractTests
     public void Extension_depends_only_on_the_public_contract()
     {
         var names = typeof(BuilderEntry).Assembly.GetReferencedAssemblies().Select(name => name.Name);
-        Assert.DoesNotContain(names, name => name is "CtxUi.Core" or "CtxUi.Panel" or "CtxUi.Gateway" or "CtxUi.Server");
+        Assert.DoesNotContain(names,
+            name => name is "CtxUi.Core" or "CtxUi.Panel" or "CtxUi.Gateway" or "CtxUi.Server");
     }
 
     [Fact]

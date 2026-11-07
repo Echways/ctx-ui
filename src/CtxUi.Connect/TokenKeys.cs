@@ -13,10 +13,12 @@ public static class TokenKeys
     private const int KeySize = 2048;
     private const UnixFileMode OwnerOnly = UnixFileMode.UserRead | UnixFileMode.UserWrite;
 
-    public static (RsaSecurityKey Signing, RsaSecurityKey Encryption) LoadOrCreate(string keysDir, IDataProtectionProvider protection)
+    public static (RsaSecurityKey Signing, RsaSecurityKey Encryption) LoadOrCreate(string keysDir,
+        IDataProtectionProvider protection)
     {
         var protector = protection.CreateProtector(Purpose);
-        return (LoadOrCreate(Path.Combine(keysDir, SigningFile), protector), LoadOrCreate(Path.Combine(keysDir, EncryptionFile), protector));
+        return (LoadOrCreate(Path.Combine(keysDir, SigningFile), protector),
+            LoadOrCreate(Path.Combine(keysDir, EncryptionFile), protector));
     }
 
     private static RsaSecurityKey LoadOrCreate(string path, IDataProtector protector)
@@ -54,7 +56,9 @@ public static class TokenKeys
             file.UnixCreateMode = OwnerOnly;
 
         using (var stream = new FileStream(path, file))
+        {
             stream.Write(protector.Protect(rsa.ExportRSAPrivateKey()));
+        }
 
         return rsa;
     }

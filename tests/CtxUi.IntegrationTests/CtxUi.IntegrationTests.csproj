@@ -1,13 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <FrameworkReference Include="Microsoft.AspNetCore.App" />
-    <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" />
-    <PackageReference Include="ModelContextProtocol.AspNetCore" />
-    <PackageReference Include="Microsoft.Playwright" />
-    <ProjectReference Include="..\..\src\CtxUi.Server\CtxUi.Server.csproj" />
+    <FrameworkReference Include="Microsoft.AspNetCore.App"/>
+    <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing"/>
+    <PackageReference Include="ModelContextProtocol.AspNetCore"/>
+    <PackageReference Include="Microsoft.Playwright"/>
+    <ProjectReference Include="..\..\src\CtxUi.Server\CtxUi.Server.csproj"/>
   </ItemGroup>
 
-  <Import Project="..\fixtures\PublishTestExtensions.targets" />
+  <Import Project="..\fixtures\PublishTestExtensions.targets"/>
 
 </Project>

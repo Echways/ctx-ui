@@ -43,7 +43,7 @@ public enum AccessStatus
     InboundNotFound,
     DirectKeyOff,
     TokenInvalid,
-    DeviceRevoked,
+    DeviceRevoked
 }
 
 public readonly record struct AccessDecision(
@@ -80,15 +80,27 @@ public sealed class RoutingSnapshot
 
     public SignInConfig SignIn { get; }
 
-    public ClientAccess? ClientByToken(string? token) =>
-        AccessToken.IsWellFormed(token) && _clients.TryGetValue(AccessToken.Hash(token), out var client) ? client : null;
+    public ClientAccess? ClientByToken(string? token)
+    {
+        return AccessToken.IsWellFormed(token) && _clients.TryGetValue(AccessToken.Hash(token), out var client)
+            ? client
+            : null;
+    }
 
-    public ClientAccess? ClientById(Guid id) => _clientsById.GetValueOrDefault(id);
+    public ClientAccess? ClientById(Guid id)
+    {
+        return _clientsById.GetValueOrDefault(id);
+    }
 
-    public InboundRoute? Route(string slug) => _routes.GetValueOrDefault(slug);
+    public InboundRoute? Route(string slug)
+    {
+        return _routes.GetValueOrDefault(slug);
+    }
 
-    public bool IsDeviceActive(Guid deviceId, Guid clientId) =>
-        _activeDevices.TryGetValue(deviceId, out var owner) && owner == clientId;
+    public bool IsDeviceActive(Guid deviceId, Guid clientId)
+    {
+        return _activeDevices.TryGetValue(deviceId, out var owner) && owner == clientId;
+    }
 
     public AccessDecision Authorize(Credential credential, string slug, DateTimeOffset now)
     {

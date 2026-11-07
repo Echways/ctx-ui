@@ -92,6 +92,9 @@ internal static class BuilderText
 
     public static string CodeToolNameTaken => Read();
 
-    private static string Read([System.Runtime.CompilerServices.CallerMemberName] string name = "") =>
-        (string)Source.GetProperty(name, BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)!.GetValue(null)!;
+    private static string Read([System.Runtime.CompilerServices.CallerMemberName] string name = "")
+    {
+        return (string)Source.GetProperty(name, BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)!
+            .GetValue(null)!;
+    }
 }

@@ -9,18 +9,29 @@ public partial class ExtensionPackagingTests
 {
     private sealed record Manifest(string Id, string Name, string Version, string Api, string Assembly);
 
-    private static string Folder(string id) => Path.Combine(AppContext.BaseDirectory, "extensions", id);
+    private static string Folder(string id)
+    {
+        return Path.Combine(AppContext.BaseDirectory, "extensions", id);
+    }
 
-    private static List<string> PublishedFiles(string id) =>
-        [.. Directory.EnumerateFiles(Folder(id), "*", SearchOption.AllDirectories)
-            .Select(file => Path.GetRelativePath(Folder(id), file).Replace('\\', '/'))];
+    private static List<string> PublishedFiles(string id)
+    {
+        return
+        [
+            .. Directory.EnumerateFiles(Folder(id), "*", SearchOption.AllDirectories)
+                .Select(file => Path.GetRelativePath(Folder(id), file).Replace('\\', '/'))
+        ];
+    }
 
-    private static Manifest ReadManifest(string id) =>
-        JsonSerializer.Deserialize<Manifest>(
+    private static Manifest ReadManifest(string id)
+    {
+        return JsonSerializer.Deserialize<Manifest>(
             File.ReadAllText(Path.Combine(Folder(id), "extension.json")),
             new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!;
+    }
 
-    [GeneratedRegex(@"(^|/)(CtxUi\.|Enfilade|MudBlazor|Jeffijoe\.MessageFormat|Microsoft\.EntityFrameworkCore|Microsoft\.Data\.Sqlite|SQLitePCLRaw)|^runtimes/|^wwwroot/_content/")]
+    [GeneratedRegex(
+        @"(^|/)(CtxUi\.|Enfilade|MudBlazor|Jeffijoe\.MessageFormat|Microsoft\.EntityFrameworkCore|Microsoft\.Data\.Sqlite|SQLitePCLRaw)|^runtimes/|^wwwroot/_content/")]
     private static partial Regex SharedFile();
 
     [Fact]

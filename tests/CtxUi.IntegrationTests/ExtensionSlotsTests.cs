@@ -17,11 +17,14 @@ public class ExtensionSlotsTests
         ["Клиенты"] = "clients",
         ["Журнал"] = "journal",
         ["OAuth"] = "oauth",
-        ["Ключи API"] = "keys",
+        ["Ключи API"] = "keys"
     };
 
-    private static Task<GatewayHost> StartAsync(string flag = "Slots") =>
-        SampleExtensionHost.StartAsync(new Dictionary<string, string> { [$"CtxUi:Extensions:sample:{flag}"] = "true" });
+    private static Task<GatewayHost> StartAsync(string flag = "Slots")
+    {
+        return SampleExtensionHost.StartAsync(new Dictionary<string, string>
+        { [$"CtxUi:Extensions:sample:{flag}"] = "true" });
+    }
 
     private static async Task ArrangeTwoClientsAsync(GatewayHost gateway)
     {
@@ -33,19 +36,22 @@ public class ExtensionSlotsTests
 
     private static async Task OpenAsync(IPage page, string link)
     {
-        await page.GetByRole(AriaRole.Navigation).GetByRole(AriaRole.Link, new() { Name = link }).ClickAsync();
-        await Expect(page.GetByRole(AriaRole.Heading, new() { Name = link })).ToBeVisibleAsync();
+        await page.GetByRole(AriaRole.Navigation).GetByRole(AriaRole.Link, new LocatorGetByRoleOptions { Name = link })
+            .ClickAsync();
+        await Expect(page.GetByRole(AriaRole.Heading, new PageGetByRoleOptions { Name = link })).ToBeVisibleAsync();
     }
 
     private static async Task<string[]> MenuOfAsync(IPage page, ILocator row)
     {
-        await row.GetByRole(AriaRole.Button, new() { Name = "Ещё действия" }).ClickAsync();
+        await row.GetByRole(AriaRole.Button, new LocatorGetByRoleOptions { Name = "Ещё действия" }).ClickAsync();
         await Expect(page.GetByRole(AriaRole.Menuitem).First).ToBeVisibleAsync();
         return [.. (await page.GetByRole(AriaRole.Menuitem).AllInnerTextsAsync()).Select(text => text.Trim())];
     }
 
-    private static Task<string[]> TestIdsAsync(IPage page, string selector) =>
-        page.Locator(selector).EvaluateAllAsync<string[]>("items => items.map(item => item.dataset.testid)");
+    private static Task<string[]> TestIdsAsync(IPage page, string selector)
+    {
+        return page.Locator(selector).EvaluateAllAsync<string[]>("items => items.map(item => item.dataset.testid)");
+    }
 
     [Fact]
     public async Task A_block_appears_at_the_top_and_bottom_of_a_built_in_page()
@@ -86,7 +92,7 @@ public class ExtensionSlotsTests
         await OpenAsync(session.Page, "Inbound'ы");
 
         var row = ClientPages.Row(session.Page, "/mcp/second");
-        await row.GetByRole(AriaRole.Button, new() { Name = "Изменить" }).ClickAsync();
+        await row.GetByRole(AriaRole.Button, new LocatorGetByRoleOptions { Name = "Изменить" }).ClickAsync();
 
         await Expect(ClientPages.Dialog(session.Page).GetByTestId("inbound-sheet")).ToHaveTextAsync("second");
     }
@@ -98,7 +104,8 @@ public class ExtensionSlotsTests
         await using var session = await PanelSession.SignInAsync(gateway);
         await OpenAsync(session.Page, "Inbound'ы");
 
-        await session.Page.GetByRole(AriaRole.Button, new() { Name = "Добавить" }).First.ClickAsync();
+        await session.Page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Добавить" }).First
+            .ClickAsync();
 
         await Expect(ClientPages.Dialog(session.Page)).ToBeVisibleAsync();
         await Expect(session.Page.GetByTestId("inbound-sheet")).ToHaveCountAsync(0);
@@ -113,8 +120,9 @@ public class ExtensionSlotsTests
         var page = await ClientPages.OpenClientsAsync(session);
 
         var menu = await MenuOfAsync(page, ClientPages.Row(page, "Петров"));
-        Assert.True(Array.IndexOf(menu, "Show client") >= 0 && Array.IndexOf(menu, "Show client") < Array.IndexOf(menu, "Удалить"));
-        await page.GetByRole(AriaRole.Menuitem, new() { Name = "Show client" }).ClickAsync();
+        Assert.True(Array.IndexOf(menu, "Show client") >= 0 &&
+                    Array.IndexOf(menu, "Show client") < Array.IndexOf(menu, "Удалить"));
+        await page.GetByRole(AriaRole.Menuitem, new PageGetByRoleOptions { Name = "Show client" }).ClickAsync();
 
         await Expect(page.GetByText("client:Петров")).ToBeVisibleAsync();
     }
@@ -129,7 +137,8 @@ public class ExtensionSlotsTests
 
         var menu = await MenuOfAsync(session.Page, ClientPages.Row(session.Page, "/mcp/second"));
         Assert.Equal(["Show inbound", "Удалить"], menu);
-        await session.Page.GetByRole(AriaRole.Menuitem, new() { Name = "Show inbound" }).ClickAsync();
+        await session.Page.GetByRole(AriaRole.Menuitem, new PageGetByRoleOptions { Name = "Show inbound" })
+            .ClickAsync();
 
         await Expect(session.Page.GetByText("inbound:second")).ToBeVisibleAsync();
     }
@@ -149,7 +158,7 @@ public class ExtensionSlotsTests
 
         var menu = await MenuOfAsync(session.Page, ClientPages.Row(session.Page, "second"));
         Assert.Equal("Show key", menu[0]);
-        await session.Page.GetByRole(AriaRole.Menuitem, new() { Name = "Show key" }).ClickAsync();
+        await session.Page.GetByRole(AriaRole.Menuitem, new PageGetByRoleOptions { Name = "Show key" }).ClickAsync();
 
         await Expect(session.Page.GetByText("key:second")).ToBeVisibleAsync();
     }
@@ -164,7 +173,8 @@ public class ExtensionSlotsTests
 
         await RowMenu.ChooseAsync(ClientPages.Row(page, "Петров"), "Open sheet");
 
-        await Expect(ClientPages.Dialog(page).GetByRole(AriaRole.Heading, new() { Name = "Sheet of Петров" })).ToBeVisibleAsync();
+        await Expect(ClientPages.Dialog(page)
+            .GetByRole(AriaRole.Heading, new LocatorGetByRoleOptions { Name = "Sheet of Петров" })).ToBeVisibleAsync();
         await Expect(ClientPages.Dialog(page).GetByTestId("action-sheet")).ToHaveTextAsync("Петров");
     }
 
@@ -177,11 +187,13 @@ public class ExtensionSlotsTests
         var page = await ClientPages.OpenClientsAsync(session);
 
         await RowMenu.ChooseAsync(ClientPages.Row(page, "Петров"), "Open sheet");
-        await ClientPages.Dialog(page).GetByRole(AriaRole.Button, new() { Name = "Закрыть" }).ClickAsync();
+        await ClientPages.Dialog(page).GetByRole(AriaRole.Button, new LocatorGetByRoleOptions { Name = "Закрыть" })
+            .ClickAsync();
         await Expect(ClientPages.Dialog(page)).ToHaveCountAsync(0);
 
         await RowMenu.ChooseAsync(ClientPages.Row(page, "Петров"), "Open sheet");
-        await ClientPages.Dialog(page).GetByRole(AriaRole.Button, new() { Name = "Закрыть" }).FocusAsync();
+        await ClientPages.Dialog(page).GetByRole(AriaRole.Button, new LocatorGetByRoleOptions { Name = "Закрыть" })
+            .FocusAsync();
         await page.Keyboard.PressAsync("Escape");
         await Expect(ClientPages.Dialog(page)).ToHaveCountAsync(0);
     }
@@ -197,7 +209,8 @@ public class ExtensionSlotsTests
         await RowMenu.ChooseAsync(ClientPages.Row(page, "Петров"), "Open broken sheet");
 
         await Expect(ClientPages.Dialog(page).Locator(".panel-block-failed")).ToBeVisibleAsync();
-        await ClientPages.Dialog(page).GetByRole(AriaRole.Button, new() { Name = "Закрыть" }).ClickAsync();
+        await ClientPages.Dialog(page).GetByRole(AriaRole.Button, new LocatorGetByRoleOptions { Name = "Закрыть" })
+            .ClickAsync();
         await RowMenu.ChooseAsync(ClientPages.Row(page, "Петров"), "Изменить");
         await Expect(ClientPages.Dialog(page)).ToBeVisibleAsync();
     }
@@ -239,7 +252,8 @@ public class ExtensionSlotsTests
         await using var session = await PanelSession.SignInAsync(gateway);
         await OpenAsync(session.Page, link);
 
-        await session.Page.Locator(".head .actions").GetByRole(AriaRole.Button, new() { Name = "Page action" }).ClickAsync();
+        await session.Page.Locator(".head .actions")
+            .GetByRole(AriaRole.Button, new LocatorGetByRoleOptions { Name = "Page action" }).ClickAsync();
 
         await Expect(session.Page.GetByText($"page:{section}")).ToBeVisibleAsync();
     }

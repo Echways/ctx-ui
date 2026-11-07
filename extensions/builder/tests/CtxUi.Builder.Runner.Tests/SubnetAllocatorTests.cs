@@ -37,7 +37,8 @@ public sealed class SubnetAllocatorTests
     [Fact]
     public void Exhausted_pool_explains_itself()
     {
-        var error = Assert.Throws<InvalidOperationException>(() => SubnetAllocator.Next("10.213.0.0/28", ["10.213.0.0/28"]));
+        var error = Assert.Throws<InvalidOperationException>(() =>
+            SubnetAllocator.Next("10.213.0.0/28", ["10.213.0.0/28"]));
         Assert.Contains("10.213.0.0/28", error.Message);
         Assert.Contains("no free", error.Message);
     }

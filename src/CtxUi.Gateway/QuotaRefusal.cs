@@ -10,7 +10,9 @@ public static class QuotaRefusal
             return string.Format(GatewayText.QuotaExhaustedForGood, charge.Limit);
 
         var moment = resetsAt.ToUniversalTime();
-        var dayFormat = moment.Year == now.ToUniversalTime().Year ? GatewayText.ResetDayFormat : GatewayText.ResetDayYearFormat;
+        var dayFormat = moment.Year == now.ToUniversalTime().Year
+            ? GatewayText.ResetDayFormat
+            : GatewayText.ResetDayYearFormat;
         return string.Format(
             GatewayText.QuotaExhaustedUntil,
             charge.Limit,

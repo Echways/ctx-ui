@@ -12,52 +12,60 @@
         }
         <section class="group">
             <h3>@PanelText.GroupWho</h3>
-            <MudTextField @bind-Value="_name" Label="@PanelText.Name" Immediate="true" Disabled="Id is not null" AutoFocus="Id is null"
-                          HelperText="@PanelText.ClientNameHelp" />
-            <MudTextField @bind-Value="_metadata" Label="@PanelText.Metadata" Immediate="true" Lines="2" Sizing="InputSizing.Auto"
-                          HelperText="@PanelText.MetadataHelp" />
+            <MudTextField @bind-Value="_name" Label="@PanelText.Name" Immediate="true" Disabled="Id is not null"
+                          AutoFocus="Id is null"
+                          HelperText="@PanelText.ClientNameHelp"/>
+            <MudTextField @bind-Value="_metadata" Label="@PanelText.Metadata" Immediate="true" Lines="2"
+                          Sizing="InputSizing.Auto"
+                          HelperText="@PanelText.MetadataHelp"/>
         </section>
         <section class="group">
             <h3>@PanelText.GroupWhere</h3>
             <div class="checks" role="group" aria-label="@PanelText.InboundAccess">
                 @foreach (var inbound in _inbounds ?? [])
                 {
-                    <MudCheckBox T="bool" Value="_chosen.Contains(inbound.Slug)" Dense="true" Class="@(inbound.Enabled ? "check" : "check off")"
+                    <MudCheckBox T="bool" Value="_chosen.Contains(inbound.Slug)" Dense="true"
+                                 Class="@(inbound.Enabled ? "check" : "check off")"
                                  ValueChanged="@(chosen => Choose(inbound.Slug, chosen))">
                         <code>@inbound.Slug</code>
-                        <span class="note">@(inbound.Enabled ? inbound.Name : string.Format(PanelText.InboundOff, inbound.Name))</span>
+                        <span
+                            class="note">@(inbound.Enabled ? inbound.Name : string.Format(PanelText.InboundOff, inbound.Name))</span>
                     </MudCheckBox>
                 }
             </div>
         </section>
         <section class="group">
             <h3>@PanelText.GroupHowLong</h3>
-            <MudTextField T="DateTime?" @bind-Value="_expires" Label="@PanelText.Expiry" InputType="InputType.Date" Format="yyyy-MM-dd"
-                          Immediate="true" HelperText="@PanelText.ExpiryHelp" />
+            <MudTextField T="DateTime?" @bind-Value="_expires" Label="@PanelText.Expiry" InputType="InputType.Date"
+                          Format="yyyy-MM-dd"
+                          Immediate="true" HelperText="@PanelText.ExpiryHelp"/>
         </section>
         <section class="group">
             <h3>@PanelText.GroupHowMuch</h3>
             <div class="pair">
-                <MudNumericField T="int?" @bind-Value="_rate" Label="@PanelText.RatePerMinute" Immediate="true" HideSpinButtons="true"
-                                 HelperText="@PanelText.NoLimitHelp" />
+                <MudNumericField T="int?" @bind-Value="_rate" Label="@PanelText.RatePerMinute" Immediate="true"
+                                 HideSpinButtons="true"
+                                 HelperText="@PanelText.NoLimitHelp"/>
                 <MudNumericField T="int?" @bind-Value="_concurrency" Label="@PanelText.Concurrency" Immediate="true"
-                                 HideSpinButtons="true" HelperText="@PanelText.NoLimitHelp" />
+                                 HideSpinButtons="true" HelperText="@PanelText.NoLimitHelp"/>
                 <MudNumericField T="int?" @bind-Value="_quota" Label="@PanelText.Quota" Immediate="true"
-                                 HideSpinButtons="true" HelperText="@PanelText.QuotaHelp" />
+                                 HideSpinButtons="true" HelperText="@PanelText.QuotaHelp"/>
                 <MudNumericField T="int?" @bind-Value="_resetDays" Label="@PanelText.ResetDays" Immediate="true"
-                                 HideSpinButtons="true" HelperText="@PanelText.ResetDaysHelp" />
+                                 HideSpinButtons="true" HelperText="@PanelText.ResetDaysHelp"/>
             </div>
         </section>
         <section class="group">
             <h3>@PanelText.GroupDevices</h3>
-            <MudNumericField T="int?" @bind-Value="_maxDevices" Label="@PanelText.DeviceLimit" Immediate="true" HideSpinButtons="true"
-                             HelperText="@PanelText.NoLimitHelp" />
-            <MudCheckBox T="bool" @bind-Value="_directKey" Label="@PanelText.DirectKeyWorks" Dense="true" Class="check" />
+            <MudNumericField T="int?" @bind-Value="_maxDevices" Label="@PanelText.DeviceLimit" Immediate="true"
+                             HideSpinButtons="true"
+                             HelperText="@PanelText.NoLimitHelp"/>
+            <MudCheckBox T="bool" @bind-Value="_directKey" Label="@PanelText.DirectKeyWorks" Dense="true"
+                         Class="check"/>
             <p class="hint">@PanelText.DirectKeyHelp</p>
         </section>
         @if (_summary is not null)
         {
-            <SlotBlocks Slot="PanelSlots.ClientSheet" Context="_summary" />
+            <SlotBlocks Slot="PanelSlots.ClientSheet" Context="_summary"/>
         }
     </ChildContent>
     <Actions>
@@ -86,11 +94,9 @@
 
     private ClientSummary? _summary;
 
-    [CascadingParameter]
-    private IMudDialogInstance MudDialog { get; set; } = default!;
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
 
-    [Parameter]
-    public Guid? Id { get; set; }
+    [Parameter] public Guid? Id { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
@@ -147,7 +153,7 @@
                 InboundSlugs = _chosen,
                 Limits = limits,
                 Access = new ClientAccessPolicy(_maxDevices, _directKey),
-                Metadata = metadata,
+                Metadata = metadata
             }));
             MudDialog.Close(DialogResult.Ok(id));
         }
@@ -156,4 +162,5 @@
             _error = Words.Sentence(exception.Message);
         }
     }
+
 }

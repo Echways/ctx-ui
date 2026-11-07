@@ -21,7 +21,7 @@ public static class DeviceMarkerCookie
             HttpOnly = true,
             Secure = http.Request.IsHttps,
             SameSite = SameSiteMode.Lax,
-            IsEssential = true,
+            IsEssential = true
         });
         return marker;
     }

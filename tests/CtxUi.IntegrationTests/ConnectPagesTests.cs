@@ -15,7 +15,7 @@ public class ConnectPagesTests
             BaseURL = gateway.BaseUrl,
             JavaScriptEnabled = false,
             ReducedMotion = ReducedMotion.Reduce,
-            Locale = "ru-RU",
+            Locale = "ru-RU"
         });
         context.SetDefaultTimeout(5_000);
         return context;
@@ -23,16 +23,18 @@ public class ConnectPagesTests
 
     private static async Task SignInAsync(IPage page, string key)
     {
-        await Expect(page.GetByRole(AriaRole.Heading, new() { Name = "Вход" })).ToBeVisibleAsync();
+        await Expect(page.GetByRole(AriaRole.Heading, new PageGetByRoleOptions { Name = "Вход" })).ToBeVisibleAsync();
         await page.GetByLabel("Ключ доступа").FillAsync(key);
-        await page.GetByRole(AriaRole.Button, new() { Name = "Войти" }).ClickAsync();
+        await page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Войти" }).ClickAsync();
     }
 
     private static async Task<string> ApproveAsync(IPage page)
     {
-        await Expect(page.GetByRole(AriaRole.Heading, new() { Name = "Разрешить доступ" })).ToBeVisibleAsync();
-        var reached = page.WaitForRequestAsync(request => request.Url.StartsWith(OAuthFlow.Callback, StringComparison.Ordinal));
-        await page.GetByRole(AriaRole.Button, new() { Name = "Разрешить" }).ClickAsync();
+        await Expect(page.GetByRole(AriaRole.Heading, new PageGetByRoleOptions { Name = "Разрешить доступ" }))
+            .ToBeVisibleAsync();
+        var reached =
+            page.WaitForRequestAsync(request => request.Url.StartsWith(OAuthFlow.Callback, StringComparison.Ordinal));
+        await page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Разрешить" }).ClickAsync();
         return (await reached).Url;
     }
 
@@ -48,7 +50,7 @@ public class ConnectPagesTests
 
         await page.GotoAsync(flow.AuthorizeUrl);
         await SignInAsync(page, issued.Token);
-        await Expect(page.GetByText("Claude Code", new() { Exact = true })).ToBeVisibleAsync();
+        await Expect(page.GetByText("Claude Code", new PageGetByTextOptions { Exact = true })).ToBeVisibleAsync();
         await Expect(page.GetByText("название указало само приложение, оно не проверено")).ToBeVisibleAsync();
         var callback = await ApproveAsync(page);
 
@@ -78,13 +80,14 @@ public class ConnectPagesTests
         {
             BaseURL = gateway.BaseUrl,
             JavaScriptEnabled = false,
-            Locale = "en-US",
+            Locale = "en-US"
         });
         var page = await context.NewPageAsync();
 
         await page.GotoAsync("/connect/signin");
 
-        await Expect(page.GetByRole(AriaRole.Heading, new() { Name = "Sign in" })).ToBeVisibleAsync();
+        await Expect(page.GetByRole(AriaRole.Heading, new PageGetByRoleOptions { Name = "Sign in" }))
+            .ToBeVisibleAsync();
         await Expect(page.Locator("html")).ToHaveAttributeAsync("lang", "en");
     }
 
@@ -121,8 +124,9 @@ public class ConnectPagesTests
 
         await page.GotoAsync(flow.AuthorizeUrl);
         await SignInAsync(page, issued.Token);
-        await Expect(page.GetByRole(AriaRole.Heading, new() { Name = "Достигнут лимит устройств" })).ToBeVisibleAsync();
-        await page.GetByRole(AriaRole.Button, new() { Name = "и войти здесь" }).ClickAsync();
+        await Expect(page.GetByRole(AriaRole.Heading, new PageGetByRoleOptions { Name = "Достигнут лимит устройств" }))
+            .ToBeVisibleAsync();
+        await page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "и войти здесь" }).ClickAsync();
         var callback = await ApproveAsync(page);
 
         Assert.Contains("code=", callback);
@@ -143,12 +147,14 @@ public class ConnectPagesTests
 
         var devices = await browser.NewPageAsync();
         await devices.GotoAsync("/connect/devices");
-        await Expect(devices.GetByRole(AriaRole.Heading, new() { Name = "Мои устройства" })).ToBeVisibleAsync();
+        await Expect(devices.GetByRole(AriaRole.Heading, new PageGetByRoleOptions { Name = "Мои устройства" }))
+            .ToBeVisibleAsync();
         await Expect(devices.GetByText("Это устройство")).ToBeVisibleAsync();
         await Expect(devices.GetByText("Claude Code")).ToBeVisibleAsync();
-        await devices.GetByRole(AriaRole.Button, new() { Name = "Выйти" }).ClickAsync();
+        await devices.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Выйти" }).ClickAsync();
 
-        await Expect(devices.GetByRole(AriaRole.Heading, new() { Name = "Вход" })).ToBeVisibleAsync();
+        await Expect(devices.GetByRole(AriaRole.Heading, new PageGetByRoleOptions { Name = "Вход" }))
+            .ToBeVisibleAsync();
     }
 
     [Fact]
@@ -159,12 +165,13 @@ public class ConnectPagesTests
         var page = await browser.NewPageAsync();
         await page.GotoAsync("/connect/signin");
 
-        await page.GetByRole(AriaRole.Link, new() { Name = "English" }).ClickAsync();
-        await Expect(page.GetByRole(AriaRole.Heading, new() { Name = "Sign in" })).ToBeVisibleAsync();
+        await page.GetByRole(AriaRole.Link, new PageGetByRoleOptions { Name = "English" }).ClickAsync();
+        await Expect(page.GetByRole(AriaRole.Heading, new PageGetByRoleOptions { Name = "Sign in" }))
+            .ToBeVisibleAsync();
         await Expect(page.Locator("html")).ToHaveAttributeAsync("lang", "en");
-        await page.GetByRole(AriaRole.Link, new() { Name = "Русский" }).ClickAsync();
+        await page.GetByRole(AriaRole.Link, new PageGetByRoleOptions { Name = "Русский" }).ClickAsync();
 
-        await Expect(page.GetByRole(AriaRole.Heading, new() { Name = "Вход" })).ToBeVisibleAsync();
+        await Expect(page.GetByRole(AriaRole.Heading, new PageGetByRoleOptions { Name = "Вход" })).ToBeVisibleAsync();
         Assert.EndsWith("/connect/signin", page.Url);
     }
 

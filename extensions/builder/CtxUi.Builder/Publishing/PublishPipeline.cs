@@ -35,7 +35,10 @@ public sealed class PublishPipeline(
 
         public RunnerClient Runner { get; } = scope.ServiceProvider.GetRequiredService<RunnerClient>();
 
-        public ValueTask DisposeAsync() => scope.DisposeAsync();
+        public ValueTask DisposeAsync()
+        {
+            return scope.DisposeAsync();
+        }
     }
 
     public event Action<Guid>? Changed;
@@ -65,7 +68,8 @@ public sealed class PublishPipeline(
             throw Failures.Conflict(BuilderText.PublishBusy);
 
         var archive = await ProjectFiles.SnapshotAsync(draft, draft.Files, ProjectFiles.FastMcpVersion, ct);
-        var stored = await run.Database.Releases.Where(release => release.ServerId == serverId).MaxAsync(release => (int?)release.Number, ct) ?? 0;
+        var stored = await run.Database.Releases.Where(release => release.ServerId == serverId)
+            .MaxAsync(release => (int?)release.Number, ct) ?? 0;
         var number = Math.Max(stored, state.Releases.Select(release => release.Number).DefaultIfEmpty(0).Max()) + 1;
         var created = new Release
         {
@@ -76,7 +80,7 @@ public sealed class PublishPipeline(
             FastMcpVersion = ProjectFiles.FastMcpVersion,
             ArchiveHash = Convert.ToHexString(SHA256.HashData(archive)),
             BaseUrl = draft.BaseUrl,
-            CreatedAt = clock.GetUtcNow(),
+            CreatedAt = clock.GetUtcNow()
         };
         await archives.WriteAsync(created.Id, archive, ct);
         run.Database.Releases.Add(created);
@@ -90,9 +94,11 @@ public sealed class PublishPipeline(
         if (await HasBuildingReleaseAsync(run, ct))
             throw Failures.Conflict(BuilderText.PublishBusy);
 
-        var activeId = await run.Database.Servers.Where(server => server.Id == serverId).Select(server => server.ActiveReleaseId).SingleOrDefaultAsync(ct);
-        var release = await run.Database.Releases.AsNoTracking().SingleOrDefaultAsync(release => release.ServerId == serverId && release.Number == number, ct)
-            ?? throw Failures.ReleaseNotFound();
+        var activeId = await run.Database.Servers.Where(server => server.Id == serverId)
+            .Select(server => server.ActiveReleaseId).SingleOrDefaultAsync(ct);
+        var release = await run.Database.Releases.AsNoTracking()
+                          .SingleOrDefaultAsync(release => release.ServerId == serverId && release.Number == number, ct)
+                      ?? throw Failures.ReleaseNotFound();
         if (release.Id == activeId || release.Status is not (ReleaseState.Retired or ReleaseState.Candidate))
             throw Failures.Conflict(BuilderText.RollbackUnavailable);
     }
@@ -101,7 +107,11 @@ public sealed class PublishPipeline(
     {
         List<Release> building;
         await using (var database = await databases.CreateDbContextAsync(ct))
-            building = await database.Releases.AsNoTracking().Where(release => release.Status == ReleaseState.Building).OrderBy(release => release.ServerId).ToListAsync(ct);
+        {
+            building = await database.Releases.AsNoTracking().Where(release => release.Status == ReleaseState.Building)
+                .OrderBy(release => release.ServerId).ToListAsync(ct);
+        }
+
         var runnerReachable = settings.IsComplete;
         foreach (var release in building)
         {
@@ -113,12 +123,14 @@ public sealed class PublishPipeline(
                 limit.CancelAfter(LookupTimeout);
                 try
                 {
-                    activated = (await run.Runner.ServerAsync(release.ServerId, limit.Token)).ActiveRelease == release.Number;
+                    activated = (await run.Runner.ServerAsync(release.ServerId, limit.Token)).ActiveRelease ==
+                                release.Number;
                 }
                 catch (RunnerException failure) when (failure.Status == HttpStatusCode.NotFound)
                 {
                 }
-                catch (Exception failure) when (failure is RunnerException or OperationCanceledException && !ct.IsCancellationRequested)
+                catch (Exception failure) when (failure is RunnerException or OperationCanceledException &&
+                                                !ct.IsCancellationRequested)
                 {
                     runnerReachable = false;
                 }
@@ -144,7 +156,8 @@ public sealed class PublishPipeline(
         try
         {
             var state = await run.Runner.ServerAsync(serverId, ct);
-            if (state.ActiveRelease is null && state.Releases.Any(release => release.Number == active.Number && release.State == ReleaseState.Candidate))
+            if (state.ActiveRelease is null && state.Releases.Any(release =>
+                    release.Number == active.Number && release.State == ReleaseState.Candidate))
             {
                 await run.Runner.ActivateReleaseAsync(serverId, active.Number, ct);
                 Raise(serverId);
@@ -152,7 +165,8 @@ public sealed class PublishPipeline(
         }
         catch (RunnerException failure)
         {
-            log.LogDebug("The activation of release {Number} of server {Server} could not be checked: {Message}", active.Number, serverId, failure.Message);
+            log.LogDebug("The activation of release {Number} of server {Server} could not be checked: {Message}",
+                active.Number, serverId, failure.Message);
         }
     }
 
@@ -161,12 +175,18 @@ public sealed class PublishPipeline(
         await using var run = Open(serverId);
         try
         {
-            var release = await run.Database.Releases.AsNoTracking().SingleAsync(release => release.ServerId == serverId && release.Number == number, ct);
+            var release = await run.Database.Releases.AsNoTracking()
+                .SingleAsync(release => release.ServerId == serverId && release.Number == number, ct);
             await BuildAsync(run, release, ct);
             var tools = await StartAndCheckAsync(run, release, ct);
-            await UpdateAsync(run, number, setters => setters.SetProperty(entity => entity.ToolsSnapshotJson, ToolSnapshot.Serialize(tools)), ct);
+            await UpdateAsync(run, number,
+                setters => setters.SetProperty(entity => entity.ToolsSnapshotJson, ToolSnapshot.Serialize(tools)), ct);
             if (mode == PublishMode.BuildOnly)
-                await UpdateAsync(run, number, setters => setters.SetProperty(entity => entity.Status, ReleaseState.Candidate).SetProperty(entity => entity.FinishedAt, clock.GetUtcNow()), ct);
+            {
+                await UpdateAsync(run, number,
+                    setters => setters.SetProperty(entity => entity.Status, ReleaseState.Candidate)
+                        .SetProperty(entity => entity.FinishedAt, clock.GetUtcNow()), ct);
+            }
             else
             {
                 await ActivateOnRunnerAsync(run, number, ct);
@@ -186,7 +206,8 @@ public sealed class PublishPipeline(
     public async Task RollbackAsync(Guid serverId, int number, CancellationToken ct)
     {
         await using var run = Open(serverId);
-        var release = await run.Database.Releases.AsNoTracking().SingleOrDefaultAsync(release => release.ServerId == serverId && release.Number == number, ct);
+        var release = await run.Database.Releases.AsNoTracking()
+            .SingleOrDefaultAsync(release => release.ServerId == serverId && release.Number == number, ct);
         if (release is null)
             return;
         await ActivateStoredAsync(run, release, ct);
@@ -211,7 +232,8 @@ public sealed class PublishPipeline(
             await PutSpecAsync(run, ct);
             var state = await run.Runner.ServerAsync(run.ServerId, ct);
             var known = state.Releases.FirstOrDefault(entry => entry.Number == release.Number);
-            if (known is null || known is { State: ReleaseState.Failed, EnvironmentHash: null } || known.State == ReleaseState.Building)
+            if (known is null || known is { State: ReleaseState.Failed, EnvironmentHash: null } ||
+                known.State == ReleaseState.Building)
                 await BuildAsync(run, release, ct);
             await StartAndCheckAsync(run, release, ct);
             await ActivateOnRunnerAsync(run, release.Number, ct);
@@ -219,7 +241,8 @@ public sealed class PublishPipeline(
         }
         catch (Exception failure) when (failure is not OperationCanceledException || !ct.IsCancellationRequested)
         {
-            await UpdateAsync(run, release.Number, setters => setters.SetProperty(entity => entity.Error, MessageOf(failure)), ct);
+            await UpdateAsync(run, release.Number,
+                setters => setters.SetProperty(entity => entity.Error, MessageOf(failure)), ct);
         }
         finally
         {
@@ -237,7 +260,8 @@ public sealed class PublishPipeline(
         }, ct);
         Raise(run.ServerId);
 
-        var status = await PollAsync(run, release.Number, status => status.State != ReleaseState.Building, timings.BuildTimeout, BuilderText.BuildTimedOut, true, ct);
+        var status = await PollAsync(run, release.Number, status => status.State != ReleaseState.Building,
+            timings.BuildTimeout, BuilderText.BuildTimedOut, true, ct);
         await StoreBuildAsync(run, release.Number, status, ct);
         if (status.State == ReleaseState.Failed)
             throw new ReleaseFailure(status.Error ?? BuilderText.BuildFailed);
@@ -248,8 +272,11 @@ public sealed class PublishPipeline(
         var number = release.Number;
         var launch = await catalog.LaunchAsync(run.ServerId, release.BaseUrl, ct);
         await run.Runner.PutServerAsync(run.ServerId, launch.Spec, ct);
-        await SendAsync(run, launch.Spec, () => run.Runner.StartReleaseAsync(run.ServerId, number, launch.Start, ct), ct);
-        var status = await PollAsync(run, number, status => status.State is ReleaseState.Candidate or ReleaseState.Failed, timings.StartTimeout, BuilderText.StartTimedOut, false, ct);
+        await SendAsync(run, launch.Spec, () => run.Runner.StartReleaseAsync(run.ServerId, number, launch.Start, ct),
+            ct);
+        var status = await PollAsync(run, number,
+            status => status.State is ReleaseState.Candidate or ReleaseState.Failed, timings.StartTimeout,
+            BuilderText.StartTimedOut, false, ct);
         if (status.State == ReleaseState.Failed)
             throw new ReleaseFailure(status.Error ?? BuilderText.StartFailed);
 
@@ -301,7 +328,8 @@ public sealed class PublishPipeline(
         }
     }
 
-    private async Task<ReleaseStatus> PollAsync(Run run, int number, Func<ReleaseStatus, bool> done, TimeSpan timeout, string timeoutMessage, bool recordLog, CancellationToken ct)
+    private async Task<ReleaseStatus> PollAsync(Run run, int number, Func<ReleaseStatus, bool> done, TimeSpan timeout,
+        string timeoutMessage, bool recordLog, CancellationToken ct)
     {
         var started = clock.GetTimestamp();
         long? outageStarted = null;
@@ -316,7 +344,8 @@ public sealed class PublishPipeline(
                 if (recordLog && status.Log.Length > 0 && status.Log != lastLog)
                 {
                     lastLog = status.Log;
-                    await UpdateAsync(run, number, setters => setters.SetProperty(entity => entity.BuildLog, status.Log), ct);
+                    await UpdateAsync(run, number,
+                        setters => setters.SetProperty(entity => entity.BuildLog, status.Log), ct);
                     Raise(run.ServerId);
                 }
 
@@ -331,11 +360,13 @@ public sealed class PublishPipeline(
             {
                 outageStarted ??= clock.GetTimestamp();
                 if (clock.GetElapsedTime(outageStarted.Value) > timings.OutageTolerance)
-                    throw new ReleaseFailure(string.Format(BuilderText.RunnerLostDuringBuild, Seconds(timings.OutageTolerance)));
+                    throw new ReleaseFailure(string.Format(BuilderText.RunnerLostDuringBuild,
+                        Seconds(timings.OutageTolerance)));
             }
 
             if (clock.GetElapsedTime(started) > timeout)
-                throw new ReleaseFailure(string.Format(timeoutMessage, Math.Max(1, (int)Math.Ceiling(timeout.TotalMinutes))));
+                throw new ReleaseFailure(string.Format(timeoutMessage,
+                    Math.Max(1, (int)Math.Ceiling(timeout.TotalMinutes))));
             await Task.Delay(timings.PollInterval, clock, ct);
         }
     }
@@ -360,10 +391,14 @@ public sealed class PublishPipeline(
         var now = clock.GetUtcNow();
         await using var transaction = await run.Database.Database.BeginTransactionAsync(ct);
         await run.Database.Releases
-            .Where(release => release.ServerId == run.ServerId && release.Id != releaseId && (release.Status == ReleaseState.Active || release.Status == ReleaseState.Candidate))
+            .Where(release => release.ServerId == run.ServerId && release.Id != releaseId &&
+                              (release.Status == ReleaseState.Active || release.Status == ReleaseState.Candidate))
             .ExecuteUpdateAsync(setters => setters.SetProperty(release => release.Status, ReleaseState.Retired), ct);
         await run.Database.Releases.Where(release => release.Id == releaseId)
-            .ExecuteUpdateAsync(setters => setters.SetProperty(release => release.Status, ReleaseState.Active).SetProperty(release => release.FinishedAt, now).SetProperty(release => release.Error, (string?)null), ct);
+            .ExecuteUpdateAsync(
+                setters => setters.SetProperty(release => release.Status, ReleaseState.Active)
+                    .SetProperty(release => release.FinishedAt, now)
+                    .SetProperty(release => release.Error, (string?)null), ct);
         await run.Database.Servers.Where(server => server.Id == run.ServerId)
             .ExecuteUpdateAsync(setters => setters.SetProperty(server => server.ActiveReleaseId, releaseId), ct);
         await transaction.CommitAsync(ct);
@@ -374,11 +409,14 @@ public sealed class PublishPipeline(
         try
         {
             var now = clock.GetUtcNow();
-            await UpdateAsync(run, number, setters => setters.SetProperty(entity => entity.Status, ReleaseState.Failed).SetProperty(entity => entity.Error, message).SetProperty(entity => entity.FinishedAt, now), ct);
+            await UpdateAsync(run, number,
+                setters => setters.SetProperty(entity => entity.Status, ReleaseState.Failed)
+                    .SetProperty(entity => entity.Error, message).SetProperty(entity => entity.FinishedAt, now), ct);
         }
         catch (Exception failure) when (failure is not OperationCanceledException)
         {
-            log.LogError(failure, "Release {Number} of server {Server} could not be marked as failed.", number, run.ServerId);
+            log.LogError(failure, "Release {Number} of server {Server} could not be marked as failed.", number,
+                run.ServerId);
         }
         finally
         {
@@ -386,22 +424,39 @@ public sealed class PublishPipeline(
         }
     }
 
-    private static Task UpdateAsync(Run run, int number, Action<UpdateSettersBuilder<Release>> set, CancellationToken ct) =>
-        run.Database.Releases.Where(release => release.ServerId == run.ServerId && release.Number == number).ExecuteUpdateAsync(set, ct);
+    private static Task UpdateAsync(Run run, int number, Action<UpdateSettersBuilder<Release>> set,
+        CancellationToken ct)
+    {
+        return run.Database.Releases.Where(release => release.ServerId == run.ServerId && release.Number == number)
+            .ExecuteUpdateAsync(set, ct);
+    }
 
     private static async Task<Release?> ActiveReleaseAsync(Run run, CancellationToken ct)
     {
-        var activeId = await run.Database.Servers.Where(server => server.Id == run.ServerId).Select(server => server.ActiveReleaseId).SingleOrDefaultAsync(ct);
-        return activeId is null ? null : await run.Database.Releases.AsNoTracking().SingleOrDefaultAsync(release => release.Id == activeId, ct);
+        var activeId = await run.Database.Servers.Where(server => server.Id == run.ServerId)
+            .Select(server => server.ActiveReleaseId).SingleOrDefaultAsync(ct);
+        return activeId is null
+            ? null
+            : await run.Database.Releases.AsNoTracking().SingleOrDefaultAsync(release => release.Id == activeId, ct);
     }
 
-    private static Task<bool> HasBuildingReleaseAsync(Run run, CancellationToken ct) =>
-        run.Database.Releases.AnyAsync(release => release.ServerId == run.ServerId && release.Status == ReleaseState.Building, ct);
+    private static Task<bool> HasBuildingReleaseAsync(Run run, CancellationToken ct)
+    {
+        return run.Database.Releases.AnyAsync(
+            release => release.ServerId == run.ServerId && release.Status == ReleaseState.Building, ct);
+    }
 
-    private Run Open(Guid serverId) => new(scopes.CreateAsyncScope(), serverId);
+    private Run Open(Guid serverId)
+    {
+        return new Run(scopes.CreateAsyncScope(), serverId);
+    }
 
-    private string Describe(RunnerException failure) =>
-        failure.Status is null ? string.Format(BuilderText.RunnerUnreachable, settings.Url, failure.Message) : failure.Message;
+    private string Describe(RunnerException failure)
+    {
+        return failure.Status is null
+            ? string.Format(BuilderText.RunnerUnreachable, settings.Url, failure.Message)
+            : failure.Message;
+    }
 
     private string MessageOf(Exception failure)
     {
@@ -417,7 +472,10 @@ public sealed class PublishPipeline(
         }
     }
 
-    private static int Seconds(TimeSpan span) => Math.Max(1, (int)Math.Ceiling(span.TotalSeconds));
+    private static int Seconds(TimeSpan span)
+    {
+        return Math.Max(1, (int)Math.Ceiling(span.TotalSeconds));
+    }
 
     private void Raise(Guid serverId)
     {

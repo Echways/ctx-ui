@@ -14,7 +14,10 @@ public class ExpiryArgumentTests
     }
 
     [Fact]
-    public void Never_means_no_expiry() => Assert.Null(ExpiryArgument.Parse("never"));
+    public void Never_means_no_expiry()
+    {
+        Assert.Null(ExpiryArgument.Parse("never"));
+    }
 
     [Theory]
     [InlineData("01.07.2027")]

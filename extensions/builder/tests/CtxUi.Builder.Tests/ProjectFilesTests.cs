@@ -25,8 +25,10 @@ public sealed class ProjectFilesTests
     [InlineData("main.py")]
     [InlineData("fastmcp.json")]
     [InlineData("")]
-    public void Unsafe_path_is_refused(string path) =>
+    public void Unsafe_path_is_refused(string path)
+    {
         Assert.Throws<PanelException>(() => ProjectFiles.ValidatePath(path));
+    }
 
     [Theory]
     [InlineData("mcp/tools/get_data.py")]
@@ -34,8 +36,10 @@ public sealed class ProjectFilesTests
     [InlineData("mcp/notes.md")]
     [InlineData("openapi.json")]
     [InlineData("builder.json")]
-    public void Allowed_path_is_returned_unchanged(string path) =>
+    public void Allowed_path_is_returned_unchanged(string path)
+    {
         Assert.Equal(path, ProjectFiles.ValidatePath(path));
+    }
 
     [Fact]
     public async Task Archive_with_traversal_or_symlink_is_refused_as_a_whole()
@@ -46,10 +50,13 @@ public sealed class ProjectFilesTests
         var absolute = TarGz(("mcp/ok.py", "x = 1"), ("/etc/passwd", "boom"));
         await Assert.ThrowsAsync<PanelException>(() => ProjectFiles.ImportArchiveAsync(absolute, default));
 
-        var symlink = WithTarEntries(new PaxTarEntry(TarEntryType.SymbolicLink, "mcp/link.py") { LinkName = "/etc/passwd" }, ("mcp/ok.py", "x = 1"));
+        var symlink =
+            WithTarEntries(new PaxTarEntry(TarEntryType.SymbolicLink, "mcp/link.py") { LinkName = "/etc/passwd" },
+                ("mcp/ok.py", "x = 1"));
         await Assert.ThrowsAsync<PanelException>(() => ProjectFiles.ImportArchiveAsync(symlink, default));
 
-        var hardlink = WithTarEntries(new PaxTarEntry(TarEntryType.HardLink, "mcp/link.py") { LinkName = "mcp/ok.py" }, ("mcp/ok.py", "x = 1"));
+        var hardlink = WithTarEntries(new PaxTarEntry(TarEntryType.HardLink, "mcp/link.py") { LinkName = "mcp/ok.py" },
+            ("mcp/ok.py", "x = 1"));
         await Assert.ThrowsAsync<PanelException>(() => ProjectFiles.ImportArchiveAsync(hardlink, default));
     }
 
@@ -75,7 +82,8 @@ public sealed class ProjectFilesTests
     [Fact]
     public async Task Archive_with_too_many_entries_is_refused()
     {
-        var entries = Enumerable.Range(0, ProjectFiles.MaxArchiveEntries + 1).Select(i => ($"mcp/f{i}.py", "")).ToArray();
+        var entries = Enumerable.Range(0, ProjectFiles.MaxArchiveEntries + 1).Select(i => ($"mcp/f{i}.py", ""))
+            .ToArray();
         await Assert.ThrowsAsync<PanelException>(() => ProjectFiles.ImportArchiveAsync(TarGz(entries), default));
     }
 
@@ -131,7 +139,8 @@ public sealed class ProjectFilesTests
     [Fact]
     public async Task Zip_archive_is_read_like_tar()
     {
-        var files = (await ProjectFiles.ImportArchiveAsync(Zip(("mcp/a.py", "a = 1"), ("main.py", "x"), ("openapi.json", "{}")), default)).Files;
+        var files = (await ProjectFiles.ImportArchiveAsync(
+            Zip(("mcp/a.py", "a = 1"), ("main.py", "x"), ("openapi.json", "{}")), default)).Files;
 
         Assert.Equal(["mcp/a.py", "openapi.json"], files.Select(file => file.Path).Order(StringComparer.Ordinal));
     }
@@ -140,7 +149,8 @@ public sealed class ProjectFilesTests
     public async Task Dependencies_of_an_imported_fastmcp_json_are_kept_without_the_fastmcp_pin()
     {
         var archive = TarGz(
-            ("fastmcp.json", "{\"environment\": {\"dependencies\": [\"fastmcp==3.0.0\", \"httpx>=0.28\", \"pydantic\"]}}"),
+            ("fastmcp.json",
+                "{\"environment\": {\"dependencies\": [\"fastmcp==3.0.0\", \"httpx>=0.28\", \"pydantic\"]}}"),
             ("mcp/a.py", "a = 1"));
 
         var import = await ProjectFiles.ImportArchiveAsync(archive, default);
@@ -157,19 +167,20 @@ public sealed class ProjectFilesTests
             ServerId = Guid.NewGuid(),
             OpenApiJson = "{\"openapi\": \"3.1.0\"}",
             BuilderJson = null,
-            Dependencies = "httpx>=0.28\n\nfastmcp==1.0\n  pydantic  \n",
+            Dependencies = "httpx>=0.28\n\nfastmcp==1.0\n  pydantic  \n"
         };
         DraftFile[] files =
         [
             new() { ServerId = draft.ServerId, Path = "mcp/a.py", Content = "a = 1" },
             new() { ServerId = draft.ServerId, Path = "main.py", Content = "print('user main')" },
-            new() { ServerId = draft.ServerId, Path = "fastmcp.json", Content = "{}" },
+            new() { ServerId = draft.ServerId, Path = "fastmcp.json", Content = "{}" }
         ];
 
         var bytes = await ProjectFiles.SnapshotAsync(draft, files, "4.1.4", default);
         var entries = ReadTarGz(bytes);
 
-        Assert.Equal(["fastmcp.json", "main.py", "mcp/a.py", "openapi.json"], entries.Keys.Order(StringComparer.Ordinal));
+        Assert.Equal(["fastmcp.json", "main.py", "mcp/a.py", "openapi.json"],
+            entries.Keys.Order(StringComparer.Ordinal));
         Assert.Contains("\"fastmcp==4.1.4\"", entries["fastmcp.json"]);
         Assert.DoesNotContain("fastmcp==1.0", entries["fastmcp.json"]);
         Assert.Contains("\"httpx>=0.28\"", entries["fastmcp.json"]);
@@ -203,13 +214,15 @@ public sealed class ProjectFilesTests
     [Fact]
     public async Task Snapshot_round_trips_through_import()
     {
-        var draft = new ServerDraft { ServerId = Guid.NewGuid(), BuilderJson = "{\"prompts\": []}", Dependencies = "httpx" };
+        var draft = new ServerDraft
+        { ServerId = Guid.NewGuid(), BuilderJson = "{\"prompts\": []}", Dependencies = "httpx" };
         DraftFile[] files = [new() { ServerId = draft.ServerId, Path = "mcp/a.py", Content = "a = 1" }];
 
         var bytes = await ProjectFiles.SnapshotAsync(draft, files, "4.1.4", default);
         var import = await ProjectFiles.ImportArchiveAsync(new MemoryStream(bytes), default);
 
-        Assert.Equal(["builder.json", "mcp/a.py"], import.Files.Select(file => file.Path).Order(StringComparer.Ordinal));
+        Assert.Equal(["builder.json", "mcp/a.py"],
+            import.Files.Select(file => file.Path).Order(StringComparer.Ordinal));
         Assert.Equal("httpx", import.Dependencies);
     }
 
@@ -227,20 +240,25 @@ public sealed class ProjectFilesTests
     [InlineData("get-data", "get_data")]
     [InlineData("Weather Now", "weather_now")]
     [InlineData("9lives", "tool_9lives")]
-    public void Tool_name_becomes_a_python_identifier(string name, string function) =>
+    public void Tool_name_becomes_a_python_identifier(string name, string function)
+    {
         Assert.Equal(function, ProjectFiles.ToolFunctionName(name));
+    }
 
-    private static MemoryStream TarGz(params (string Path, string Content)[] entries) =>
-        TarGzBytes([.. entries.Select(entry => (entry.Path, Utf8.GetBytes(entry.Content)))]);
+    private static MemoryStream TarGz(params (string Path, string Content)[] entries)
+    {
+        return TarGzBytes([.. entries.Select(entry => (entry.Path, Utf8.GetBytes(entry.Content)))]);
+    }
 
     private static MemoryStream TarGzBytes(params (string Path, byte[] Content)[] entries)
     {
         var output = new MemoryStream();
-        using (var gzip = new GZipStream(output, CompressionLevel.Fastest, leaveOpen: true))
-        using (var writer = new TarWriter(gzip, TarEntryFormat.Pax, leaveOpen: true))
+        using (var gzip = new GZipStream(output, CompressionLevel.Fastest, true))
+        using (var writer = new TarWriter(gzip, TarEntryFormat.Pax, true))
         {
             foreach (var (path, content) in entries)
-                writer.WriteEntry(new PaxTarEntry(TarEntryType.RegularFile, path) { DataStream = new MemoryStream(content) });
+                writer.WriteEntry(new PaxTarEntry(TarEntryType.RegularFile, path)
+                { DataStream = new MemoryStream(content) });
         }
 
         output.Position = 0;
@@ -250,11 +268,12 @@ public sealed class ProjectFilesTests
     private static MemoryStream WithTarEntries(TarEntry special, params (string Path, string Content)[] entries)
     {
         var output = new MemoryStream();
-        using (var gzip = new GZipStream(output, CompressionLevel.Fastest, leaveOpen: true))
-        using (var writer = new TarWriter(gzip, TarEntryFormat.Pax, leaveOpen: true))
+        using (var gzip = new GZipStream(output, CompressionLevel.Fastest, true))
+        using (var writer = new TarWriter(gzip, TarEntryFormat.Pax, true))
         {
             foreach (var (path, content) in entries)
-                writer.WriteEntry(new PaxTarEntry(TarEntryType.RegularFile, path) { DataStream = new MemoryStream(Utf8.GetBytes(content)) });
+                writer.WriteEntry(new PaxTarEntry(TarEntryType.RegularFile, path)
+                { DataStream = new MemoryStream(Utf8.GetBytes(content)) });
             writer.WriteEntry(special);
         }
 
@@ -265,7 +284,7 @@ public sealed class ProjectFilesTests
     private static MemoryStream Zip(params (string Path, string Content)[] entries)
     {
         var output = new MemoryStream();
-        using (var zip = new ZipArchive(output, ZipArchiveMode.Create, leaveOpen: true))
+        using (var zip = new ZipArchive(output, ZipArchiveMode.Create, true))
         {
             foreach (var (path, content) in entries)
             {

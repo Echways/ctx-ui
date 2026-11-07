@@ -15,7 +15,8 @@ public sealed class RunnerClientTests
     {
         public List<(HttpMethod Method, string Path, string Body)> Requests { get; } = [];
 
-        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request,
+            CancellationToken cancellationToken)
         {
             var body = request.Content is null ? "" : await request.Content.ReadAsStringAsync(cancellationToken);
             Requests.Add((request.Method, request.RequestUri!.PathAndQuery, body));
@@ -23,17 +24,23 @@ public sealed class RunnerClientTests
         }
     }
 
-    private static (RunnerClient Client, StubHandler Handler) Create(Func<HttpRequestMessage, HttpResponseMessage> respond)
+    private static (RunnerClient Client, StubHandler Handler) Create(
+        Func<HttpRequestMessage, HttpResponseMessage> respond)
     {
         var handler = new StubHandler(respond);
         var http = new HttpClient(handler) { BaseAddress = new Uri("http://runner:8091/") };
         return (new RunnerClient(http), handler);
     }
 
-    private static HttpResponseMessage Json<T>(T value, HttpStatusCode status = HttpStatusCode.OK) =>
-        new(status) { Content = JsonContent.Create(value) };
+    private static HttpResponseMessage Json<T>(T value, HttpStatusCode status = HttpStatusCode.OK)
+    {
+        return new HttpResponseMessage(status) { Content = JsonContent.Create(value) };
+    }
 
-    private static HttpResponseMessage Status(HttpStatusCode status) => new(status);
+    private static HttpResponseMessage Status(HttpStatusCode status)
+    {
+        return new HttpResponseMessage(status);
+    }
 
     [Fact]
     public async Task Health_reads_the_runner_report()
@@ -51,7 +58,8 @@ public sealed class RunnerClientTests
     {
         var (client, handler) = Create(_ => Status(HttpStatusCode.NoContent));
 
-        await client.PutServerAsync(Id, new ServerSpec(NetworkAccess.FullNetwork, new ServerLimits(1024, 2, 100), "route"), default);
+        await client.PutServerAsync(Id,
+            new ServerSpec(NetworkAccess.FullNetwork, new ServerLimits(1024, 2, 100), "route"), default);
 
         var request = handler.Requests.Single();
         Assert.Equal((HttpMethod.Put, $"/v1/servers/{Id}"), (request.Method, request.Path));
@@ -95,7 +103,8 @@ public sealed class RunnerClientTests
     [Fact]
     public async Task Release_status_is_read()
     {
-        var (client, handler) = Create(_ => Json(new ReleaseStatus(3, ReleaseState.Built, "built", "lock", "env", null)));
+        var (client, handler) =
+            Create(_ => Json(new ReleaseStatus(3, ReleaseState.Built, "built", "lock", "env", null)));
 
         var status = await client.ReleaseAsync(Id, 3, default);
 
@@ -108,7 +117,8 @@ public sealed class RunnerClientTests
     {
         var (client, handler) = Create(_ => Status(HttpStatusCode.Accepted));
 
-        await client.StartReleaseAsync(Id, 3, new StartRelease(new Dictionary<string, string> { ["KEY"] = "value" }), default);
+        await client.StartReleaseAsync(Id, 3, new StartRelease(new Dictionary<string, string> { ["KEY"] = "value" }),
+            default);
 
         var request = handler.Requests.Single();
         Assert.Equal((HttpMethod.Post, $"/v1/servers/{Id}/releases/3/start"), (request.Method, request.Path));
@@ -123,7 +133,8 @@ public sealed class RunnerClientTests
         var status = await client.ActivateReleaseAsync(Id, 3, default);
 
         Assert.Equal(ReleaseState.Active, status.State);
-        Assert.Equal((HttpMethod.Post, $"/v1/servers/{Id}/releases/3/activate"), (handler.Requests[0].Method, handler.Requests[0].Path));
+        Assert.Equal((HttpMethod.Post, $"/v1/servers/{Id}/releases/3/activate"),
+            (handler.Requests[0].Method, handler.Requests[0].Path));
     }
 
     [Theory]
@@ -135,13 +146,15 @@ public sealed class RunnerClientTests
 
         await (action == "stop" ? client.StopServerAsync(Id, default) : client.StartServerAsync(Id, default));
 
-        Assert.Equal((HttpMethod.Post, $"/v1/servers/{Id}/{action}"), (handler.Requests[0].Method, handler.Requests[0].Path));
+        Assert.Equal((HttpMethod.Post, $"/v1/servers/{Id}/{action}"),
+            (handler.Requests[0].Method, handler.Requests[0].Path));
     }
 
     [Fact]
     public async Task Logs_stream_as_text_with_tail_and_follow()
     {
-        var (client, handler) = Create(_ => new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("line one\nline two\n") });
+        var (client, handler) = Create(_ => new HttpResponseMessage(HttpStatusCode.OK)
+        { Content = new StringContent("line one\nline two\n") });
 
         var text = new StringBuilder();
         await foreach (var chunk in client.LogsAsync(Id, 50, true, default))
@@ -156,10 +169,13 @@ public sealed class RunnerClientTests
     {
         var (client, _) = Create(_ => new HttpResponseMessage(HttpStatusCode.Conflict)
         {
-            Content = new StringContent("{\"status\":409,\"detail\":\"A build is already running.\"}", Encoding.UTF8, new MediaTypeHeaderValue("application/problem+json"))
+            Content = new StringContent("{\"status\":409,\"detail\":\"A build is already running.\"}", Encoding.UTF8,
+                new MediaTypeHeaderValue("application/problem+json"))
         });
 
-        var failure = await Assert.ThrowsAsync<RunnerException>(() => client.BuildReleaseAsync(Id, 1, new MemoryStream(), default));
+        var failure =
+            await Assert.ThrowsAsync<RunnerException>(() =>
+                client.BuildReleaseAsync(Id, 1, new MemoryStream(), default));
 
         Assert.Equal(HttpStatusCode.Conflict, failure.Status);
         Assert.Equal("A build is already running.", failure.Message);

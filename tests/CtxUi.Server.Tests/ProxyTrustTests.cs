@@ -31,6 +31,8 @@ public class ProxyTrustTests
     [InlineData("nonsense")]
     [InlineData("10.0.0.0/33")]
     [InlineData("10.0.0.1,proxy.example.org")]
-    public void Garbage_is_refused(string value) =>
+    public void Garbage_is_refused(string value)
+    {
         Assert.Throws<FormatException>(() => ProxyTrust.Parse(value));
+    }
 }

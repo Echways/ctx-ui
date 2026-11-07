@@ -19,8 +19,10 @@ public class RedirectUrisTests
     [InlineData("https://example.org/callback", "https://example.org:443/callback", false)]
     [InlineData("cursor://anysphere.cursor-mcp/oauth/callback", "cursor://anysphere.cursor-mcp/oauth/callback", true)]
     [InlineData("cursor://anysphere.cursor-mcp/oauth/callback", "cursor://anysphere.cursor-mcp/oauth/other", false)]
-    public void Redirect_uri_matching(string registered, string requested, bool matches) =>
+    public void Redirect_uri_matching(string registered, string requested, bool matches)
+    {
         Assert.Equal(matches, RedirectUris.Matches(registered, requested));
+    }
 
     [Theory]
     [InlineData("https://claude.ai/api/mcp/auth_callback", true)]
@@ -35,8 +37,10 @@ public class RedirectUrisTests
     [InlineData("https://example.org/callback#fragment", false)]
     [InlineData("/relative", false)]
     [InlineData("", false)]
-    public void Registration_accepts_https_loopback_and_app_schemes(string uri, bool allowed) =>
+    public void Registration_accepts_https_loopback_and_app_schemes(string uri, bool allowed)
+    {
         Assert.Equal(allowed, RedirectUris.IsAllowedForRegistration(uri));
+    }
 
     [Theory]
     [InlineData("http://localhost:3118/callback", true)]
@@ -45,6 +49,8 @@ public class RedirectUrisTests
     [InlineData("https://localhost/callback", false)]
     [InlineData("https://claude.ai/callback", false)]
     [InlineData("cursor://anysphere.cursor-mcp/oauth/callback", false)]
-    public void Loopback_means_plain_http_to_this_machine(string uri, bool loopback) =>
+    public void Loopback_means_plain_http_to_this_machine(string uri, bool loopback)
+    {
         Assert.Equal(loopback, RedirectUris.IsLoopback(uri));
+    }
 }

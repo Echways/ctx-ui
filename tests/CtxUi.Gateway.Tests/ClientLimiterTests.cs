@@ -8,14 +8,25 @@ namespace CtxUi.Gateway.Tests;
 
 public class ClientLimiterTests : IAsyncDisposable
 {
-    private readonly ClientLimiter _limiter = new(Options.Create(new GatewayOptions { ConcurrencyWait = TimeSpan.FromMilliseconds(200) }));
+    private readonly ClientLimiter _limiter =
+        new(Options.Create(new GatewayOptions { ConcurrencyWait = TimeSpan.FromMilliseconds(200) }));
 
-    private ValueTask<RateLimitLease> SlotAsync(ClientAccess client) => _limiter.AcquireSlotAsync(client, CancellationToken.None);
+    private ValueTask<RateLimitLease> SlotAsync(ClientAccess client)
+    {
+        return _limiter.AcquireSlotAsync(client, CancellationToken.None);
+    }
 
-    private static ClientAccess Client(ClientLimits limits, Guid? id = null) =>
-        new(id ?? Guid.NewGuid(), "Иванов", true, null, FrozenSet<Guid>.Empty, new Dictionary<string, string>()) { Limits = limits };
+    private static ClientAccess Client(ClientLimits limits, Guid? id = null)
+    {
+        return new ClientAccess(id ?? Guid.NewGuid(), "Иванов", true, null, FrozenSet<Guid>.Empty,
+                new Dictionary<string, string>())
+        { Limits = limits };
+    }
 
-    public ValueTask DisposeAsync() => _limiter.DisposeAsync();
+    public ValueTask DisposeAsync()
+    {
+        return _limiter.DisposeAsync();
+    }
 
     [Fact]
     public async Task Client_without_limits_is_never_held_back()
@@ -32,7 +43,7 @@ public class ClientLimiterTests : IAsyncDisposable
     [Fact]
     public void Requests_over_the_rate_are_refused()
     {
-        var client = Client(new ClientLimits(RatePerMinute: 3));
+        var client = Client(new ClientLimits(3));
 
         for (var attempt = 0; attempt < 3; attempt++)
             Assert.True(_limiter.AcquireRate(client).IsAcquired);
@@ -44,7 +55,7 @@ public class ClientLimiterTests : IAsyncDisposable
     [Fact]
     public async Task Allowance_comes_back_gradually_not_once_a_minute()
     {
-        var client = Client(new ClientLimits(RatePerMinute: 600));
+        var client = Client(new ClientLimits(600));
         for (var attempt = 0; attempt < 600; attempt++)
             _limiter.AcquireRate(client);
         Assert.False(_limiter.AcquireRate(client).IsAcquired);
@@ -66,14 +77,17 @@ public class ClientLimiterTests : IAsyncDisposable
     [InlineData(7, 9)]
     [InlineData(60, 1)]
     [InlineData(100_000, 1)]
-    public void Wait_hint_is_the_time_one_request_takes_to_come_back(int perMinute, int expectedSeconds) =>
-        Assert.Equal(expectedSeconds, ClientLimiter.SecondsUntilNextRequest(Client(new ClientLimits(RatePerMinute: perMinute))));
+    public void Wait_hint_is_the_time_one_request_takes_to_come_back(int perMinute, int expectedSeconds)
+    {
+        Assert.Equal(expectedSeconds,
+            ClientLimiter.SecondsUntilNextRequest(Client(new ClientLimits(perMinute))));
+    }
 
     [Fact]
     public void Rate_is_counted_per_client()
     {
-        var busy = Client(new ClientLimits(RatePerMinute: 1));
-        var other = Client(new ClientLimits(RatePerMinute: 1));
+        var busy = Client(new ClientLimits(1));
+        var other = Client(new ClientLimits(1));
         _limiter.AcquireRate(busy);
 
         Assert.False(_limiter.AcquireRate(busy).IsAcquired);
@@ -84,13 +98,13 @@ public class ClientLimiterTests : IAsyncDisposable
     public async Task Changed_limit_applies_to_the_next_request()
     {
         var id = Guid.NewGuid();
-        var strict = Client(new ClientLimits(RatePerMinute: 1, MaxConcurrency: 1), id);
+        var strict = Client(new ClientLimits(1, 1), id);
         _limiter.AcquireRate(strict);
         using var held = await SlotAsync(strict);
         Assert.False(_limiter.AcquireRate(strict).IsAcquired);
         Assert.False((await SlotAsync(strict)).IsAcquired);
 
-        var relaxed = Client(new ClientLimits(RatePerMinute: 5, MaxConcurrency: 2), id);
+        var relaxed = Client(new ClientLimits(5, 2), id);
         var unlimited = Client(ClientLimits.None, id);
 
         Assert.True(_limiter.AcquireRate(relaxed).IsAcquired);

@@ -4,7 +4,10 @@ namespace CtxUi.Connect.SignIn;
 
 public static partial class PhrasePattern
 {
-    public static string[] Split(string pattern) => Placeholder().Split(pattern);
+    public static string[] Split(string pattern)
+    {
+        return Placeholder().Split(pattern);
+    }
 
     [GeneratedRegex(@"\{(\d+)\}")]
     private static partial Regex Placeholder();

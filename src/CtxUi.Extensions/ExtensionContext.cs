@@ -9,7 +9,8 @@ public sealed class ExtensionContext
 {
     private const string DatabaseFile = "data.db";
 
-    internal ExtensionContext(string id, PanelEditor panel, IServiceCollection services, IConfiguration configuration, string dataDirectory)
+    internal ExtensionContext(string id, PanelEditor panel, IServiceCollection services, IConfiguration configuration,
+        string dataDirectory)
     {
         Id = id;
         Panel = panel;
@@ -30,14 +31,19 @@ public sealed class ExtensionContext
 
     public ExtensionContext AddDatabase<TContext>() where TContext : DbContext
     {
-        var connection = new SqliteConnectionStringBuilder { DataSource = Path.Combine(DataDirectory, DatabaseFile) }.ToString();
+        var connection = new SqliteConnectionStringBuilder { DataSource = Path.Combine(DataDirectory, DatabaseFile) }
+            .ToString();
         Services.AddDbContextFactory<TContext>(options => options.UseSqlite(connection));
         Services.AddScoped<IExtensionInitializer, DatabaseInitializer<TContext>>();
         return this;
     }
 
-    private sealed class DatabaseInitializer<TContext>(TContext database) : IExtensionInitializer where TContext : DbContext
+    private sealed class DatabaseInitializer<TContext>(TContext database)
+        : IExtensionInitializer where TContext : DbContext
     {
-        public Task InitializeAsync(CancellationToken ct) => database.Database.MigrateAsync(ct);
+        public Task InitializeAsync(CancellationToken ct)
+        {
+            return database.Database.MigrateAsync(ct);
+        }
     }
 }

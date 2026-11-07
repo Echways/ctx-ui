@@ -11,7 +11,8 @@ public sealed class ResponseTraffic
 public sealed class ResponseTrafficTelemetry(IHttpContextAccessor accessor) : IForwarderTelemetryConsumer
 {
     public void OnContentTransferred(
-        DateTime timestamp, bool isRequest, long contentLength, long iops, TimeSpan readTime, TimeSpan writeTime, TimeSpan firstReadTime)
+        DateTime timestamp, bool isRequest, long contentLength, long iops, TimeSpan readTime, TimeSpan writeTime,
+        TimeSpan firstReadTime)
     {
         if (!isRequest && accessor.HttpContext?.Features.Get<ResponseTraffic>() is { } traffic)
             traffic.Bytes = contentLength;

@@ -30,38 +30,45 @@ public sealed class ClientMetadataFetcher(IHttpClientFactory http)
                     length += read;
             }
 
-            return length > MaxBytes ? null : ClientMetadataDocument.Parse(clientId, buffer.AsSpan(0, length), response.Headers.CacheControl);
+            return length > MaxBytes
+                ? null
+                : ClientMetadataDocument.Parse(clientId, buffer.AsSpan(0, length), response.Headers.CacheControl);
         }
         catch (Exception exception) when (exception is HttpRequestException or IOException
-                                              || exception is OperationCanceledException && !ct.IsCancellationRequested)
+                                          || (exception is OperationCanceledException && !ct.IsCancellationRequested))
         {
             return null;
         }
     }
 
-    public static SocketsHttpHandler Handler(IMetadataAddressPolicy policy) => new()
+    public static SocketsHttpHandler Handler(IMetadataAddressPolicy policy)
     {
-        AllowAutoRedirect = false,
-        UseProxy = false,
-        UseCookies = false,
-        ConnectTimeout = Timeout,
-        ConnectCallback = async (context, ct) =>
+        return new SocketsHttpHandler
         {
-            var allowed = (await Dns.GetHostAddressesAsync(context.DnsEndPoint.Host, ct)).Where(policy.AllowsAddress).ToArray();
-            if (allowed.Length == 0)
-                throw new HttpRequestException($"{context.DnsEndPoint.Host} does not resolve to an allowed address");
+            AllowAutoRedirect = false,
+            UseProxy = false,
+            UseCookies = false,
+            ConnectTimeout = Timeout,
+            ConnectCallback = async (context, ct) =>
+            {
+                var allowed = (await Dns.GetHostAddressesAsync(context.DnsEndPoint.Host, ct))
+                    .Where(policy.AllowsAddress).ToArray();
+                if (allowed.Length == 0)
+                    throw new HttpRequestException(
+                        $"{context.DnsEndPoint.Host} does not resolve to an allowed address");
 
-            var socket = new Socket(SocketType.Stream, ProtocolType.Tcp) { NoDelay = true };
-            try
-            {
-                await socket.ConnectAsync(allowed, context.DnsEndPoint.Port, ct);
-                return new NetworkStream(socket, ownsSocket: true);
+                var socket = new Socket(SocketType.Stream, ProtocolType.Tcp) { NoDelay = true };
+                try
+                {
+                    await socket.ConnectAsync(allowed, context.DnsEndPoint.Port, ct);
+                    return new NetworkStream(socket, true);
+                }
+                catch
+                {
+                    socket.Dispose();
+                    throw;
+                }
             }
-            catch
-            {
-                socket.Dispose();
-                throw;
-            }
-        },
-    };
+        };
+    }
 }

@@ -62,11 +62,14 @@ public sealed class GatewayHost : IAsyncDisposable
         return result;
     }
 
-    public Task ArrangeAsync(Func<IServiceProvider, Task> action) => ArrangeAsync(async services =>
+    public Task ArrangeAsync(Func<IServiceProvider, Task> action)
     {
-        await action(services);
-        return true;
-    });
+        return ArrangeAsync(async services =>
+        {
+            await action(services);
+            return true;
+        });
+    }
 
     public async Task<T> ChangeAsync<T>(Func<IServiceProvider, Task<T>> action)
     {
@@ -78,26 +81,37 @@ public sealed class GatewayHost : IAsyncDisposable
         string slug,
         string url,
         IEnumerable<KeyValuePair<string, string>>? headers = null,
-        bool forwardIdentity = false) =>
-        ArrangeAsync(services => services.GetRequiredService<InboundService>().AddHttpAsync(slug, null, url, headers, forwardIdentity));
+        bool forwardIdentity = false)
+    {
+        return ArrangeAsync(services =>
+            services.GetRequiredService<InboundService>().AddHttpAsync(slug, null, url, headers, forwardIdentity));
+    }
 
     public Task<IssuedClient> AddClientAsync(
         string name,
         string[] slugs,
         DateTimeOffset? expiresAt = null,
         IEnumerable<KeyValuePair<string, string>>? metadata = null,
-        ClientLimits? limits = null) =>
-        ArrangeAsync(services => services.GetRequiredService<ClientService>().AddAsync(name, slugs, expiresAt, metadata, limits));
-
-    public Task<IssuedAdmin> AddAdminAsync(string name = "root") =>
-        ChangeAsync(services => services.GetRequiredService<AdminAccounts>().AddAsync(name));
-
-    public Task SetLimitsAsync(string name, ClientLimits limits) => ArrangeAsync(async services =>
+        ClientLimits? limits = null)
     {
-        var clients = services.GetRequiredService<ClientService>();
-        await clients.UpdateAsync((await clients.GetAsync(name)).Id, new ClientUpdate { Limits = limits });
-        return true;
-    });
+        return ArrangeAsync(services =>
+            services.GetRequiredService<ClientService>().AddAsync(name, slugs, expiresAt, metadata, limits));
+    }
+
+    public Task<IssuedAdmin> AddAdminAsync(string name = "root")
+    {
+        return ChangeAsync(services => services.GetRequiredService<AdminAccounts>().AddAsync(name));
+    }
+
+    public Task SetLimitsAsync(string name, ClientLimits limits)
+    {
+        return ArrangeAsync(async services =>
+        {
+            var clients = services.GetRequiredService<ClientService>();
+            await clients.UpdateAsync((await clients.GetAsync(name)).Id, new ClientUpdate { Limits = limits });
+            return true;
+        });
+    }
 
     public async Task FlushUsageAsync()
     {
@@ -109,7 +123,7 @@ public sealed class GatewayHost : IAsyncDisposable
     {
         var request = new HttpRequestMessage(HttpMethod.Post, path)
         {
-            Content = new StringContent(body, Encoding.UTF8, "application/json"),
+            Content = new StringContent(body, Encoding.UTF8, "application/json")
         };
         if (bearer is not null)
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", bearer);
@@ -124,7 +138,7 @@ public sealed class GatewayHost : IAsyncDisposable
         SqliteConnection.ClearAllPools();
         try
         {
-            Directory.Delete(DataDir, recursive: true);
+            Directory.Delete(DataDir, true);
         }
         catch (IOException)
         {

@@ -26,6 +26,7 @@ public sealed class ResponseSchemaTests
     {
         var failure = Assert.Throws<PanelException>(() => ResponseSchema.FromExample(example));
 
-        Assert.Equal(example.Length == 0 ? BuilderText.ResponseExampleEmpty : BuilderText.ResponseExampleInvalid, failure.Message);
+        Assert.Equal(example.Length == 0 ? BuilderText.ResponseExampleEmpty : BuilderText.ResponseExampleInvalid,
+            failure.Message);
     }
 }

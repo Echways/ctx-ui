@@ -27,7 +27,8 @@ public sealed class PublishQueue : BackgroundService, IExtensionInitializer
     private readonly HashSet<Guid> _deleting = [];
     private readonly HashSet<Guid> _connecting = [];
 
-    public PublishQueue(PublishPipeline pipeline, RunnerSettings settings, PublishTimings timings, ReleaseArchives archives, IDbContextFactory<BuilderDatabase> databases, ILogger<PublishQueue> log)
+    public PublishQueue(PublishPipeline pipeline, RunnerSettings settings, PublishTimings timings,
+        ReleaseArchives archives, IDbContextFactory<BuilderDatabase> databases, ILogger<PublishQueue> log)
     {
         _pipeline = pipeline;
         _settings = settings;
@@ -45,7 +46,9 @@ public sealed class PublishQueue : BackgroundService, IExtensionInitializer
     public bool IsBusy(Guid serverId)
     {
         lock (_gate)
+        {
             return _outstanding.ContainsKey(serverId) || _preparing.Contains(serverId);
+        }
     }
 
     public void ReserveForDeletion(Guid serverId)
@@ -63,7 +66,9 @@ public sealed class PublishQueue : BackgroundService, IExtensionInitializer
     public void ReleaseDeletion(Guid serverId)
     {
         lock (_gate)
+        {
             _deleting.Remove(serverId);
+        }
     }
 
     public void ReserveForConnection(Guid serverId)
@@ -80,7 +85,9 @@ public sealed class PublishQueue : BackgroundService, IExtensionInitializer
     public void ReleaseConnection(Guid serverId)
     {
         lock (_gate)
+        {
             _connecting.Remove(serverId);
+        }
     }
 
     public async Task<int> PublishAsync(Guid serverId, PublishMode mode, CancellationToken ct)
@@ -103,7 +110,9 @@ public sealed class PublishQueue : BackgroundService, IExtensionInitializer
         finally
         {
             lock (_gate)
+            {
                 _preparing.Remove(serverId);
+            }
         }
     }
 
@@ -114,7 +123,10 @@ public sealed class PublishQueue : BackgroundService, IExtensionInitializer
         Enqueue(serverId, token => _pipeline.RollbackAsync(serverId, release, token));
     }
 
-    public void ApplySettings(Guid serverId) => Enqueue(serverId, token => _pipeline.ApplySettingsAsync(serverId, token));
+    public void ApplySettings(Guid serverId)
+    {
+        Enqueue(serverId, token => _pipeline.ApplySettingsAsync(serverId, token));
+    }
 
     public async Task InitializeAsync(CancellationToken ct)
     {
@@ -150,8 +162,7 @@ public sealed class PublishQueue : BackgroundService, IExtensionInitializer
             do
             {
                 await ScheduleRepairsAsync(ct);
-            }
-            while (await timer.WaitForNextTickAsync(ct));
+            } while (await timer.WaitForNextTickAsync(ct));
         }
         catch (OperationCanceledException)
         {
@@ -163,9 +174,10 @@ public sealed class PublishQueue : BackgroundService, IExtensionInitializer
         try
         {
             await using var database = await _databases.CreateDbContextAsync(ct);
-            var servers = await database.Servers.AsNoTracking().Where(server => server.ActiveReleaseId != null).Select(server => server.Id).ToListAsync(ct);
+            var servers = await database.Servers.AsNoTracking().Where(server => server.ActiveReleaseId != null)
+                .Select(server => server.Id).ToListAsync(ct);
             foreach (var serverId in servers.Where(serverId => !IsBusy(serverId)))
-                TryEnqueue(serverId, token => _pipeline.RepairActivationAsync(serverId, token), announced: false);
+                TryEnqueue(serverId, token => _pipeline.RepairActivationAsync(serverId, token), false);
         }
         catch (Exception failure) when (failure is not OperationCanceledException)
         {
@@ -193,12 +205,13 @@ public sealed class PublishQueue : BackgroundService, IExtensionInitializer
     private void RequireConfigured()
     {
         if (!_settings.IsComplete)
-            throw new PanelException(string.Format(BuilderText.RunnerNotConfigured, string.Join(", ", _settings.Missing)));
+            throw new PanelException(string.Format(BuilderText.RunnerNotConfigured,
+                string.Join(", ", _settings.Missing)));
     }
 
     private void Enqueue(Guid serverId, Func<CancellationToken, Task> run)
     {
-        if (!TryEnqueue(serverId, run, announced: true))
+        if (!TryEnqueue(serverId, run, true))
             throw Failures.Conflict(BuilderText.ServerDeleting);
     }
 

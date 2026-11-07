@@ -34,7 +34,8 @@ public static class TokenEndpoint
     {
         var request = http.GetOpenIddictServerRequest()!;
         if (!request.IsAuthorizationCodeGrantType() && !request.IsRefreshTokenGrantType())
-            return ConnectResults.Refuse(Errors.UnsupportedGrantType, "only the authorization code and refresh token grants are supported");
+            return ConnectResults.Refuse(Errors.UnsupportedGrantType,
+                "only the authorization code and refresh token grants are supported");
 
         var authentication = await http.AuthenticateAsync(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
         var presented = authentication.Principal!;
@@ -45,14 +46,15 @@ public static class TokenEndpoint
         var client = snapshot.Current.ClientById(clientId);
         if (client is null
             || !client.Enabled
-            || client.ExpiresAt is { } expiresAt && clock.GetUtcNow() >= expiresAt
+            || (client.ExpiresAt is { } expiresAt && clock.GetUtcNow() >= expiresAt)
             || resources.ServedSlugOf(request) is not { } slug
             || snapshot.Current.Route(slug) is not { } route
             || !client.InboundIds.Contains(route.Id)
             || !await devices.IsActiveAsync(deviceId, http.RequestAborted))
             return Invalid();
 
-        var identity = new ClaimsIdentity(presented.Claims, presented.Identity!.AuthenticationType, Claims.Name, Claims.Role);
+        var identity = new ClaimsIdentity(presented.Claims, presented.Identity!.AuthenticationType, Claims.Name,
+            Claims.Role);
         var principal = new ClaimsPrincipal(identity);
         principal.SetResources(resources.Resource(slug));
         principal.SetAudiences(resources.Resource(slug));
@@ -61,5 +63,8 @@ public static class TokenEndpoint
         return Results.SignIn(principal, authenticationScheme: OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
     }
 
-    private static IResult Invalid() => ConnectResults.Refuse(Errors.InvalidGrant, "the grant is no longer valid");
+    private static IResult Invalid()
+    {
+        return ConnectResults.Refuse(Errors.InvalidGrant, "the grant is no longer valid");
+    }
 }

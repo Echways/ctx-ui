@@ -6,8 +6,11 @@ namespace CtxUi.Builder.Tests;
 
 public sealed class ReleaseStatusTests
 {
-    private static Task<ServerStatus> StatusAsync(PublishHarness harness, Guid server) =>
-        harness.WithScopeAsync(services => services.GetRequiredService<ReleaseCatalog>().StatusAsync(server, default));
+    private static Task<ServerStatus> StatusAsync(PublishHarness harness, Guid server)
+    {
+        return harness.WithScopeAsync(services =>
+            services.GetRequiredService<ReleaseCatalog>().StatusAsync(server, default));
+    }
 
     [Fact]
     public async Task A_server_without_releases_has_no_release_state()
@@ -22,7 +25,8 @@ public sealed class ReleaseStatusTests
     }
 
     [Fact]
-    public async Task The_active_release_stays_the_true_version_while_the_runner_reports_it_failed_during_a_replacement()
+    public async Task
+        The_active_release_stays_the_true_version_while_the_runner_reports_it_failed_during_a_replacement()
     {
         await using var harness = await PublishHarness.CreateAsync();
         var server = await harness.CreateServerAsync();
@@ -78,7 +82,8 @@ public sealed class ReleaseStatusTests
         harness.Runner.FailBuilds.Add(2);
         await harness.PublishAndWaitAsync(server);
 
-        var views = await harness.WithScopeAsync(services => services.GetRequiredService<ReleaseCatalog>().ListAsync(server, default));
+        var views = await harness.WithScopeAsync(services =>
+            services.GetRequiredService<ReleaseCatalog>().ListAsync(server, default));
 
         Assert.Equal([2, 1], views.Select(view => view.Number));
         Assert.True(views[1].IsActive);

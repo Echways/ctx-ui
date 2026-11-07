@@ -15,15 +15,23 @@ public sealed class ApiForm
 
     public string? Secret { get; set; }
 
-    public bool ChangesAuth(ServerSettingsView current) =>
-        Kind != current.AuthKind
-        || (Kind == ApiAuthKind.Header && Normalized(HeaderName) != Normalized(current.AuthHeaderName))
-        || (Kind == ApiAuthKind.Basic && Normalized(Username) != Normalized(current.AuthUsername))
-        || (Kind != ApiAuthKind.None && !string.IsNullOrEmpty(Secret));
+    public bool ChangesAuth(ServerSettingsView current)
+    {
+        return Kind != current.AuthKind
+               || (Kind == ApiAuthKind.Header && Normalized(HeaderName) != Normalized(current.AuthHeaderName))
+               || (Kind == ApiAuthKind.Basic && Normalized(Username) != Normalized(current.AuthUsername))
+               || (Kind != ApiAuthKind.None && !string.IsNullOrEmpty(Secret));
+    }
 
-    public bool ChangesBaseUrl(ServerSettingsView current) => Normalized(BaseUrl).TrimEnd('/') != Normalized(current.BaseUrl).TrimEnd('/');
+    public bool ChangesBaseUrl(ServerSettingsView current)
+    {
+        return Normalized(BaseUrl).TrimEnd('/') != Normalized(current.BaseUrl).TrimEnd('/');
+    }
 
-    private static string Normalized(string? value) => (value ?? string.Empty).Trim();
+    private static string Normalized(string? value)
+    {
+        return (value ?? string.Empty).Trim();
+    }
 }
 
 public sealed class DependenciesForm

@@ -8,21 +8,23 @@
     <ChildContent>
         @if (_client is null)
         {
-            <Placeholder />
+            <Placeholder/>
         }
         else if (_token is null)
         {
             <div class="kf pigment" role="alert">
                 <p class="kf-lost">@PanelText.TokenLost</p>
-                <button type="button" class="kf-white" @onclick="() => MudDialog.Close(DialogResult.Ok(Reissue))">@PanelText.ReissueYes</button>
+                <button type="button" class="kf-white"
+                        @onclick="() => MudDialog.Close(DialogResult.Ok(Reissue))">@PanelText.ReissueYes</button>
             </div>
         }
         else
         {
             @if (_mode.ShowsToken)
             {
-                <KeyField Label="@PanelText.Token" Value="@_token" CopyLabel="@PanelText.CopyToken" Born="Fresh" />
+                <KeyField Label="@PanelText.Token" Value="@_token" CopyLabel="@PanelText.CopyToken" Born="Fresh"/>
             }
+
             <div class="slugs">
                 @foreach (var slug in ConnectionText.Slugs(_client))
                 {
@@ -32,14 +34,15 @@
                         @if (_mode.OAuth)
                         {
                             <CopyLine Label="@PanelText.ForOAuthApps" Value="@ConnectionText.Address(PublicUrl, slug)"
-                                      CopyLabel="@string.Format(PanelText.CopyAddressOf, slug)" />
+                                      CopyLabel="@string.Format(PanelText.CopyAddressOf, slug)"/>
                         }
                         @if (!_mode.OAuth || _mode.DirectKey)
                         {
                             <CopyLine Label="@PanelText.WithHeader" Value="@ConnectionText.Address(PublicUrl, slug)"
-                                      CopyLabel="@string.Format(PanelText.CopyAddressOf, slug)" />
-                            <CopyLine Label="@PanelText.WithTokenInPath" Value="@ConnectionText.AddressWithToken(PublicUrl, _token, slug)"
-                                      CopyLabel="@string.Format(PanelText.CopyAddressWithTokenOf, slug)" />
+                                      CopyLabel="@string.Format(PanelText.CopyAddressOf, slug)"/>
+                            <CopyLine Label="@PanelText.WithTokenInPath"
+                                      Value="@ConnectionText.AddressWithToken(PublicUrl, _token, slug)"
+                                      CopyLabel="@string.Format(PanelText.CopyAddressWithTokenOf, slug)"/>
                         }
                     </section>
                 }
@@ -58,11 +61,12 @@
                     }
                     else
                     {
-                        <CopyLine Label="@PanelText.InviteLink" Value="@_inviteUrl" CopyLabel="@PanelText.InviteCopy" />
+                        <CopyLine Label="@PanelText.InviteLink" Value="@_inviteUrl" CopyLabel="@PanelText.InviteCopy"/>
                         <p class="hint">@string.Format(PanelText.InviteValidUntil, Words.Day(_inviteUntil))</p>
                     }
                 </section>
             }
+
             <section class="message">
                 <span class="lbl" id="@($"message-{_id}")">@PanelText.MessageForClient</span>
                 <pre class="msg" aria-labelledby="@($"message-{_id}")">@_message</pre>
@@ -72,7 +76,8 @@
     <Actions>
         @if (_token is not null)
         {
-            <CopyButton Value="@_message" Label="@PanelText.CopyMessage" Text="@PanelText.CopyMessage" Class="btn-k pigment" />
+            <CopyButton Value="@_message" Label="@PanelText.CopyMessage" Text="@PanelText.CopyMessage"
+                        Class="btn-k pigment"/>
         }
     </Actions>
 </Sheet>
@@ -89,14 +94,11 @@
     private string? _inviteUrl;
     private DateTimeOffset _inviteUntil;
 
-    [CascadingParameter]
-    private IMudDialogInstance MudDialog { get; set; } = default!;
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
 
-    [Parameter]
-    public Guid Id { get; set; }
+    [Parameter] public Guid Id { get; set; }
 
-    [Parameter]
-    public bool Fresh { get; set; }
+    [Parameter] public bool Fresh { get; set; }
 
     private string PublicUrl => Options.Value.PublicUrl;
 
@@ -138,4 +140,5 @@
         _inviteUntil = Clock.GetUtcNow() + InviteCode.Lifetime;
         Describe();
     }
+
 }

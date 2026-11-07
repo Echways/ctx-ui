@@ -19,18 +19,27 @@ public sealed partial class CliAdminTests : IDisposable
     [GeneratedRegex(@"Панель:  (https://mcp\.example\.org/[a-z0-9]{16}/)")]
     private static partial Regex PanelLine();
 
-    private Task<(int Code, string Output, string Error)> RunAsync(params string[] args) => CliRunner.RunAsync(_dataDir, args);
+    private Task<(int Code, string Output, string Error)> RunAsync(params string[] args)
+    {
+        return CliRunner.RunAsync(_dataDir, args);
+    }
 
-    private static string Password(string output) => PasswordLine().Match(output).Groups[1].Value;
+    private static string Password(string output)
+    {
+        return PasswordLine().Match(output).Groups[1].Value;
+    }
 
-    private static string Panel(string output) => PanelLine().Match(output).Groups[1].Value;
+    private static string Panel(string output)
+    {
+        return PanelLine().Match(output).Groups[1].Value;
+    }
 
     public void Dispose()
     {
         SqliteConnection.ClearAllPools();
         try
         {
-            Directory.Delete(_dataDir, recursive: true);
+            Directory.Delete(_dataDir, true);
         }
         catch (IOException)
         {
@@ -38,7 +47,10 @@ public sealed partial class CliAdminTests : IDisposable
     }
 
     [Fact]
-    public void Admin_is_a_cli_command() => Assert.True(Cli.Handles(["admin", "list"]));
+    public void Admin_is_a_cli_command()
+    {
+        Assert.True(Cli.Handles(["admin", "list"]));
+    }
 
     [Fact]
     public async Task Added_admin_gets_a_generated_password_and_the_panel_address()

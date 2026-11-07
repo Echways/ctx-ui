@@ -8,14 +8,17 @@ public sealed class CliDevicesTests : IDisposable
 {
     private readonly string _dataDir = Directory.CreateTempSubdirectory("ctx-ui-cli-").FullName;
 
-    private Task<(int Code, string Output, string Error)> RunAsync(params string[] args) => CliRunner.RunAsync(_dataDir, args);
+    private Task<(int Code, string Output, string Error)> RunAsync(params string[] args)
+    {
+        return CliRunner.RunAsync(_dataDir, args);
+    }
 
     public void Dispose()
     {
         SqliteConnection.ClearAllPools();
         try
         {
-            Directory.Delete(_dataDir, recursive: true);
+            Directory.Delete(_dataDir, true);
         }
         catch (IOException)
         {
@@ -29,14 +32,18 @@ public sealed class CliDevicesTests : IDisposable
         Assert.Equal(0, added.Code);
     }
 
-    private static async Task<Device> AdmitAsync(GatewayHost gateway, Guid clientId, string name, string signedInWith = Device.ByKey) =>
-        await gateway.ChangeAsync(async services =>
+    private static async Task<Device> AdmitAsync(GatewayHost gateway, Guid clientId, string name,
+        string signedInWith = Device.ByKey)
+    {
+        return await gateway.ChangeAsync(async services =>
         {
             var devices = services.GetRequiredService<DeviceService>();
-            var admitted = (await devices.AdmitAsync(clientId, DeviceMarker.Generate(), new DeviceSeen(name, "203.0.113.7", signedInWith))).Device!;
+            var admitted = (await devices.AdmitAsync(clientId, DeviceMarker.Generate(),
+                new DeviceSeen(name, "203.0.113.7", signedInWith))).Device!;
             await devices.AddAppAsync(admitted.Id, "app-key", "Claude Code", "authorization-1");
             return await devices.GetAsync(admitted.Id);
         });
+    }
 
     [Fact]
     public async Task Usage_log_shows_the_device()
@@ -156,7 +163,8 @@ public sealed class CliDevicesTests : IDisposable
         await gateway.ChangeAsync(async services =>
         {
             var links = services.GetRequiredService<ClientLinkService>();
-            await links.LinkAsync(await links.InviteAsync(issued.Client.Id), new ExternalIdentity("github", "42", "ivanov@example.org"));
+            await links.LinkAsync(await links.InviteAsync(issued.Client.Id),
+                new ExternalIdentity("github", "42", "ivanov@example.org"));
             return true;
         });
 

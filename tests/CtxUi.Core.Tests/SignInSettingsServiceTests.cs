@@ -13,10 +13,15 @@ public class SignInSettingsServiceTests
     private readonly FakeVault _vault = new();
     private readonly FakeTimeProvider _clock = new(TestData.Now);
 
-    private SignInSettingsService Settings(TestDatabase database) => new(database.NewContext(), _vault);
+    private SignInSettingsService Settings(TestDatabase database)
+    {
+        return new SignInSettingsService(database.NewContext(), _vault);
+    }
 
-    private static Task<long> RevisionAsync(TestDatabase database) =>
-        database.NewContext().RoutingStates.AsNoTracking().Select(state => state.Revision).SingleAsync();
+    private static Task<long> RevisionAsync(TestDatabase database)
+    {
+        return database.NewContext().RoutingStates.AsNoTracking().Select(state => state.Revision).SingleAsync();
+    }
 
     [Fact]
     public async Task Enabling_needs_an_allowed_public_url()
@@ -105,7 +110,7 @@ public class SignInSettingsServiceTests
                 DefaultMaxDevices = 3,
                 DefaultDirectKey = false,
                 IdleDays = 365,
-                SelfRevoke = false,
+                SelfRevoke = false
             },
             PublicUrl);
 
@@ -181,7 +186,8 @@ public class SignInSettingsServiceTests
     {
         await using var database = await TestDatabase.CreateAsync();
 
-        await Settings(database).SetProviderAsync(new ProviderSetup("oidc", "client-id", "secret", "http://127.0.0.1:9000", "Local"));
+        await Settings(database)
+            .SetProviderAsync(new ProviderSetup("oidc", "client-id", "secret", "http://127.0.0.1:9000", "Local"));
 
         Assert.Equal("http://127.0.0.1:9000", Assert.Single(await Settings(database).ProvidersAsync()).Issuer);
     }
@@ -218,7 +224,8 @@ public class SignInSettingsServiceTests
         await Settings(database).SetProviderAsync(new ProviderSetup("github", "client-id", "secret"));
         await Settings(database).SetProviderAsync(new ProviderSetup("google", "client-id", "secret"));
 
-        Assert.Equal(["google", "github"], (await Settings(database).ProvidersAsync()).Select(provider => provider.Name));
+        Assert.Equal(["google", "github"],
+            (await Settings(database).ProvidersAsync()).Select(provider => provider.Name));
         Assert.Equal(
             ["google", "microsoft", "github", "gitlab", "yandex", "vkid", "discord", "telegram", "oidc"],
             ProviderCatalog.All.Select(provider => provider.Name));
@@ -228,7 +235,8 @@ public class SignInSettingsServiceTests
     public async Task Removing_a_provider_removes_its_links()
     {
         await using var database = await TestDatabase.CreateAsync();
-        await new InboundService(database.NewContext(), _vault, _clock).AddHttpAsync("echo", null, "https://mcp.example.org/mcp");
+        await new InboundService(database.NewContext(), _vault, _clock).AddHttpAsync("echo", null,
+            "https://mcp.example.org/mcp");
         var issued = await new ClientService(database.NewContext(), _vault, _clock).AddAsync("Иванов", ["echo"]);
         await Settings(database).SetProviderAsync(new ProviderSetup("github", "client-id", "secret"));
         await using (var db = database.NewContext())
@@ -240,7 +248,7 @@ public class SignInSettingsServiceTests
                 Provider = "github",
                 Subject = "1",
                 Display = "ivanov",
-                LinkedAt = TestData.Now,
+                LinkedAt = TestData.Now
             });
             db.ClientLinks.Add(new ClientLink
             {
@@ -249,7 +257,7 @@ public class SignInSettingsServiceTests
                 Provider = "google",
                 Subject = "2",
                 Display = "ivanov@example.org",
-                LinkedAt = TestData.Now,
+                LinkedAt = TestData.Now
             });
             await db.SaveChangesAsync();
         }
@@ -275,8 +283,11 @@ public class SignInSettingsServiceTests
         await Settings(database).SetProviderAsync(new ProviderSetup("github", "client-id", "secret"));
         await Settings(database).UpdateAsync(new SignInSettingsUpdate { Enabled = true, KeySignIn = false }, PublicUrl);
 
-        var disabling = await Assert.ThrowsAsync<DomainException>(() => Settings(database).SetProviderEnabledAsync("github", false));
-        var removing = await Assert.ThrowsAsync<DomainException>(() => Settings(database).RemoveProviderAsync("github"));
+        var disabling =
+            await Assert.ThrowsAsync<DomainException>(() =>
+                Settings(database).SetProviderEnabledAsync("github", false));
+        var removing =
+            await Assert.ThrowsAsync<DomainException>(() => Settings(database).RemoveProviderAsync("github"));
 
         Assert.Contains("хотя бы один способ входа", disabling.Message);
         Assert.Contains("хотя бы один способ входа", removing.Message);

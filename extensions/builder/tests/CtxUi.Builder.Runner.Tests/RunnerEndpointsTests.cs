@@ -32,7 +32,8 @@ public sealed class RunnerEndpointsTests
         using var missing = await anonymous.GetAsync("/v1/health");
         anonymous.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "wrong");
         using var wrong = await anonymous.GetAsync("/v1/health");
-        anonymous.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", RunnerHarness.Token + "x");
+        anonymous.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", RunnerHarness.Token + "x");
         using var longer = await anonymous.GetAsync("/v1/health");
         using var unknownPath = await anonymous.GetAsync("/v1/nothing");
         using var mutation = await anonymous.PutAsJsonAsync($"/v1/servers/{Id}", RunnerHarness.Spec());
@@ -53,7 +54,8 @@ public sealed class RunnerEndpointsTests
 
         var keys = harness.Services.GetRequiredService<IOptions<KeyManagementOptions>>().Value;
         var repository = keys.XmlRepository;
-        harness.Services.GetRequiredService<IKeyManager>().CreateNewKey(DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddDays(1));
+        harness.Services.GetRequiredService<IKeyManager>()
+            .CreateNewKey(DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddDays(1));
 
         Assert.IsType<InMemoryXmlRepository>(repository);
         Assert.NotNull(keys.XmlEncryptor);
@@ -79,8 +81,8 @@ public sealed class RunnerEndpointsTests
         await using var _ = harness;
         await using var __ = upstream;
 
-        using var missing = await harness.CallAsync($"/s/{Id}/mcp", secret: null);
-        using var wrong = await harness.CallAsync($"/s/{Id}/mcp", secret: "wrong");
+        using var missing = await harness.CallAsync($"/s/{Id}/mcp", null);
+        using var wrong = await harness.CallAsync($"/s/{Id}/mcp", "wrong");
         using var unknown = await harness.CallAsync($"/s/{Guid.NewGuid()}/mcp");
         using var other = await harness.CallAsync($"/s/{Id}/other");
 
@@ -164,7 +166,8 @@ public sealed class RunnerEndpointsTests
         await harness.PutSpecAsync();
 
         using var content = new StreamContent(new MemoryStream(new byte[16 * 1024 * 1024 + 1]));
-        using var request = new HttpRequestMessage(HttpMethod.Post, $"/v1/servers/{Id}/releases/1") { Content = content };
+        using var request = new HttpRequestMessage(HttpMethod.Post, $"/v1/servers/{Id}/releases/1")
+        { Content = content };
         request.Headers.TransferEncodingChunked = true;
         using var tooBig = await harness.Control.SendAsync(request);
 

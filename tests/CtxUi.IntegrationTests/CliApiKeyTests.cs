@@ -12,14 +12,17 @@ public sealed partial class CliApiKeyTests : IDisposable
     [GeneratedRegex(@"Ключ:     (ctxk_[A-Za-z0-9]{40})\b")]
     private static partial Regex KeyLine();
 
-    private Task<(int Code, string Output, string Error)> RunAsync(params string[] args) => CliRunner.RunAsync(_dataDir, args);
+    private Task<(int Code, string Output, string Error)> RunAsync(params string[] args)
+    {
+        return CliRunner.RunAsync(_dataDir, args);
+    }
 
     public void Dispose()
     {
         SqliteConnection.ClearAllPools();
         try
         {
-            Directory.Delete(_dataDir, recursive: true);
+            Directory.Delete(_dataDir, true);
         }
         catch (IOException)
         {
@@ -27,7 +30,10 @@ public sealed partial class CliApiKeyTests : IDisposable
     }
 
     [Fact]
-    public void Apikey_is_a_cli_command() => Assert.True(Cli.Handles(["apikey", "list"]));
+    public void Apikey_is_a_cli_command()
+    {
+        Assert.True(Cli.Handles(["apikey", "list"]));
+    }
 
     [Fact]
     public async Task Added_key_is_shown_once_with_the_api_and_swagger_addresses()
@@ -81,7 +87,8 @@ public sealed partial class CliApiKeyTests : IDisposable
     public async Task Key_added_and_removed_from_the_cli_opens_and_closes_a_running_server()
     {
         await using var gateway = await GatewayHost.StartAsync();
-        var key = KeyLine().Match((await CliRunner.RunAsync(gateway.DataDir, "apikey", "add", "bot")).Output).Groups[1].Value;
+        var key = KeyLine().Match((await CliRunner.RunAsync(gateway.DataDir, "apikey", "add", "bot")).Output).Groups[1]
+            .Value;
         using var api = ApiClient.WithKey(gateway, key);
 
         using var before = await api.GetAsync("api/v1/inbounds");

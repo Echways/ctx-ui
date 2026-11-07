@@ -4,7 +4,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CtxUi.Builder.Servers;
 
-public sealed class ConnectedInboundsLoader(ConnectedInbounds connected, IDbContextFactory<BuilderDatabase> databases) : IExtensionInitializer
+public sealed class ConnectedInboundsLoader(ConnectedInbounds connected, IDbContextFactory<BuilderDatabase> databases)
+    : IExtensionInitializer
 {
     public async Task InitializeAsync(CancellationToken ct)
     {

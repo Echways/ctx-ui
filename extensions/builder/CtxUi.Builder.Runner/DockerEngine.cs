@@ -55,11 +55,20 @@ public sealed class DockerEngine : IDockerEngine, IDisposable
 
     private readonly DockerClient _client;
 
-    public DockerEngine(Uri endpoint) => _client = new DockerClientConfiguration(endpoint).CreateClient();
+    public DockerEngine(Uri endpoint)
+    {
+        _client = new DockerClientConfiguration(endpoint).CreateClient();
+    }
 
-    public void Dispose() => _client.Dispose();
+    public void Dispose()
+    {
+        _client.Dispose();
+    }
 
-    public async Task<string> VersionAsync(CancellationToken ct) => (await _client.System.GetVersionAsync(ct)).Version;
+    public async Task<string> VersionAsync(CancellationToken ct)
+    {
+        return (await _client.System.GetVersionAsync(ct)).Version;
+    }
 
     public async Task<IReadOnlyList<BuilderContainer>> ListContainersAsync(Guid? server, CancellationToken ct)
     {
@@ -70,7 +79,8 @@ public sealed class DockerEngine : IDockerEngine, IDisposable
         }, ct);
 
         return containers
-            .Where(container => container.Labels.TryGetValue(BuilderLabels.Root, out var owner) && Guid.TryParse(owner, out _))
+            .Where(container =>
+                container.Labels.TryGetValue(BuilderLabels.Root, out var owner) && Guid.TryParse(owner, out _))
             .Select(container => new BuilderContainer(
                 container.Names.First().TrimStart('/'),
                 container.Labels.AsReadOnly(),
@@ -93,7 +103,8 @@ public sealed class DockerEngine : IDockerEngine, IDisposable
     public async Task StopContainerAsync(Guid server, string name, CancellationToken ct)
     {
         await RequireContainerAsync(server, name, ct);
-        await _client.Containers.StopContainerAsync(name, new ContainerStopParameters { WaitBeforeKillSeconds = StopGraceSeconds }, ct);
+        await _client.Containers.StopContainerAsync(name,
+            new ContainerStopParameters { WaitBeforeKillSeconds = StopGraceSeconds }, ct);
     }
 
     public async Task RemoveContainerAsync(Guid server, string name, CancellationToken ct)
@@ -102,7 +113,8 @@ public sealed class DockerEngine : IDockerEngine, IDisposable
             return;
 
         RequireOwnLabel(server, container.Config.Labels, $"container {name}");
-        await IgnoreMissing(() => _client.Containers.RemoveContainerAsync(name, new ContainerRemoveParameters { Force = true }, ct));
+        await IgnoreMissing(() =>
+            _client.Containers.RemoveContainerAsync(name, new ContainerRemoveParameters { Force = true }, ct));
     }
 
     public async Task<long> WaitContainerAsync(Guid server, string name, CancellationToken ct)
@@ -114,7 +126,8 @@ public sealed class DockerEngine : IDockerEngine, IDisposable
     public async Task ExtractArchiveAsync(Guid server, string name, string path, Stream archive, CancellationToken ct)
     {
         await RequireContainerAsync(server, name, ct);
-        await _client.Containers.ExtractArchiveToContainerAsync(name, new ContainerPathStatParameters { Path = path }, archive, ct);
+        await _client.Containers.ExtractArchiveToContainerAsync(name, new ContainerPathStatParameters { Path = path },
+            archive, ct);
     }
 
     public async Task<string?> ReadFileAsync(Guid server, string name, string path, long maxBytes, CancellationToken ct)
@@ -122,14 +135,15 @@ public sealed class DockerEngine : IDockerEngine, IDisposable
         await RequireContainerAsync(server, name, ct);
         try
         {
-            var response = await _client.Containers.GetArchiveFromContainerAsync(name, new GetArchiveFromContainerParameters { Path = path }, false, ct);
+            var response = await _client.Containers.GetArchiveFromContainerAsync(name,
+                new GetArchiveFromContainerParameters { Path = path }, false, ct);
             await using var archive = response.Stream;
             if (response.Stat?.Size > maxBytes)
                 throw new BuilderFileTooLargeException(path, maxBytes);
 
             using var buffered = await BufferBoundedAsync(archive, path, maxBytes, ct);
             await using var tar = new TarReader(buffered);
-            var entry = await tar.GetNextEntryAsync(copyData: false, ct);
+            var entry = await tar.GetNextEntryAsync(false, ct);
             if (entry?.Length > maxBytes)
                 throw new BuilderFileTooLargeException(path, maxBytes);
 
@@ -145,7 +159,8 @@ public sealed class DockerEngine : IDockerEngine, IDisposable
         }
     }
 
-    private static async Task<MemoryStream> BufferBoundedAsync(Stream archive, string path, long maxBytes, CancellationToken ct)
+    private static async Task<MemoryStream> BufferBoundedAsync(Stream archive, string path, long maxBytes,
+        CancellationToken ct)
     {
         var buffered = new MemoryStream();
         var chunk = new byte[ArchiveReadBufferBytes];
@@ -165,10 +180,11 @@ public sealed class DockerEngine : IDockerEngine, IDisposable
         return buffered;
     }
 
-    public async IAsyncEnumerable<string> ReadLogsAsync(Guid server, string name, int? tail, bool follow, [EnumeratorCancellation] CancellationToken ct)
+    public async IAsyncEnumerable<string> ReadLogsAsync(Guid server, string name, int? tail, bool follow,
+        [EnumeratorCancellation] CancellationToken ct)
     {
         await RequireContainerAsync(server, name, ct);
-        using var stream = await _client.Containers.GetContainerLogsAsync(name, tty: false, new ContainerLogsParameters
+        using var stream = await _client.Containers.GetContainerLogsAsync(name, false, new ContainerLogsParameters
         {
             ShowStdout = true,
             ShowStderr = true,
@@ -207,7 +223,8 @@ public sealed class DockerEngine : IDockerEngine, IDisposable
     {
         var volumes = await _client.Volumes.ListAsync(new VolumesListParameters { Filters = LabelFilter(server) }, ct);
         return (volumes.Volumes ?? [])
-            .Select(volume => new BuilderVolume(volume.Name, (volume.Labels ?? new Dictionary<string, string>()).AsReadOnly()))
+            .Select(volume =>
+                new BuilderVolume(volume.Name, (volume.Labels ?? new Dictionary<string, string>()).AsReadOnly()))
             .ToList();
     }
 
@@ -232,7 +249,8 @@ public sealed class DockerEngine : IDockerEngine, IDisposable
 
     public async Task<IReadOnlyList<string>> ListNetworksAsync(Guid server, CancellationToken ct)
     {
-        var networks = await _client.Networks.ListNetworksAsync(new NetworksListParameters { Filters = LabelFilter(server) }, ct);
+        var networks =
+            await _client.Networks.ListNetworksAsync(new NetworksListParameters { Filters = LabelFilter(server) }, ct);
         return networks.Select(network => network.Name).ToList();
     }
 
@@ -279,29 +297,28 @@ public sealed class DockerEngine : IDockerEngine, IDisposable
         if (inspected.NetworkSettings?.Networks?.ContainsKey(network) != true)
             return;
 
-        await _client.Networks.DisconnectNetworkAsync(network, new NetworkDisconnectParameters { Container = container, Force = true }, ct);
+        await _client.Networks.DisconnectNetworkAsync(network,
+            new NetworkDisconnectParameters { Container = container, Force = true }, ct);
     }
 
     public async Task<bool> RequireSystemContainerAsync(string name, CancellationToken ct)
     {
         var container = await FindContainerAsync(name, ct)
-            ?? throw new BuilderObjectRefusedException($"Container {name} does not exist.");
+                        ?? throw new BuilderObjectRefusedException($"Container {name} does not exist.");
         if (Owner(container.Config.Labels) != BuilderLabels.SystemValue)
-        {
-            throw new BuilderObjectRefusedException($"Container {name} does not carry the label {BuilderLabels.Root}={BuilderLabels.SystemValue}.");
-        }
+            throw new BuilderObjectRefusedException(
+                $"Container {name} does not carry the label {BuilderLabels.Root}={BuilderLabels.SystemValue}.");
 
         return container.State?.Running == true;
     }
 
-    private async Task<ContainerInspectResponse> RequireConnectableAsync(Guid server, string network, string container, CancellationToken ct)
+    private async Task<ContainerInspectResponse> RequireConnectableAsync(Guid server, string network, string container,
+        CancellationToken ct)
     {
         var inspected = await _client.Containers.InspectContainerAsync(container, ct);
         var owner = Owner(inspected.Config.Labels);
         if (owner != server.ToString() && owner != BuilderLabels.SystemValue)
-        {
             throw new BuilderObjectRefusedException($"Container {container} does not belong to server {server}.");
-        }
 
         var attached = await _client.Networks.InspectNetworkAsync(network, ct);
         RequireOwnLabel(server, attached.Labels, $"network {network}");
@@ -361,24 +378,27 @@ public sealed class DockerEngine : IDockerEngine, IDisposable
         }
     }
 
-    private static string? Owner(IDictionary<string, string>? labels) =>
-        labels is not null && labels.TryGetValue(BuilderLabels.Root, out var owner) ? owner : null;
+    private static string? Owner(IDictionary<string, string>? labels)
+    {
+        return labels is not null && labels.TryGetValue(BuilderLabels.Root, out var owner) ? owner : null;
+    }
 
     private static void RequireOwnLabel(Guid server, IDictionary<string, string>? labels, string description)
     {
         if (Owner(labels) != server.ToString())
-        {
             throw new BuilderObjectRefusedException($"The {description} does not belong to server {server}.");
-        }
     }
 
-    private static Dictionary<string, IDictionary<string, bool>> LabelFilter(Guid? server) => new()
+    private static Dictionary<string, IDictionary<string, bool>> LabelFilter(Guid? server)
     {
-        ["label"] = new Dictionary<string, bool>
+        return new Dictionary<string, IDictionary<string, bool>>
         {
-            [server is null ? BuilderLabels.Root : $"{BuilderLabels.Root}={server}"] = true
-        }
-    };
+            ["label"] = new Dictionary<string, bool>
+            {
+                [server is null ? BuilderLabels.Root : $"{BuilderLabels.Root}={server}"] = true
+            }
+        };
+    }
 
     [DataContract]
     private sealed class PrioritizedEndpointSettings : EndpointSettings

@@ -9,7 +9,8 @@ namespace CtxUi.IntegrationTests;
 
 public class OAuthKeyFlowTests
 {
-    private static async Task<(WebApplication Server, GatewayHost Gateway, IssuedClient Issued)> StartAsync(params string[] slugs)
+    private static async Task<(WebApplication Server, GatewayHost Gateway, IssuedClient Issued)> StartAsync(
+        params string[] slugs)
     {
         var server = await McpEndToEndTests.StartMcpServerAsync();
         var gateway = await OAuthHarness.StartAsync();
@@ -19,8 +20,11 @@ public class OAuthKeyFlowTests
         return (server, gateway, await gateway.AddClientAsync("Иванов", slugs.DefaultIfEmpty("echo").ToArray()));
     }
 
-    private static Task<List<Device>> DevicesAsync(GatewayHost gateway, Guid clientId) => gateway.ChangeAsync(services =>
-        services.GetRequiredService<DeviceService>().ListAsync(clientId, DateTimeOffset.MinValue));
+    private static Task<List<Device>> DevicesAsync(GatewayHost gateway, Guid clientId)
+    {
+        return gateway.ChangeAsync(services =>
+            services.GetRequiredService<DeviceService>().ListAsync(clientId, DateTimeOffset.MinValue));
+    }
 
     [Fact]
     public async Task Key_sign_in_gives_a_token_that_calls_a_tool()
@@ -62,7 +66,8 @@ public class OAuthKeyFlowTests
         var (server, gateway, issued) = await StartAsync();
         await using var _s = server;
         await using var _g = gateway;
-        await gateway.ArrangeAsync(services => services.GetRequiredService<ClientService>().SetEnabledAsync(issued.Client.Id, false));
+        await gateway.ArrangeAsync(services =>
+            services.GetRequiredService<ClientService>().SetEnabledAsync(issued.Client.Id, false));
         using var flow = await OAuthFlow.StartAsync(gateway, "echo");
 
         await flow.SignInWithKeyAsync(issued.Token);
@@ -106,12 +111,14 @@ public class OAuthKeyFlowTests
         using var flow = await OAuthFlow.StartAsync(gateway, "echo");
 
         await flow.OpenAsync();
-        var token = OAuthFlow.Forms(flow.Page).SelectMany(form => form.Fields).FirstOrDefault(field => field.Key == "__RequestVerificationToken");
-        using var posted = await flow.Browser.PostAsync("/connect/signin", new FormUrlEncodedContent(new Dictionary<string, string>
-        {
-            ["key"] = issued.Token,
-            ["__RequestVerificationToken"] = token.Value ?? "",
-        }));
+        var token = OAuthFlow.Forms(flow.Page).SelectMany(form => form.Fields)
+            .FirstOrDefault(field => field.Key == "__RequestVerificationToken");
+        using var posted = await flow.Browser.PostAsync("/connect/signin", new FormUrlEncodedContent(
+            new Dictionary<string, string>
+            {
+                ["key"] = issued.Token,
+                ["__RequestVerificationToken"] = token.Value ?? ""
+            }));
 
         Assert.Equal(HttpStatusCode.OK, flow.Status);
         Assert.DoesNotContain("name=\"key\"", flow.Page);
@@ -128,13 +135,13 @@ public class OAuthKeyFlowTests
         await claude.SignInWithKeyAsync(issued.Token);
         await claude.ApproveAsync();
         await claude.ExchangeAsync();
-        using var cursor = await OAuthFlow.StartAsync(gateway, "echo", claude.Cookies, clientName: "Cursor");
+        using var cursor = await OAuthFlow.StartAsync(gateway, "echo", claude.Cookies, "Cursor");
 
         await cursor.OpenAsync();
         Assert.Contains("Cursor", cursor.Page);
         await cursor.ApproveAsync();
         await cursor.ExchangeAsync();
-        using var again = await OAuthFlow.StartAsync(gateway, "echo", claude.Cookies, clientName: "Cursor");
+        using var again = await OAuthFlow.StartAsync(gateway, "echo", claude.Cookies, "Cursor");
         await again.OpenAsync();
 
         Assert.NotNull(again.Code);
@@ -149,7 +156,8 @@ public class OAuthKeyFlowTests
         await using var _s = server;
         await using var _g = gateway;
         using var local = await OAuthFlow.StartAsync(gateway, "echo");
-        using var web = await OAuthFlow.StartAsync(gateway, "echo", local.Cookies, "Claude", "https://claude.ai/api/mcp/auth_callback");
+        using var web = await OAuthFlow.StartAsync(gateway, "echo", local.Cookies, "Claude",
+            "https://claude.ai/api/mcp/auth_callback");
 
         await local.SignInWithKeyAsync(issued.Token);
         await web.OpenAsync();
@@ -254,7 +262,7 @@ public class OAuthKeyFlowTests
             ["grant_type"] = "authorization_code",
             ["code"] = flow.Code!,
             ["redirect_uri"] = OAuthFlow.Callback,
-            ["code_verifier"] = flow.Verifier,
+            ["code_verifier"] = flow.Verifier
         });
 
         Assert.InRange(answer.Body.GetProperty("expires_in").GetInt32(), 3599, 3600);
@@ -262,10 +270,8 @@ public class OAuthKeyFlowTests
         {
             var tokens = services.GetRequiredService<IOpenIddictTokenManager>();
             await foreach (var token in tokens.ListAsync())
-            {
                 if (await tokens.GetTypeAsync(token) == OpenIddictConstants.TokenTypeIdentifiers.RefreshToken)
                     return (await tokens.GetCreationDateAsync(token), await tokens.GetExpirationDateAsync(token));
-            }
 
             return (null, null);
         });

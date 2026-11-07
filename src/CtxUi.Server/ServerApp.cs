@@ -16,7 +16,7 @@ public static partial class ServerApp
         var builder = WebApplication.CreateBuilder(new WebApplicationOptions
         {
             Args = args,
-            ApplicationName = typeof(ServerApp).Assembly.GetName().Name,
+            ApplicationName = typeof(ServerApp).Assembly.GetName().Name
         });
         builder.WebHost.UseStaticWebAssets();
         configure?.Invoke(builder);
@@ -26,7 +26,8 @@ public static partial class ServerApp
         var section = builder.Configuration.GetSection(CtxUiOptions.Section);
         var extensions = ExtensionCatalog.Load(section.Get<CtxUiOptions>() ?? new CtxUiOptions());
         builder.Services.AddSingleton(extensions);
-        builder.Services.AddCtxUiPanel(section, layout => ExtensionPipeline.Register(layout, builder.Services, extensions, section));
+        builder.Services.AddCtxUiPanel(section,
+            layout => ExtensionPipeline.Register(layout, builder.Services, extensions, section));
         builder.Services.AddCtxUiConnect(
             builder.Configuration.GetSection(CtxUiOptions.Section),
             ServiceRegistration.KeysPath(builder.Configuration));
@@ -41,7 +42,8 @@ public static partial class ServerApp
 
         var app = builder.Build();
         app.UseForwardedHeaders();
-        app.UseForwardedHeaders(ForwardedFor(app.Services.GetRequiredService<IOptions<CtxUiOptions>>().Value.TrustedProxies));
+        app.UseForwardedHeaders(ForwardedFor(app.Services.GetRequiredService<IOptions<CtxUiOptions>>().Value
+            .TrustedProxies));
         app.UseTokenPath();
         app.UseCtxUiConnectGate();
         app.UseCtxUiPanelGate([GatewayServices.Path, HealthProbe.Path, .. ConnectServices.OpenPaths]);
@@ -65,7 +67,9 @@ public static partial class ServerApp
     {
         ReportRejectedExtensions(app);
         await using (var scope = app.Services.CreateAsyncScope())
+        {
             await scope.ServiceProvider.GetRequiredService<CtxUiDbContext>().PrepareAsync(ct);
+        }
 
         await app.Services.LoadCtxUiGatewayAsync(ct);
         app.Services.LoadCtxUiConnect();
@@ -92,7 +96,8 @@ public static partial class ServerApp
     private static ForwardedHeadersOptions ForwardedFor(string trustedProxies)
     {
         var (proxies, networks) = ProxyTrust.Parse(trustedProxies);
-        var options = new ForwardedHeadersOptions { ForwardedHeaders = ForwardedHeaders.XForwardedFor, ForwardLimit = 1 };
+        var options = new ForwardedHeadersOptions
+        { ForwardedHeaders = ForwardedHeaders.XForwardedFor, ForwardLimit = 1 };
         options.KnownProxies.Clear();
         options.KnownIPNetworks.Clear();
         foreach (var proxy in proxies)

@@ -22,21 +22,23 @@ public sealed class ApiKeyService(CtxUiDbContext db, TimeProvider clock)
             NameKey = key,
             SecretHash = ApiKeySecret.Hash(secret),
             SecretPrefix = ApiKeySecret.DisplayPrefix(secret),
-            CreatedAt = clock.GetUtcNow(),
+            CreatedAt = clock.GetUtcNow()
         };
         db.ApiKeys.Add(apiKey);
         await db.SaveChangesAsync(ct);
         return new IssuedApiKey(apiKey, secret);
     }
 
-    public Task<List<ApiKey>> ListAsync(CancellationToken ct = default) =>
-        db.ApiKeys.AsNoTracking().OrderBy(apiKey => apiKey.NameKey).ToListAsync(ct);
+    public Task<List<ApiKey>> ListAsync(CancellationToken ct = default)
+    {
+        return db.ApiKeys.AsNoTracking().OrderBy(apiKey => apiKey.NameKey).ToListAsync(ct);
+    }
 
     public async Task RemoveAsync(string name, CancellationToken ct = default)
     {
         var key = ApiKeyName.Key(name.Trim());
         var apiKey = await db.ApiKeys.SingleOrDefaultAsync(known => known.NameKey == key, ct)
-            ?? throw new NotFoundException(string.Format(CoreText.ApiKeyNotFound, name.Trim()));
+                     ?? throw new NotFoundException(string.Format(CoreText.ApiKeyNotFound, name.Trim()));
         db.ApiKeys.Remove(apiKey);
         await db.SaveChangesAsync(ct);
     }

@@ -5,9 +5,13 @@ namespace CtxUi.Builder.Tools;
 
 public static class OpenApiSource
 {
-    public static bool IsGiven(string? address, string? pasted) => !string.IsNullOrWhiteSpace(address) || !string.IsNullOrWhiteSpace(pasted);
+    public static bool IsGiven(string? address, string? pasted)
+    {
+        return !string.IsNullOrWhiteSpace(address) || !string.IsNullOrWhiteSpace(pasted);
+    }
 
-    public static async Task<ImportedApi> ReadAsync(string? address, string? pasted, IHttpClientFactory clients, CancellationToken ct)
+    public static async Task<ImportedApi> ReadAsync(string? address, string? pasted, IHttpClientFactory clients,
+        CancellationToken ct)
     {
         if (!string.IsNullOrWhiteSpace(pasted))
         {

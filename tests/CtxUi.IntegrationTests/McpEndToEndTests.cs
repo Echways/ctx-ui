@@ -13,8 +13,12 @@ namespace CtxUi.IntegrationTests;
 [McpServerToolType]
 public sealed class EchoTools
 {
-    [McpServerTool(Name = "echo"), Description("Возвращает переданный текст")]
-    public static string Echo(string text) => "echo: " + text;
+    [McpServerTool(Name = "echo")]
+    [Description("Возвращает переданный текст")]
+    public static string Echo(string text)
+    {
+        return "echo: " + text;
+    }
 }
 
 public class McpEndToEndTests
@@ -38,7 +42,7 @@ public class McpEndToEndTests
             : new HttpClientTransportOptions
             {
                 Endpoint = new Uri(endpoint),
-                AdditionalHeaders = new Dictionary<string, string> { ["Authorization"] = "Bearer " + bearer },
+                AdditionalHeaders = new Dictionary<string, string> { ["Authorization"] = "Bearer " + bearer }
             };
         await using var client = await McpClient.CreateAsync(
             new HttpClientTransport(options),
@@ -75,7 +79,7 @@ public class McpEndToEndTests
         await gateway.AddInboundAsync("echo", server.Urls.First() + "/mcp");
         var issued = await gateway.AddClientAsync("Иванов", ["echo"]);
 
-        var answer = await CallEchoAsync($"{gateway.BaseUrl}/k/{issued.Token}/mcp/echo", bearer: null, protocolVersion: null);
+        var answer = await CallEchoAsync($"{gateway.BaseUrl}/k/{issued.Token}/mcp/echo", null, null);
 
         Assert.Equal("echo: привет", answer);
     }

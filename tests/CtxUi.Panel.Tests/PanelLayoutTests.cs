@@ -18,7 +18,10 @@ public class PanelLayoutTests
     private sealed class ThirdPage : ComponentBase;
 
 
-    private static PanelEditor Editor(PanelLayout layout) => layout.EditorFor("SampleAssembly");
+    private static PanelEditor Editor(PanelLayout layout)
+    {
+        return layout.EditorFor("SampleAssembly");
+    }
 
     private static EnfiladeOptions Applied(PanelLayout layout)
     {
@@ -78,7 +81,10 @@ public class PanelLayoutTests
         Editor(layout).AddSection<SecondPage>(() => "Second", PanelPosition.Before(PanelSections.ApiKeys));
 
         Assert.Equal(
-            ["overview", "sample", "metrics", "inbounds", "clients", "journal", "access", "oauth", "sample/second", "keys"],
+            [
+                "overview", "sample", "metrics", "inbounds", "clients", "journal", "access", "oauth", "sample/second",
+                "keys"
+            ],
             layout.VisibleEntries);
     }
 
@@ -127,8 +133,8 @@ public class PanelLayoutTests
         var layout = PanelServices.CreateLayout();
 
         var hide = Assert.Throws<InvalidOperationException>(() => Editor(layout).Hide("nowhere"));
-        var place = Assert.Throws<InvalidOperationException>(
-            () => Editor(layout).AddSection<SamplePage>(() => "Sample", PanelPosition.After("elsewhere")));
+        var place = Assert.Throws<InvalidOperationException>(() =>
+            Editor(layout).AddSection<SamplePage>(() => "Sample", PanelPosition.After("elsewhere")));
 
         Assert.Contains("nowhere", hide.Message);
         Assert.Contains("elsewhere", place.Message);

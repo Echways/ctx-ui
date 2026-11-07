@@ -7,8 +7,10 @@ public class SlotVisibilityTests
 {
     private const string Slot = "inbound-actions";
 
-    private static SlotAction<string> Action(string title, Func<string, bool>? visible = null) =>
-        new(() => title, _ => Task.CompletedTask, 0, visible);
+    private static SlotAction<string> Action(string title, Func<string, bool>? visible = null)
+    {
+        return new SlotAction<string>(() => title, _ => Task.CompletedTask, 0, visible);
+    }
 
     private static PanelSlotRegistry Registry(params SlotAction<string>[] actions)
     {
@@ -19,7 +21,10 @@ public class SlotVisibilityTests
         return registry;
     }
 
-    private static string[] Titles(IEnumerable<SlotAction<string>> actions) => [.. actions.Select(action => action.Title())];
+    private static string[] Titles(IEnumerable<SlotAction<string>> actions)
+    {
+        return [.. actions.Select(action => action.Title())];
+    }
 
     [Fact]
     public void Actions_without_a_predicate_are_always_shown_and_the_row_is_not_built()
@@ -64,7 +69,8 @@ public class SlotVisibilityTests
         var registry = Registry(Action("always"), Action("conditional", _ => true));
         var failures = new List<Exception>();
 
-        var visible = registry.VisibleActions<string>(Slot, () => throw new InvalidOperationException("no row"), failures.Add);
+        var visible =
+            registry.VisibleActions<string>(Slot, () => throw new InvalidOperationException("no row"), failures.Add);
 
         Assert.Equal(["always"], Titles(visible));
         Assert.Single(failures);
@@ -80,7 +86,8 @@ public class SlotVisibilityTests
         editor.When(row => row == "built").AddSheet<Sheet>(() => "sheet", row => row);
         registry.Freeze();
 
-        Assert.Equal(["always", "built only", "sheet"], Titles(registry.VisibleActions<string>(Slot, () => "built", _ => { })));
+        Assert.Equal(["always", "built only", "sheet"],
+            Titles(registry.VisibleActions<string>(Slot, () => "built", _ => { })));
         Assert.Equal(["always"], Titles(registry.VisibleActions<string>(Slot, () => "other", _ => { })));
     }
 
@@ -95,13 +102,22 @@ public class SlotVisibilityTests
         Assert.Contains(["Func`1", "Func`2", "Int32"], sheet, new SequenceComparer());
     }
 
-    private static string[] Parameters(MethodInfo method) => [.. method.GetParameters().Select(parameter => parameter.ParameterType.Name)];
+    private static string[] Parameters(MethodInfo method)
+    {
+        return [.. method.GetParameters().Select(parameter => parameter.ParameterType.Name)];
+    }
 
     private sealed class SequenceComparer : IEqualityComparer<string[]>
     {
-        public bool Equals(string[]? x, string[]? y) => x is not null && y is not null && x.SequenceEqual(y);
+        public bool Equals(string[]? x, string[]? y)
+        {
+            return x is not null && y is not null && x.SequenceEqual(y);
+        }
 
-        public int GetHashCode(string[] value) => value.Length;
+        public int GetHashCode(string[] value)
+        {
+            return value.Length;
+        }
     }
 
     private sealed class Sheet : PanelBlock<string>

@@ -1,53 +1,53 @@
 <Project>
 
-  <Target Name="CtxUiCheckExtension" BeforeTargets="PrepareForPublish;CtxUiPreview">
-    <Error Condition="'$(CtxUiExtensionId)' == ''" Text="Set CtxUiExtensionId in the extension project, for example &lt;CtxUiExtensionId&gt;my-extension&lt;/CtxUiExtensionId&gt;." />
-    <Error Condition="!$([System.Text.RegularExpressions.Regex]::IsMatch('$(CtxUiExtensionId)', '^[a-z][a-z0-9-]{0,31}$'))" Text="CtxUiExtensionId '$(CtxUiExtensionId)' must start with a lowercase letter and hold lowercase letters, digits and dashes, 32 characters at most." />
-  </Target>
+    <Target Name="CtxUiCheckExtension" BeforeTargets="PrepareForPublish;CtxUiPreview">
+        <Error Condition="'$(CtxUiExtensionId)' == ''" Text="Set CtxUiExtensionId in the extension project, for example &lt;CtxUiExtensionId&gt;my-extension&lt;/CtxUiExtensionId&gt;."/>
+        <Error Condition="!$([System.Text.RegularExpressions.Regex]::IsMatch('$(CtxUiExtensionId)', '^[a-z][a-z0-9-]{0,31}$'))" Text="CtxUiExtensionId '$(CtxUiExtensionId)' must start with a lowercase letter and hold lowercase letters, digits and dashes, 32 characters at most."/>
+    </Target>
 
-  <Target Name="CtxUiPruneShared" AfterTargets="ComputeResolvedFilesToPublishList">
-    <ItemGroup>
-      <ResolvedFileToPublish Remove="@(ResolvedFileToPublish)" Condition="$([System.Text.RegularExpressions.Regex]::IsMatch('%(ResolvedFileToPublish.RelativePath)', '^(runtimes/|([a-zA-Z-]+/)?((CtxUi\.Extensions|Enfilade|MudBlazor|Jeffijoe\.MessageFormat)(\.resources)?\.[a-z]+$|Microsoft\.Extensions\.DependencyModel|Microsoft\.EntityFrameworkCore|Microsoft\.Data\.Sqlite|SQLitePCLRaw))'))" />
-    </ItemGroup>
-  </Target>
+    <Target Name="CtxUiPruneShared" AfterTargets="ComputeResolvedFilesToPublishList">
+        <ItemGroup>
+            <ResolvedFileToPublish Remove="@(ResolvedFileToPublish)" Condition="$([System.Text.RegularExpressions.Regex]::IsMatch('%(ResolvedFileToPublish.RelativePath)', '^(runtimes/|([a-zA-Z-]+/)?((CtxUi\.Extensions|Enfilade|MudBlazor|Jeffijoe\.MessageFormat)(\.resources)?\.[a-z]+$|Microsoft\.Extensions\.DependencyModel|Microsoft\.EntityFrameworkCore|Microsoft\.Data\.Sqlite|SQLitePCLRaw))'))"/>
+        </ItemGroup>
+    </Target>
 
-  <Target Name="CtxUiPackExtension" AfterTargets="Publish">
-    <PropertyGroup>
-      <CtxUiExtensionName Condition="'$(CtxUiExtensionName)' == ''">$(AssemblyName)</CtxUiExtensionName>
-      <CtxUiManifestName>$(CtxUiExtensionName.Replace('\', '\\').Replace('&quot;', '\&quot;'))</CtxUiManifestName>
-      <CtxUiArchive>$([System.IO.Path]::GetFullPath('$(PublishDir)../$(CtxUiExtensionId)-$(Version).zip'))</CtxUiArchive>
-    </PropertyGroup>
-    <RemoveDir Directories="$(PublishDir)wwwroot/_content" />
-    <ItemGroup>
-      <CtxUiHostOnlyFile Include="$(PublishDir)*.staticwebassets.endpoints.json;$(PublishDir)*.runtimeconfig.json" />
-    </ItemGroup>
-    <Delete Files="@(CtxUiHostOnlyFile)" />
-    <WriteLinesToFile File="$(PublishDir)extension.json" Overwrite="true"
-                      Lines="{ &quot;id&quot;: &quot;$(CtxUiExtensionId)&quot;, &quot;name&quot;: &quot;$(CtxUiManifestName)&quot;, &quot;version&quot;: &quot;$(Version)&quot;, &quot;api&quot;: &quot;$(CtxUiExtensionApi)&quot;, &quot;assembly&quot;: &quot;$(AssemblyName)&quot; }" />
-    <ZipDirectory SourceDirectory="$(PublishDir)" DestinationFile="$(CtxUiArchive)" Overwrite="true" />
-    <Message Importance="high" Text="$(CtxUiExtensionId): $(CtxUiArchive)" />
-  </Target>
+    <Target Name="CtxUiPackExtension" AfterTargets="Publish">
+        <PropertyGroup>
+            <CtxUiExtensionName Condition="'$(CtxUiExtensionName)' == ''">$(AssemblyName)</CtxUiExtensionName>
+            <CtxUiManifestName>$(CtxUiExtensionName.Replace('\', '\\').Replace('&quot;', '\&quot;'))</CtxUiManifestName>
+            <CtxUiArchive>$([System.IO.Path]::GetFullPath('$(PublishDir)../$(CtxUiExtensionId)-$(Version).zip'))</CtxUiArchive>
+        </PropertyGroup>
+        <RemoveDir Directories="$(PublishDir)wwwroot/_content"/>
+        <ItemGroup>
+            <CtxUiHostOnlyFile Include="$(PublishDir)*.staticwebassets.endpoints.json;$(PublishDir)*.runtimeconfig.json"/>
+        </ItemGroup>
+        <Delete Files="@(CtxUiHostOnlyFile)"/>
+        <WriteLinesToFile File="$(PublishDir)extension.json" Overwrite="true"
+                          Lines="{ &quot;id&quot;: &quot;$(CtxUiExtensionId)&quot;, &quot;name&quot;: &quot;$(CtxUiManifestName)&quot;, &quot;version&quot;: &quot;$(Version)&quot;, &quot;api&quot;: &quot;$(CtxUiExtensionApi)&quot;, &quot;assembly&quot;: &quot;$(AssemblyName)&quot; }"/>
+        <ZipDirectory SourceDirectory="$(PublishDir)" DestinationFile="$(CtxUiArchive)" Overwrite="true"/>
+        <Message Importance="high" Text="$(CtxUiExtensionId): $(CtxUiArchive)"/>
+    </Target>
 
-  <Target Name="CtxUiPreview">
-    <Error Condition="'$(CTXUI_BINARY)' == ''" Text="Set the CTXUI_BINARY environment variable to the path of a ctx-ui server binary to preview the extension." />
-    <PropertyGroup>
-      <CtxUiPreviewBinary>$([System.IO.Path]::GetFullPath('$(CTXUI_BINARY)'))</CtxUiPreviewBinary>
-      <CtxUiPreviewPort Condition="'$(CtxUiPreviewPort)' == ''">5199</CtxUiPreviewPort>
-      <CtxUiPreviewRoot>$(MSBuildProjectDirectory)/obj/ctxui-preview/</CtxUiPreviewRoot>
-      <CtxUiPreviewCredentials>$(CtxUiPreviewRoot)administrator.txt</CtxUiPreviewCredentials>
-      <CtxUiPreviewEnvironment>CtxUi__DataDir=$(CtxUiPreviewRoot)data;CtxUi__ExtensionsDir=$(CtxUiPreviewRoot)extensions;CtxUi__PublicUrl=http://127.0.0.1:$(CtxUiPreviewPort);Urls=http://127.0.0.1:$(CtxUiPreviewPort)</CtxUiPreviewEnvironment>
-    </PropertyGroup>
-    <RemoveDir Directories="$(CtxUiPreviewRoot)extensions" />
-    <MSBuild Projects="$(MSBuildProjectFullPath)" Targets="Publish" Properties="PublishDir=$(CtxUiPreviewRoot)extensions/$(CtxUiExtensionId)/" />
-    <Exec Condition="!Exists('$(CtxUiPreviewCredentials)')" Command="&quot;$(CtxUiPreviewBinary)&quot; admin add preview" EnvironmentVariables="$(CtxUiPreviewEnvironment)" ConsoleToMSBuild="true" StandardOutputImportance="low">
-      <Output TaskParameter="ConsoleOutput" ItemName="CtxUiPreviewAdministrator" />
-    </Exec>
-    <WriteLinesToFile Condition="!Exists('$(CtxUiPreviewCredentials)')" File="$(CtxUiPreviewCredentials)" Lines="@(CtxUiPreviewAdministrator)" />
-    <ReadLinesFromFile File="$(CtxUiPreviewCredentials)">
-      <Output TaskParameter="Lines" ItemName="CtxUiPreviewShown" />
-    </ReadLinesFromFile>
-    <Message Importance="high" Text="%(CtxUiPreviewShown.Identity)" />
-    <Exec Command="&quot;$(CtxUiPreviewBinary)&quot;" WorkingDirectory="$([System.IO.Path]::GetDirectoryName('$(CtxUiPreviewBinary)'))" EnvironmentVariables="$(CtxUiPreviewEnvironment)" StandardOutputImportance="high" />
-  </Target>
+    <Target Name="CtxUiPreview">
+        <Error Condition="'$(CTXUI_BINARY)' == ''" Text="Set the CTXUI_BINARY environment variable to the path of a ctx-ui server binary to preview the extension."/>
+        <PropertyGroup>
+            <CtxUiPreviewBinary>$([System.IO.Path]::GetFullPath('$(CTXUI_BINARY)'))</CtxUiPreviewBinary>
+            <CtxUiPreviewPort Condition="'$(CtxUiPreviewPort)' == ''">5199</CtxUiPreviewPort>
+            <CtxUiPreviewRoot>$(MSBuildProjectDirectory)/obj/ctxui-preview/</CtxUiPreviewRoot>
+            <CtxUiPreviewCredentials>$(CtxUiPreviewRoot)administrator.txt</CtxUiPreviewCredentials>
+            <CtxUiPreviewEnvironment>CtxUi__DataDir=$(CtxUiPreviewRoot)data;CtxUi__ExtensionsDir=$(CtxUiPreviewRoot)extensions;CtxUi__PublicUrl=http://127.0.0.1:$(CtxUiPreviewPort);Urls=http://127.0.0.1:$(CtxUiPreviewPort)</CtxUiPreviewEnvironment>
+        </PropertyGroup>
+        <RemoveDir Directories="$(CtxUiPreviewRoot)extensions"/>
+        <MSBuild Projects="$(MSBuildProjectFullPath)" Targets="Publish" Properties="PublishDir=$(CtxUiPreviewRoot)extensions/$(CtxUiExtensionId)/"/>
+        <Exec Condition="!Exists('$(CtxUiPreviewCredentials)')" Command="&quot;$(CtxUiPreviewBinary)&quot; admin add preview" EnvironmentVariables="$(CtxUiPreviewEnvironment)" ConsoleToMSBuild="true" StandardOutputImportance="low">
+            <Output TaskParameter="ConsoleOutput" ItemName="CtxUiPreviewAdministrator"/>
+        </Exec>
+        <WriteLinesToFile Condition="!Exists('$(CtxUiPreviewCredentials)')" File="$(CtxUiPreviewCredentials)" Lines="@(CtxUiPreviewAdministrator)"/>
+        <ReadLinesFromFile File="$(CtxUiPreviewCredentials)">
+            <Output TaskParameter="Lines" ItemName="CtxUiPreviewShown"/>
+        </ReadLinesFromFile>
+        <Message Importance="high" Text="%(CtxUiPreviewShown.Identity)"/>
+        <Exec Command="&quot;$(CtxUiPreviewBinary)&quot;" WorkingDirectory="$([System.IO.Path]::GetDirectoryName('$(CtxUiPreviewBinary)'))" EnvironmentVariables="$(CtxUiPreviewEnvironment)" StandardOutputImportance="high"/>
+    </Target>
 
 </Project>

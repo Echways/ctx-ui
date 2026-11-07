@@ -6,8 +6,9 @@
 <div class="builder-settings">
     <Pane Title="@BuilderText.ApiPane" Hint="@BuilderText.ApiHint">
         <Form Model="_api" OnSubmit="SaveApiAsync" Submit="@BuilderText.Save">
-            <Field For="() => _api.BaseUrl" Label="@BuilderText.BaseUrl" />
-            <MudSelect T="ApiAuthKind" Label="@BuilderText.AuthKind" Value="_api.Kind" ValueChanged="kind => _api.Kind = kind" For="() => _api.Kind" data-testid="auth-kind">
+            <Field For="() => _api.BaseUrl" Label="@BuilderText.BaseUrl"/>
+            <MudSelect T="ApiAuthKind" Label="@BuilderText.AuthKind" Value="_api.Kind"
+                       ValueChanged="kind => _api.Kind = kind" For="() => _api.Kind" data-testid="auth-kind">
                 @foreach (var option in AuthKinds)
                 {
                     <MudSelectItem Value="option.Value">@option.Title</MudSelectItem>
@@ -15,15 +16,16 @@
             </MudSelect>
             @if (_api.Kind == ApiAuthKind.Header)
             {
-                <Field For="() => _api.HeaderName" Label="@BuilderText.HeaderName" />
+                <Field For="() => _api.HeaderName" Label="@BuilderText.HeaderName"/>
             }
             @if (_api.Kind == ApiAuthKind.Basic)
             {
-                <Field For="() => _api.Username" Label="@BuilderText.UserName" />
+                <Field For="() => _api.Username" Label="@BuilderText.UserName"/>
             }
             @if (_api.Kind != ApiAuthKind.None)
             {
-                <Field For="() => _api.Secret" Label="@BuilderText.AuthSecret" Hint="@(Settings.AuthHasSecret ? BuilderText.KeepSecretHint : null)" Secret />
+                <Field For="() => _api.Secret" Label="@BuilderText.AuthSecret"
+                       Hint="@(Settings.AuthHasSecret ? BuilderText.KeepSecretHint : null)" Secret/>
             }
         </Form>
         @if (_baseUrlPending)
@@ -34,7 +36,7 @@
 
     <Pane Title="@BuilderText.DependenciesPane" Hint="@BuilderText.DependenciesHint">
         <Form Model="_dependencies" OnSubmit="SaveDependenciesAsync" Submit="@BuilderText.Save">
-            <Field For="() => _dependencies.Text" Label="@BuilderText.DependenciesLabel" Lines="6" />
+            <Field For="() => _dependencies.Text" Label="@BuilderText.DependenciesLabel" Lines="6"/>
         </Form>
     </Pane>
 
@@ -48,29 +50,32 @@
             <ul class="builder-secrets" data-testid="secret-names">
                 @foreach (var name in Settings.SecretNames)
                 {
-                    <li><Tag>@name</Tag></li>
+                    <li>
+                        <Tag>@name</Tag>
+                    </li>
                 }
             </ul>
         }
         <Form Model="_secret" OnSubmit="SaveSecretAsync" Submit="@BuilderText.SetSecret">
-            <Field For="() => _secret.Name" Label="@BuilderText.SecretName" />
-            <Field For="() => _secret.Value" Label="@BuilderText.SecretValue" Secret />
+            <Field For="() => _secret.Name" Label="@BuilderText.SecretName"/>
+            <Field For="() => _secret.Value" Label="@BuilderText.SecretValue" Secret/>
         </Form>
     </Pane>
 
     <Pane Title="@BuilderText.AccessPane" Hint="@BuilderText.AccessHint">
         <Form Model="_access" OnSubmit="SaveAccessAsync" Submit="@BuilderText.Save">
-            <MudSelect T="NetworkAccess" Label="@BuilderText.Access" Value="_access.Access" ValueChanged="ChooseAccess" For="() => _access.Access" data-testid="access-select">
+            <MudSelect T="NetworkAccess" Label="@BuilderText.Access" Value="_access.Access" ValueChanged="ChooseAccess"
+                       For="() => _access.Access" data-testid="access-select">
                 <MudSelectItem Value="NetworkAccess.InternetOnly">@BuilderText.AccessInternetOnly</MudSelectItem>
                 <MudSelectItem Value="NetworkAccess.FullNetwork">@BuilderText.AccessFullNetwork</MudSelectItem>
             </MudSelect>
-            <Field For="() => _access.MemoryMb" Label="@BuilderText.Memory" />
-            <Field For="() => _access.Cpus" Label="@BuilderText.Cpus" />
-            <Field For="() => _access.Pids" Label="@BuilderText.Pids" />
+            <Field For="() => _access.MemoryMb" Label="@BuilderText.Memory"/>
+            <Field For="() => _access.Cpus" Label="@BuilderText.Cpus"/>
+            <Field For="() => _access.Pids" Label="@BuilderText.Pids"/>
         </Form>
         @if (_confirming)
         {
-            <AccessConfirm OnConfirm="ConfirmAccess" OnCancel="CancelAccess" />
+            <AccessConfirm OnConfirm="ConfirmAccess" OnCancel="CancelAccess"/>
         }
     </Pane>
 
@@ -95,14 +100,12 @@
         new(ApiAuthKind.None, BuilderText.AuthNone),
         new(ApiAuthKind.Bearer, BuilderText.AuthBearer),
         new(ApiAuthKind.Header, BuilderText.AuthHeader),
-        new(ApiAuthKind.Basic, BuilderText.AuthBasic),
+        new(ApiAuthKind.Basic, BuilderText.AuthBasic)
     ];
 
-    [Parameter, EditorRequired]
-    public ServerSettingsView Settings { get; set; } = null!;
+    [Parameter][EditorRequired] public ServerSettingsView Settings { get; set; } = null!;
 
-    [Parameter]
-    public EventCallback OnChanged { get; set; }
+    [Parameter] public EventCallback OnChanged { get; set; }
 
     protected override void OnParametersSet()
     {
@@ -189,4 +192,5 @@
         using var stream = new DotNetStreamReference(new MemoryStream(export.Content));
         await module.InvokeVoidAsync("download", export.FileName, stream);
     }
+
 }

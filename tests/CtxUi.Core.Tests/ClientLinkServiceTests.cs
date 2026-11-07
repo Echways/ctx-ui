@@ -13,7 +13,10 @@ public class ClientLinkServiceTests
     private readonly FakeVault _vault = new();
     private readonly FakeTimeProvider _clock = new(TestData.Now);
 
-    private ClientLinkService Links(TestDatabase database) => new(database.NewContext(), _clock);
+    private ClientLinkService Links(TestDatabase database)
+    {
+        return new ClientLinkService(database.NewContext(), _clock);
+    }
 
     private Guid _ivanov;
     private Guid _petrov;
@@ -21,9 +24,12 @@ public class ClientLinkServiceTests
     private async Task<TestDatabase> TwoClientsAsync()
     {
         var database = await TestDatabase.CreateAsync();
-        await new InboundService(database.NewContext(), _vault, _clock).AddHttpAsync("echo", null, "https://mcp.example.org/mcp");
-        _ivanov = (await new ClientService(database.NewContext(), _vault, _clock).AddAsync("Иванов", ["echo"])).Client.Id;
-        _petrov = (await new ClientService(database.NewContext(), _vault, _clock).AddAsync("Петров", ["echo"])).Client.Id;
+        await new InboundService(database.NewContext(), _vault, _clock).AddHttpAsync("echo", null,
+            "https://mcp.example.org/mcp");
+        _ivanov = (await new ClientService(database.NewContext(), _vault, _clock).AddAsync("Иванов", ["echo"])).Client
+            .Id;
+        _petrov = (await new ClientService(database.NewContext(), _vault, _clock).AddAsync("Петров", ["echo"])).Client
+            .Id;
         return database;
     }
 
@@ -54,7 +60,8 @@ public class ClientLinkServiceTests
         Assert.Equal(LinkOutcome.InviteInvalid, second.Outcome);
         Assert.Null(await Links(database).InvitedClientAsync(code));
         var link = Assert.Single(await Links(database).ListAsync(_ivanov));
-        Assert.Equal(("google", "user-1", "ivanov@example.org", TestData.Now), (link.Provider, link.Subject, link.Display, link.LinkedAt));
+        Assert.Equal(("google", "user-1", "ivanov@example.org", TestData.Now),
+            (link.Provider, link.Subject, link.Display, link.LinkedAt));
     }
 
     [Fact]
@@ -138,7 +145,8 @@ public class ClientLinkServiceTests
         await using var database = await TwoClientsAsync();
         await Links(database).LinkAsync(await Links(database).InviteAsync(_ivanov), Ivanov);
         await Links(database).LinkAsync(await Links(database).InviteAsync(_ivanov), Ivanov with { Subject = "user-2" });
-        await Links(database).LinkAsync(await Links(database).InviteAsync(_ivanov), new ExternalIdentity("github", "1", "ivanov"));
+        await Links(database).LinkAsync(await Links(database).InviteAsync(_ivanov),
+            new ExternalIdentity("github", "1", "ivanov"));
 
         await Links(database).UnlinkAsync(_ivanov, "Google");
 

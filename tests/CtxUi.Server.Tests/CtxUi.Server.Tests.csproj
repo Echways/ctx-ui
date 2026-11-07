@@ -1,9 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\CtxUi.Server\CtxUi.Server.csproj" />
+    <ProjectReference Include="..\..\src\CtxUi.Server\CtxUi.Server.csproj"/>
   </ItemGroup>
 
-  <Import Project="..\fixtures\PublishTestExtensions.targets" />
+  <Import Project="..\fixtures\PublishTestExtensions.targets"/>
 
 </Project>

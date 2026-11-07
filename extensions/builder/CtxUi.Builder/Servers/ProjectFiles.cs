@@ -32,13 +32,16 @@ public static partial class ProjectFiles
     private static readonly UTF8Encoding StrictUtf8 = new(false, true);
 
     private static readonly HashSet<string> DataExtensions =
-        new(StringComparer.OrdinalIgnoreCase) { ".py", ".json", ".txt", ".md", ".csv", ".tsv", ".yaml", ".yml", ".toml", ".xml", ".html", ".sql" };
+        new(StringComparer.OrdinalIgnoreCase)
+            { ".py", ".json", ".txt", ".md", ".csv", ".tsv", ".yaml", ".yml", ".toml", ".xml", ".html", ".sql" };
 
     private static readonly HashSet<string> PythonKeywords =
     [
-        "False", "None", "True", "and", "as", "assert", "async", "await", "break", "class", "continue", "def", "del", "elif", "else",
-        "except", "finally", "for", "from", "global", "if", "import", "in", "is", "lambda", "nonlocal", "not", "or", "pass", "raise",
-        "return", "try", "while", "with", "yield",
+        "False", "None", "True", "and", "as", "assert", "async", "await", "break", "class", "continue", "def", "del",
+        "elif", "else",
+        "except", "finally", "for", "from", "global", "if", "import", "in", "is", "lambda", "nonlocal", "not", "or",
+        "pass", "raise",
+        "return", "try", "while", "with", "yield"
     ];
 
     [GeneratedRegex(@"^fastmcp\s*($|[\[=<>!~;@\s])", RegexOptions.IgnoreCase)]
@@ -49,7 +52,8 @@ public static partial class ProjectFiles
 
     public static string ValidatePath(string path)
     {
-        if (string.IsNullOrEmpty(path) || path.Length > MaxPathLength || path.Any(char.IsControl) || path.Contains('\\'))
+        if (string.IsNullOrEmpty(path) || path.Length > MaxPathLength || path.Any(char.IsControl) ||
+            path.Contains('\\'))
             throw Unsafe(path);
         if (path is OpenApiPath or BuilderPath)
             return path;
@@ -67,7 +71,8 @@ public static partial class ProjectFiles
     public static string NewToolTemplate(string name)
     {
         var function = ToolFunctionName(name);
-        return $"from fastmcp.tools import tool\n\n\n@tool\ndef {function}(name: str) -> str:\n    \"\"\"Greets the caller by name.\"\"\"\n    return f\"Hello, {{name}}!\"\n";
+        return
+            $"from fastmcp.tools import tool\n\n\n@tool\ndef {function}(name: str) -> str:\n    \"\"\"Greets the caller by name.\"\"\"\n    return f\"Hello, {{name}}!\"\n";
     }
 
     public static string ToolFunctionName(string name)
@@ -85,7 +90,8 @@ public static partial class ProjectFiles
     public static IReadOnlyList<string> ParseDependencies(string? text)
     {
         var result = new List<string>();
-        foreach (var line in (text ?? string.Empty).Split('\n').Select(line => line.Trim()).Where(line => line.Length > 0))
+        foreach (var line in (text ?? string.Empty).Split('\n').Select(line => line.Trim())
+                 .Where(line => line.Length > 0))
         {
             if (line.StartsWith('-') || line.Length > MaxDependencyLength || line.Any(char.IsControl))
                 throw new PanelException(string.Format(BuilderText.DependencyInvalid, line));
@@ -96,12 +102,13 @@ public static partial class ProjectFiles
         return result;
     }
 
-    public static async Task<byte[]> SnapshotAsync(ServerDraft draft, IReadOnlyList<DraftFile> files, string fastMcpVersion, CancellationToken ct)
+    public static async Task<byte[]> SnapshotAsync(ServerDraft draft, IReadOnlyList<DraftFile> files,
+        string fastMcpVersion, CancellationToken ct)
     {
         var entries = new SortedDictionary<string, byte[]>(StringComparer.Ordinal)
         {
             [FastMcpPath] = Encoding.UTF8.GetBytes(FastMcpJson(draft.Dependencies, fastMcpVersion)),
-            [MainPath] = await ReadMainAsync(ct),
+            [MainPath] = await ReadMainAsync(ct)
         };
         foreach (var file in files.Where(file => file.Path.StartsWith(ProjectRoot, StringComparison.Ordinal)))
             entries[ValidatePath(file.Path)] = Encoding.UTF8.GetBytes(file.Content);
@@ -111,8 +118,8 @@ public static partial class ProjectFiles
             entries[BuilderPath] = Encoding.UTF8.GetBytes(draft.BuilderJson);
 
         var output = new MemoryStream();
-        await using (var gzip = new GZipStream(output, CompressionLevel.Optimal, leaveOpen: true))
-        await using (var writer = new TarWriter(gzip, TarEntryFormat.Ustar, leaveOpen: true))
+        await using (var gzip = new GZipStream(output, CompressionLevel.Optimal, true))
+        await using (var writer = new TarWriter(gzip, TarEntryFormat.Ustar, true))
         {
             foreach (var (path, content) in entries)
             {
@@ -120,7 +127,8 @@ public static partial class ProjectFiles
                 {
                     DataStream = new MemoryStream(content),
                     ModificationTime = DateTimeOffset.UnixEpoch,
-                    Mode = UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.GroupRead | UnixFileMode.OtherRead,
+                    Mode = UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.GroupRead |
+                           UnixFileMode.OtherRead
                 };
                 await writer.WriteEntryAsync(entry, ct);
             }
@@ -142,21 +150,23 @@ public static partial class ProjectFiles
             else
                 throw new PanelException(BuilderText.ArchiveUnreadable);
         }
-        catch (Exception failure) when (failure is InvalidDataException or EndOfStreamException or IOException or ArgumentException or NotSupportedException)
+        catch (Exception failure) when (failure is InvalidDataException or EndOfStreamException or IOException
+                                            or ArgumentException or NotSupportedException)
         {
             throw new PanelException(BuilderText.ArchiveUnreadable);
         }
 
-        return new ProjectImport([.. collector.Files.Select(file => (file.Key, file.Value))], DependenciesOf(collector.FastMcpJson));
+        return new ProjectImport([.. collector.Files.Select(file => (file.Key, file.Value))],
+            DependenciesOf(collector.FastMcpJson));
     }
 
     private static async Task ReadTarAsync(MemoryStream buffer, ArchiveCollector collector, CancellationToken ct)
     {
         await using var gzip = new GZipStream(buffer, CompressionMode.Decompress);
-        await using var limited = new LimitedStream(gzip, MaxProjectBytes + (long)MaxArchiveEntries * TarEntryOverheadBytes);
+        await using var limited =
+            new LimitedStream(gzip, MaxProjectBytes + (long)MaxArchiveEntries * TarEntryOverheadBytes);
         using var reader = new TarReader(limited);
-        while (await reader.GetNextEntryAsync(copyData: false, ct) is { } entry)
-        {
+        while (await reader.GetNextEntryAsync(false, ct) is { } entry)
             switch (entry.EntryType)
             {
                 case TarEntryType.GlobalExtendedAttributes:
@@ -173,7 +183,6 @@ public static partial class ProjectFiles
                 default:
                     throw new PanelException(string.Format(BuilderText.ArchiveEntryKindRefused, entry.Name));
             }
-        }
     }
 
     private static async Task ReadZipAsync(MemoryStream buffer, ArchiveCollector collector, CancellationToken ct)
@@ -214,9 +223,15 @@ public static partial class ProjectFiles
         return buffer;
     }
 
-    private static bool IsGzip(MemoryStream buffer) => buffer.Length > 2 && buffer.GetBuffer()[0] == 0x1f && buffer.GetBuffer()[1] == 0x8b;
+    private static bool IsGzip(MemoryStream buffer)
+    {
+        return buffer.Length > 2 && buffer.GetBuffer()[0] == 0x1f && buffer.GetBuffer()[1] == 0x8b;
+    }
 
-    private static bool IsZip(MemoryStream buffer) => buffer.Length > 4 && buffer.GetBuffer()[0] == 'P' && buffer.GetBuffer()[1] == 'K';
+    private static bool IsZip(MemoryStream buffer)
+    {
+        return buffer.Length > 4 && buffer.GetBuffer()[0] == 'P' && buffer.GetBuffer()[1] == 'K';
+    }
 
     private static string? DependenciesOf(string? fastMcpJson)
     {
@@ -230,7 +245,9 @@ public static partial class ProjectFiles
                 || !environment.TryGetProperty("dependencies", out var dependencies)
                 || dependencies.ValueKind != JsonValueKind.Array)
                 return null;
-            var lines = ParseDependencies(string.Join('\n', dependencies.EnumerateArray().Where(item => item.ValueKind == JsonValueKind.String).Select(item => item.GetString())));
+            var lines = ParseDependencies(string.Join('\n',
+                dependencies.EnumerateArray().Where(item => item.ValueKind == JsonValueKind.String)
+                    .Select(item => item.GetString())));
             return lines.Count == 0 ? null : string.Join('\n', lines);
         }
         catch (JsonException)
@@ -242,7 +259,8 @@ public static partial class ProjectFiles
     private static string FastMcpJson(string? dependencies, string fastMcpVersion)
     {
         using var output = new MemoryStream();
-        using (var writer = new Utf8JsonWriter(output, new JsonWriterOptions { Indented = true, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping }))
+        using (var writer = new Utf8JsonWriter(output,
+                   new JsonWriterOptions { Indented = true, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping }))
         {
             writer.WriteStartObject();
             writer.WriteStartObject("source");
@@ -273,13 +291,17 @@ public static partial class ProjectFiles
     private static async Task<byte[]> ReadMainAsync(CancellationToken ct)
     {
         await using var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(MainResource)
-            ?? throw new InvalidOperationException($"Embedded resource {MainResource} is missing.");
+                                 ?? throw new InvalidOperationException(
+                                     $"Embedded resource {MainResource} is missing.");
         using var output = new MemoryStream();
         await stream.CopyToAsync(output, ct);
         return output.ToArray();
     }
 
-    private static PanelException Unsafe(string path) => new(string.Format(BuilderText.ProjectPathInvalid, path));
+    private static PanelException Unsafe(string path)
+    {
+        return new PanelException(string.Format(BuilderText.ProjectPathInvalid, path));
+    }
 
     private sealed class ArchiveCollector
     {
@@ -298,7 +320,10 @@ public static partial class ProjectFiles
             return directory || name.Length == 0 ? null : name;
         }
 
-        public bool Wants(string name) => IsKept(name) || name == FastMcpPath;
+        public bool Wants(string name)
+        {
+            return IsKept(name) || name == FastMcpPath;
+        }
 
         public async Task AddAsync(string name, Stream? data, CancellationToken ct)
         {
@@ -345,7 +370,10 @@ public static partial class ProjectFiles
             return output.ToArray();
         }
 
-        private static bool IsKept(string name) => name is OpenApiPath or BuilderPath || name.StartsWith(ProjectRoot, StringComparison.Ordinal);
+        private static bool IsKept(string name)
+        {
+            return name is OpenApiPath or BuilderPath || name.StartsWith(ProjectRoot, StringComparison.Ordinal);
+        }
 
         private static string Normalize(string rawName, bool directory)
         {
@@ -384,20 +412,35 @@ public static partial class ProjectFiles
             set => throw new NotSupportedException();
         }
 
-        public override int Read(byte[] buffer, int offset, int count) => Count(inner.Read(buffer, offset, count));
+        public override int Read(byte[] buffer, int offset, int count)
+        {
+            return Count(inner.Read(buffer, offset, count));
+        }
 
-        public override async ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default) =>
-            Count(await inner.ReadAsync(buffer, cancellationToken));
+        public override async ValueTask<int> ReadAsync(Memory<byte> buffer,
+            CancellationToken cancellationToken = default)
+        {
+            return Count(await inner.ReadAsync(buffer, cancellationToken));
+        }
 
         public override void Flush()
         {
         }
 
-        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+        public override long Seek(long offset, SeekOrigin origin)
+        {
+            throw new NotSupportedException();
+        }
 
-        public override void SetLength(long value) => throw new NotSupportedException();
+        public override void SetLength(long value)
+        {
+            throw new NotSupportedException();
+        }
 
-        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+        public override void Write(byte[] buffer, int offset, int count)
+        {
+            throw new NotSupportedException();
+        }
 
         private int Count(int read)
         {

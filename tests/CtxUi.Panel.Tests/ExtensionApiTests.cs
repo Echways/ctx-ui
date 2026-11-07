@@ -35,6 +35,7 @@ public class ExtensionApiTests
         string[] forbidden = ["Token", "Hash", "Sealed", "Secret", "Headers", "Url"];
         var names = new[] { typeof(ClientSummary), typeof(InboundSummary), typeof(ApiKeySummary) }
             .SelectMany(type => type.GetProperties()).Select(property => property.Name);
-        Assert.DoesNotContain(names, name => forbidden.Any(word => name.Contains(word, StringComparison.OrdinalIgnoreCase)));
+        Assert.DoesNotContain(names,
+            name => forbidden.Any(word => name.Contains(word, StringComparison.OrdinalIgnoreCase)));
     }
 }

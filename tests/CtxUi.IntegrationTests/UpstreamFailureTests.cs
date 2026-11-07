@@ -12,12 +12,15 @@ namespace CtxUi.IntegrationTests;
 
 public class UpstreamFailureTests
 {
-    private const string ToolCall = """{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"echo","arguments":{}}}""";
+    private const string ToolCall =
+        """{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"echo","arguments":{}}}""";
 
     private static readonly ClientLimits OneCall = new(QuotaCalls: 1, ResetEveryDays: 30);
 
-    private static Task<List<UsageEvent>> JournalAsync(GatewayHost gateway) =>
-        gateway.ChangeAsync(services => services.GetRequiredService<UsageStore>().RecentAsync(null, 100));
+    private static Task<List<UsageEvent>> JournalAsync(GatewayHost gateway)
+    {
+        return gateway.ChangeAsync(services => services.GetRequiredService<UsageStore>().RecentAsync(null, 100));
+    }
 
     [Fact]
     public async Task Upstream_silent_longer_than_the_inbound_timeout_gets_504_and_the_call_is_refunded()
@@ -55,11 +58,11 @@ public class UpstreamFailureTests
         {
             await socket.ConnectAsync(address.Host, address.Port);
             var head = "POST /mcp/echo HTTP/1.1\r\n" +
-                $"Host: {address.Authority}\r\n" +
-                $"Authorization: Bearer {issued.Token}\r\n" +
-                "Content-Type: application/json\r\n" +
-                "Content-Length: 1000\r\n\r\n" +
-                ToolCall[..10];
+                       $"Host: {address.Authority}\r\n" +
+                       $"Authorization: Bearer {issued.Token}\r\n" +
+                       "Content-Type: application/json\r\n" +
+                       "Content-Length: 1000\r\n\r\n" +
+                       ToolCall[..10];
             await socket.GetStream().WriteAsync(Encoding.ASCII.GetBytes(head));
         }
 

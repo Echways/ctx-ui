@@ -24,7 +24,7 @@ public class PanelJournalFilterTests
 
         await ChooseClientAsync(page, "Петров");
         await Expect(Rows(page)).ToHaveCountAsync(4);
-        await Expect(Rows(page).Filter(new() { HasText = "Иванов" })).ToHaveCountAsync(0);
+        await Expect(Rows(page).Filter(new LocatorFilterOptions { HasText = "Иванов" })).ToHaveCountAsync(0);
 
         await ChooseClientAsync(page, "Все клиенты");
         await Expect(Rows(page)).ToHaveCountAsync(5);

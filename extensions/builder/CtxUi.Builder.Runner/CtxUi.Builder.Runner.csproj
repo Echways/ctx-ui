@@ -1,9 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
   <ItemGroup>
-    <PackageReference Include="Docker.DotNet" />
-    <PackageReference Include="Yarp.ReverseProxy" />
-    <ProjectReference Include="..\CtxUi.Builder.Contracts\CtxUi.Builder.Contracts.csproj" />
+    <PackageReference Include="Docker.DotNet"/>
+    <PackageReference Include="Yarp.ReverseProxy"/>
+    <ProjectReference Include="..\CtxUi.Builder.Contracts\CtxUi.Builder.Contracts.csproj"/>
   </ItemGroup>
 
 </Project>

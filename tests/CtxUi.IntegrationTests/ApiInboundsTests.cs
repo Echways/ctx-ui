@@ -6,8 +6,10 @@ namespace CtxUi.IntegrationTests;
 
 public class ApiInboundsTests
 {
-    private static Task<GatewayHost> StartWithoutPollingAsync() =>
-        GatewayHost.StartAsync(builder => builder.Configuration["CtxUi:RefreshInterval"] = "01:00:00");
+    private static Task<GatewayHost> StartWithoutPollingAsync()
+    {
+        return GatewayHost.StartAsync(builder => builder.Configuration["CtxUi:RefreshInterval"] = "01:00:00");
+    }
 
     [Fact]
     public async Task Put_creates_an_inbound_and_answers_with_its_address()
@@ -19,7 +21,7 @@ public class ApiInboundsTests
         {
             url = "https://learn.example.org/api/mcp",
             name = "Учебный",
-            upstreamHeaders = new Dictionary<string, string> { ["Authorization"] = "Bearer s3cret" },
+            upstreamHeaders = new Dictionary<string, string> { ["Authorization"] = "Bearer s3cret" }
         });
         var body = await ApiClient.ReadAsync(response);
 
@@ -40,7 +42,8 @@ public class ApiInboundsTests
         await gateway.AddInboundAsync("learn", "https://old.example.org/mcp", [KeyValuePair.Create("X-Key", "v")]);
         using var api = await ApiClient.IssueAsync(gateway);
 
-        using var response = await api.PutAsync("api/v1/inbounds/learn", new { url = "https://new.example.org/mcp", requestTimeoutSeconds = 30 });
+        using var response = await api.PutAsync("api/v1/inbounds/learn",
+            new { url = "https://new.example.org/mcp", requestTimeoutSeconds = 30 });
         var body = await ApiClient.ReadAsync(response);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -57,7 +60,8 @@ public class ApiInboundsTests
         using var api = await ApiClient.IssueAsync(gateway);
 
         using var response = await api.PutAsync(
-            "api/v1/inbounds/learn", new { url = "https://old.example.org/mcp", upstreamHeaders = new Dictionary<string, string>() });
+            "api/v1/inbounds/learn",
+            new { url = "https://old.example.org/mcp", upstreamHeaders = new Dictionary<string, string>() });
 
         Assert.Equal(0, (await ApiClient.ReadAsync(response)).GetProperty("upstreamHeaderNames").GetArrayLength());
     }
@@ -66,7 +70,8 @@ public class ApiInboundsTests
     [InlineData("Learn", "https://learn.example.org/mcp", "Slug «Learn» недопустим")]
     [InlineData("learn", "ftp://learn.example.org/mcp", "Адрес «ftp://learn.example.org/mcp» недопустим")]
     [InlineData("learn", null, "Адрес «» недопустим")]
-    public async Task Invalid_inbound_is_refused_with_the_same_words_as_the_cli(string slug, string? url, string expected)
+    public async Task Invalid_inbound_is_refused_with_the_same_words_as_the_cli(string slug, string? url,
+        string expected)
     {
         await using var gateway = await GatewayHost.StartAsync();
         using var api = await ApiClient.IssueAsync(gateway);
@@ -89,7 +94,8 @@ public class ApiInboundsTests
 
         var list = await ApiClient.ReadAsync(await api.GetAsync("api/v1/inbounds"));
 
-        Assert.Equal(["echo", "learn"], list.EnumerateArray().Select(inbound => inbound.GetProperty("slug").GetString()));
+        Assert.Equal(["echo", "learn"],
+            list.EnumerateArray().Select(inbound => inbound.GetProperty("slug").GetString()));
         Assert.Equal([1, 0], list.EnumerateArray().Select(inbound => inbound.GetProperty("clients").GetInt32()));
     }
 

@@ -26,7 +26,8 @@ public static partial class Cli
                 if (statuses.Count == 0)
                     output.WriteLine(ServerText.ExtensionNone);
                 foreach (var status in statuses)
-                    output.WriteLine($"{status.Name}  {status.Manifest?.Version ?? "-"}  {status.State.ToString().ToLowerInvariant()}{(status.Problem is null ? "" : $"  {status.Problem}")}");
+                    output.WriteLine(
+                        $"{status.Name}  {status.Manifest?.Version ?? "-"}  {status.State.ToString().ToLowerInvariant()}{(status.Problem is null ? "" : $"  {status.Problem}")}");
                 return Task.CompletedTask;
             }),
             leaf("remove", ServerText.ExtensionRemoveCommand, [id, purge], (parse, services, _) =>
@@ -34,7 +35,7 @@ public static partial class Cli
                 InstallerOf(services).Remove(parse.GetValue(id)!, parse.GetValue(purge));
                 output.WriteLine(string.Format(ServerText.ExtensionRemoved, parse.GetValue(id)));
                 return Task.CompletedTask;
-            }),
+            })
         };
     }
 

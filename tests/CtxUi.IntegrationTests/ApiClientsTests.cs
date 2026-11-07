@@ -9,7 +9,8 @@ public class ApiClientsTests
 {
     private static async Task<GatewayHost> StartWithEchoAsync(string url = "https://echo.example.org/mcp")
     {
-        var gateway = await GatewayHost.StartAsync(builder => builder.Configuration["CtxUi:RefreshInterval"] = "01:00:00");
+        var gateway =
+            await GatewayHost.StartAsync(builder => builder.Configuration["CtxUi:RefreshInterval"] = "01:00:00");
         await gateway.AddInboundAsync("echo", url);
         await gateway.AddInboundAsync("learn", "https://learn.example.org/mcp");
         return gateway;
@@ -22,7 +23,10 @@ public class ApiClientsTests
         return await ApiClient.ReadAsync(response);
     }
 
-    private static string Id(JsonElement issued) => issued.GetProperty("client").GetProperty("id").GetString()!;
+    private static string Id(JsonElement issued)
+    {
+        return issued.GetProperty("client").GetProperty("id").GetString()!;
+    }
 
     [Fact]
     public async Task Issued_client_comes_with_token_addresses_and_message()
@@ -36,7 +40,7 @@ public class ApiClientsTests
             inbounds = new[] { "learn", "echo" },
             expires = "2099-07-01",
             limits = new { ratePerMinute = 60, quotaCalls = 1000, resetEveryDays = 30 },
-            metadata = new Dictionary<string, string> { ["group"] = "4419" },
+            metadata = new Dictionary<string, string> { ["group"] = "4419" }
         });
         var issued = await ApiClient.ReadAsync(response);
         var client = issued.GetProperty("client");
@@ -44,10 +48,12 @@ public class ApiClientsTests
         var token = connection.GetProperty("token").GetString()!;
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
-        Assert.Equal($"/{gateway.PanelPath}/api/v1/clients/{client.GetProperty("id").GetString()}", response.Headers.Location?.OriginalString);
+        Assert.Equal($"/{gateway.PanelPath}/api/v1/clients/{client.GetProperty("id").GetString()}",
+            response.Headers.Location?.OriginalString);
         Assert.True(AccessToken.IsWellFormed(token));
         Assert.Equal("Active", client.GetProperty("status").GetString());
-        Assert.Equal(["echo", "learn"], client.GetProperty("inbounds").EnumerateArray().Select(slug => slug.GetString()));
+        Assert.Equal(["echo", "learn"],
+            client.GetProperty("inbounds").EnumerateArray().Select(slug => slug.GetString()));
         Assert.Equal(60, client.GetProperty("limits").GetProperty("ratePerMinute").GetInt32());
         Assert.Equal(JsonValueKind.Null, client.GetProperty("limits").GetProperty("maxConcurrency").ValueKind);
         Assert.Equal("2099-07-01T00:00:00+00:00", client.GetProperty("expiresAt").GetString());
@@ -99,7 +105,8 @@ public class ApiClientsTests
         using var api = await ApiClient.IssueAsync(gateway);
         var issued = await IssueAsync(api, new { name = "Группа 4419/2", inbounds = new[] { "echo" } });
 
-        var found = await ApiClient.ReadAsync(await api.GetAsync($"api/v1/clients?name={Uri.EscapeDataString(" группа 4419/2 ")}"));
+        var found = await ApiClient.ReadAsync(
+            await api.GetAsync($"api/v1/clients?name={Uri.EscapeDataString(" группа 4419/2 ")}"));
         var missing = await ApiClient.ReadAsync(await api.GetAsync("api/v1/clients?name=nobody"));
         var byId = await ApiClient.ReadAsync(await api.GetAsync($"api/v1/clients/{Id(issued)}"));
 
@@ -118,12 +125,13 @@ public class ApiClientsTests
             name = "Иванов",
             inbounds = new[] { "echo" },
             expires = "2099-07-01",
-            limits = new { ratePerMinute = 60 },
+            limits = new { ratePerMinute = 60 }
         }));
 
         using var limitsOnly = await api.PatchAsync($"api/v1/clients/{id}", new { limits = new { quotaCalls = 10 } });
         var afterLimits = await ApiClient.ReadAsync(limitsOnly);
-        using var neverExpires = await api.PatchAsync($"api/v1/clients/{id}", new { expires = "never", inbounds = new[] { "learn" } });
+        using var neverExpires = await api.PatchAsync($"api/v1/clients/{id}",
+            new { expires = "never", inbounds = new[] { "learn" } });
         var afterExpiry = await ApiClient.ReadAsync(neverExpires);
 
         Assert.Equal(HttpStatusCode.OK, limitsOnly.StatusCode);
@@ -145,7 +153,8 @@ public class ApiClientsTests
 
         using var disable = await api.PostAsync($"api/v1/clients/{client.Client.Id}/disable");
         using var refused = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/echo", client.Token));
-        var status = (await ApiClient.ReadAsync(await api.GetAsync($"api/v1/clients/{client.Client.Id}"))).GetProperty("status").GetString();
+        var status = (await ApiClient.ReadAsync(await api.GetAsync($"api/v1/clients/{client.Client.Id}")))
+            .GetProperty("status").GetString();
         using var enable = await api.PostAsync($"api/v1/clients/{client.Client.Id}/enable");
         using var allowed = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/echo", client.Token));
 
@@ -165,7 +174,8 @@ public class ApiClientsTests
 
         using var reissue = await api.PostAsync($"api/v1/clients/{client.Client.Id}/reissue");
         var token = (await ApiClient.ReadAsync(reissue)).GetProperty("token").GetString();
-        var shown = (await ApiClient.ReadAsync(await api.GetAsync($"api/v1/clients/{client.Client.Id}/connection"))).GetProperty("token").GetString();
+        var shown = (await ApiClient.ReadAsync(await api.GetAsync($"api/v1/clients/{client.Client.Id}/connection")))
+            .GetProperty("token").GetString();
         using var withOld = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/echo", client.Token));
         using var withNew = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/echo", token));
 
@@ -184,7 +194,8 @@ public class ApiClientsTests
         using var api = await ApiClient.IssueAsync(gateway);
 
         using var reset = await api.PostAsync($"api/v1/clients/{client.Client.Id}/reset-quota");
-        var stored = await gateway.ChangeAsync(services => services.GetRequiredService<ClientService>().GetAsync(client.Client.Id));
+        var stored = await gateway.ChangeAsync(services =>
+            services.GetRequiredService<ClientService>().GetAsync(client.Client.Id));
 
         Assert.Equal(HttpStatusCode.NoContent, reset.StatusCode);
         Assert.True(stored.PeriodStartedAt > client.Client.PeriodStartedAt);
@@ -209,15 +220,17 @@ public class ApiClientsTests
         Assert.Equal("Клиент не найден", (await ApiClient.ReadAsync(get)).GetProperty("detail").GetString());
     }
 
-    private static async Task<(string Id, Guid DeviceId)> WithDeviceAsync(GatewayHost gateway, ApiClient api, string signedInWith = CtxUi.Core.SignIn.Device.ByKey)
+    private static async Task<(string Id, Guid DeviceId)> WithDeviceAsync(GatewayHost gateway, ApiClient api,
+        string signedInWith = Core.SignIn.Device.ByKey)
     {
         var issued = await IssueAsync(api, new { name = "Иванов", inbounds = new[] { "echo" } });
         var id = Guid.Parse(Id(issued));
         var device = await gateway.ChangeAsync(async services =>
         {
-            var devices = services.GetRequiredService<CtxUi.Core.SignIn.DeviceService>();
+            var devices = services.GetRequiredService<Core.SignIn.DeviceService>();
             var admitted = (await devices.AdmitAsync(
-                id, CtxUi.Core.SignIn.DeviceMarker.Generate(), new CtxUi.Core.SignIn.DeviceSeen("Chrome · Windows", "203.0.113.7", signedInWith))).Device!;
+                id, Core.SignIn.DeviceMarker.Generate(),
+                new Core.SignIn.DeviceSeen("Chrome · Windows", "203.0.113.7", signedInWith))).Device!;
             await devices.AddAppAsync(admitted.Id, "app-key", "Claude Code", "authorization-1");
             return admitted;
         });
@@ -233,11 +246,12 @@ public class ApiClientsTests
         {
             name = "Иванов",
             inbounds = new[] { "echo" },
-            access = new { maxDevices = 2, directKey = false },
+            access = new { maxDevices = 2, directKey = false }
         });
         var client = (await ApiClient.ReadAsync(created)).GetProperty("client");
 
-        using var changed = await api.PatchAsync($"api/v1/clients/{client.GetProperty("id").GetString()}", new { access = new { maxDevices = 5, directKey = true } });
+        using var changed = await api.PatchAsync($"api/v1/clients/{client.GetProperty("id").GetString()}",
+            new { access = new { maxDevices = 5, directKey = true } });
         var after = await ApiClient.ReadAsync(changed);
 
         Assert.Equal(2, client.GetProperty("maxDevices").GetInt32());
@@ -284,7 +298,8 @@ public class ApiClientsTests
 
         Assert.Equal(HttpStatusCode.OK, invite.StatusCode);
         Assert.StartsWith("http://localhost:8080/connect/invite/", view.GetProperty("url").GetString());
-        Assert.InRange(view.GetProperty("expiresAt").GetDateTimeOffset(), DateTimeOffset.UtcNow.AddDays(6.9), DateTimeOffset.UtcNow.AddDays(7.1));
+        Assert.InRange(view.GetProperty("expiresAt").GetDateTimeOffset(), DateTimeOffset.UtcNow.AddDays(6.9),
+            DateTimeOffset.UtcNow.AddDays(7.1));
     }
 
     [Fact]
@@ -295,8 +310,9 @@ public class ApiClientsTests
         var id = Id(await IssueAsync(api, new { name = "Иванов", inbounds = new[] { "echo" } }));
         await gateway.ChangeAsync(async services =>
         {
-            var links = services.GetRequiredService<CtxUi.Core.SignIn.ClientLinkService>();
-            await links.LinkAsync(await links.InviteAsync(Guid.Parse(id)), new CtxUi.Core.SignIn.ExternalIdentity("github", "42", "ivanov@example.org"));
+            var links = services.GetRequiredService<Core.SignIn.ClientLinkService>();
+            await links.LinkAsync(await links.InviteAsync(Guid.Parse(id)),
+                new Core.SignIn.ExternalIdentity("github", "42", "ivanov@example.org"));
             return true;
         });
 
@@ -319,19 +335,23 @@ public class ApiClientsTests
         var id = Id(await IssueAsync(api, new { name = "Иванов", inbounds = new[] { "echo" } }));
         await gateway.ChangeAsync(async services =>
         {
-            var links = services.GetRequiredService<CtxUi.Core.SignIn.ClientLinkService>();
-            await links.LinkAsync(await links.InviteAsync(Guid.Parse(id)), new CtxUi.Core.SignIn.ExternalIdentity("github", "42", "ivanov@example.org"));
-            await links.LinkAsync(await links.InviteAsync(Guid.Parse(id)), new CtxUi.Core.SignIn.ExternalIdentity("github", "43", "ivanov@work.example"));
+            var links = services.GetRequiredService<Core.SignIn.ClientLinkService>();
+            await links.LinkAsync(await links.InviteAsync(Guid.Parse(id)),
+                new Core.SignIn.ExternalIdentity("github", "42", "ivanov@example.org"));
+            await links.LinkAsync(await links.InviteAsync(Guid.Parse(id)),
+                new Core.SignIn.ExternalIdentity("github", "43", "ivanov@work.example"));
             return true;
         });
 
         using var listed = await api.GetAsync($"api/v1/clients/{id}/links");
-        var work = (await ApiClient.ReadAsync(listed)).EnumerateArray().Single(link => link.GetProperty("display").GetString() == "ivanov@work.example");
+        var work = (await ApiClient.ReadAsync(listed)).EnumerateArray()
+            .Single(link => link.GetProperty("display").GetString() == "ivanov@work.example");
         using var removed = await api.DeleteAsync($"api/v1/clients/{id}/links/{work.GetProperty("id").GetString()}");
         using var left = await api.GetAsync($"api/v1/clients/{id}/links");
 
         Assert.Equal(HttpStatusCode.NoContent, removed.StatusCode);
-        Assert.Equal("ivanov@example.org", Assert.Single((await ApiClient.ReadAsync(left)).EnumerateArray()).GetProperty("display").GetString());
+        Assert.Equal("ivanov@example.org",
+            Assert.Single((await ApiClient.ReadAsync(left)).EnumerateArray()).GetProperty("display").GetString());
     }
 
     [Fact]

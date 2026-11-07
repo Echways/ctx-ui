@@ -53,10 +53,13 @@ public static class OpenApiImport
         return new ImportedApi(BaseUrlOf(root), operations, OpenApiDraft.Serialize(root));
     }
 
-    public static Task<ImportedApi> FetchAsync(Uri address, HttpClient client, CancellationToken ct) =>
-        FetchAsync(address, client, FetchTimeout, ct);
+    public static Task<ImportedApi> FetchAsync(Uri address, HttpClient client, CancellationToken ct)
+    {
+        return FetchAsync(address, client, FetchTimeout, ct);
+    }
 
-    public static async Task<ImportedApi> FetchAsync(Uri address, HttpClient client, TimeSpan timeout, CancellationToken ct)
+    public static async Task<ImportedApi> FetchAsync(Uri address, HttpClient client, TimeSpan timeout,
+        CancellationToken ct)
     {
         if (!address.IsAbsoluteUri || address.Scheme is not ("http" or "https"))
             throw new PanelException(BuilderText.ImportAddressInvalid);
@@ -82,12 +85,14 @@ public static class OpenApiImport
         }
         catch (HttpRequestException failure)
         {
-            throw new PanelException(failure.StatusCode is { } status ? string.Format(BuilderText.ImportFetchFailed, (int)status) : failure.HttpRequestError switch
-            {
-                HttpRequestError.NameResolutionError => BuilderText.ImportHostNotFound,
-                HttpRequestError.SecureConnectionError => BuilderText.ImportTlsFailed,
-                _ => BuilderText.ImportUnreachable,
-            });
+            throw new PanelException(failure.StatusCode is { } status
+                ? string.Format(BuilderText.ImportFetchFailed, (int)status)
+                : failure.HttpRequestError switch
+                {
+                    HttpRequestError.NameResolutionError => BuilderText.ImportHostNotFound,
+                    HttpRequestError.SecureConnectionError => BuilderText.ImportTlsFailed,
+                    _ => BuilderText.ImportUnreachable
+                });
         }
         catch (IOException)
         {
@@ -118,14 +123,15 @@ public static class OpenApiImport
         var result = new JsonObject
         {
             ["openapi"] = source["openapi"]?.DeepClone() ?? "3.0.3",
-            ["info"] = source["info"]?.DeepClone() ?? new JsonObject { ["title"] = "API", ["version"] = "1.0.0" },
+            ["info"] = source["info"]?.DeepClone() ?? new JsonObject { ["title"] = "API", ["version"] = "1.0.0" }
         };
         var paths = new JsonObject();
         foreach (var entry in OpenApiDraft.Operations(source).Where(entry => names.Contains(entry.Name)))
         {
             var pathItem = paths[entry.Path] as JsonObject ?? (JsonObject)(paths[entry.Path] = new JsonObject());
             pathItem[entry.Method] = entry.Operation.DeepClone();
-            foreach (var (key, value) in entry.PathItem.Where(pair => !OpenApiDraft.Methods.Contains(pair.Key) && pathItem[pair.Key] is null))
+            foreach (var (key, value) in entry.PathItem.Where(pair =>
+                         !OpenApiDraft.Methods.Contains(pair.Key) && pathItem[pair.Key] is null))
                 pathItem[key] = value?.DeepClone();
         }
 
@@ -158,7 +164,8 @@ public static class OpenApiImport
 
         var errors = result.Diagnostic?.Errors ?? [];
         if (result.Document is null || errors.Count > 0)
-            throw new PanelException(string.Format(BuilderText.ImportUnsupported, errors.FirstOrDefault()?.Message ?? BuilderText.ImportNotOpenApi));
+            throw new PanelException(string.Format(BuilderText.ImportUnsupported,
+                errors.FirstOrDefault()?.Message ?? BuilderText.ImportNotOpenApi));
         if (!isSwagger)
             return root;
 
@@ -183,28 +190,34 @@ public static class OpenApiImport
 
     private static string? SummaryOf(JsonObject operation)
     {
-        var text = operation["summary"]?.GetValueKind() == JsonValueKind.String ? operation["summary"]!.GetValue<string>()
-            : operation["description"]?.GetValueKind() == JsonValueKind.String ? operation["description"]!.GetValue<string>() : null;
+        var text = operation["summary"]?.GetValueKind() == JsonValueKind.String
+            ? operation["summary"]!.GetValue<string>()
+            : operation["description"]?.GetValueKind() == JsonValueKind.String
+                ? operation["description"]!.GetValue<string>()
+                : null;
         return string.IsNullOrWhiteSpace(text) ? null : text.Trim();
     }
 
     private static string? BaseUrlOf(JsonObject root)
     {
-        if (root["servers"] is not JsonArray { Count: > 0 } servers || servers[0] is not JsonObject server || server["url"] is not JsonValue url)
+        if (root["servers"] is not JsonArray { Count: > 0 } servers || servers[0] is not JsonObject server ||
+            server["url"] is not JsonValue url)
             return null;
         var address = url.GetValue<string>();
         if (server["variables"] is JsonObject variables)
-        {
             foreach (var (name, variable) in variables)
                 address = address.Replace("{" + name + "}", variable?["default"]?.ToString() ?? string.Empty);
-        }
 
-        if (address.Contains('{') || !Uri.TryCreate(address.Trim(), UriKind.Absolute, out var uri) || uri.Scheme is not ("http" or "https"))
+        if (address.Contains('{') || !Uri.TryCreate(address.Trim(), UriKind.Absolute, out var uri) ||
+            uri.Scheme is not ("http" or "https"))
             return IsRelative(address) ? address.Trim() : null;
         return uri.ToString().TrimEnd('/');
     }
 
-    private static bool IsRelative(string address) => address.StartsWith('/') && !address.StartsWith("//") && !address.Contains('{');
+    private static bool IsRelative(string address)
+    {
+        return address.StartsWith('/') && !address.StartsWith("//") && !address.Contains('{');
+    }
 
     private static string? Resolved(string? baseUrl, Uri document)
     {
@@ -220,20 +233,19 @@ public static class OpenApiImport
         queue.Enqueue(paths);
         var seen = new HashSet<string>(StringComparer.Ordinal);
         while (queue.TryDequeue(out var node))
-        {
             foreach (var reference in References(node))
             {
                 if (!reference.StartsWith(ComponentsPrefix, StringComparison.Ordinal) || !seen.Add(reference))
                     continue;
                 var parts = reference[ComponentsPrefix.Length..].Split('/');
-                if (parts.Length < 2 || components[parts[0]] is not JsonObject group || group[parts[1]] is not { } target)
+                if (parts.Length < 2 || components[parts[0]] is not JsonObject group ||
+                    group[parts[1]] is not { } target)
                     continue;
                 var bucket = kept[parts[0]] as JsonObject ?? (JsonObject)(kept[parts[0]] = new JsonObject());
                 if (bucket[parts[1]] is null)
                     bucket[parts[1]] = target.DeepClone();
                 queue.Enqueue(target);
             }
-        }
 
         return kept;
     }
@@ -244,13 +256,11 @@ public static class OpenApiImport
         {
             case JsonObject members:
                 foreach (var (key, value) in members)
-                {
                     if (key == "$ref" && value?.GetValueKind() == JsonValueKind.String)
                         yield return value.GetValue<string>();
                     else if (value is not null)
                         foreach (var nested in References(value))
                             yield return nested;
-                }
 
                 break;
             case JsonArray items:

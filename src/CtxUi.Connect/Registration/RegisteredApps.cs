@@ -30,11 +30,16 @@ public sealed class RegisteredApps(
     private const string CreatedProperty = "ctx_created";
     private const int DynamicIdLength = 32;
 
-    private static readonly string[] GrantTypes = [OpenIddictConstants.GrantTypes.AuthorizationCode, OpenIddictConstants.GrantTypes.RefreshToken];
+    private static readonly string[] GrantTypes =
+        [OpenIddictConstants.GrantTypes.AuthorizationCode, OpenIddictConstants.GrantTypes.RefreshToken];
+
     private static readonly string[] ResponseTypes = [OpenIddictConstants.ResponseTypes.Code];
 
-    public bool IsDocumentClientId(string? clientId, out Uri url) =>
-        Uri.TryCreate(clientId, UriKind.Absolute, out url!) && url.OriginalString == clientId && policy.AllowsUri(url);
+    public bool IsDocumentClientId(string? clientId, out Uri url)
+    {
+        return Uri.TryCreate(clientId, UriKind.Absolute, out url!) && url.OriginalString == clientId &&
+               policy.AllowsUri(url);
+    }
 
     public async Task<bool> EnsureFromDocumentAsync(string clientId, CancellationToken ct)
     {
@@ -66,29 +71,33 @@ public sealed class RegisteredApps(
 
         var uris = new List<string>();
         if (request.TryGetProperty("redirect_uris", out var redirects) && redirects.ValueKind == JsonValueKind.Array)
-        {
             foreach (var redirect in redirects.EnumerateArray())
             {
                 if (redirect.ValueKind != JsonValueKind.String
                     || redirect.GetString()!.Length > MaxRedirectUriLength
                     || !RedirectUris.IsAllowedForRegistration(redirect.GetString()!))
-                    return Refused("", [], "invalid_redirect_uri", "redirect URIs must be https, loopback http or an app scheme");
+                    return Refused("", [], "invalid_redirect_uri",
+                        "redirect URIs must be https, loopback http or an app scheme");
 
                 uris.Add(redirect.GetString()!);
             }
-        }
 
         if (uris.Count == 0)
             return Refused("", [], "invalid_redirect_uri", "at least one redirect URI is required");
         if (uris.Count > MaxRedirectUris)
             return Refused("", [], "invalid_redirect_uri", $"at most {MaxRedirectUris} redirect URIs are accepted");
-        if (Text(request, "token_endpoint_auth_method") is not (null or ClientAuthenticationMethods.None or ClientAuthenticationMethods.ClientSecretPost or ClientAuthenticationMethods.ClientSecretBasic))
-            return Refused("", uris, "invalid_client_metadata", "only public clients are registered, the token endpoint authentication method is always none");
+        if (Text(request, "token_endpoint_auth_method") is not (null or ClientAuthenticationMethods.None
+            or ClientAuthenticationMethods.ClientSecretPost or ClientAuthenticationMethods.ClientSecretBasic))
+            return Refused("", uris, "invalid_client_metadata",
+                "only public clients are registered, the token endpoint authentication method is always none");
         if (!Subset(request, "grant_types", GrantTypes) || !Subset(request, "response_types", ResponseTypes))
-            return Refused("", uris, "invalid_client_metadata", "only the authorization code flow with refresh tokens is supported");
+            return Refused("", uris, "invalid_client_metadata",
+                "only the authorization code flow with refresh tokens is supported");
 
         uris = uris.Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToList();
-        var name = AppNames.Clean(Text(request, "client_name")) is { Length: > 0 } given ? given : AppIdentity.Of(null, "", uris).RedirectHosts[0];
+        var name = AppNames.Clean(Text(request, "client_name")) is { Length: > 0 } given
+            ? given
+            : AppIdentity.Of(null, "", uris).RedirectHosts[0];
         var clientId = DynamicClientPrefix + AppIdentity.Fingerprint(name, uris)[..DynamicIdLength];
         if (await apps.FindByClientIdAsync(clientId, ct) is null)
             await apps.CreateAsync(Describe(clientId, name, uris, clock.GetUtcNow()), ct);
@@ -106,8 +115,10 @@ public sealed class RegisteredApps(
         return AppIdentity.Of(IsDocumentClientId(clientId, out _) ? clientId : null, name, uris);
     }
 
-    public async Task<string?> ApplicationIdAsync(string clientId, CancellationToken ct) =>
-        await apps.FindByClientIdAsync(clientId, ct) is { } app ? await apps.GetIdAsync(app, ct) : null;
+    public async Task<string?> ApplicationIdAsync(string clientId, CancellationToken ct)
+    {
+        return await apps.FindByClientIdAsync(clientId, ct) is { } app ? await apps.GetIdAsync(app, ct) : null;
+    }
 
     public async Task<int> PruneAsync(DateTimeOffset before, CancellationToken ct)
     {
@@ -127,7 +138,8 @@ public sealed class RegisteredApps(
         return removed;
     }
 
-    private static OpenIddictApplicationDescriptor Describe(string clientId, string name, IEnumerable<string> redirectUris, DateTimeOffset now)
+    private static OpenIddictApplicationDescriptor Describe(string clientId, string name,
+        IEnumerable<string> redirectUris, DateTimeOffset now)
     {
         var descriptor = new OpenIddictApplicationDescriptor
         {
@@ -143,9 +155,9 @@ public sealed class RegisteredApps(
                 Permissions.GrantTypes.RefreshToken,
                 Permissions.ResponseTypes.Code,
                 Permissions.Prefixes.Scope + ConnectServices.McpScope,
-                Permissions.Prefixes.Scope + Scopes.OfflineAccess,
+                Permissions.Prefixes.Scope + Scopes.OfflineAccess
             },
-            Requirements = { Requirements.Features.ProofKeyForCodeExchange },
+            Requirements = { Requirements.Features.ProofKeyForCodeExchange }
         };
         foreach (var uri in redirectUris)
             descriptor.RedirectUris.Add(new Uri(uri));
@@ -154,17 +166,30 @@ public sealed class RegisteredApps(
         return descriptor;
     }
 
-    private static DateTimeOffset? Moment(ImmutableDictionary<string, JsonElement> properties, string name) =>
-        properties.TryGetValue(name, out var value) && value.TryGetDateTimeOffset(out var moment) ? moment : null;
+    private static DateTimeOffset? Moment(ImmutableDictionary<string, JsonElement> properties, string name)
+    {
+        return properties.TryGetValue(name, out var value) && value.TryGetDateTimeOffset(out var moment)
+            ? moment
+            : null;
+    }
 
-    private static string? Text(JsonElement request, string name) =>
-        request.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
+    private static string? Text(JsonElement request, string name)
+    {
+        return request.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String
+            ? value.GetString()
+            : null;
+    }
 
-    private static bool Subset(JsonElement request, string name, string[] allowed) =>
-        !request.TryGetProperty(name, out var values)
-        || values.ValueKind == JsonValueKind.Array
-        && values.EnumerateArray().All(value => value.ValueKind == JsonValueKind.String && allowed.Contains(value.GetString()));
+    private static bool Subset(JsonElement request, string name, string[] allowed)
+    {
+        return !request.TryGetProperty(name, out var values)
+               || values.ValueKind == JsonValueKind.Array
+               && values.EnumerateArray().All(value =>
+                   value.ValueKind == JsonValueKind.String && allowed.Contains(value.GetString()));
+    }
 
-    private static RegistrationResult Refused(string name, IReadOnlyList<string> uris, string error, string description) =>
-        new(null, name, uris, error, description);
+    private static RegistrationResult Refused(string name, IReadOnlyList<string> uris, string error, string description)
+    {
+        return new RegistrationResult(null, name, uris, error, description);
+    }
 }

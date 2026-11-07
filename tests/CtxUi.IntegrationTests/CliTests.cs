@@ -12,10 +12,15 @@ public sealed partial class CliTests : IDisposable
     [GeneratedRegex("tnk_[A-Za-z0-9]{32}")]
     private static partial Regex TokenPattern();
 
-    private Task<(int Code, string Output, string Error)> RunAsync(params string[] args) => RunInAsync(_dataDir, args);
+    private Task<(int Code, string Output, string Error)> RunAsync(params string[] args)
+    {
+        return RunInAsync(_dataDir, args);
+    }
 
-    private static Task<(int Code, string Output, string Error)> RunInAsync(string dataDir, params string[] args) =>
-        CliRunner.RunAsync(dataDir, args);
+    private static Task<(int Code, string Output, string Error)> RunInAsync(string dataDir, params string[] args)
+    {
+        return CliRunner.RunAsync(dataDir, args);
+    }
 
     private async Task<string> IssueAsync(string name, params string[] extra)
     {
@@ -30,7 +35,7 @@ public sealed partial class CliTests : IDisposable
         SqliteConnection.ClearAllPools();
         try
         {
-            Directory.Delete(_dataDir, recursive: true);
+            Directory.Delete(_dataDir, true);
         }
         catch (IOException)
         {
@@ -59,7 +64,8 @@ public sealed partial class CliTests : IDisposable
     public async Task Inbound_can_be_added_and_listed()
     {
         var added = await RunAsync(
-            "inbound", "add", "echo", "--url", "https://upstream.example.org/mcp", "--header", "X-Api-Key=k1", "--forward-identity");
+            "inbound", "add", "echo", "--url", "https://upstream.example.org/mcp", "--header", "X-Api-Key=k1",
+            "--forward-identity");
         var listed = await RunAsync("inbound", "list");
 
         Assert.Equal(0, added.Code);
@@ -97,8 +103,11 @@ public sealed partial class CliTests : IDisposable
         var listed = await RunAsync("client", "list");
 
         var lines = listed.Output.Split('\n', StringSplitOptions.RemoveEmptyEntries);
-        Assert.Contains(lines, line => line.Contains("Иванов 4419") && line.Contains("активен") && line.Contains("2099-01-01") && line.Contains("echo"));
-        Assert.Contains(lines, line => line.Contains("Петров") && line.Contains("отключён") && line.Contains("бессрочно"));
+        Assert.Contains(lines,
+            line => line.Contains("Иванов 4419") && line.Contains("активен") && line.Contains("2099-01-01") &&
+                    line.Contains("echo"));
+        Assert.Contains(lines,
+            line => line.Contains("Петров") && line.Contains("отключён") && line.Contains("бессрочно"));
     }
 
     [Fact]
@@ -165,7 +174,7 @@ public sealed partial class CliTests : IDisposable
     public async Task Show_says_what_to_do_when_the_keys_directory_is_lost()
     {
         var token = await IssueAsync("Иванов");
-        Directory.Delete(Path.Combine(_dataDir, "keys"), recursive: true);
+        Directory.Delete(Path.Combine(_dataDir, "keys"), true);
 
         var shown = await RunAsync("client", "show", "Иванов");
 

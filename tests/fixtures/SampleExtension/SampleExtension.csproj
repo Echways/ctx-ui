@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk.Razor">
 
-  <Import Project="..\..\..\src\CtxUi.Extensions\buildTransitive\CtxUi.Extensions.props" />
+  <Import Project="..\..\..\src\CtxUi.Extensions\buildTransitive\CtxUi.Extensions.props"/>
 
   <PropertyGroup>
     <CtxUiExtensionId>sample</CtxUiExtensionId>
@@ -9,18 +9,18 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <FrameworkReference Include="Microsoft.AspNetCore.App" />
-    <PackageReference Include="UAParser" VersionOverride="3.1.46" />
-    <PackageReference Include="Microsoft.Extensions.Compliance.Abstractions" VersionOverride="10.11.0" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="all" />
-    <ProjectReference Include="..\..\..\src\CtxUi.Extensions\CtxUi.Extensions.csproj" />
+    <FrameworkReference Include="Microsoft.AspNetCore.App"/>
+    <PackageReference Include="UAParser" VersionOverride="3.1.46"/>
+    <PackageReference Include="Microsoft.Extensions.Compliance.Abstractions" VersionOverride="10.11.0"/>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="all"/>
+    <ProjectReference Include="..\..\..\src\CtxUi.Extensions\CtxUi.Extensions.csproj"/>
   </ItemGroup>
 
   <ItemGroup>
     <EmbeddedResource Update="SampleText.resx" StronglyTypedLanguage="CSharp" StronglyTypedClassName="SampleText"
-                      StronglyTypedNamespace="SampleExtension" StronglyTypedFileName="$(IntermediateOutputPath)SampleText.Designer.cs" />
+                      StronglyTypedNamespace="SampleExtension" StronglyTypedFileName="$(IntermediateOutputPath)SampleText.Designer.cs"/>
   </ItemGroup>
 
-  <Import Project="..\..\..\src\CtxUi.Extensions\buildTransitive\CtxUi.Extensions.targets" />
+  <Import Project="..\..\..\src\CtxUi.Extensions\buildTransitive\CtxUi.Extensions.targets"/>
 
 </Project>

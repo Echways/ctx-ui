@@ -89,7 +89,9 @@ public class PanelLoginTests
         using var locked = await panel.SignInAsync("root", admin.Password);
         var listed = await CliRunner.RunAsync(gateway.DataDir, "admin", "list");
         var reissued = await CliRunner.RunAsync(gateway.DataDir, "admin", "password", "root");
-        var fresh = reissued.Output.Split('\n').Single(line => line.StartsWith("Пароль:", StringComparison.Ordinal))[9..].Trim();
+        var fresh =
+            reissued.Output.Split('\n').Single(line => line.StartsWith("Пароль:", StringComparison.Ordinal))[9..]
+                .Trim();
         using var reopened = await panel.SignInAsync("root", fresh);
 
         Assert.Equal(HttpStatusCode.OK, locked.StatusCode);
@@ -120,8 +122,9 @@ public class PanelLoginTests
 
         using var forged = await panel.PostAsync(
             "login",
-            new Dictionary<string, string> { ["_handler"] = "login", ["Input.Name"] = "root", ["Input.Password"] = admin.Password },
-            withToken: false);
+            new Dictionary<string, string>
+            { ["_handler"] = "login", ["Input.Name"] = "root", ["Input.Password"] = admin.Password },
+            false);
 
         Assert.Equal(HttpStatusCode.BadRequest, forged.StatusCode);
         Assert.Equal("", Cookie(forged));

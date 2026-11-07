@@ -6,25 +6,32 @@ namespace CtxUi.Builder.Tests;
 
 public sealed class ToolArgumentsTests
 {
-    private static ArgumentSet From(string schema) => ArgumentSet.From(JsonDocument.Parse(schema).RootElement);
+    private static ArgumentSet From(string schema)
+    {
+        return ArgumentSet.From(JsonDocument.Parse(schema).RootElement);
+    }
 
     [Fact]
     public void Simple_properties_become_typed_fields_and_nested_ones_take_json()
     {
         var set = From("""
-            {"type":"object","required":["city"],"properties":{
-              "city":{"type":"string","description":"City name"},
-              "days":{"type":"integer","default":3},
-              "metric":{"type":"boolean"},
-              "ratio":{"type":"number"},
-              "tags":{"type":"array","items":{"type":"string"}},
-              "filter":{"type":"object"},
-              "note":{"anyOf":[{"type":"string"},{"type":"null"}]},
-              "either":{"anyOf":[{"type":"string"},{"type":"integer"}]}}}
-            """);
+                       {"type":"object","required":["city"],"properties":{
+                         "city":{"type":"string","description":"City name"},
+                         "days":{"type":"integer","default":3},
+                         "metric":{"type":"boolean"},
+                         "ratio":{"type":"number"},
+                         "tags":{"type":"array","items":{"type":"string"}},
+                         "filter":{"type":"object"},
+                         "note":{"anyOf":[{"type":"string"},{"type":"null"}]},
+                         "either":{"anyOf":[{"type":"string"},{"type":"integer"}]}}}
+                       """);
 
         Assert.Equal(
-            [("city", "string", true), ("days", "integer", false), ("metric", "boolean", false), ("ratio", "number", false), ("tags", "json", false), ("filter", "json", false), ("note", "string", false), ("either", "json", false)],
+            [
+                ("city", "string", true), ("days", "integer", false), ("metric", "boolean", false),
+                ("ratio", "number", false), ("tags", "json", false), ("filter", "json", false),
+                ("note", "string", false), ("either", "json", false)
+            ],
             set.Fields.Select(field => (field.Name, field.Type, field.Required)));
         Assert.Equal("City name", set.Fields[0].Description);
         Assert.Equal("3", set.Fields[1].Text);
@@ -33,12 +40,14 @@ public sealed class ToolArgumentsTests
     [Fact]
     public void Entered_values_are_typed_and_empty_optional_fields_are_left_out()
     {
-        var set = From("""{"type":"object","required":["city"],"properties":{"city":{"type":"string"},"days":{"type":"integer"},"ratio":{"type":"number"},"metric":{"type":"boolean"},"tags":{"type":"array"},"skipped":{"type":"string"}}}""");
+        var set = From(
+            """{"type":"object","required":["city"],"properties":{"city":{"type":"string"},"days":{"type":"integer"},"ratio":{"type":"number"},"metric":{"type":"boolean"},"tags":{"type":"array"},"skipped":{"type":"string"}}}""");
         Fill(set, ("city", "Berlin"), ("days", "5"), ("ratio", "0.5"), ("metric", "true"), ("tags", "[\"a\",\"b\"]"));
 
         var arguments = set.ToArguments();
 
-        Assert.Equal("""{"city":"Berlin","days":5,"ratio":0.5,"metric":true,"tags":["a","b"]}""", arguments.ToJsonString());
+        Assert.Equal("""{"city":"Berlin","days":5,"ratio":0.5,"metric":true,"tags":["a","b"]}""",
+            arguments.ToJsonString());
     }
 
     [Fact]

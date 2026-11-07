@@ -12,7 +12,13 @@ public sealed class PanelPosition
 
     internal bool IsAfter { get; }
 
-    public static PanelPosition Before(string entry) => new(entry, isAfter: false);
+    public static PanelPosition Before(string entry)
+    {
+        return new PanelPosition(entry, false);
+    }
 
-    public static PanelPosition After(string entry) => new(entry, isAfter: true);
+    public static PanelPosition After(string entry)
+    {
+        return new PanelPosition(entry, true);
+    }
 }

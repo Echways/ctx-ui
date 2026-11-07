@@ -30,7 +30,9 @@ public sealed class DeviceTouchTests : IAsyncDisposable
             .AddScoped<DeviceService>()
             .BuildServiceProvider();
         using (var scope = _services.CreateScope())
+        {
             scope.ServiceProvider.GetRequiredService<CtxUiDbContext>().Database.Migrate();
+        }
 
         _touch = new DeviceTouch(_services.GetRequiredService<IServiceScopeFactory>());
     }
@@ -43,15 +45,21 @@ public sealed class DeviceTouchTests : IAsyncDisposable
 
     private async Task<Guid> AddDeviceAsync()
     {
-        await UseAsync(services => services.GetRequiredService<InboundService>().AddHttpAsync("echo", null, "https://mcp.example.org/mcp"));
-        var issued = await UseAsync(services => services.GetRequiredService<ClientService>().AddAsync("Иванов", ["echo"]));
+        await UseAsync(services => services.GetRequiredService<InboundService>()
+            .AddHttpAsync("echo", null, "https://mcp.example.org/mcp"));
+        var issued = await UseAsync(services =>
+            services.GetRequiredService<ClientService>().AddAsync("Иванов", ["echo"]));
         var admission = await UseAsync(services => services.GetRequiredService<DeviceService>()
-            .AdmitAsync(issued.Client.Id, DeviceMarker.Generate(), new DeviceSeen("Chrome · Windows", "203.0.113.7", Device.ByKey)));
+            .AdmitAsync(issued.Client.Id, DeviceMarker.Generate(),
+                new DeviceSeen("Chrome · Windows", "203.0.113.7", Device.ByKey)));
         return admission.Device!.Id;
     }
 
-    private Task<DateTimeOffset?> LastUsedAsync(Guid deviceId) =>
-        UseAsync(async services => (await services.GetRequiredService<DeviceService>().GetAsync(deviceId)).LastUsedAt);
+    private Task<DateTimeOffset?> LastUsedAsync(Guid deviceId)
+    {
+        return UseAsync(async services =>
+            (await services.GetRequiredService<DeviceService>().GetAsync(deviceId)).LastUsedAt);
+    }
 
     [Fact]
     public async Task Touches_are_saved_on_flush_once_a_minute_per_device()

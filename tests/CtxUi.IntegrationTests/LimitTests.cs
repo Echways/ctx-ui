@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Http.Headers;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
@@ -22,7 +23,7 @@ public class LimitTests
         await using var upstream = await FakeUpstream.StartAsync();
         await using var gateway = await GatewayHost.StartAsync(builder => builder.Logging.AddProvider(logs));
         await gateway.AddInboundAsync("echo", upstream.McpUrl);
-        var issued = await gateway.AddClientAsync("Иванов", ["echo"], limits: new ClientLimits(RatePerMinute: 2));
+        var issued = await gateway.AddClientAsync("Иванов", ["echo"], limits: new ClientLimits(2));
 
         using var first = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/echo", issued.Token));
         using var second = await gateway.Http.SendAsync(GatewayHost.Post($"/k/{issued.Token}/mcp/echo"));
@@ -43,12 +44,12 @@ public class LimitTests
         await using var upstream = await FakeUpstream.StartAsync();
         await using var gateway = await GatewayHost.StartAsync();
         await gateway.AddInboundAsync("echo", upstream.McpUrl);
-        var issued = await gateway.AddClientAsync("Иванов", ["echo"], limits: new ClientLimits(RatePerMinute: 2));
+        var issued = await gateway.AddClientAsync("Иванов", ["echo"], limits: new ClientLimits(2));
 
         HttpRequestMessage Request(HttpMethod method)
         {
             var request = new HttpRequestMessage(method, "/mcp/echo");
-            request.Headers.Authorization = new("Bearer", issued.Token);
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", issued.Token);
             return request;
         }
 
@@ -67,8 +68,8 @@ public class LimitTests
         await using var upstream = await FakeUpstream.StartAsync();
         await using var gateway = await GatewayHost.StartAsync();
         await gateway.AddInboundAsync("echo", upstream.McpUrl);
-        var ivanov = await gateway.AddClientAsync("Иванов", ["echo"], limits: new ClientLimits(RatePerMinute: 1));
-        var petrov = await gateway.AddClientAsync("Петров", ["echo"], limits: new ClientLimits(RatePerMinute: 1));
+        var ivanov = await gateway.AddClientAsync("Иванов", ["echo"], limits: new ClientLimits(1));
+        var petrov = await gateway.AddClientAsync("Петров", ["echo"], limits: new ClientLimits(1));
         using var spent = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/echo", ivanov.Token));
 
         using var refused = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/echo", ivanov.Token));
@@ -84,7 +85,7 @@ public class LimitTests
         await using var upstream = await FakeUpstream.StartAsync();
         await using var gateway = await GatewayHost.StartAsync();
         await gateway.AddInboundAsync("echo", upstream.McpUrl);
-        var issued = await gateway.AddClientAsync("Иванов", ["echo"], limits: new ClientLimits(RatePerMinute: 1));
+        var issued = await gateway.AddClientAsync("Иванов", ["echo"], limits: new ClientLimits(1));
         using var spent = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/echo", issued.Token));
         using var refused = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/echo", issued.Token));
 
@@ -144,7 +145,7 @@ public class LimitTests
         var issued = await gateway.AddClientAsync("Иванов", ["session"], limits: new ClientLimits(MaxConcurrency: 1));
 
         using var listen = new HttpRequestMessage(HttpMethod.Get, "/mcp/session");
-        listen.Headers.Authorization = new("Bearer", issued.Token);
+        listen.Headers.Authorization = new AuthenticationHeaderValue("Bearer", issued.Token);
         using var stream = await gateway.Http.SendAsync(listen, HttpCompletionOption.ResponseHeadersRead);
         using var call = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/session", issued.Token));
         release.SetResult();

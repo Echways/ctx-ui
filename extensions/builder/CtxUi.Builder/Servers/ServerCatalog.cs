@@ -11,7 +11,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CtxUi.Builder.Servers;
 
-public sealed partial class ServerCatalog(IDbContextFactory<BuilderDatabase> databases, SecretBox box, TimeProvider clock)
+public sealed partial class ServerCatalog(
+    IDbContextFactory<BuilderDatabase> databases,
+    SecretBox box,
+    TimeProvider clock)
 {
     private const int RouteSecretBytes = 32;
     private const int MinimumMemoryMb = 6;
@@ -32,14 +35,23 @@ public sealed partial class ServerCatalog(IDbContextFactory<BuilderDatabase> dat
 
     private sealed record StoredAuth(ApiAuthKind Kind, string? HeaderName, string? Username, string Secret);
 
-    public Task<BuilderServer> CreateAsync(string slug, string name, CancellationToken ct) => CreateCoreAsync(slug, name, null, ct);
+    public Task<BuilderServer> CreateAsync(string slug, string name, CancellationToken ct)
+    {
+        return CreateCoreAsync(slug, name, null, ct);
+    }
 
-    public Task<BuilderServer> ImportAsync(string slug, string name, ProjectImport import, CancellationToken ct) => CreateCoreAsync(slug, name, import, ct);
+    public Task<BuilderServer> ImportAsync(string slug, string name, ProjectImport import, CancellationToken ct)
+    {
+        return CreateCoreAsync(slug, name, import, ct);
+    }
 
-    public async Task<BuilderServer> ImportArchiveAsync(string slug, string name, Stream archive, CancellationToken ct) =>
-        await CreateCoreAsync(slug, name, await ProjectFiles.ImportArchiveAsync(archive, ct), ct);
+    public async Task<BuilderServer> ImportArchiveAsync(string slug, string name, Stream archive, CancellationToken ct)
+    {
+        return await CreateCoreAsync(slug, name, await ProjectFiles.ImportArchiveAsync(archive, ct), ct);
+    }
 
-    private async Task<BuilderServer> CreateCoreAsync(string slug, string name, ProjectImport? import, CancellationToken ct)
+    private async Task<BuilderServer> CreateCoreAsync(string slug, string name, ProjectImport? import,
+        CancellationToken ct)
     {
         if (!SlugPattern().IsMatch(slug))
             throw new PanelException(BuilderText.SlugInvalid);
@@ -49,8 +61,8 @@ public sealed partial class ServerCatalog(IDbContextFactory<BuilderDatabase> dat
         if (await database.Servers.AnyAsync(server => server.Slug == slug, ct))
             throw new PanelException(BuilderText.SlugTaken);
 
-        if (import is not null && import.Files.FirstOrDefault(file => file.Path == ProjectFiles.OpenApiPath) is { Content: { } document })
-        {
+        if (import is not null && import.Files.FirstOrDefault(file => file.Path == ProjectFiles.OpenApiPath) is
+            { Content: { } document })
             try
             {
                 await OpenApiImport.ValidateStoredAsync(document, ct);
@@ -59,10 +71,9 @@ public sealed partial class ServerCatalog(IDbContextFactory<BuilderDatabase> dat
             {
                 throw new PanelException(string.Format(BuilderText.ArchiveOpenApiInvalid, failure.Message));
             }
-        }
 
-        if (import is not null && import.Files.FirstOrDefault(file => file.Path == ProjectFiles.BuilderPath) is { Content: { } builder })
-        {
+        if (import is not null && import.Files.FirstOrDefault(file => file.Path == ProjectFiles.BuilderPath) is
+            { Content: { } builder })
             try
             {
                 BuilderDocument.Read(builder);
@@ -71,7 +82,6 @@ public sealed partial class ServerCatalog(IDbContextFactory<BuilderDatabase> dat
             {
                 throw new PanelException(string.Format(BuilderText.ArchiveBuilderInvalid, failure.Message));
             }
-        }
 
         var limits = new ServerLimits();
         var now = clock.GetUtcNow();
@@ -85,10 +95,12 @@ public sealed partial class ServerCatalog(IDbContextFactory<BuilderDatabase> dat
             CpuLimit = limits.Cpus,
             PidsLimit = limits.Pids,
             RouteSecretSealed = box.Seal(Base64Url.EncodeToString(RandomNumberGenerator.GetBytes(RouteSecretBytes))),
-            CreatedAt = now,
+            CreatedAt = now
         };
         database.Servers.Add(server);
-        database.Drafts.Add(import is null ? new ServerDraft { ServerId = server.Id, UpdatedAt = now } : DraftOf(server.Id, import, now));
+        database.Drafts.Add(import is null
+            ? new ServerDraft { ServerId = server.Id, UpdatedAt = now }
+            : DraftOf(server.Id, import, now));
         try
         {
             await database.SaveChangesAsync(ct);
@@ -118,11 +130,13 @@ public sealed partial class ServerCatalog(IDbContextFactory<BuilderDatabase> dat
     public async Task<DraftFile> FileAsync(Guid id, string path, CancellationToken ct)
     {
         await using var database = await databases.CreateDbContextAsync(ct);
-        return await database.Files.AsNoTracking().SingleOrDefaultAsync(file => file.ServerId == id && file.Path == path, ct)
-            ?? throw Failures.ServerNotFound();
+        return await database.Files.AsNoTracking()
+                   .SingleOrDefaultAsync(file => file.ServerId == id && file.Path == path, ct)
+               ?? throw Failures.ServerNotFound();
     }
 
-    public async Task<long> SaveFileAsync(Guid id, string path, string content, long expectedRevision, CancellationToken ct)
+    public async Task<long> SaveFileAsync(Guid id, string path, string content, long expectedRevision,
+        CancellationToken ct)
     {
         if (!path.StartsWith(ProjectRoot, StringComparison.Ordinal))
             throw new PanelException(BuilderText.PathInvalid);
@@ -134,19 +148,25 @@ public sealed partial class ServerCatalog(IDbContextFactory<BuilderDatabase> dat
 
         var revision = expectedRevision + 1;
         if (expectedRevision == 0)
+        {
             await InsertFileAsync(database, id, path, content, ct);
+        }
         else
         {
             var updated = await database.Files
                 .Where(file => file.ServerId == id && file.Path == path && file.Revision == expectedRevision)
-                .ExecuteUpdateAsync(setters => setters.SetProperty(file => file.Content, content).SetProperty(file => file.Revision, revision), ct);
+                .ExecuteUpdateAsync(
+                    setters => setters.SetProperty(file => file.Content, content)
+                        .SetProperty(file => file.Revision, revision), ct);
             if (updated == 0)
                 throw new DraftConflictException(BuilderText.DraftChangedElsewhere);
         }
 
         var now = clock.GetUtcNow();
         await database.Drafts.Where(draft => draft.ServerId == id)
-            .ExecuteUpdateAsync(setters => setters.SetProperty(draft => draft.Revision, draft => draft.Revision + 1).SetProperty(draft => draft.UpdatedAt, now), ct);
+            .ExecuteUpdateAsync(
+                setters => setters.SetProperty(draft => draft.Revision, draft => draft.Revision + 1)
+                    .SetProperty(draft => draft.UpdatedAt, now), ct);
         return revision;
     }
 
@@ -156,20 +176,25 @@ public sealed partial class ServerCatalog(IDbContextFactory<BuilderDatabase> dat
         return await SaveOpenApiAsync(database, id, openApiJson, expectedRevision, ct);
     }
 
-    private async Task<long> SaveOpenApiAsync(BuilderDatabase database, Guid id, string openApiJson, long expectedRevision, CancellationToken ct)
+    private async Task<long> SaveOpenApiAsync(BuilderDatabase database, Guid id, string openApiJson,
+        long expectedRevision, CancellationToken ct)
     {
         OpenApiDraft.Parse(openApiJson);
         await RequireServerAsync(database, id, ct);
         await RequireRoomAsync(database, id, ProjectFiles.OpenApiPath, Encoding.UTF8.GetByteCount(openApiJson), ct);
         var now = clock.GetUtcNow();
-        var updated = await database.Drafts.Where(draft => draft.ServerId == id && draft.Revision == expectedRevision).ExecuteUpdateAsync(setters => setters
-            .SetProperty(draft => draft.OpenApiJson, openApiJson)
-            .SetProperty(draft => draft.Revision, expectedRevision + 1)
-            .SetProperty(draft => draft.UpdatedAt, now), ct);
-        return updated == 0 ? throw new DraftConflictException(BuilderText.DraftChangedElsewhere) : expectedRevision + 1;
+        var updated = await database.Drafts.Where(draft => draft.ServerId == id && draft.Revision == expectedRevision)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(draft => draft.OpenApiJson, openApiJson)
+                .SetProperty(draft => draft.Revision, expectedRevision + 1)
+                .SetProperty(draft => draft.UpdatedAt, now), ct);
+        return updated == 0
+            ? throw new DraftConflictException(BuilderText.DraftChangedElsewhere)
+            : expectedRevision + 1;
     }
 
-    public async Task<long> SaveFormToolAsync(Guid id, FormTool tool, bool isNew, long expectedRevision, CancellationToken ct)
+    public async Task<long> SaveFormToolAsync(Guid id, FormTool tool, bool isNew, long expectedRevision,
+        CancellationToken ct)
     {
         await using var database = await databases.CreateDbContextAsync(ct);
         var draft = await DraftAsync(database, id, ct);
@@ -177,7 +202,8 @@ public sealed partial class ServerCatalog(IDbContextFactory<BuilderDatabase> dat
             throw new DraftConflictException(BuilderText.DraftChangedElsewhere);
 
         var document = draft.OpenApiJson ?? string.Empty;
-        if (CodeToolNames.From(draft.Files.Select(file => (file.Path, file.Content))).Contains(tool.Name) || (isNew && OpenApiDraft.Names(document).Contains(tool.Name)))
+        if (CodeToolNames.From(draft.Files.Select(file => (file.Path, file.Content))).Contains(tool.Name) ||
+            (isNew && OpenApiDraft.Names(document).Contains(tool.Name)))
             throw new PanelException(string.Format(BuilderText.ToolNameTaken, tool.Name));
         return await SaveOpenApiAsync(database, id, OpenApiDraft.Upsert(document, tool), expectedRevision, ct);
     }
@@ -188,10 +214,12 @@ public sealed partial class ServerCatalog(IDbContextFactory<BuilderDatabase> dat
         var draft = await DraftAsync(database, id, ct);
         if (draft.Revision != expectedRevision)
             throw new DraftConflictException(BuilderText.DraftChangedElsewhere);
-        return await SaveOpenApiAsync(database, id, OpenApiDraft.Remove(draft.OpenApiJson ?? string.Empty, toolName), expectedRevision, ct);
+        return await SaveOpenApiAsync(database, id, OpenApiDraft.Remove(draft.OpenApiJson ?? string.Empty, toolName),
+            expectedRevision, ct);
     }
 
-    public async Task<(string Path, long Revision)> ConvertToCodeAsync(Guid id, string toolName, long expectedRevision, CancellationToken ct)
+    public async Task<(string Path, long Revision)> ConvertToCodeAsync(Guid id, string toolName, long expectedRevision,
+        CancellationToken ct)
     {
         await using var database = await databases.CreateDbContextAsync(ct);
         await RequireServerAsync(database, id, ct);
@@ -201,14 +229,17 @@ public sealed partial class ServerCatalog(IDbContextFactory<BuilderDatabase> dat
 
         var (openApiJson, python) = OpenApiDraft.ConvertToCode(draft.OpenApiJson ?? string.Empty, toolName);
         var path = OpenApiDraft.ToolFilePath(toolName);
-        await RequireRoomAsync(database, id, ProjectFiles.OpenApiPath, Encoding.UTF8.GetByteCount(openApiJson) + Encoding.UTF8.GetByteCount(python), ct);
+        await RequireRoomAsync(database, id, ProjectFiles.OpenApiPath,
+            Encoding.UTF8.GetByteCount(openApiJson) + Encoding.UTF8.GetByteCount(python), ct);
 
         await using var transaction = await database.Database.BeginTransactionAsync(ct);
         var now = clock.GetUtcNow();
-        var updated = await database.Drafts.Where(candidate => candidate.ServerId == id && candidate.Revision == expectedRevision).ExecuteUpdateAsync(setters => setters
-            .SetProperty(candidate => candidate.OpenApiJson, openApiJson)
-            .SetProperty(candidate => candidate.Revision, expectedRevision + 1)
-            .SetProperty(candidate => candidate.UpdatedAt, now), ct);
+        var updated = await database.Drafts
+            .Where(candidate => candidate.ServerId == id && candidate.Revision == expectedRevision).ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(candidate => candidate.OpenApiJson, openApiJson)
+                    .SetProperty(candidate => candidate.Revision, expectedRevision + 1)
+                    .SetProperty(candidate => candidate.UpdatedAt, now), ct);
         if (updated == 0)
             throw new DraftConflictException(BuilderText.DraftChangedElsewhere);
 
@@ -225,7 +256,8 @@ public sealed partial class ServerCatalog(IDbContextFactory<BuilderDatabase> dat
         return (path, expectedRevision + 1);
     }
 
-    public async Task<long> ImportOperationsAsync(Guid id, ImportedApi api, IReadOnlySet<string> selected, long expectedRevision, CancellationToken ct)
+    public async Task<long> ImportOperationsAsync(Guid id, ImportedApi api, IReadOnlySet<string> selected,
+        long expectedRevision, CancellationToken ct)
     {
         if (selected.Count == 0)
             throw new PanelException(BuilderText.ImportNothingSelected);
@@ -235,26 +267,43 @@ public sealed partial class ServerCatalog(IDbContextFactory<BuilderDatabase> dat
             throw new DraftConflictException(BuilderText.DraftChangedElsewhere);
 
         var reserved = CodeToolNames.From(draft.Files.Select(file => (file.Path, file.Content)));
-        var merged = OpenApiDraft.Merge(draft.OpenApiJson ?? string.Empty, OpenApiImport.Select(api, selected), reserved);
+        var merged = OpenApiDraft.Merge(draft.OpenApiJson ?? string.Empty, OpenApiImport.Select(api, selected),
+            reserved);
         return await SaveOpenApiAsync(database, id, merged, expectedRevision, ct);
     }
 
-    public Task<long> SaveResourceAsync(Guid id, BuilderResource resource, string? replacing, long expectedRevision, CancellationToken ct) =>
-        ChangeBuilderDocumentAsync(id, model => BuilderDocument.WithResource(model, resource, replacing), expectedRevision, ct);
+    public Task<long> SaveResourceAsync(Guid id, BuilderResource resource, string? replacing, long expectedRevision,
+        CancellationToken ct)
+    {
+        return ChangeBuilderDocumentAsync(id, model => BuilderDocument.WithResource(model, resource, replacing),
+            expectedRevision, ct);
+    }
 
-    public Task<long> DeleteResourceAsync(Guid id, string uri, long expectedRevision, CancellationToken ct) =>
-        ChangeBuilderDocumentAsync(id, model => BuilderDocument.WithoutResource(model, uri), expectedRevision, ct);
+    public Task<long> DeleteResourceAsync(Guid id, string uri, long expectedRevision, CancellationToken ct)
+    {
+        return ChangeBuilderDocumentAsync(id, model => BuilderDocument.WithoutResource(model, uri), expectedRevision,
+            ct);
+    }
 
-    public Task<long> SavePromptAsync(Guid id, BuilderPrompt prompt, string? replacing, long expectedRevision, CancellationToken ct) =>
-        ChangeBuilderDocumentAsync(id, model => BuilderDocument.WithPrompt(model, prompt, replacing), expectedRevision, ct);
+    public Task<long> SavePromptAsync(Guid id, BuilderPrompt prompt, string? replacing, long expectedRevision,
+        CancellationToken ct)
+    {
+        return ChangeBuilderDocumentAsync(id, model => BuilderDocument.WithPrompt(model, prompt, replacing),
+            expectedRevision, ct);
+    }
 
-    public Task<long> DeletePromptAsync(Guid id, string name, long expectedRevision, CancellationToken ct) =>
-        ChangeBuilderDocumentAsync(id, model => BuilderDocument.WithoutPrompt(model, name), expectedRevision, ct);
+    public Task<long> DeletePromptAsync(Guid id, string name, long expectedRevision, CancellationToken ct)
+    {
+        return ChangeBuilderDocumentAsync(id, model => BuilderDocument.WithoutPrompt(model, name), expectedRevision,
+            ct);
+    }
 
     public async Task<long> ProposeBaseUrlAsync(Guid id, string baseUrl, CancellationToken ct)
     {
         var settings = await SettingsAsync(id, ct);
-        return await SetApiAsync(id, baseUrl, new ApiAuthInput(settings.AuthKind, settings.AuthHeaderName, settings.AuthUsername, null), settings.SettingsRevision, ct);
+        return await SetApiAsync(id, baseUrl,
+            new ApiAuthInput(settings.AuthKind, settings.AuthHeaderName, settings.AuthUsername, null),
+            settings.SettingsRevision, ct);
     }
 
     public async Task SetSecretAsync(Guid id, string name, string value, CancellationToken ct)
@@ -281,7 +330,8 @@ public sealed partial class ServerCatalog(IDbContextFactory<BuilderDatabase> dat
     {
         if (!Enum.IsDefined(access))
             throw new PanelException(BuilderText.AccessInvalid);
-        if (limits.MemoryMb < MinimumMemoryMb || !double.IsFinite(limits.Cpus) || limits.Cpus < MinimumCpus || limits.Pids < 1)
+        if (limits.MemoryMb < MinimumMemoryMb || !double.IsFinite(limits.Cpus) || limits.Cpus < MinimumCpus ||
+            limits.Pids < 1)
             throw new PanelException(BuilderText.LimitsInvalid);
 
         await using var database = await databases.CreateDbContextAsync(ct);
@@ -297,9 +347,10 @@ public sealed partial class ServerCatalog(IDbContextFactory<BuilderDatabase> dat
     {
         await using var database = await databases.CreateDbContextAsync(ct);
         var server = await database.Servers.AsNoTracking().SingleOrDefaultAsync(server => server.Id == id, ct)
-            ?? throw Failures.ServerNotFound();
+                     ?? throw Failures.ServerNotFound();
         var draft = await database.Drafts.AsNoTracking().SingleAsync(draft => draft.ServerId == id, ct);
-        var names = await database.Secrets.AsNoTracking().Where(secret => secret.ServerId == id).Select(secret => secret.Name).OrderBy(name => name).ToListAsync(ct);
+        var names = await database.Secrets.AsNoTracking().Where(secret => secret.ServerId == id)
+            .Select(secret => secret.Name).OrderBy(name => name).ToListAsync(ct);
         var auth = OpenAuth(draft.ApiAuthSealed);
         return new ServerSettingsView(
             server.Id,
@@ -317,21 +368,28 @@ public sealed partial class ServerCatalog(IDbContextFactory<BuilderDatabase> dat
             names);
     }
 
-    public async Task<long> SetApiAsync(Guid id, string? baseUrl, ApiAuthInput auth, long expectedRevision, CancellationToken ct)
+    public async Task<long> SetApiAsync(Guid id, string? baseUrl, ApiAuthInput auth, long expectedRevision,
+        CancellationToken ct)
     {
         var uri = ParseBaseUrl(baseUrl);
         await using var database = await databases.CreateDbContextAsync(ct);
         await RequireServerAsync(database, id, ct);
-        var sealedAuth = SealAuth(auth, OpenAuth((await database.Drafts.AsNoTracking().SingleAsync(draft => draft.ServerId == id, ct)).ApiAuthSealed));
+        var sealedAuth = SealAuth(auth,
+            OpenAuth(
+                (await database.Drafts.AsNoTracking().SingleAsync(draft => draft.ServerId == id, ct)).ApiAuthSealed));
         var address = uri?.ToString().TrimEnd('/');
         var now = clock.GetUtcNow();
-        var updated = await database.Drafts.Where(draft => draft.ServerId == id && draft.SettingsRevision == expectedRevision).ExecuteUpdateAsync(setters => setters
-            .SetProperty(draft => draft.BaseUrl, address)
-            .SetProperty(draft => draft.ApiAuthSealed, sealedAuth)
-            .SetProperty(draft => draft.SettingsRevision, expectedRevision + 1)
-            .SetProperty(draft => draft.Revision, draft => draft.Revision + 1)
-            .SetProperty(draft => draft.UpdatedAt, now), ct);
-        return updated == 0 ? throw new DraftConflictException(BuilderText.SettingsChangedElsewhere) : expectedRevision + 1;
+        var updated = await database.Drafts
+            .Where(draft => draft.ServerId == id && draft.SettingsRevision == expectedRevision).ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(draft => draft.BaseUrl, address)
+                    .SetProperty(draft => draft.ApiAuthSealed, sealedAuth)
+                    .SetProperty(draft => draft.SettingsRevision, expectedRevision + 1)
+                    .SetProperty(draft => draft.Revision, draft => draft.Revision + 1)
+                    .SetProperty(draft => draft.UpdatedAt, now), ct);
+        return updated == 0
+            ? throw new DraftConflictException(BuilderText.SettingsChangedElsewhere)
+            : expectedRevision + 1;
     }
 
     public async Task<long> SetDependenciesAsync(Guid id, string? text, long expectedRevision, CancellationToken ct)
@@ -341,12 +399,16 @@ public sealed partial class ServerCatalog(IDbContextFactory<BuilderDatabase> dat
         await RequireServerAsync(database, id, ct);
         var joined = lines.Count == 0 ? null : string.Join('\n', lines);
         var now = clock.GetUtcNow();
-        var updated = await database.Drafts.Where(draft => draft.ServerId == id && draft.SettingsRevision == expectedRevision).ExecuteUpdateAsync(setters => setters
-            .SetProperty(draft => draft.Dependencies, joined)
-            .SetProperty(draft => draft.SettingsRevision, expectedRevision + 1)
-            .SetProperty(draft => draft.Revision, draft => draft.Revision + 1)
-            .SetProperty(draft => draft.UpdatedAt, now), ct);
-        return updated == 0 ? throw new DraftConflictException(BuilderText.SettingsChangedElsewhere) : expectedRevision + 1;
+        var updated = await database.Drafts
+            .Where(draft => draft.ServerId == id && draft.SettingsRevision == expectedRevision).ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(draft => draft.Dependencies, joined)
+                    .SetProperty(draft => draft.SettingsRevision, expectedRevision + 1)
+                    .SetProperty(draft => draft.Revision, draft => draft.Revision + 1)
+                    .SetProperty(draft => draft.UpdatedAt, now), ct);
+        return updated == 0
+            ? throw new DraftConflictException(BuilderText.SettingsChangedElsewhere)
+            : expectedRevision + 1;
     }
 
     public async Task<string> CreateToolAsync(Guid id, string name, CancellationToken ct)
@@ -368,7 +430,7 @@ public sealed partial class ServerCatalog(IDbContextFactory<BuilderDatabase> dat
     {
         await using var database = await databases.CreateDbContextAsync(ct);
         var server = await database.Servers.AsNoTracking().SingleOrDefaultAsync(server => server.Id == id, ct)
-            ?? throw Failures.ServerNotFound();
+                     ?? throw Failures.ServerNotFound();
         return box.Open(server.RouteSecretSealed);
     }
 
@@ -376,7 +438,7 @@ public sealed partial class ServerCatalog(IDbContextFactory<BuilderDatabase> dat
     {
         await using var database = await databases.CreateDbContextAsync(ct);
         var server = await database.Servers.AsNoTracking().SingleOrDefaultAsync(server => server.Id == id, ct)
-            ?? throw Failures.ServerNotFound();
+                     ?? throw Failures.ServerNotFound();
         var draft = await database.Drafts.AsNoTracking().SingleAsync(draft => draft.ServerId == id, ct);
         var secrets = await database.Secrets.AsNoTracking().Where(secret => secret.ServerId == id).ToListAsync(ct);
 
@@ -387,9 +449,11 @@ public sealed partial class ServerCatalog(IDbContextFactory<BuilderDatabase> dat
         if (!string.IsNullOrEmpty(baseUrl))
             environment[BaseUrlVariable] = baseUrl;
         if (OpenAuth(draft.ApiAuthSealed) is { } auth)
-            environment[ApiHeadersVariable] = JsonSerializer.Serialize(new Dictionary<string, string> { [auth.Kind == ApiAuthKind.Header ? auth.HeaderName! : "Authorization"] = AuthValue(auth) });
+            environment[ApiHeadersVariable] = JsonSerializer.Serialize(new Dictionary<string, string>
+            { [auth.Kind == ApiAuthKind.Header ? auth.HeaderName! : "Authorization"] = AuthValue(auth) });
 
-        var spec = new ServerSpec(server.NetworkAccess, new ServerLimits(server.MemoryMb, server.CpuLimit, server.PidsLimit), box.Open(server.RouteSecretSealed));
+        var spec = new ServerSpec(server.NetworkAccess,
+            new ServerLimits(server.MemoryMb, server.CpuLimit, server.PidsLimit), box.Open(server.RouteSecretSealed));
         return new ServerLaunch(spec, new StartRelease(environment));
     }
 
@@ -397,24 +461,34 @@ public sealed partial class ServerCatalog(IDbContextFactory<BuilderDatabase> dat
     {
         await using var database = await databases.CreateDbContextAsync(ct);
         var server = await database.Servers.AsNoTracking().SingleOrDefaultAsync(server => server.Id == id, ct)
-            ?? throw Failures.ServerNotFound();
+                     ?? throw Failures.ServerNotFound();
         var draft = await DraftAsync(database, id, ct);
-        return new ProjectExport($"{server.Slug}.tar.gz", await ProjectFiles.SnapshotAsync(draft, draft.Files, ProjectFiles.FastMcpVersion, ct));
+        return new ProjectExport($"{server.Slug}.tar.gz",
+            await ProjectFiles.SnapshotAsync(draft, draft.Files, ProjectFiles.FastMcpVersion, ct));
     }
 
-    private static string AuthValue(StoredAuth auth) => auth.Kind switch
+    private static string AuthValue(StoredAuth auth)
     {
-        ApiAuthKind.Basic => "Basic " + Convert.ToBase64String(Encoding.UTF8.GetBytes($"{auth.Username}:{auth.Secret}")),
-        ApiAuthKind.Bearer => $"Bearer {auth.Secret}",
-        _ => auth.Secret,
-    };
+        return auth.Kind switch
+        {
+            ApiAuthKind.Basic => "Basic " +
+                                 Convert.ToBase64String(Encoding.UTF8.GetBytes($"{auth.Username}:{auth.Secret}")),
+            ApiAuthKind.Bearer => $"Bearer {auth.Secret}",
+            _ => auth.Secret
+        };
+    }
 
-    private StoredAuth? OpenAuth(string? sealedAuth) =>
-        sealedAuth is null ? null : JsonSerializer.Deserialize<StoredAuth>(box.Open(sealedAuth));
+    private StoredAuth? OpenAuth(string? sealedAuth)
+    {
+        return sealedAuth is null ? null : JsonSerializer.Deserialize<StoredAuth>(box.Open(sealedAuth));
+    }
 
-    private static async Task<ServerDraft> DraftAsync(BuilderDatabase database, Guid id, CancellationToken ct) =>
-        await database.Drafts.AsNoTracking().Include(draft => draft.Files).SingleOrDefaultAsync(draft => draft.ServerId == id, ct)
-        ?? throw Failures.ServerNotFound();
+    private static async Task<ServerDraft> DraftAsync(BuilderDatabase database, Guid id, CancellationToken ct)
+    {
+        return await database.Drafts.AsNoTracking().Include(draft => draft.Files)
+                   .SingleOrDefaultAsync(draft => draft.ServerId == id, ct)
+               ?? throw Failures.ServerNotFound();
+    }
 
     private async Task<bool> SlugExistsAsync(string slug, CancellationToken ct)
     {
@@ -422,7 +496,8 @@ public sealed partial class ServerCatalog(IDbContextFactory<BuilderDatabase> dat
         return await database.Servers.AnyAsync(server => server.Slug == slug, ct);
     }
 
-    private static async Task InsertFileAsync(BuilderDatabase database, Guid id, string path, string content, CancellationToken ct)
+    private static async Task InsertFileAsync(BuilderDatabase database, Guid id, string path, string content,
+        CancellationToken ct)
     {
         database.Files.Add(new DraftFile { ServerId = id, Path = path, Content = content, Revision = 1 });
         try
@@ -435,7 +510,8 @@ public sealed partial class ServerCatalog(IDbContextFactory<BuilderDatabase> dat
         }
     }
 
-    private async Task<long> ChangeBuilderDocumentAsync(Guid id, Func<BuilderDocumentModel, BuilderDocumentModel> change, long expectedRevision, CancellationToken ct)
+    private async Task<long> ChangeBuilderDocumentAsync(Guid id,
+        Func<BuilderDocumentModel, BuilderDocumentModel> change, long expectedRevision, CancellationToken ct)
     {
         await using var database = await databases.CreateDbContextAsync(ct);
         await RequireServerAsync(database, id, ct);
@@ -445,17 +521,23 @@ public sealed partial class ServerCatalog(IDbContextFactory<BuilderDatabase> dat
 
         var model = change(BuilderDocument.Read(draft.BuilderJson));
         var json = model.IsEmpty ? null : BuilderDocument.Write(model);
-        await RequireRoomAsync(database, id, ProjectFiles.BuilderPath, Encoding.UTF8.GetByteCount(json ?? string.Empty), ct);
+        await RequireRoomAsync(database, id, ProjectFiles.BuilderPath, Encoding.UTF8.GetByteCount(json ?? string.Empty),
+            ct);
 
         var now = clock.GetUtcNow();
-        var updated = await database.Drafts.Where(candidate => candidate.ServerId == id && candidate.Revision == expectedRevision).ExecuteUpdateAsync(setters => setters
-            .SetProperty(candidate => candidate.BuilderJson, json)
-            .SetProperty(candidate => candidate.Revision, expectedRevision + 1)
-            .SetProperty(candidate => candidate.UpdatedAt, now), ct);
-        return updated == 0 ? throw new DraftConflictException(BuilderText.DraftChangedElsewhere) : expectedRevision + 1;
+        var updated = await database.Drafts
+            .Where(candidate => candidate.ServerId == id && candidate.Revision == expectedRevision).ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(candidate => candidate.BuilderJson, json)
+                    .SetProperty(candidate => candidate.Revision, expectedRevision + 1)
+                    .SetProperty(candidate => candidate.UpdatedAt, now), ct);
+        return updated == 0
+            ? throw new DraftConflictException(BuilderText.DraftChangedElsewhere)
+            : expectedRevision + 1;
     }
 
-    private static async Task RequireNoFormToolClashAsync(BuilderDatabase database, Guid id, string path, string content, CancellationToken ct)
+    private static async Task RequireNoFormToolClashAsync(BuilderDatabase database, Guid id, string path,
+        string content, CancellationToken ct)
     {
         if (!path.EndsWith(".py", StringComparison.OrdinalIgnoreCase))
             return;
@@ -463,10 +545,12 @@ public sealed partial class ServerCatalog(IDbContextFactory<BuilderDatabase> dat
         if (names.Count == 0)
             return;
 
-        var previous = await database.Files.AsNoTracking().Where(file => file.ServerId == id && file.Path == path).Select(file => file.Content).SingleOrDefaultAsync(ct);
+        var previous = await database.Files.AsNoTracking().Where(file => file.ServerId == id && file.Path == path)
+            .Select(file => file.Content).SingleOrDefaultAsync(ct);
         if (previous is not null)
             names.ExceptWith(CodeToolNames.From([(path, previous)]));
-        var document = await database.Drafts.AsNoTracking().Where(draft => draft.ServerId == id).Select(draft => draft.OpenApiJson).SingleOrDefaultAsync(ct);
+        var document = await database.Drafts.AsNoTracking().Where(draft => draft.ServerId == id)
+            .Select(draft => draft.OpenApiJson).SingleOrDefaultAsync(ct);
         if (names.Count == 0 || document is null)
             return;
 
@@ -484,13 +568,14 @@ public sealed partial class ServerCatalog(IDbContextFactory<BuilderDatabase> dat
             throw new PanelException(string.Format(BuilderText.CodeToolNameTaken, clash));
     }
 
-    private static async Task RequireRoomAsync(BuilderDatabase database, Guid id, string replacedPath, long addedBytes, CancellationToken ct)
+    private static async Task RequireRoomAsync(BuilderDatabase database, Guid id, string replacedPath, long addedBytes,
+        CancellationToken ct)
     {
         var otherBytes = await database.Database.SqlQuery<long>($"""
-            SELECT COALESCE((SELECT SUM(LENGTH(CAST(Content AS BLOB))) FROM Files WHERE ServerId = {id} AND Path <> {replacedPath}), 0)
-                + COALESCE((SELECT LENGTH(CAST(OpenApiJson AS BLOB)) FROM Drafts WHERE ServerId = {id} AND {replacedPath} <> {ProjectFiles.OpenApiPath}), 0)
-                + COALESCE((SELECT LENGTH(CAST(BuilderJson AS BLOB)) FROM Drafts WHERE ServerId = {id} AND {replacedPath} <> {ProjectFiles.BuilderPath}), 0) AS Value
-            """).SingleAsync(ct);
+                                                                 SELECT COALESCE((SELECT SUM(LENGTH(CAST(Content AS BLOB))) FROM Files WHERE ServerId = {id} AND Path <> {replacedPath}), 0)
+                                                                     + COALESCE((SELECT LENGTH(CAST(OpenApiJson AS BLOB)) FROM Drafts WHERE ServerId = {id} AND {replacedPath} <> {ProjectFiles.OpenApiPath}), 0)
+                                                                     + COALESCE((SELECT LENGTH(CAST(BuilderJson AS BLOB)) FROM Drafts WHERE ServerId = {id} AND {replacedPath} <> {ProjectFiles.BuilderPath}), 0) AS Value
+                                                                 """).SingleAsync(ct);
         if (otherBytes + addedBytes > ProjectFiles.MaxProjectBytes)
             throw new PanelException(BuilderText.ProjectTooLarge);
     }
@@ -503,7 +588,8 @@ public sealed partial class ServerCatalog(IDbContextFactory<BuilderDatabase> dat
 
     private static ServerDraft DraftOf(Guid id, ProjectImport import, DateTimeOffset now)
     {
-        var draft = new ServerDraft { ServerId = id, UpdatedAt = now, Revision = 1, Dependencies = import.Dependencies };
+        var draft = new ServerDraft
+        { ServerId = id, UpdatedAt = now, Revision = 1, Dependencies = import.Dependencies };
         long bytes = 0;
         foreach (var (path, content) in import.Files)
         {
@@ -544,14 +630,17 @@ public sealed partial class ServerCatalog(IDbContextFactory<BuilderDatabase> dat
             return null;
         if (input.Kind == ApiAuthKind.Header && !HeaderNamePattern().IsMatch(input.HeaderName ?? string.Empty))
             throw new PanelException(BuilderText.AuthHeaderInvalid);
-        if (input.Kind == ApiAuthKind.Basic && (string.IsNullOrWhiteSpace(input.Username) || input.Username.Contains(':')))
+        if (input.Kind == ApiAuthKind.Basic &&
+            (string.IsNullOrWhiteSpace(input.Username) || input.Username.Contains(':')))
             throw new PanelException(BuilderText.AuthUsernameInvalid);
 
-        var secret = !string.IsNullOrEmpty(input.Secret) ? input.Secret : existing?.Kind == input.Kind ? existing.Secret : null;
+        var secret = !string.IsNullOrEmpty(input.Secret) ? input.Secret :
+            existing?.Kind == input.Kind ? existing.Secret : null;
         if (string.IsNullOrEmpty(secret))
             throw new PanelException(BuilderText.SecretValueRequired);
 
-        var stored = new StoredAuth(input.Kind, input.Kind == ApiAuthKind.Header ? input.HeaderName : null, input.Kind == ApiAuthKind.Basic ? input.Username?.Trim() : null, secret);
+        var stored = new StoredAuth(input.Kind, input.Kind == ApiAuthKind.Header ? input.HeaderName : null,
+            input.Kind == ApiAuthKind.Basic ? input.Username?.Trim() : null, secret);
         return box.Seal(JsonSerializer.Serialize(stored));
     }
 }

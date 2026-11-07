@@ -9,22 +9,28 @@ namespace CtxUi.Core.Tests;
 
 public class ClientQuotaTests
 {
-    private static readonly ClientLimits Limits = new(RatePerMinute: 60, MaxConcurrency: 2, QuotaCalls: 100, ResetEveryDays: 30);
+    private static readonly ClientLimits Limits = new(60, 2, 100, 30);
 
     private readonly FakeVault _vault = new();
     private readonly FakeTimeProvider _clock = new(TestData.Now);
 
-    private ClientService Clients(TestDatabase database) => new(database.NewContext(), _vault, _clock);
+    private ClientService Clients(TestDatabase database)
+    {
+        return new ClientService(database.NewContext(), _vault, _clock);
+    }
 
     private async Task<TestDatabase> DatabaseWithEchoAsync()
     {
         var database = await TestDatabase.CreateAsync();
-        await new InboundService(database.NewContext(), _vault, _clock).AddHttpAsync("echo", null, "https://mcp.example.org/mcp");
+        await new InboundService(database.NewContext(), _vault, _clock).AddHttpAsync("echo", null,
+            "https://mcp.example.org/mcp");
         return database;
     }
 
-    private static Task<long> RevisionAsync(TestDatabase database) =>
-        database.NewContext().RoutingStates.AsNoTracking().Select(state => state.Revision).SingleAsync();
+    private static Task<long> RevisionAsync(TestDatabase database)
+    {
+        return database.NewContext().RoutingStates.AsNoTracking().Select(state => state.Revision).SingleAsync();
+    }
 
     [Fact]
     public async Task Limits_given_at_issue_are_saved_and_the_period_starts_now()
@@ -59,7 +65,7 @@ public class ClientQuotaTests
         await Assert.ThrowsAsync<DomainException>(() =>
             Clients(database).AddAsync("Петров", ["echo"], limits: new ClientLimits(QuotaCalls: 0)));
         await Assert.ThrowsAsync<DomainException>(() =>
-            Clients(database).UpdateAsync(issued.Client.Id, new ClientUpdate { Limits = new ClientLimits(RatePerMinute: -1) }));
+            Clients(database).UpdateAsync(issued.Client.Id, new ClientUpdate { Limits = new ClientLimits(-1) }));
 
         Assert.Single(await Clients(database).ListAsync());
         Assert.Equal(Limits, ClientLimits.Of(await Clients(database).GetAsync("Иванов")));
@@ -71,7 +77,8 @@ public class ClientQuotaTests
         await using var database = await DatabaseWithEchoAsync();
         var issued = await Clients(database).AddAsync("Иванов", ["echo"], limits: Limits);
 
-        await Clients(database).UpdateAsync(issued.Client.Id, new ClientUpdate { ChangeExpiry = true, ExpiresAt = TestData.Now.AddDays(5) });
+        await Clients(database).UpdateAsync(issued.Client.Id,
+            new ClientUpdate { ChangeExpiry = true, ExpiresAt = TestData.Now.AddDays(5) });
 
         Assert.Equal(Limits, ClientLimits.Of(await Clients(database).GetAsync("Иванов")));
     }
@@ -94,7 +101,8 @@ public class ClientQuotaTests
         var issued = await Clients(database).AddAsync("Иванов", ["echo"], limits: Limits);
         _clock.Advance(TimeSpan.FromDays(3));
 
-        await Clients(database).UpdateAsync(issued.Client.Id, new ClientUpdate { Limits = Limits with { QuotaCalls = 500, RatePerMinute = null } });
+        await Clients(database).UpdateAsync(issued.Client.Id,
+            new ClientUpdate { Limits = Limits with { QuotaCalls = 500, RatePerMinute = null } });
 
         var client = await Clients(database).GetAsync("Иванов");
         Assert.Equal(500, client.QuotaCalls);
@@ -109,7 +117,8 @@ public class ClientQuotaTests
         var issued = await Clients(database).AddAsync("Иванов", ["echo"]);
         _clock.Advance(TimeSpan.FromDays(60));
 
-        await Clients(database).UpdateAsync(issued.Client.Id, new ClientUpdate { Limits = new ClientLimits(QuotaCalls: 100) });
+        await Clients(database)
+            .UpdateAsync(issued.Client.Id, new ClientUpdate { Limits = new ClientLimits(QuotaCalls: 100) });
 
         Assert.Equal(TestData.Now.AddDays(60), (await Clients(database).GetAsync("Иванов")).PeriodStartedAt);
     }
@@ -121,7 +130,8 @@ public class ClientQuotaTests
         var issued = await Clients(database).AddAsync("Иванов", ["echo"], limits: Limits);
         _clock.Advance(TimeSpan.FromDays(3));
 
-        await Clients(database).UpdateAsync(issued.Client.Id, new ClientUpdate { Limits = Limits with { ResetEveryDays = 7 } });
+        await Clients(database).UpdateAsync(issued.Client.Id,
+            new ClientUpdate { Limits = Limits with { ResetEveryDays = 7 } });
 
         Assert.Equal(TestData.Now.AddDays(3), (await Clients(database).GetAsync("Иванов")).PeriodStartedAt);
     }
@@ -150,7 +160,7 @@ public class ClientQuotaTests
         await Clients(database).SaveUsageAsync(
         [
             new StoredUsage(counted.Id, TestData.Now, 57),
-            new StoredUsage(Guid.NewGuid(), TestData.Now, 1),
+            new StoredUsage(Guid.NewGuid(), TestData.Now, 1)
         ]);
 
         var stored = Assert.Single(await Clients(database).LoadUsageAsync());
@@ -164,7 +174,8 @@ public class ClientQuotaTests
     {
         await using var database = await DatabaseWithEchoAsync();
         var issued = await Clients(database).AddAsync("Иванов", ["echo"], limits: Limits);
-        var loader = new RoutingSnapshotLoader(database.NewContext(), _vault, _clock, NullLogger<RoutingSnapshotLoader>.Instance);
+        var loader = new RoutingSnapshotLoader(database.NewContext(), _vault, _clock,
+            NullLogger<RoutingSnapshotLoader>.Instance);
 
         var decision = (await loader.LoadAsync()).Authorize(Credential.FromKey(issued.Token), "echo", TestData.Now);
 

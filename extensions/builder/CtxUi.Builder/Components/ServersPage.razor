@@ -12,31 +12,33 @@
     </Actions>
 </PageHead>
 
-<RunnerStatus />
+<RunnerStatus/>
 
 @if (_servers is null)
 {
-    <Placeholder />
+    <Placeholder/>
 }
 else
 {
-    <Listing TItem="BuilderServer" Items="_servers" Sort="slug" Href="@(server => $"builder/{server.Id}")" SearchBy="[server => server.Name, server => server.Slug]">
+    <Listing TItem="BuilderServer" Items="_servers" Sort="slug" Href="@(server => $"builder/{server.Id}")"
+             SearchBy="[server => server.Name, server => server.Slug]">
         <Filters>
-            <Search />
+            <Search/>
         </Filters>
         <Columns>
-            <Cell Title="@BuilderText.Name" Value="server => server.Name" Sort />
-            <Cell Title="@BuilderText.Slug" Value="server => server.Slug" Sort />
+            <Cell Title="@BuilderText.Name" Value="server => server.Name" Sort/>
+            <Cell Title="@BuilderText.Slug" Value="server => server.Slug" Sort/>
             <Slot Title="@BuilderText.Access">
-                <Tag Tone="@(context.NetworkAccess == NetworkAccess.FullNetwork ? Tone.Warn : Tone.Neutral)">@AccessName(context.NetworkAccess)</Tag>
+                <Tag
+                    Tone="@(context.NetworkAccess == NetworkAccess.FullNetwork ? Tone.Warn : Tone.Neutral)">@AccessName(context.NetworkAccess)</Tag>
             </Slot>
             <Slot Title="@BuilderText.Inbound">
                 @(IsConnected(context) ? BuilderText.InboundConnected : BuilderText.InboundNone)
             </Slot>
-            <Cell Title="@BuilderText.Created" Value="server => server.CreatedAt" Sort />
+            <Cell Title="@BuilderText.Created" Value="server => server.CreatedAt" Sort/>
         </Columns>
         <Empty>
-            <EmptyState Title="@BuilderText.NoServers" Hint="@BuilderText.NoServersHint" />
+            <EmptyState Title="@BuilderText.NoServers" Hint="@BuilderText.NoServersHint"/>
         </Empty>
     </Listing>
 }
@@ -45,7 +47,10 @@ else
     private List<BuilderServer>? _servers;
     private HashSet<Guid> _inbounds = [];
 
-    protected override Task OnInitializedAsync() => LoadAsync();
+    protected override Task OnInitializedAsync()
+    {
+        return LoadAsync();
+    }
 
     private async Task LoadAsync()
     {
@@ -53,7 +58,10 @@ else
         _servers = [.. await Catalog.ListAsync(CancellationToken.None)];
     }
 
-    private bool IsConnected(BuilderServer server) => server.InboundId is { } inbound && _inbounds.Contains(inbound);
+    private bool IsConnected(BuilderServer server)
+    {
+        return server.InboundId is { } inbound && _inbounds.Contains(inbound);
+    }
 
     private async Task CreateAsync()
     {
@@ -62,6 +70,9 @@ else
         await LoadAsync();
     }
 
-    private static string AccessName(NetworkAccess access) =>
-        access == NetworkAccess.FullNetwork ? BuilderText.AccessFullNetwork : BuilderText.AccessInternetOnly;
+    private static string AccessName(NetworkAccess access)
+    {
+        return access == NetworkAccess.FullNetwork ? BuilderText.AccessFullNetwork : BuilderText.AccessInternetOnly;
+    }
+
 }

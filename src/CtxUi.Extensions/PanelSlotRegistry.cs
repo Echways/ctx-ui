@@ -2,7 +2,11 @@ using System.Collections.Frozen;
 
 namespace CtxUi.Extensions;
 
-internal sealed record SlotAction<TContext>(Func<string> Title, Func<PanelActionArgs<TContext>, Task> Run, int Order, Func<TContext, bool>? Visible = null);
+internal sealed record SlotAction<TContext>(
+    Func<string> Title,
+    Func<PanelActionArgs<TContext>, Task> Run,
+    int Order,
+    Func<TContext, bool>? Visible = null);
 
 internal sealed class PanelSlotRegistry
 {
@@ -35,12 +39,18 @@ internal sealed class PanelSlotRegistry
         _actions = _pendingActions.ToFrozenDictionary();
     }
 
-    public IReadOnlyList<Type> Blocks(string slot) => _blocks.GetValueOrDefault(slot) ?? [];
+    public IReadOnlyList<Type> Blocks(string slot)
+    {
+        return _blocks.GetValueOrDefault(slot) ?? [];
+    }
 
-    public IReadOnlyList<SlotAction<TContext>> Actions<TContext>(string slot) =>
-        _actions.GetValueOrDefault(slot) as List<SlotAction<TContext>> ?? [];
+    public IReadOnlyList<SlotAction<TContext>> Actions<TContext>(string slot)
+    {
+        return _actions.GetValueOrDefault(slot) as List<SlotAction<TContext>> ?? [];
+    }
 
-    public IReadOnlyList<SlotAction<TContext>> VisibleActions<TContext>(string slot, Func<TContext> context, Action<Exception> failed)
+    public IReadOnlyList<SlotAction<TContext>> VisibleActions<TContext>(string slot, Func<TContext> context,
+        Action<Exception> failed)
     {
         var actions = Actions<TContext>(slot);
         if (actions.All(action => action.Visible is null))

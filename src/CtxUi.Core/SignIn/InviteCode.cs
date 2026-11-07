@@ -10,9 +10,18 @@ public static class InviteCode
 
     private static readonly PrefixedSecret Secret = new(Prefix, 32);
 
-    public static string Generate() => Secret.Generate();
+    public static string Generate()
+    {
+        return Secret.Generate();
+    }
 
-    public static bool IsWellFormed([NotNullWhen(true)] string? value) => Secret.IsWellFormed(value);
+    public static bool IsWellFormed([NotNullWhen(true)] string? value)
+    {
+        return Secret.IsWellFormed(value);
+    }
 
-    public static string Hash(string code) => PrefixedSecret.Hash(code);
+    public static string Hash(string code)
+    {
+        return PrefixedSecret.Hash(code);
+    }
 }

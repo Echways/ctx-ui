@@ -6,8 +6,11 @@ namespace CtxUi.IntegrationTests;
 
 public class HealthTests
 {
-    private static IConfiguration Listening(string urls) =>
-        new ConfigurationBuilder().AddInMemoryCollection([KeyValuePair.Create<string, string?>("Urls", urls)]).Build();
+    private static IConfiguration Listening(string urls)
+    {
+        return new ConfigurationBuilder().AddInMemoryCollection([KeyValuePair.Create<string, string?>("Urls", urls)])
+            .Build();
+    }
 
     [Fact]
     public async Task Health_endpoint_answers_without_signing_in()

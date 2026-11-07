@@ -19,8 +19,11 @@ public sealed record SignedIn(ClientAccess Client, string SignedInWith)
         return null;
     }
 
-    public DeviceSeen Seen(HttpContext http) => new(
-        DeviceNames.From(http.Request.Headers.UserAgent.ToString()),
-        http.Connection.RemoteIpAddress?.ToString() ?? "",
-        SignedInWith);
+    public DeviceSeen Seen(HttpContext http)
+    {
+        return new DeviceSeen(
+            DeviceNames.From(http.Request.Headers.UserAgent.ToString()),
+            http.Connection.RemoteIpAddress?.ToString() ?? "",
+            SignedInWith);
+    }
 }

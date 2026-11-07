@@ -23,7 +23,7 @@
   </PropertyGroup>
 
   <ItemGroup Condition="$(MSBuildProjectName.StartsWith('CtxUi.Extensions'))">
-    <None Include="$(MSBuildThisFileDirectory)docs/extensions-package.md" Pack="true" PackagePath="README.md" />
+    <None Include="$(MSBuildThisFileDirectory)docs/extensions-package.md" Pack="true" PackagePath="README.md"/>
   </ItemGroup>
 
 </Project>

@@ -28,8 +28,9 @@ public static partial class PanelServices
 
     private const string Favicon = "_content/CtxUi.Panel/favicon.svg";
 
-    internal static PanelLayout CreateLayout() =>
-        new PanelLayout()
+    internal static PanelLayout CreateLayout()
+    {
+        return new PanelLayout()
             .AddBuiltIn<Overview>(PanelSections.Overview, () => PanelText.Overview)
             .AddBuiltIn<Metrics>(PanelSections.Metrics, () => PanelText.Metrics)
             .AddBuiltIn<Inbounds>(PanelSections.Inbounds, () => PanelText.Inbounds)
@@ -39,8 +40,10 @@ public static partial class PanelServices
             .AddBuiltIn<OAuth>(PanelSections.OAuth, () => PanelText.OAuth)
             .AddBuiltIn<Keys>(PanelSections.ApiKeys, () => PanelText.ApiKeys)
             .AddBuiltInStylesheet("_content/CtxUi.Panel/panel.css");
+    }
 
-    internal static IServiceCollection AddCtxUiPanel(this IServiceCollection services, IConfiguration section, Action<PanelLayout> extend)
+    internal static IServiceCollection AddCtxUiPanel(this IServiceCollection services, IConfiguration section,
+        Action<PanelLayout> extend)
     {
         services.Configure<PanelOptions>(section);
         var sessionCheck = section.Get<PanelOptions>()?.SessionCheckInterval ?? new PanelOptions().SessionCheckInterval;
@@ -92,7 +95,10 @@ public static partial class PanelServices
         return app.Use(next => context => gate.PassAsync(context, next, openPaths));
     }
 
-    public static IApplicationBuilder UseCtxUiPanelLanguage(this IApplicationBuilder app) => app.UseRequestLocalization();
+    public static IApplicationBuilder UseCtxUiPanelLanguage(this IApplicationBuilder app)
+    {
+        return app.UseRequestLocalization();
+    }
 
     public static WebApplication MapCtxUiPanel(this WebApplication app)
     {
@@ -106,13 +112,12 @@ public static partial class PanelServices
         var path = await scope.ServiceProvider.GetRequiredService<PanelSettings>().PathAsync(ct);
         services.GetRequiredService<PanelGate>().Open(path);
         if (!await scope.ServiceProvider.GetRequiredService<CtxUiDbContext>().Admins.AnyAsync(ct))
-        {
             NoAdmins(services.GetRequiredService<ILoggerFactory>().CreateLogger("CtxUi.Panel"));
-        }
     }
 
     [LoggerMessage(
         Level = LogLevel.Warning,
-        Message = "nobody can sign in to the panel: there are no admins. Add the first one with ctx-ui admin add <login>")]
+        Message =
+            "nobody can sign in to the panel: there are no admins. Add the first one with ctx-ui admin add <login>")]
     private static partial void NoAdmins(ILogger logger);
 }

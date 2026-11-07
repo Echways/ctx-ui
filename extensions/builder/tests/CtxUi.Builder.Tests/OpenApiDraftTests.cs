@@ -6,25 +6,30 @@ namespace CtxUi.Builder.Tests;
 
 public sealed class OpenApiDraftTests
 {
-    private static FormTool Forecast() => new(
-        "get_forecast",
-        "GET",
-        "/v1/forecast/{city}",
-        "Weather forecast for N days",
-        [
-            new ToolParameter("city", "string", ParameterPlace.Path, true, null, "City name"),
-            new ToolParameter("days", "integer", ParameterPlace.Query, false, JsonValue.Create(3), null),
-            new ToolParameter("X-Trace", "string", ParameterPlace.Header, false, null, null),
-        ],
-        JsonNode.Parse("""{"type":"object","properties":{"temp":{"type":"number"}}}"""));
+    private static FormTool Forecast()
+    {
+        return new FormTool(
+            "get_forecast",
+            "GET",
+            "/v1/forecast/{city}",
+            "Weather forecast for N days",
+            [
+                new ToolParameter("city", "string", ParameterPlace.Path, true, null, "City name"),
+                new ToolParameter("days", "integer", ParameterPlace.Query, false, JsonValue.Create(3), null),
+                new ToolParameter("X-Trace", "string", ParameterPlace.Header, false, null, null)
+            ],
+            JsonNode.Parse("""{"type":"object","properties":{"temp":{"type":"number"}}}"""));
+    }
 
     private static void AssertSameTool(FormTool expected, FormTool actual)
     {
-        Assert.Equal((expected.Name, expected.Method, expected.Path, expected.Description), (actual.Name, actual.Method, actual.Path, actual.Description));
+        Assert.Equal((expected.Name, expected.Method, expected.Path, expected.Description),
+            (actual.Name, actual.Method, actual.Path, actual.Description));
         Assert.Equal(expected.Parameters.Count, actual.Parameters.Count);
         foreach (var (left, right) in expected.Parameters.Zip(actual.Parameters))
         {
-            Assert.Equal((left.Name, left.Type, left.Place, left.Required, left.Description), (right.Name, right.Type, right.Place, right.Required, right.Description));
+            Assert.Equal((left.Name, left.Type, left.Place, left.Required, left.Description),
+                (right.Name, right.Type, right.Place, right.Required, right.Description));
             Assert.Equal(left.Default?.ToJsonString(), right.Default?.ToJsonString());
         }
 
@@ -47,13 +52,15 @@ public sealed class OpenApiDraftTests
         var tool = new FormTool("send_alert", "POST", "/alerts", "Send an alert",
         [
             new ToolParameter("text", "string", ParameterPlace.Body, true, null, "Message"),
-            new ToolParameter("urgent", "boolean", ParameterPlace.Body, false, JsonValue.Create(false), null),
+            new ToolParameter("urgent", "boolean", ParameterPlace.Body, false, JsonValue.Create(false), null)
         ], null);
 
         var json = OpenApiDraft.Upsert(string.Empty, tool);
 
         AssertSameTool(tool, Assert.Single(OpenApiDraft.Read(json)));
-        var body = JsonNode.Parse(json)!["paths"]!["/alerts"]!["post"]!["requestBody"]!["content"]!["application/json"]!["schema"]!;
+        var body =
+            JsonNode.Parse(json)!["paths"]!["/alerts"]!["post"]!["requestBody"]!["content"]!["application/json"]![
+                "schema"]!;
         Assert.Equal("text", body["required"]![0]!.GetValue<string>());
     }
 
@@ -82,27 +89,27 @@ public sealed class OpenApiDraftTests
     public void Upsert_keeps_fields_outside_the_form()
     {
         const string existing = """
-        {
-          "openapi": "3.0.3",
-          "info": { "title": "Weather", "version": "2" },
-          "x-owner": "ops",
-          "paths": {
-            "/v1/forecast/{city}": {
-              "x-path": 1,
-              "get": {
-                "operationId": "get_forecast",
-                "tags": ["weather"],
-                "x-rate": 5,
-                "parameters": [
-                  { "name": "city", "in": "path", "required": true, "schema": { "type": "string", "enum": ["Berlin"] } },
-                  { "name": "session", "in": "cookie", "schema": { "type": "string" } }
-                ],
-                "responses": { "200": { "description": "Fine" }, "404": { "description": "Missing" } }
-              }
-            }
-          }
-        }
-        """;
+                                {
+                                  "openapi": "3.0.3",
+                                  "info": { "title": "Weather", "version": "2" },
+                                  "x-owner": "ops",
+                                  "paths": {
+                                    "/v1/forecast/{city}": {
+                                      "x-path": 1,
+                                      "get": {
+                                        "operationId": "get_forecast",
+                                        "tags": ["weather"],
+                                        "x-rate": 5,
+                                        "parameters": [
+                                          { "name": "city", "in": "path", "required": true, "schema": { "type": "string", "enum": ["Berlin"] } },
+                                          { "name": "session", "in": "cookie", "schema": { "type": "string" } }
+                                        ],
+                                        "responses": { "200": { "description": "Fine" }, "404": { "description": "Missing" } }
+                                      }
+                                    }
+                                  }
+                                }
+                                """;
 
         var json = JsonNode.Parse(OpenApiDraft.Upsert(existing, Forecast()))!;
 
@@ -183,13 +190,15 @@ public sealed class OpenApiDraftTests
         var tool = new FormTool("t", "GET", "/t", null,
         [
             new ToolParameter("X-Count", "integer", ParameterPlace.Header, false, null, null),
-            new ToolParameter("X-Debug", "boolean", ParameterPlace.Header, false, null, null),
+            new ToolParameter("X-Debug", "boolean", ParameterPlace.Header, false, null, null)
         ], null);
 
         var (_, python) = OpenApiDraft.ConvertToCode(OpenApiDraft.Upsert(string.Empty, tool), "t");
 
         Assert.Contains("(str(value).lower() if isinstance(value, bool) else str(value))", python);
-        Assert.Contains("headers = {key: (str(value).lower() if isinstance(value, bool) else str(value)) for key, value in {\"X-Count\": x_count, \"X-Debug\": x_debug}.items() if value is not None}", python);
+        Assert.Contains(
+            "headers = {key: (str(value).lower() if isinstance(value, bool) else str(value)) for key, value in {\"X-Count\": x_count, \"X-Debug\": x_debug}.items() if value is not None}",
+            python);
     }
 
     [Fact]
@@ -198,7 +207,7 @@ public sealed class OpenApiDraftTests
         var tool = new FormTool("send", "POST", "/send", null,
         [
             new ToolParameter("note", "string", ParameterPlace.Body, false, null, null),
-            new ToolParameter("text", "string", ParameterPlace.Body, true, null, null),
+            new ToolParameter("text", "string", ParameterPlace.Body, true, null, null)
         ], null);
 
         var (_, python) = OpenApiDraft.ConvertToCode(OpenApiDraft.Upsert(string.Empty, tool), "send");
@@ -217,53 +226,60 @@ public sealed class OpenApiDraftTests
     [Theory]
     [InlineData("")]
     [InlineData("   ")]
-    public void Blank_document_has_no_tools(string blank) => Assert.Empty(OpenApiDraft.Read(blank));
+    public void Blank_document_has_no_tools(string blank)
+    {
+        Assert.Empty(OpenApiDraft.Read(blank));
+    }
 
     [Fact]
     public void Operation_without_operation_id_is_read_under_a_generated_name()
     {
-        const string json = """{"openapi":"3.0.3","paths":{"/pets/{id}":{"get":{"responses":{"200":{"description":"OK"}}}}}}""";
+        const string json =
+            """{"openapi":"3.0.3","paths":{"/pets/{id}":{"get":{"responses":{"200":{"description":"OK"}}}}}}""";
 
         Assert.Equal("get_pets_id", Assert.Single(OpenApiDraft.Read(json)).Name);
     }
 
     private const string Imported = """
-    {
-      "openapi": "3.1.0",
-      "info": { "title": "Shop", "version": "1" },
-      "paths": {
-        "/orders/{id}": {
-          "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
-          "servers": [{ "url": "https://orders.example.com" }],
-          "summary": "Order",
-          "get": {
-            "operationId": "getOrder",
-            "parameters": [
-              { "name": "expand", "in": "query", "schema": { "anyOf": [{ "type": "string" }, { "type": "null" }] } },
-              { "name": "kind", "in": "query", "schema": { "$ref": "#/components/schemas/Kind" } },
-              { "name": "ids", "in": "query", "schema": { "type": ["array", "null"], "items": { "type": "string" } } }
-            ],
-            "responses": { "200": { "description": "OK" } }
-          }
-        },
-        "/orders": {
-          "post": {
-            "operationId": "createOrder",
-            "requestBody": { "required": true, "content": { "application/json": { "schema": { "allOf": [{ "$ref": "#/components/schemas/Base" }, { "type": "object", "properties": { "x": { "type": "string" } } }] } } } },
-            "responses": { "201": { "description": "Created" } }
-          },
-          "put": {
-            "operationId": "replaceOrders",
-            "requestBody": { "content": { "application/json": { "schema": { "type": "array", "items": { "type": "string" } } } } },
-            "responses": { "200": { "description": "OK" } }
-          }
-        }
-      },
-      "components": { "schemas": { "Kind": { "type": "string", "enum": ["a", "b"] }, "Base": { "type": "object" } } }
-    }
-    """;
+                                    {
+                                      "openapi": "3.1.0",
+                                      "info": { "title": "Shop", "version": "1" },
+                                      "paths": {
+                                        "/orders/{id}": {
+                                          "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+                                          "servers": [{ "url": "https://orders.example.com" }],
+                                          "summary": "Order",
+                                          "get": {
+                                            "operationId": "getOrder",
+                                            "parameters": [
+                                              { "name": "expand", "in": "query", "schema": { "anyOf": [{ "type": "string" }, { "type": "null" }] } },
+                                              { "name": "kind", "in": "query", "schema": { "$ref": "#/components/schemas/Kind" } },
+                                              { "name": "ids", "in": "query", "schema": { "type": ["array", "null"], "items": { "type": "string" } } }
+                                            ],
+                                            "responses": { "200": { "description": "OK" } }
+                                          }
+                                        },
+                                        "/orders": {
+                                          "post": {
+                                            "operationId": "createOrder",
+                                            "requestBody": { "required": true, "content": { "application/json": { "schema": { "allOf": [{ "$ref": "#/components/schemas/Base" }, { "type": "object", "properties": { "x": { "type": "string" } } }] } } } },
+                                            "responses": { "201": { "description": "Created" } }
+                                          },
+                                          "put": {
+                                            "operationId": "replaceOrders",
+                                            "requestBody": { "content": { "application/json": { "schema": { "type": "array", "items": { "type": "string" } } } } },
+                                            "responses": { "200": { "description": "OK" } }
+                                          }
+                                        }
+                                      },
+                                      "components": { "schemas": { "Kind": { "type": "string", "enum": ["a", "b"] }, "Base": { "type": "object" } } }
+                                    }
+                                    """;
 
-    private static JsonNode Operation(string json, string path, string method) => JsonNode.Parse(json)!["paths"]![path]![method]!;
+    private static JsonNode Operation(string json, string path, string method)
+    {
+        return JsonNode.Parse(json)!["paths"]![path]![method]!;
+    }
 
     [Fact]
     public void Complex_parameters_are_read_as_complex_and_saved_unchanged()
@@ -306,17 +322,24 @@ public sealed class OpenApiDraftTests
         Assert.DoesNotContain(create.Parameters, parameter => parameter.Place == ParameterPlace.Body);
         Assert.DoesNotContain(replace.Parameters, parameter => parameter.Place == ParameterPlace.Body);
 
-        var saved = OpenApiDraft.Upsert(OpenApiDraft.Upsert(Imported, create with { Description = "Create" }), replace with { Description = "Replace" });
+        var saved = OpenApiDraft.Upsert(OpenApiDraft.Upsert(Imported, create with { Description = "Create" }),
+            replace with { Description = "Replace" });
 
-        Assert.NotNull(Operation(saved, "/orders", "post")["requestBody"]!["content"]!["application/json"]!["schema"]!["allOf"]);
-        Assert.Equal("array", Operation(saved, "/orders", "put")["requestBody"]!["content"]!["application/json"]!["schema"]!["type"]!.GetValue<string>());
+        Assert.NotNull(
+            Operation(saved, "/orders", "post")["requestBody"]!["content"]!["application/json"]!["schema"]!["allOf"]);
+        Assert.Equal("array",
+            Operation(saved, "/orders", "put")["requestBody"]!["content"]!["application/json"]!["schema"]!["type"]!
+                .GetValue<string>());
     }
 
     [Fact]
     public void Adding_body_parameters_to_a_body_the_form_cannot_represent_is_refused()
     {
         var create = OpenApiDraft.Read(Imported).Single(candidate => candidate.Name == "createOrder");
-        var extra = create with { Parameters = [new ToolParameter("note", "string", ParameterPlace.Body, false, null, null)] };
+        var extra = create with
+        {
+            Parameters = [new ToolParameter("note", "string", ParameterPlace.Body, false, null, null)]
+        };
 
         var failure = Assert.Throws<PanelException>(() => OpenApiDraft.Upsert(Imported, extra));
 
@@ -327,9 +350,9 @@ public sealed class OpenApiDraftTests
     public void A_ref_body_with_properties_stays_editable_and_keeps_its_other_fields()
     {
         const string json = """
-        {"openapi":"3.0.3","info":{"title":"t","version":"1"},"paths":{"/a":{"post":{"operationId":"a","requestBody":{"description":"Payload","content":{"application/json":{"schema":{"$ref":"#/components/schemas/Body"}}}},"responses":{"200":{"description":"OK"}}}}},
-         "components":{"schemas":{"Body":{"type":"object","title":"Body","properties":{"text":{"type":"string","enum":["x"]},"ref":{"$ref":"#/components/schemas/Body"}}}}}}
-        """;
+                            {"openapi":"3.0.3","info":{"title":"t","version":"1"},"paths":{"/a":{"post":{"operationId":"a","requestBody":{"description":"Payload","content":{"application/json":{"schema":{"$ref":"#/components/schemas/Body"}}}},"responses":{"200":{"description":"OK"}}}}},
+                             "components":{"schemas":{"Body":{"type":"object","title":"Body","properties":{"text":{"type":"string","enum":["x"]},"ref":{"$ref":"#/components/schemas/Body"}}}}}}
+                            """;
 
         var tool = Assert.Single(OpenApiDraft.Read(json));
         var saved = OpenApiDraft.Upsert(json, tool);
@@ -347,9 +370,9 @@ public sealed class OpenApiDraftTests
     public void Wrong_typed_fields_are_skipped_instead_of_throwing()
     {
         const string json = """
-        {"openapi":"3.0.3","paths":{"/a":{"get":{"operationId":5,"description":7,"parameters":[{"name":3,"in":"query"},{"name":"ok","in":"query","required":"yes","description":false,"schema":{"type":5}}],
-         "requestBody":{"content":{"application/json":7}},"responses":{"200":{"description":"OK","content":{"application/json":3}}}}},"/b":5,"/c":{"post":{"operationId":"c","requestBody":{"content":{"application/json":{"schema":{"properties":{"p":{"type":[1],"description":2}},"required":[1,"p"]}}}},"responses":"x"}}}}
-        """;
+                            {"openapi":"3.0.3","paths":{"/a":{"get":{"operationId":5,"description":7,"parameters":[{"name":3,"in":"query"},{"name":"ok","in":"query","required":"yes","description":false,"schema":{"type":5}}],
+                             "requestBody":{"content":{"application/json":7}},"responses":{"200":{"description":"OK","content":{"application/json":3}}}}},"/b":5,"/c":{"post":{"operationId":"c","requestBody":{"content":{"application/json":{"schema":{"properties":{"p":{"type":[1],"description":2}},"required":[1,"p"]}}}},"responses":"x"}}}}
+                            """;
 
         var tools = OpenApiDraft.Read(json);
 
@@ -371,18 +394,19 @@ public sealed class OpenApiDraftTests
     }
 
     private const string Inherited = """
-    {"openapi":"3.0.3","info":{"title":"t","version":"1"},
-     "paths":{"/items/{id}":{"parameters":[{"name":"id","in":"path","required":true,"schema":{"$ref":"#/components/schemas/Id"}},{"name":"v","in":"query","description":"Version","schema":{"type":"integer","format":"int64","minimum":1}}],
-       "get":{"operationId":"getItem","responses":{"200":{"description":"OK"}}}}},
-     "components":{"schemas":{"Id":{"type":"string"}}}}
-    """;
+                                     {"openapi":"3.0.3","info":{"title":"t","version":"1"},
+                                      "paths":{"/items/{id}":{"parameters":[{"name":"id","in":"path","required":true,"schema":{"$ref":"#/components/schemas/Id"}},{"name":"v","in":"query","description":"Version","schema":{"type":"integer","format":"int64","minimum":1}}],
+                                        "get":{"operationId":"getItem","responses":{"200":{"description":"OK"}}}}},
+                                      "components":{"schemas":{"Id":{"type":"string"}}}}
+                                     """;
 
     private static string Effective(string json)
     {
         var path = JsonNode.Parse(json)!["paths"]!["/items/{id}"]!;
         var inherited = path["parameters"]!.AsArray();
         var own = path["get"]!["parameters"]?.AsArray() ?? [];
-        return JsonNode.Parse("[" + string.Join(",", inherited.Concat(own).Select(node => node!.ToJsonString())) + "]")!.ToJsonString();
+        return JsonNode.Parse("[" + string.Join(",", inherited.Concat(own).Select(node => node!.ToJsonString())) + "]")!
+            .ToJsonString();
     }
 
     [Fact]
@@ -401,7 +425,14 @@ public sealed class OpenApiDraftTests
     public void Changing_an_inherited_parameter_overrides_it_on_top_of_the_path_level_node()
     {
         var tool = Assert.Single(OpenApiDraft.Read(Inherited));
-        var changed = tool with { Parameters = [.. tool.Parameters.Select(parameter => parameter.Name == "v" ? parameter with { Description = "Changed" } : parameter)] };
+        var changed = tool with
+        {
+            Parameters =
+            [
+                .. tool.Parameters.Select(parameter =>
+                    parameter.Name == "v" ? parameter with { Description = "Changed" } : parameter)
+            ]
+        };
 
         var saved = OpenApiDraft.Upsert(Inherited, changed);
 
@@ -410,7 +441,8 @@ public sealed class OpenApiDraftTests
         Assert.Equal("Changed", version!["description"]!.GetValue<string>());
         Assert.Equal("int64", version["schema"]!["format"]!.GetValue<string>());
         Assert.Equal(1, version["schema"]!["minimum"]!.GetValue<int>());
-        Assert.Equal("#/components/schemas/Id", JsonNode.Parse(saved)!["paths"]!["/items/{id}"]!["parameters"]![0]!["schema"]!["$ref"]!.GetValue<string>());
+        Assert.Equal("#/components/schemas/Id",
+            JsonNode.Parse(saved)!["paths"]!["/items/{id}"]!["parameters"]![0]!["schema"]!["$ref"]!.GetValue<string>());
     }
 
     [Fact]

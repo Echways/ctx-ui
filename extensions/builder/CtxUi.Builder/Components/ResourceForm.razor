@@ -6,8 +6,10 @@
     {
         <div class="builder-conflict" role="alert" data-testid="resource-conflict">
             <p class="warn-t">@BuilderText.DraftChangedElsewhere</p>
-            <button type="button" class="link" data-testid="resource-load-new-version" @onclick="() => OnReload.InvokeAsync()">@BuilderText.LoadNewVersion</button>
-            <button type="button" class="link" data-testid="resource-keep-mine" @onclick="RetryAsync">@(_pending == PendingAction.Save ? BuilderText.KeepMine : BuilderText.RetryOnNewVersion)</button>
+            <button type="button" class="link" data-testid="resource-load-new-version"
+                    @onclick="() => OnReload.InvokeAsync()">@BuilderText.LoadNewVersion</button>
+            <button type="button" class="link" data-testid="resource-keep-mine"
+                    @onclick="RetryAsync">@(_pending == PendingAction.Save ? BuilderText.KeepMine : BuilderText.RetryOnNewVersion)</button>
         </div>
     }
     @if (_error is not null)
@@ -15,45 +17,45 @@
         <p class="bad-t" role="alert" data-testid="resource-error">@_error</p>
     }
     <Form Model="_draft" OnSubmit="SaveAsync" Submit="@BuilderText.SaveResource" Done="@BuilderText.ResourceSaved">
-        <Field For="() => _draft.Uri" Label="@BuilderText.ResourceUri" />
-        <Field For="() => _draft.Name" Label="@BuilderText.ResourceName" />
-        <Field For="() => _draft.MimeType" Label="@BuilderText.ResourceMimeType" />
-        <Field For="() => _draft.Text" Label="@BuilderText.ResourceText" Lines="12" />
+        <Field For="() => _draft.Uri" Label="@BuilderText.ResourceUri"/>
+        <Field For="() => _draft.Name" Label="@BuilderText.ResourceName"/>
+        <Field For="() => _draft.MimeType" Label="@BuilderText.ResourceMimeType"/>
+        <Field For="() => _draft.Text" Label="@BuilderText.ResourceText" Lines="12"/>
     </Form>
     @if (Resource is not null)
     {
         <div class="builder-actions">
-            <Button Kind="ButtonKind.Danger" OnClick="DeleteAsync" Refresh="false" Done="@BuilderText.ResourceDeleted" data-testid="delete-resource"
-                    Confirm="@(new Confirm(string.Format(BuilderText.DeleteResourceQuestion, Resource.Uri), BuilderText.DeleteResourceWarning, BuilderText.DeleteResource, Danger: true))">@BuilderText.DeleteResource</Button>
+            <Button Kind="ButtonKind.Danger" OnClick="DeleteAsync" Refresh="false" Done="@BuilderText.ResourceDeleted"
+                    data-testid="delete-resource"
+                    Confirm="@(new Confirm(string.Format(BuilderText.DeleteResourceQuestion, Resource.Uri), BuilderText.DeleteResourceWarning, BuilderText.DeleteResource, true))">@BuilderText.DeleteResource</Button>
         </div>
     }
 </div>
 
 @code {
-    private enum PendingAction { Save, Delete }
+
+    private enum PendingAction
+    {
+        Save,
+        Delete
+    }
 
     private ResourceFormDraft _draft = new();
     private PendingAction _pending;
     private string? _error;
     private bool _conflict;
 
-    [Parameter, EditorRequired]
-    public Guid ServerId { get; set; }
+    [Parameter][EditorRequired] public Guid ServerId { get; set; }
 
-    [Parameter]
-    public BuilderResource? Resource { get; set; }
+    [Parameter] public BuilderResource? Resource { get; set; }
 
-    [Parameter, EditorRequired]
-    public long Revision { get; set; }
+    [Parameter][EditorRequired] public long Revision { get; set; }
 
-    [Parameter]
-    public EventCallback<string> OnSaved { get; set; }
+    [Parameter] public EventCallback<string> OnSaved { get; set; }
 
-    [Parameter]
-    public EventCallback OnDeleted { get; set; }
+    [Parameter] public EventCallback OnDeleted { get; set; }
 
-    [Parameter]
-    public EventCallback OnReload { get; set; }
+    [Parameter] public EventCallback OnReload { get; set; }
 
     private string _baseline = string.Empty;
 
@@ -123,4 +125,5 @@
             _error = failure.Message;
         }
     }
+
 }

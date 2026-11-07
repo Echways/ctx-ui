@@ -26,9 +26,15 @@ public sealed class CatalogHarness : IAsyncLifetime
         Catalog = AnotherCatalog();
     }
 
-    public ServerCatalog AnotherCatalog() => new(new PooledDbContextFactory<BuilderDatabase>(_options), Box, TimeProvider.System);
+    public ServerCatalog AnotherCatalog()
+    {
+        return new ServerCatalog(new PooledDbContextFactory<BuilderDatabase>(_options), Box, TimeProvider.System);
+    }
 
-    public BuilderDatabase Inspect() => Open();
+    public BuilderDatabase Inspect()
+    {
+        return Open();
+    }
 
     public ValueTask DisposeAsync()
     {

@@ -13,8 +13,12 @@ public class CredentialReaderTests
 
     private static readonly OAuthGrant Granted = new(Guid.NewGuid(), Guid.NewGuid(), [Resource]);
 
-    private static Task<Credential> ReadAsync(HttpContext context, bool oauthActive = true, IAccessTokenValidator? validator = null) =>
-        new CredentialReader(validator ?? new FakeValidator(Granted)).ReadAsync(context, Resource, oauthActive, CancellationToken.None);
+    private static Task<Credential> ReadAsync(HttpContext context, bool oauthActive = true,
+        IAccessTokenValidator? validator = null)
+    {
+        return new CredentialReader(validator ?? new FakeValidator(Granted)).ReadAsync(context, Resource, oauthActive,
+            CancellationToken.None);
+    }
 
     [Fact]
     public async Task Path_token_is_a_key()
@@ -32,7 +36,8 @@ public class CredentialReaderTests
     {
         var validator = new FakeValidator(Granted);
 
-        var credential = await ReadAsync(await Pipeline.RunAsync("/mcp/echo", authorization: "Bearer " + Key), validator: validator);
+        var credential = await ReadAsync(await Pipeline.RunAsync("/mcp/echo", authorization: "Bearer " + Key),
+            validator: validator);
 
         Assert.Equal(new Credential(CredentialKind.Key, Key), credential);
         Assert.Equal(0, validator.Calls);
@@ -42,13 +47,17 @@ public class CredentialReaderTests
     [InlineData(null)]
     [InlineData("Bearer ")]
     [InlineData("Basic dXNlcjpwYXNz")]
-    public async Task Nothing_usable_is_missing(string? header) =>
-        Assert.Equal(CredentialKind.Missing, (await ReadAsync(await Pipeline.RunAsync("/mcp/echo", authorization: header))).Kind);
+    public async Task Nothing_usable_is_missing(string? header)
+    {
+        Assert.Equal(CredentialKind.Missing,
+            (await ReadAsync(await Pipeline.RunAsync("/mcp/echo", authorization: header))).Kind);
+    }
 
     [Fact]
     public async Task Other_bearer_with_oauth_on_is_a_grant()
     {
-        var credential = await ReadAsync(await Pipeline.RunAsync("/mcp/echo", authorization: "Bearer eyJ.access.token"));
+        var credential =
+            await ReadAsync(await Pipeline.RunAsync("/mcp/echo", authorization: "Bearer eyJ.access.token"));
 
         Assert.Equal(new Credential(CredentialKind.Grant, Grant: Granted), credential);
     }
@@ -59,7 +68,7 @@ public class CredentialReaderTests
         var validator = new FakeValidator(Granted);
 
         var credential = await ReadAsync(
-            await Pipeline.RunAsync("/mcp/echo", authorization: "Bearer eyJ.access.token"), oauthActive: false, validator: validator);
+            await Pipeline.RunAsync("/mcp/echo", authorization: "Bearer eyJ.access.token"), false, validator);
 
         Assert.Equal(new Credential(CredentialKind.Key, "eyJ.access.token"), credential);
         Assert.Equal(0, validator.Calls);
@@ -71,7 +80,8 @@ public class CredentialReaderTests
         var reader = new CredentialReader(null);
 
         var credential = await reader.ReadAsync(
-            await Pipeline.RunAsync("/mcp/echo", authorization: "Bearer eyJ.access.token"), Resource, true, CancellationToken.None);
+            await Pipeline.RunAsync("/mcp/echo", authorization: "Bearer eyJ.access.token"), Resource, true,
+            CancellationToken.None);
 
         Assert.Equal(CredentialKind.Key, credential.Kind);
     }
@@ -82,7 +92,8 @@ public class CredentialReaderTests
         var foreign = Granted with { Audiences = ["https://mcp.example.org/mcp/docs"] };
 
         var credential = await ReadAsync(
-            await Pipeline.RunAsync("/mcp/echo", authorization: "Bearer eyJ.access.token"), validator: new FakeValidator(foreign));
+            await Pipeline.RunAsync("/mcp/echo", authorization: "Bearer eyJ.access.token"),
+            validator: new FakeValidator(foreign));
 
         Assert.Equal(CredentialKind.Invalid, credential.Kind);
     }
@@ -91,7 +102,8 @@ public class CredentialReaderTests
     public async Task Rejected_token_is_invalid()
     {
         var credential = await ReadAsync(
-            await Pipeline.RunAsync("/mcp/echo", authorization: "Bearer eyJ.access.token"), validator: new FakeValidator(null));
+            await Pipeline.RunAsync("/mcp/echo", authorization: "Bearer eyJ.access.token"),
+            validator: new FakeValidator(null));
 
         Assert.Equal(CredentialKind.Invalid, credential.Kind);
     }
@@ -100,7 +112,8 @@ public class CredentialReaderTests
     public async Task Validator_failure_is_invalid()
     {
         var credential = await ReadAsync(
-            await Pipeline.RunAsync("/mcp/echo", authorization: "Bearer eyJ.access.token"), validator: new FakeValidator(null, fail: true));
+            await Pipeline.RunAsync("/mcp/echo", authorization: "Bearer eyJ.access.token"),
+            validator: new FakeValidator(null, true));
 
         Assert.Equal(CredentialKind.Invalid, credential.Kind);
     }

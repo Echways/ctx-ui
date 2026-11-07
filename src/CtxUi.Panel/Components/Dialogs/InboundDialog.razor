@@ -7,41 +7,48 @@
             <p class="form-error" role="alert">@_error</p>
         }
         <section class="group">
-            <MudTextField @bind-Value="_slug" Label="Slug" Immediate="true" Disabled="Slug is not null" AutoFocus="Slug is null" HelperText="@PanelText.SlugHelp" />
-            <MudTextField @bind-Value="_name" Label="@PanelText.Title" Immediate="true" HelperText="@PanelText.TitleHelp" />
-            <MudTextField @bind-Value="_url" Label="@PanelText.McpServerAddress" Immediate="true" HelperText="@PanelText.McpServerAddressHelp" />
+            <MudTextField @bind-Value="_slug" Label="Slug" Immediate="true" Disabled="Slug is not null"
+                          AutoFocus="Slug is null" HelperText="@PanelText.SlugHelp"/>
+            <MudTextField @bind-Value="_name" Label="@PanelText.Title" Immediate="true"
+                          HelperText="@PanelText.TitleHelp"/>
+            <MudTextField @bind-Value="_url" Label="@PanelText.McpServerAddress" Immediate="true"
+                          HelperText="@PanelText.McpServerAddressHelp"/>
         </section>
         <section class="group">
             <h3>@PanelText.UpstreamHeaders</h3>
             @if (Slug is not null)
             {
                 <p class="hint">@_storedHeaders</p>
-                <MudCheckBox T="bool" @bind-Value="_replaceHeaders" Label="@PanelText.ReplaceHeaders" Dense="true" Class="check" />
+                <MudCheckBox T="bool" @bind-Value="_replaceHeaders" Label="@PanelText.ReplaceHeaders" Dense="true"
+                             Class="check"/>
             }
             @if (_replaceHeaders)
             {
-                <MudTextField @bind-Value="_headers" Label="@PanelText.UpstreamHeaders" Immediate="true" Lines="3" Sizing="InputSizing.Auto"
-                              HelperText="@PanelText.UpstreamHeadersHelp" />
+                <MudTextField @bind-Value="_headers" Label="@PanelText.UpstreamHeaders" Immediate="true" Lines="3"
+                              Sizing="InputSizing.Auto"
+                              HelperText="@PanelText.UpstreamHeadersHelp"/>
             }
-            <MudCheckBox T="bool" @bind-Value="_forwardIdentity" Label="@PanelText.ForwardIdentity" Dense="true" Class="check" />
+            <MudCheckBox T="bool" @bind-Value="_forwardIdentity" Label="@PanelText.ForwardIdentity" Dense="true"
+                         Class="check"/>
         </section>
         <section class="group">
             <h3>@PanelText.GroupLimits</h3>
             <div class="pair">
                 <MudNumericField T="int" @bind-Value="_timeoutSeconds" Label="@PanelText.Timeout" Immediate="true"
-                                 Min="1" Max="Inbound.RequestTimeoutCeiling" HideSpinButtons="true" />
+                                 Min="1" Max="Inbound.RequestTimeoutCeiling" HideSpinButtons="true"/>
                 <MudNumericField T="int" @bind-Value="_bodyKilobytes" Label="@PanelText.BodyLimit" Immediate="true"
-                                 Min="1" Max="Inbound.MaxBodyBytesCeiling / 1024" HideSpinButtons="true" />
+                                 Min="1" Max="Inbound.MaxBodyBytesCeiling / 1024" HideSpinButtons="true"/>
             </div>
         </section>
         @if (_summary is not null)
         {
-            <SlotBlocks Slot="PanelSlots.InboundSheet" Context="_summary" />
+            <SlotBlocks Slot="PanelSlots.InboundSheet" Context="_summary"/>
         }
     </ChildContent>
     <Actions>
         <button type="button" class="link" @onclick="() => MudDialog.Cancel()">@PanelText.Cancel</button>
-        <button type="button" class="btn-k pigment" @onclick="SaveAsync">@(Slug is null ? PanelText.AddInbound : PanelText.Save)</button>
+        <button type="button" class="btn-k pigment"
+                @onclick="SaveAsync">@(Slug is null ? PanelText.AddInbound : PanelText.Save)</button>
     </Actions>
 </Sheet>
 
@@ -59,11 +66,9 @@
 
     private InboundSummary? _summary;
 
-    [CascadingParameter]
-    private IMudDialogInstance MudDialog { get; set; } = default!;
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
 
-    [Parameter]
-    public string? Slug { get; set; }
+    [Parameter] public string? Slug { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
@@ -90,7 +95,7 @@
         {
             null => PanelText.HeadersLost,
             { Count: 0 } => PanelText.HeadersNone,
-            _ => string.Format(PanelText.HeadersSet, string.Join(", ", headers)),
+            _ => string.Format(PanelText.HeadersSet, string.Join(", ", headers))
         };
     }
 
@@ -105,7 +110,7 @@
                 ForwardIdentity = _forwardIdentity,
                 RequestTimeoutSeconds = _timeoutSeconds,
                 MaxBodyBytes = (int)Math.Min(int.MaxValue, _bodyKilobytes * 1024L),
-                UpstreamHeaders = _replaceHeaders ? PairLines.ParseText(_headers) : null,
+                UpstreamHeaders = _replaceHeaders ? PairLines.ParseText(_headers) : null
             };
             await Backend.ChangeAsync(services =>
             {
@@ -119,4 +124,5 @@
             _error = Words.Sentence(exception.Message);
         }
     }
+
 }

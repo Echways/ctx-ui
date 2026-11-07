@@ -8,7 +8,13 @@ public sealed class InMemoryXmlRepository : IXmlRepository
 {
     private readonly ConcurrentQueue<XElement> _elements = new();
 
-    public IReadOnlyCollection<XElement> GetAllElements() => _elements.ToArray();
+    public IReadOnlyCollection<XElement> GetAllElements()
+    {
+        return _elements.ToArray();
+    }
 
-    public void StoreElement(XElement element, string friendlyName) => _elements.Enqueue(element);
+    public void StoreElement(XElement element, string friendlyName)
+    {
+        _elements.Enqueue(element);
+    }
 }

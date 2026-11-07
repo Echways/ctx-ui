@@ -9,9 +9,10 @@ public sealed class CodeToolNamesTests
     {
         var names = CodeToolNames.From(
         [
-            ("mcp/a.py", "from fastmcp.tools import tool\n\n\n@tool\ndef alpha(x: int):\n    return x\n\n\n@tool(name=\"beta-name\")\nasync def beta_impl():\n    pass\n\n\n@tool(description='d')\ndef gamma():\n    pass\n\n\ndef helper():\n    pass\n"),
+            ("mcp/a.py",
+                "from fastmcp.tools import tool\n\n\n@tool\ndef alpha(x: int):\n    return x\n\n\n@tool(name=\"beta-name\")\nasync def beta_impl():\n    pass\n\n\n@tool(description='d')\ndef gamma():\n    pass\n\n\ndef helper():\n    pass\n"),
             ("mcp/data.json", "@tool\ndef ignored(): pass"),
-            ("other/b.py", "@tool\ndef elsewhere(): pass"),
+            ("other/b.py", "@tool\ndef elsewhere(): pass")
         ]);
 
         Assert.Equal(["alpha", "beta-name", "gamma"], names.Order(StringComparer.Ordinal));

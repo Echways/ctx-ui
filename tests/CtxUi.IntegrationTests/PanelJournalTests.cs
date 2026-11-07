@@ -21,7 +21,8 @@ public class PanelJournalTests
         await using var gateway = await GatewayHost.StartAsync();
         await gateway.AddInboundAsync("echo", upstream.McpUrl);
         await gateway.AddInboundAsync("broken", upstream.BaseUrl + "/broken");
-        var issued = await gateway.AddClientAsync("Иванов", ["echo", "broken"], limits: new ClientLimits(QuotaCalls: 1));
+        var issued =
+            await gateway.AddClientAsync("Иванов", ["echo", "broken"], limits: new ClientLimits(QuotaCalls: 1));
         await CallAsync(gateway, "echo", issued.Token, ToolsList);
         await CallAsync(gateway, "broken", issued.Token, ToolCall("search"));
         await CallAsync(gateway, "echo", issued.Token, ToolCall("echo"));
@@ -32,7 +33,9 @@ public class PanelJournalTests
         var page = await OpenJournalAsync(session);
 
         await Expect(Rows(page)).ToHaveCountAsync(6);
-        await Expect(Rows(page).Nth(1)).ToHaveTextAsync(DateTimeOffset.UtcNow.ToString("d MMMM", System.Globalization.CultureInfo.GetCultureInfo("ru")));
+        await Expect(Rows(page).Nth(1))
+            .ToHaveTextAsync(DateTimeOffset.UtcNow.ToString("d MMMM",
+                System.Globalization.CultureInfo.GetCultureInfo("ru")));
         await Expect(Rows(page).Nth(2).GetByRole(AriaRole.Cell).Nth(1)).ToHaveTextAsync("Иванов");
         await Expect(Rows(page).Nth(2).GetByRole(AriaRole.Cell).Nth(2)).ToHaveTextAsync("echo");
         await Expect(Rows(page).Nth(2).GetByRole(AriaRole.Cell).Nth(3)).ToHaveTextAsync("tools/call echo");
@@ -84,7 +87,9 @@ public class PanelJournalTests
 
         var page = await OpenJournalAsync(session);
 
-        await Expect(page.GetByRole(AriaRole.Row).Filter(new() { HasText = "Chrome · Windows" })).ToHaveCountAsync(1);
-        await Expect(page.GetByRole(AriaRole.Row).Filter(new() { HasText = "Иванов" })).ToHaveCountAsync(2);
+        await Expect(page.GetByRole(AriaRole.Row).Filter(new LocatorFilterOptions { HasText = "Chrome · Windows" }))
+            .ToHaveCountAsync(1);
+        await Expect(page.GetByRole(AriaRole.Row).Filter(new LocatorFilterOptions { HasText = "Иванов" }))
+            .ToHaveCountAsync(2);
     }
 }

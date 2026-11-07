@@ -15,7 +15,10 @@ public sealed class HttpServerProbe : IServerProbe, IDisposable
         Timeout = TimeSpan.FromSeconds(3)
     };
 
-    public string Address(string container) => $"http://{container}:{ServerPort}";
+    public string Address(string container)
+    {
+        return $"http://{container}:{ServerPort}";
+    }
 
     public async Task<bool> IsHealthyAsync(string container, CancellationToken ct)
     {
@@ -34,5 +37,8 @@ public sealed class HttpServerProbe : IServerProbe, IDisposable
         }
     }
 
-    public void Dispose() => _client.Dispose();
+    public void Dispose()
+    {
+        _client.Dispose();
+    }
 }

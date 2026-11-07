@@ -9,7 +9,8 @@ public sealed class BuilderFlowTests(RunnerFixture runner) : IClassFixture<Runne
     private const string Client = "Иванов";
     private const string WeatherSlug = "weather";
 
-    [Fact(Skip = BuilderEnvironment.Requirements, SkipUnless = nameof(BuilderEnvironment.Ready), SkipType = typeof(BuilderEnvironment))]
+    [Fact(Skip = BuilderEnvironment.Requirements, SkipUnless = nameof(BuilderEnvironment.Ready),
+        SkipType = typeof(BuilderEnvironment))]
     public async Task Server_goes_from_a_form_to_a_client_call_and_back()
     {
         await using var session = await BuilderSession.StartAsync(runner.Stack);
@@ -20,7 +21,8 @@ public sealed class BuilderFlowTests(RunnerFixture runner) : IClassFixture<Runne
         await session.ConnectWithMistakeAsync("Not a slug", "Погода", Client);
         await session.ConnectAsync(WeatherSlug, Client);
 
-        Assert.Contains("fastmcp", await session.CallThroughGatewayAsync(WeatherSlug, Client, "pkg_info", new { name = "fastmcp" }));
+        Assert.Contains("fastmcp",
+            await session.CallThroughGatewayAsync(WeatherSlug, Client, "pkg_info", new { name = "fastmcp" }));
 
         await session.AddCodeToolAsync("broken");
         await session.ReplaceCodeAsync("def broken(:\n");
@@ -31,11 +33,13 @@ public sealed class BuilderFlowTests(RunnerFixture runner) : IClassFixture<Runne
         var details = await session.ServerDetailsAsync();
         Assert.Equal(1, details.GetProperty("activeRelease").GetInt32());
         Assert.Equal("Running", details.GetProperty("state").GetString());
-        Assert.Contains("fastmcp", await session.CallThroughGatewayAsync(WeatherSlug, Client, "pkg_info", new { name = "fastmcp" }));
+        Assert.Contains("fastmcp",
+            await session.CallThroughGatewayAsync(WeatherSlug, Client, "pkg_info", new { name = "fastmcp" }));
         Assert.DoesNotContain("fail:", session.Panel.Log, StringComparison.Ordinal);
     }
 
-    [Fact(Skip = BuilderEnvironment.Requirements, SkipUnless = nameof(BuilderEnvironment.Ready), SkipType = typeof(BuilderEnvironment))]
+    [Fact(Skip = BuilderEnvironment.Requirements, SkipUnless = nameof(BuilderEnvironment.Ready),
+        SkipType = typeof(BuilderEnvironment))]
     public async Task Python_tool_edit_republishes_without_installing_packages()
     {
         await using var session = await BuilderSession.StartAsync(runner.Stack);
@@ -45,23 +49,29 @@ public sealed class BuilderFlowTests(RunnerFixture runner) : IClassFixture<Runne
 
         await session.PublishAsync("Running, v1");
         await session.ConnectAsync("greeter", Client);
-        Assert.Equal("Hello, Anna!", await session.CallThroughGatewayAsync("greeter", Client, "greet", new { name = "Anna" }));
+        Assert.Equal("Hello, Anna!",
+            await session.CallThroughGatewayAsync("greeter", Client, "greet", new { name = "Anna" }));
 
         await session.Page.GetByTestId("open-releases").ClickAsync();
         await session.Page.Locator("[data-path='mcp/greet.py']").ClickAsync();
-        await session.ReplaceCodeAsync("from fastmcp.tools import tool\n\n\n@tool\ndef greet(name: str) -> str:\n    return f\"Bonjour, {name}!\"\n");
+        await session.ReplaceCodeAsync(
+            "from fastmcp.tools import tool\n\n\n@tool\ndef greet(name: str) -> str:\n    return f\"Bonjour, {name}!\"\n");
         await session.PublishAsync("Running, v2");
 
-        Assert.Equal("Bonjour, Anna!", await session.CallThroughGatewayAsync("greeter", Client, "greet", new { name = "Anna" }));
+        Assert.Equal("Bonjour, Anna!",
+            await session.CallThroughGatewayAsync("greeter", Client, "greet", new { name = "Anna" }));
         await session.Page.GetByTestId("open-releases").ClickAsync();
         var second = session.Page.Locator("[data-release='2']");
         await Expect(second).ToContainTextAsync("Active");
-        Assert.Contains("is already built, reusing it", await second.Locator("pre").TextContentAsync(), StringComparison.Ordinal);
-        Assert.DoesNotContain("Installing the dependencies", await second.Locator("pre").TextContentAsync(), StringComparison.Ordinal);
+        Assert.Contains("is already built, reusing it", await second.Locator("pre").TextContentAsync(),
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("Installing the dependencies", await second.Locator("pre").TextContentAsync(),
+            StringComparison.Ordinal);
         Assert.DoesNotContain("fail:", session.Panel.Log, StringComparison.Ordinal);
     }
 
-    [Fact(Skip = BuilderEnvironment.Requirements, SkipUnless = nameof(BuilderEnvironment.Ready), SkipType = typeof(BuilderEnvironment))]
+    [Fact(Skip = BuilderEnvironment.Requirements, SkipUnless = nameof(BuilderEnvironment.Ready),
+        SkipType = typeof(BuilderEnvironment))]
     public async Task Unsaved_form_text_blocks_switching_until_it_is_discarded()
     {
         await using var session = await BuilderSession.StartAsync(runner.Stack);
@@ -76,18 +86,22 @@ public sealed class BuilderFlowTests(RunnerFixture runner) : IClassFixture<Runne
         await Expect(session.Page.GetByTestId("switch-blocked")).ToHaveCountAsync(0);
 
         await session.Page.GetByTestId("new-resource").ClickAsync();
-        var uri = session.Page.GetByTestId("resource-form").GetByLabel("Address (URI)", new() { Exact = true }).First;
+        var uri = session.Page.GetByTestId("resource-form")
+            .GetByLabel("Address (URI)", new LocatorGetByLabelOptions { Exact = true }).First;
         await uri.FillAsync("data://typed");
         await session.Page.GetByTestId("new-resource").ClickAsync();
         await session.Page.GetByTestId("discard-mine").ClickAsync();
-        await Expect(session.Page.GetByTestId("resource-form").GetByLabel("Address (URI)", new() { Exact = true }).First).ToHaveValueAsync("");
+        await Expect(session.Page.GetByTestId("resource-form")
+            .GetByLabel("Address (URI)", new LocatorGetByLabelOptions { Exact = true }).First).ToHaveValueAsync("");
         Assert.DoesNotContain("fail:", session.Panel.Log, StringComparison.Ordinal);
     }
 
-    private static async Task AssertBlocksAsync(BuilderSession session, string opener, string form, string label, string text)
+    private static async Task AssertBlocksAsync(BuilderSession session, string opener, string form, string label,
+        string text)
     {
         await session.Page.GetByTestId(opener).ClickAsync();
-        var field = session.Page.GetByTestId(form).GetByLabel(label, new() { Exact = true }).First;
+        var field = session.Page.GetByTestId(form).GetByLabel(label, new LocatorGetByLabelOptions { Exact = true })
+            .First;
         await field.FillAsync(text);
         await session.Page.GetByTestId("open-releases").ClickAsync();
         await Expect(session.Page.GetByTestId("switch-blocked")).ToBeVisibleAsync();
@@ -97,7 +111,8 @@ public sealed class BuilderFlowTests(RunnerFixture runner) : IClassFixture<Runne
         await Expect(session.Page.GetByTestId(form)).ToHaveCountAsync(0);
     }
 
-    [Fact(Skip = "Set CTXUI_BINARY to a ctx-ui server binary to run the builder flow tests", SkipUnless = nameof(BuilderEnvironment.PanelBinaryIsSet), SkipType = typeof(BuilderEnvironment))]
+    [Fact(Skip = "Set CTXUI_BINARY to a ctx-ui server binary to run the builder flow tests",
+        SkipUnless = nameof(BuilderEnvironment.PanelBinaryIsSet), SkipType = typeof(BuilderEnvironment))]
     public async Task Panel_without_the_extension_shows_no_trace_of_it()
     {
         var empty = Directory.CreateTempSubdirectory("ctxb-no-extensions-").FullName;
@@ -108,7 +123,8 @@ public sealed class BuilderFlowTests(RunnerFixture runner) : IClassFixture<Runne
 
             var overview = await session.Page.ContentAsync();
             Assert.DoesNotContain("builder", overview, StringComparison.OrdinalIgnoreCase);
-            await Expect(session.Page.GetByRole(AriaRole.Navigation).GetByRole(AriaRole.Link, new() { Name = "Servers", Exact = true })).ToHaveCountAsync(0);
+            await Expect(session.Page.GetByRole(AriaRole.Navigation).GetByRole(AriaRole.Link,
+                new LocatorGetByRoleOptions { Name = "Servers", Exact = true })).ToHaveCountAsync(0);
 
             var unknown = await session.Page.APIRequest.GetAsync(panel.Url + "nothing-here");
             var page = await session.Page.APIRequest.GetAsync(panel.Url + "builder");
@@ -118,16 +134,18 @@ public sealed class BuilderFlowTests(RunnerFixture runner) : IClassFixture<Runne
             var endpoint = await session.Page.APIRequest.GetAsync(panel.Url + "extensions/builder/servers");
             Assert.Equal(unknownEndpoint.Status, endpoint.Status);
             Assert.Equal(unknownEndpoint.Headers["content-type"], endpoint.Headers["content-type"]);
-            Assert.DoesNotContain("builder", await panel.CliAsync("extension", "list"), StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain("builder", await panel.CliAsync("extension", "list"),
+                StringComparison.OrdinalIgnoreCase);
             Assert.DoesNotContain("fail:", panel.Log, StringComparison.Ordinal);
         }
         finally
         {
-            Directory.Delete(empty, recursive: true);
+            Directory.Delete(empty, true);
         }
     }
 
-    [Fact(Skip = BuilderEnvironment.Requirements, SkipUnless = nameof(BuilderEnvironment.Ready), SkipType = typeof(BuilderEnvironment))]
+    [Fact(Skip = BuilderEnvironment.Requirements, SkipUnless = nameof(BuilderEnvironment.Ready),
+        SkipType = typeof(BuilderEnvironment))]
     public async Task Exported_project_runs_with_plain_fastmcp()
     {
         await using var session = await BuilderSession.StartAsync(runner.Stack);

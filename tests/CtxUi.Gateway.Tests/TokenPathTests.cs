@@ -22,8 +22,10 @@ public class TokenPathTests
     [InlineData("/K/x/mcp/echo")]
     [InlineData("/")]
     [InlineData(null)]
-    public void Other_paths_are_left_alone(string? path) =>
+    public void Other_paths_are_left_alone(string? path)
+    {
         Assert.False(TokenPath.TrySplit(path, out _, out _));
+    }
 
     [Fact]
     public async Task Middleware_hides_the_token_from_everything_downstream()

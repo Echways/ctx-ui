@@ -8,6 +8,9 @@ public sealed class ImportSelection
 
     public bool UseBaseUrl { get; set; }
 
-    public static ImportSelection Default(ImportedApi api, string? currentBaseUrl) =>
-        new() { UseBaseUrl = string.IsNullOrWhiteSpace(currentBaseUrl) && api.BaseUrl is not null };
+    public static ImportSelection Default(ImportedApi api, string? currentBaseUrl)
+    {
+        return new ImportSelection
+        { UseBaseUrl = string.IsNullOrWhiteSpace(currentBaseUrl) && api.BaseUrl is not null };
+    }
 }

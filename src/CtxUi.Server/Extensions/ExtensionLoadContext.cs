@@ -8,7 +8,7 @@ public sealed class ExtensionLoadContext : AssemblyLoadContext
     private static readonly string[] SharedPrefixes =
     [
         "Enfilade", "MudBlazor", "Jeffijoe.MessageFormat", "Microsoft.AspNetCore", "Microsoft.Extensions",
-        "Microsoft.EntityFrameworkCore", "Microsoft.Data.Sqlite", "SQLitePCLRaw", "System.",
+        "Microsoft.EntityFrameworkCore", "Microsoft.Data.Sqlite", "SQLitePCLRaw", "System."
     ];
 
     private readonly AssemblyDependencyResolver _resolver;
@@ -20,11 +20,16 @@ public sealed class ExtensionLoadContext : AssemblyLoadContext
         Resolving += (_, name) => FromFolder(name);
     }
 
-    protected override Assembly? Load(AssemblyName assemblyName) =>
-        IsShared(assemblyName.Name!) ? null : FromFolder(assemblyName);
+    protected override Assembly? Load(AssemblyName assemblyName)
+    {
+        return IsShared(assemblyName.Name!) ? null : FromFolder(assemblyName);
+    }
 
-    private static bool IsShared(string name) =>
-        name == "CtxUi.Extensions" || SharedPrefixes.Any(prefix => name.StartsWith(prefix, StringComparison.Ordinal));
+    private static bool IsShared(string name)
+    {
+        return name == "CtxUi.Extensions" ||
+               SharedPrefixes.Any(prefix => name.StartsWith(prefix, StringComparison.Ordinal));
+    }
 
     private Assembly? FromFolder(AssemblyName name)
     {

@@ -23,11 +23,15 @@ public sealed class PanelSession : IAsyncDisposable
 
     public IPage Page { get; }
 
-    public static Task<IBrowser> SharedBrowserAsync() => Browser.Value;
+    public static Task<IBrowser> SharedBrowserAsync()
+    {
+        return Browser.Value;
+    }
 
     public string Password { get; }
 
-    public static async Task<PanelSession> OpenAsync(GatewayHost gateway, string admin = "root", string? language = "ru")
+    public static async Task<PanelSession> OpenAsync(GatewayHost gateway, string admin = "root",
+        string? language = "ru")
     {
         var issued = await gateway.AddAdminAsync(admin);
         var context = await NewContextAsync(gateway, language);
@@ -56,7 +60,7 @@ public sealed class PanelSession : IAsyncDisposable
             Domain = cookie.Domain,
             Path = cookie.Path,
             HttpOnly = cookie.HttpOnly,
-            Secure = cookie.Secure,
+            Secure = cookie.Secure
         }));
         var page = await context.NewPageAsync();
         await page.GotoAsync("");
@@ -68,10 +72,13 @@ public sealed class PanelSession : IAsyncDisposable
     {
         await Page.GetByLabel("Логин").FillAsync(name);
         await Page.GetByLabel("Пароль").FillAsync(password);
-        await Page.GetByRole(AriaRole.Button, new() { Name = "Войти" }).ClickAsync();
+        await Page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Войти" }).ClickAsync();
     }
 
-    public ValueTask DisposeAsync() => _context.DisposeAsync();
+    public ValueTask DisposeAsync()
+    {
+        return _context.DisposeAsync();
+    }
 
     private static async Task<IBrowserContext> NewContextAsync(GatewayHost gateway, string? language)
     {
@@ -80,18 +87,18 @@ public sealed class PanelSession : IAsyncDisposable
         {
             BaseURL = gateway.PanelUrl,
             Locale = "ru-RU",
-            Permissions = ["clipboard-read", "clipboard-write"],
+            Permissions = ["clipboard-read", "clipboard-write"]
         });
         context.SetDefaultTimeout(PatienceMs);
         if (language is not null)
-        {
-            await context.AddCookiesAsync([new Cookie
-            {
-                Name = CookieRequestCultureProvider.DefaultCookieName,
-                Value = CookieRequestCultureProvider.MakeCookieValue(new RequestCulture(language)),
-                Url = gateway.PanelUrl,
-            }]);
-        }
+            await context.AddCookiesAsync([
+                new Cookie
+                {
+                    Name = CookieRequestCultureProvider.DefaultCookieName,
+                    Value = CookieRequestCultureProvider.MakeCookieValue(new RequestCulture(language)),
+                    Url = gateway.PanelUrl
+                }
+            ]);
 
         return context;
     }

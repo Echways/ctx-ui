@@ -9,8 +9,10 @@ public sealed class TestDatabase : IAsyncDisposable
     private readonly SqliteConnection _connection = new("DataSource=:memory:");
     private readonly DbContextOptions<CtxUiDbContext> _options;
 
-    private TestDatabase() =>
+    private TestDatabase()
+    {
         _options = new DbContextOptionsBuilder<CtxUiDbContext>().UseSqlite(_connection).Options;
+    }
 
     public static async Task<TestDatabase> CreateAsync()
     {
@@ -21,7 +23,13 @@ public sealed class TestDatabase : IAsyncDisposable
         return database;
     }
 
-    public CtxUiDbContext NewContext() => new(_options);
+    public CtxUiDbContext NewContext()
+    {
+        return new CtxUiDbContext(_options);
+    }
 
-    public ValueTask DisposeAsync() => _connection.DisposeAsync();
+    public ValueTask DisposeAsync()
+    {
+        return _connection.DisposeAsync();
+    }
 }

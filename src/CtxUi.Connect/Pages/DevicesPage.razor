@@ -1,5 +1,7 @@
 <ConnectPage Title="@ConnectText.MyDevices">
-    <p class="lead"><Phrase Pattern="@ConnectText.SignedInAs" Arguments="[ClientName]" /></p>
+    <p class="lead">
+        <Phrase Pattern="@ConnectText.SignedInAs" Arguments="[ClientName]"/>
+    </p>
     <p class="quiet">@(SelfRevoke ? ConnectText.DevicesLead : ConnectText.DevicesManagedByAdmin)</p>
     @if (Devices.Count == 0)
     {
@@ -14,8 +16,9 @@
                     @if (SelfRevoke)
                     {
                         <form method="post" action="@(ConnectServices.Prefix)/devices/@device.Id/revoke">
-                            <AntiforgeryToken />
-                            <button class="link" type="submit" aria-label="@string.Format(ConnectText.DisconnectOf, device.Name)">@ConnectText.Disconnect</button>
+                            <AntiforgeryToken/>
+                            <button class="link" type="submit"
+                                    aria-label="@string.Format(ConnectText.DisconnectOf, device.Name)">@ConnectText.Disconnect</button>
                         </form>
                     }
                 </DeviceCard>
@@ -23,21 +26,17 @@
         </ul>
     }
     <form class="aside" method="post" action="@(ConnectServices.Prefix)/signout">
-        <AntiforgeryToken />
+        <AntiforgeryToken/>
         <button class="link" type="submit">@ConnectText.SignOut</button>
     </form>
 </ConnectPage>
 
 @code {
-    [Parameter]
-    public IReadOnlyList<Device> Devices { get; set; } = [];
+    [Parameter] public IReadOnlyList<Device> Devices { get; set; } = [];
 
-    [Parameter]
-    public string ClientName { get; set; } = "";
+    [Parameter] public string ClientName { get; set; } = "";
 
-    [Parameter]
-    public Guid? CurrentDeviceId { get; set; }
+    [Parameter] public Guid? CurrentDeviceId { get; set; }
 
-    [Parameter]
-    public bool SelfRevoke { get; set; }
+    [Parameter] public bool SelfRevoke { get; set; }
 }

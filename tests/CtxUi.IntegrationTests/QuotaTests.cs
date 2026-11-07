@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.Builder;
@@ -13,30 +14,44 @@ public class QuotaTests
 {
     private static readonly DateTimeOffset Start = new(2026, 10, 12, 10, 0, 0, TimeSpan.Zero);
 
-    private static string ToolCall(string id = "1", string tool = "echo") =>
-        "{\"jsonrpc\":\"2.0\",\"id\":" + id + ",\"method\":\"tools/call\",\"params\":{\"name\":\"" + tool + "\",\"arguments\":{}}}";
+    private static string ToolCall(string id = "1", string tool = "echo")
+    {
+        return "{\"jsonrpc\":\"2.0\",\"id\":" + id + ",\"method\":\"tools/call\",\"params\":{\"name\":\"" + tool +
+               "\",\"arguments\":{}}}";
+    }
 
-    private static string Request(string method, string id = "1") =>
-        $$"""{"jsonrpc":"2.0","id":{{id}},"method":"{{method}}"}""";
+    private static string Request(string method, string id = "1")
+    {
+        return $$"""{"jsonrpc":"2.0","id":{{id}},"method":"{{method}}"}""";
+    }
 
-    private static async Task<HttpResponseMessage> CallAsync(GatewayHost gateway, string token, string body, string inbound = "echo") =>
-        await gateway.Http.SendAsync(GatewayHost.Post($"/mcp/{inbound}", token, body));
+    private static async Task<HttpResponseMessage> CallAsync(GatewayHost gateway, string token, string body,
+        string inbound = "echo")
+    {
+        return await gateway.Http.SendAsync(GatewayHost.Post($"/mcp/{inbound}", token, body));
+    }
 
-    private static async Task<JsonElement> JsonAsync(HttpResponseMessage response) =>
-        JsonDocument.Parse(await response.Content.ReadAsStringAsync()).RootElement;
+    private static async Task<JsonElement> JsonAsync(HttpResponseMessage response)
+    {
+        return JsonDocument.Parse(await response.Content.ReadAsStringAsync()).RootElement;
+    }
 
-    private static async Task<bool> IsQuotaRefusalAsync(HttpResponseMessage response) =>
-        response.StatusCode == HttpStatusCode.OK &&
-        (await response.Content.ReadAsStringAsync()).Contains("Лимит вызовов исчерпан");
+    private static async Task<bool> IsQuotaRefusalAsync(HttpResponseMessage response)
+    {
+        return response.StatusCode == HttpStatusCode.OK &&
+               (await response.Content.ReadAsStringAsync()).Contains("Лимит вызовов исчерпан");
+    }
 
     [Fact]
     public async Task Call_over_the_quota_gets_a_tool_error_the_model_can_read_and_stays_away_from_the_upstream()
     {
         var clock = new FakeTimeProvider(Start);
         await using var upstream = await FakeUpstream.StartAsync();
-        await using var gateway = await GatewayHost.StartAsync(builder => builder.Services.AddSingleton<TimeProvider>(clock));
+        await using var gateway =
+            await GatewayHost.StartAsync(builder => builder.Services.AddSingleton<TimeProvider>(clock));
         await gateway.AddInboundAsync("echo", upstream.McpUrl);
-        var issued = await gateway.AddClientAsync("Иванов", ["echo"], limits: new ClientLimits(QuotaCalls: 2, ResetEveryDays: 30));
+        var issued = await gateway.AddClientAsync("Иванов", ["echo"],
+            limits: new ClientLimits(QuotaCalls: 2, ResetEveryDays: 30));
 
         using var first = await CallAsync(gateway, issued.Token, ToolCall("1"));
         using var second = await CallAsync(gateway, issued.Token, ToolCall("2"));
@@ -69,14 +84,16 @@ public class QuotaTests
         using var refused = await CallAsync(gateway, issued.Token, ToolCall());
 
         using var initialize = await CallAsync(gateway, issued.Token, Request("initialize"));
-        using var initialized = await CallAsync(gateway, issued.Token, """{"jsonrpc":"2.0","method":"notifications/initialized"}""");
+        using var initialized = await CallAsync(gateway, issued.Token,
+            """{"jsonrpc":"2.0","method":"notifications/initialized"}""");
         using var list = await CallAsync(gateway, issued.Token, Request("tools/list"));
         using var listen = new HttpRequestMessage(HttpMethod.Get, "/mcp/echo");
-        listen.Headers.Authorization = new("Bearer", issued.Token);
+        listen.Headers.Authorization = new AuthenticationHeaderValue("Bearer", issued.Token);
         using var stream = await gateway.Http.SendAsync(listen);
 
         Assert.True(await IsQuotaRefusalAsync(refused));
-        Assert.All([initialize, initialized, list, stream], response => Assert.Equal(HttpStatusCode.OK, response.StatusCode));
+        Assert.All([initialize, initialized, list, stream],
+            response => Assert.Equal(HttpStatusCode.OK, response.StatusCode));
         Assert.Equal(5, upstream.Requests.Count);
     }
 
@@ -88,7 +105,8 @@ public class QuotaTests
         await gateway.AddInboundAsync("echo", upstream.McpUrl);
         var issued = await gateway.AddClientAsync("Иванов", ["echo"], limits: new ClientLimits(QuotaCalls: 1));
 
-        foreach (var method in new[] { "initialize", "ping", "tools/list", "resources/read", "prompts/get", "tools/call/extra" })
+        foreach (var method in new[]
+                     { "initialize", "ping", "tools/list", "resources/read", "prompts/get", "tools/call/extra" })
         {
             using var free = await CallAsync(gateway, issued.Token, Request(method));
             Assert.False(await IsQuotaRefusalAsync(free));
@@ -106,9 +124,11 @@ public class QuotaTests
     {
         var clock = new FakeTimeProvider(Start);
         await using var upstream = await FakeUpstream.StartAsync();
-        await using var gateway = await GatewayHost.StartAsync(builder => builder.Services.AddSingleton<TimeProvider>(clock));
+        await using var gateway =
+            await GatewayHost.StartAsync(builder => builder.Services.AddSingleton<TimeProvider>(clock));
         await gateway.AddInboundAsync("echo", upstream.McpUrl);
-        var issued = await gateway.AddClientAsync("Иванов", ["echo"], limits: new ClientLimits(QuotaCalls: 1, ResetEveryDays: 7));
+        var issued = await gateway.AddClientAsync("Иванов", ["echo"],
+            limits: new ClientLimits(QuotaCalls: 1, ResetEveryDays: 7));
         using var spent = await CallAsync(gateway, issued.Token, ToolCall());
 
         clock.Advance(TimeSpan.FromDays(7) - TimeSpan.FromSeconds(1));
@@ -137,7 +157,8 @@ public class QuotaTests
         await using var gateway = await GatewayHost.StartAsync();
         await gateway.AddInboundAsync("broken", upstream.BaseUrl + "/broken");
         await gateway.AddInboundAsync("echo", upstream.McpUrl);
-        var issued = await gateway.AddClientAsync("Иванов", ["broken", "echo"], limits: new ClientLimits(QuotaCalls: 1));
+        var issued =
+            await gateway.AddClientAsync("Иванов", ["broken", "echo"], limits: new ClientLimits(QuotaCalls: 1));
 
         for (var attempt = 0; attempt < 3; attempt++)
         {
@@ -256,7 +277,8 @@ public class QuotaTests
         var answer = await JsonAsync(response);
         Assert.Equal(JsonValueKind.Null, answer.GetProperty("id").ValueKind);
         Assert.Equal(-32600, answer.GetProperty("error").GetProperty("code").GetInt32());
-        Assert.Contains("шлюз не разобрал тело запроса", answer.GetProperty("error").GetProperty("message").GetString());
+        Assert.Contains("шлюз не разобрал тело запроса",
+            answer.GetProperty("error").GetProperty("message").GetString());
         Assert.False(await IsQuotaRefusalAsync(call));
         Assert.Single(upstream.Requests);
     }
@@ -277,13 +299,14 @@ public class QuotaTests
         });
         var issued = await gateway.AddClientAsync("Иванов", ["echo"]);
         var padding = new string('x', 2048);
-        var bytes = Encoding.UTF8.GetBytes("{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"ping\",\"params\":{\"pad\":\"" + padding + "\"}}");
+        var bytes = Encoding.UTF8.GetBytes("{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"ping\",\"params\":{\"pad\":\"" +
+                                           padding + "\"}}");
 
         using var request = new HttpRequestMessage(HttpMethod.Post, "/mcp/echo")
         {
-            Content = chunked ? new StreamContent(new MemoryStream(bytes)) : new ByteArrayContent(bytes),
+            Content = chunked ? new StreamContent(new MemoryStream(bytes)) : new ByteArrayContent(bytes)
         };
-        request.Headers.Authorization = new("Bearer", issued.Token);
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", issued.Token);
         request.Headers.TransferEncodingChunked = chunked;
         using var tooLarge = await gateway.Http.SendAsync(request);
         using var small = await CallAsync(gateway, issued.Token, Request("ping"));
@@ -301,7 +324,8 @@ public class QuotaTests
         await using var gateway = await GatewayHost.StartAsync();
         await gateway.AddInboundAsync("echo", upstream.McpUrl);
         var issued = await gateway.AddClientAsync("Иванов", ["echo"], limits: new ClientLimits(QuotaCalls: 5));
-        var body = "{ \"jsonrpc\" : \"2.0\",\n\t\"id\":1, \"method\":\"tools\\/call\", \"params\":{\"name\":\"эхо\",\"arguments\":{\"text\":\"привет \\u043c\\u0438\\u0440\"}} }";
+        var body =
+            "{ \"jsonrpc\" : \"2.0\",\n\t\"id\":1, \"method\":\"tools\\/call\", \"params\":{\"name\":\"эхо\",\"arguments\":{\"text\":\"привет \\u043c\\u0438\\u0440\"}} }";
 
         using var response = await CallAsync(gateway, issued.Token, body);
 
@@ -315,7 +339,8 @@ public class QuotaTests
         await using var upstream = await FakeUpstream.StartAsync();
         await using var gateway = await GatewayHost.StartAsync();
         await gateway.AddInboundAsync("echo", upstream.McpUrl);
-        var issued = await gateway.AddClientAsync("Иванов", ["echo"], limits: new ClientLimits(QuotaCalls: 2, ResetEveryDays: 30));
+        var issued = await gateway.AddClientAsync("Иванов", ["echo"],
+            limits: new ClientLimits(QuotaCalls: 2, ResetEveryDays: 30));
         using var beforeRestart = await CallAsync(gateway, issued.Token, ToolCall());
 
         await gateway.RestartAsync();
@@ -340,7 +365,8 @@ public class QuotaTests
         await Eventually.TrueAsync(
             async () =>
             {
-                var client = await gateway.ChangeAsync(services => services.GetRequiredService<ClientService>().GetAsync("Иванов"));
+                var client = await gateway.ChangeAsync(services =>
+                    services.GetRequiredService<ClientService>().GetAsync("Иванов"));
                 return QuotaPeriod.UsedCalls(client, DateTimeOffset.UtcNow) == 2;
             },
             "счётчик вызовов записан в базу");
@@ -351,7 +377,8 @@ public class QuotaTests
     {
         var clock = new FakeTimeProvider(Start);
         await using var upstream = await FakeUpstream.StartAsync();
-        await using var gateway = await GatewayHost.StartAsync(builder => builder.Services.AddSingleton<TimeProvider>(clock));
+        await using var gateway =
+            await GatewayHost.StartAsync(builder => builder.Services.AddSingleton<TimeProvider>(clock));
         await gateway.AddInboundAsync("echo", upstream.McpUrl);
         var issued = await gateway.AddClientAsync("Иванов", ["echo"], limits: new ClientLimits(QuotaCalls: 1));
         using var spent = await CallAsync(gateway, issued.Token, ToolCall());

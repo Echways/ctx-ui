@@ -60,7 +60,9 @@ public sealed partial class FakeRunner : HttpMessageHandler
     public string[] CallsSnapshot()
     {
         lock (_gate)
+        {
             return [.. Calls];
+        }
     }
 
     public void FinishBuild(int number)
@@ -90,9 +92,13 @@ public sealed partial class FakeRunner : HttpMessageHandler
                     entry.Error = "The build was interrupted by a restart of the runner.";
                 }
                 else if (entry.State == ReleaseState.Built)
+                {
                     Releases.Remove(entry.Number);
+                }
                 else if (loseMarker && entry.State == ReleaseState.Active)
+                {
                     entry.State = ReleaseState.Candidate;
+                }
             }
 
             if (loseMarker)
@@ -103,16 +109,22 @@ public sealed partial class FakeRunner : HttpMessageHandler
     public void Forget(int number)
     {
         lock (_gate)
+        {
             Releases.Remove(number);
+        }
     }
 
     public void SeedBuilt(int number, ReleaseState state = ReleaseState.Retired)
     {
         lock (_gate)
-            Releases[number] = new Entry(number, state) { EnvironmentHash = "environment", LockFile = $"lock-{number}" };
+        {
+            Releases[number] = new Entry(number, state)
+            { EnvironmentHash = "environment", LockFile = $"lock-{number}" };
+        }
     }
 
-    protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+    protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request,
+        CancellationToken cancellationToken)
     {
         if (Unreachable)
             throw new HttpRequestException("connection refused");
@@ -120,7 +132,9 @@ public sealed partial class FakeRunner : HttpMessageHandler
         var path = request.RequestUri!.AbsolutePath;
         var body = request.Content is null ? [] : await request.Content.ReadAsByteArrayAsync(cancellationToken);
         lock (_gate)
+        {
             return Handle(request.Method, path, body);
+        }
     }
 
     private HttpResponseMessage Handle(HttpMethod method, string path, byte[] body)
@@ -129,12 +143,14 @@ public sealed partial class FakeRunner : HttpMessageHandler
         if (!match.Success)
             return Problem(HttpStatusCode.NotFound, "unknown path");
 
-        if (match.Groups["server"].Success && UnknownServers.Contains(Guid.Parse(match.Groups["server"].Value)) && method == HttpMethod.Get && !match.Groups["number"].Success)
+        if (match.Groups["server"].Success && UnknownServers.Contains(Guid.Parse(match.Groups["server"].Value)) &&
+            method == HttpMethod.Get && !match.Groups["number"].Success)
             return Problem(HttpStatusCode.NotFound, "unknown server");
 
         var release = match.Groups["number"].Success ? int.Parse(match.Groups["number"].Value) : (int?)null;
         var action = match.Groups["action"].Value;
-        Calls.Add($"{method} {(release is null ? "server" : "release " + release)}{(action.Length == 0 ? "" : " " + action)}");
+        Calls.Add(
+            $"{method} {(release is null ? "server" : "release " + release)}{(action.Length == 0 ? "" : " " + action)}");
 
         if (release is null)
             return HandleServer(method, action, body);
@@ -142,10 +158,12 @@ public sealed partial class FakeRunner : HttpMessageHandler
         return (method.Method, action) switch
         {
             ("POST", "") => Build(release.Value, body),
-            ("GET", "") => Releases.TryGetValue(release.Value, out var entry) ? Json(Status(entry)) : Problem(HttpStatusCode.NotFound, "unknown release"),
+            ("GET", "") => Releases.TryGetValue(release.Value, out var entry)
+                ? Json(Status(entry))
+                : Problem(HttpStatusCode.NotFound, "unknown release"),
             ("POST", "start") => Start(release.Value, body),
             ("POST", "activate") => Activate(release.Value),
-            _ => Problem(HttpStatusCode.NotFound, "unknown action"),
+            _ => Problem(HttpStatusCode.NotFound, "unknown action")
         };
     }
 
@@ -153,7 +171,8 @@ public sealed partial class FakeRunner : HttpMessageHandler
     {
         if (method == HttpMethod.Put)
         {
-            Specs.Add(System.Text.Json.JsonSerializer.Deserialize<ServerSpec>(body, System.Text.Json.JsonSerializerOptions.Web)!);
+            Specs.Add(System.Text.Json.JsonSerializer.Deserialize<ServerSpec>(body,
+                System.Text.Json.JsonSerializerOptions.Web)!);
             KnowsSpec = true;
             return new HttpResponseMessage(HttpStatusCode.NoContent);
         }
@@ -167,7 +186,8 @@ public sealed partial class FakeRunner : HttpMessageHandler
         }
 
         if (method == HttpMethod.Get && action.Length == 0)
-            return Json(new ServerState(Guid.Empty, Active, [.. Releases.Values.OrderBy(entry => entry.Number).Select(Status)]));
+            return Json(new ServerState(Guid.Empty, Active,
+                [.. Releases.Values.OrderBy(entry => entry.Number).Select(Status)]));
 
         return Problem(HttpStatusCode.NotFound, "unknown action");
     }
@@ -181,9 +201,11 @@ public sealed partial class FakeRunner : HttpMessageHandler
         }
 
         if (!KnowsSpec)
-            return Problem(HttpStatusCode.Conflict, "The specification of server is not known.", RunnerProblems.SpecRequired);
+            return Problem(HttpStatusCode.Conflict, "The specification of server is not known.",
+                RunnerProblems.SpecRequired);
         if (Releases.Values.Any(entry => entry.State == ReleaseState.Building))
-            return Problem(HttpStatusCode.Conflict, "A release of this server is still building. Only one build runs at a time.");
+            return Problem(HttpStatusCode.Conflict,
+                "A release of this server is still building. Only one build runs at a time.");
         if (Releases.TryGetValue(number, out var existing) && existing.State != ReleaseState.Failed)
             return Problem(HttpStatusCode.Conflict, $"Release {number} already exists with state {existing.State}.");
 
@@ -213,11 +235,14 @@ public sealed partial class FakeRunner : HttpMessageHandler
     private HttpResponseMessage Start(int number, byte[] body)
     {
         if (!KnowsSpec)
-            return Problem(HttpStatusCode.Conflict, "The specification of server is not known. Send it with PUT before a start.");
+            return Problem(HttpStatusCode.Conflict,
+                "The specification of server is not known. Send it with PUT before a start.");
         if (!Releases.TryGetValue(number, out var entry))
             return Problem(HttpStatusCode.NotFound, "unknown release");
 
-        Starts.Add((number, System.Text.Json.JsonSerializer.Deserialize<StartRelease>(body, System.Text.Json.JsonSerializerOptions.Web)!));
+        Starts.Add((number,
+            System.Text.Json.JsonSerializer.Deserialize<StartRelease>(body,
+                System.Text.Json.JsonSerializerOptions.Web)!));
         if (FailStarts.Contains(number))
         {
             entry.State = ReleaseState.Failed;
@@ -234,7 +259,8 @@ public sealed partial class FakeRunner : HttpMessageHandler
 
     private HttpResponseMessage Activate(int number)
     {
-        if (!Releases.TryGetValue(number, out var entry) || entry.State != ReleaseState.Candidate || FailActivations.Contains(number))
+        if (!Releases.TryGetValue(number, out var entry) || entry.State != ReleaseState.Candidate ||
+            FailActivations.Contains(number))
             return Problem(HttpStatusCode.Conflict, $"Release {number} is not a healthy candidate.");
 
         if (Active is { } previous && previous != number && Releases.TryGetValue(previous, out var old))
@@ -244,13 +270,22 @@ public sealed partial class FakeRunner : HttpMessageHandler
         return Json(Status(entry));
     }
 
-    private static ReleaseStatus Status(Entry entry) =>
-        new(entry.Number, entry.State, entry.Log, entry.LockFile, entry.EnvironmentHash, entry.Error);
+    private static ReleaseStatus Status(Entry entry)
+    {
+        return new ReleaseStatus(entry.Number, entry.State, entry.Log, entry.LockFile, entry.EnvironmentHash,
+            entry.Error);
+    }
 
-    private static HttpResponseMessage Json<T>(T value) => new(HttpStatusCode.OK) { Content = JsonContent.Create(value) };
+    private static HttpResponseMessage Json<T>(T value)
+    {
+        return new HttpResponseMessage(HttpStatusCode.OK) { Content = JsonContent.Create(value) };
+    }
 
-    private static HttpResponseMessage Problem(HttpStatusCode status, string detail, string? type = null) =>
-        new(status) { Content = JsonContent.Create(new ProblemDetails { Status = (int)status, Detail = detail, Type = type }) };
+    private static HttpResponseMessage Problem(HttpStatusCode status, string detail, string? type = null)
+    {
+        return new HttpResponseMessage(status)
+        { Content = JsonContent.Create(new ProblemDetails { Status = (int)status, Detail = detail, Type = type }) };
+    }
 
     [GeneratedRegex(@"^/v1/servers/(?<server>[0-9a-f-]{36})(/releases/(?<number>\d+))?(/(?<action>[a-z]+))?$")]
     private static partial Regex RoutePattern();

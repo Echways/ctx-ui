@@ -11,8 +11,10 @@ namespace CtxUi.IntegrationTests;
 
 public class OAuthMetadataTests
 {
-    private static string[] Strings(JsonElement json, string name) =>
-        json.GetProperty(name).EnumerateArray().Select(item => item.GetString()!).ToArray();
+    private static string[] Strings(JsonElement json, string name)
+    {
+        return json.GetProperty(name).EnumerateArray().Select(item => item.GetString()!).ToArray();
+    }
 
     [Fact]
     public async Task Metadata_is_404_while_oauth_is_off()
@@ -25,7 +27,7 @@ public class OAuthMetadataTests
                      "/.well-known/openid-configuration",
                      "/.well-known/oauth-protected-resource/mcp/learn",
                      "/connect/authorize",
-                     "/connect/token",
+                     "/connect/token"
                  })
         {
             using var response = await gateway.Http.GetAsync(path);
@@ -131,7 +133,8 @@ public class OAuthMetadataTests
         await gateway.ArrangeAsync(services => services.GetRequiredService<SignInSettingsService>()
             .UpdateAsync(new SignInSettingsUpdate { Enabled = false }, gateway.Issuer));
 
-        Assert.Equal(HttpStatusCode.NotFound, (await gateway.Http.GetAsync("/.well-known/oauth-authorization-server")).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound,
+            (await gateway.Http.GetAsync("/.well-known/oauth-authorization-server")).StatusCode);
         using var response = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/learn"));
         Assert.Equal("Bearer", response.Headers.WwwAuthenticate.ToString());
     }
@@ -149,10 +152,9 @@ public class OAuthMetadataTests
 
         Assert.Equal(before, names.Select(name => File.ReadAllBytes(Path.Combine(keys, name))));
         if (!OperatingSystem.IsWindows())
-        {
             foreach (var name in names)
-                Assert.Equal(UnixFileMode.UserRead | UnixFileMode.UserWrite, File.GetUnixFileMode(Path.Combine(keys, name)));
-        }
+                Assert.Equal(UnixFileMode.UserRead | UnixFileMode.UserWrite,
+                    File.GetUnixFileMode(Path.Combine(keys, name)));
 
         Assert.DoesNotContain("RSA", Encoding.UTF8.GetString(before[0]));
     }
@@ -160,7 +162,8 @@ public class OAuthMetadataTests
     [Fact]
     public async Task Oauth_on_with_an_http_public_url_stays_off()
     {
-        await using var gateway = await GatewayHost.StartAsync(builder => builder.Configuration["CtxUi:PublicUrl"] = "http://mcp.example.org");
+        await using var gateway = await GatewayHost.StartAsync(builder =>
+            builder.Configuration["CtxUi:PublicUrl"] = "http://mcp.example.org");
         await gateway.ArrangeAsync(async services =>
         {
             var db = services.GetRequiredService<CtxUiDbContext>();
@@ -168,7 +171,8 @@ public class OAuthMetadataTests
             await db.SaveChangesAsync();
         });
 
-        Assert.Equal(HttpStatusCode.NotFound, (await gateway.Http.GetAsync("/.well-known/oauth-authorization-server")).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound,
+            (await gateway.Http.GetAsync("/.well-known/oauth-authorization-server")).StatusCode);
         using var response = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/learn"));
         Assert.Equal("Bearer", response.Headers.WwwAuthenticate.ToString());
     }

@@ -10,15 +10,28 @@ public sealed class RunnerRequestException(int status, string message, string? t
 
     public string? Type { get; } = type;
 
-    public static RunnerRequestException NotFound(string message) => new(StatusCodes.Status404NotFound, message);
+    public static RunnerRequestException NotFound(string message)
+    {
+        return new RunnerRequestException(StatusCodes.Status404NotFound, message);
+    }
 
-    public static RunnerRequestException Conflict(string message) => new(StatusCodes.Status409Conflict, message);
+    public static RunnerRequestException Conflict(string message)
+    {
+        return new RunnerRequestException(StatusCodes.Status409Conflict, message);
+    }
 
-    public static RunnerRequestException UnknownServer(Guid id) =>
-        new(StatusCodes.Status404NotFound, $"Server {id} is not known. Send its specification with PUT first.", RunnerProblems.SpecRequired);
+    public static RunnerRequestException UnknownServer(Guid id)
+    {
+        return new RunnerRequestException(StatusCodes.Status404NotFound,
+            $"Server {id} is not known. Send its specification with PUT first.",
+            RunnerProblems.SpecRequired);
+    }
 
-    public static RunnerRequestException SpecMissing(Guid id) =>
-        new(StatusCodes.Status409Conflict, $"The specification of server {id} is not known. Send it with PUT first.", RunnerProblems.SpecRequired);
+    public static RunnerRequestException SpecMissing(Guid id)
+    {
+        return new RunnerRequestException(StatusCodes.Status409Conflict,
+            $"The specification of server {id} is not known. Send it with PUT first.", RunnerProblems.SpecRequired);
+    }
 }
 
 public sealed class ReleaseRecord(int number, ReleaseState state)
@@ -48,7 +61,9 @@ public sealed class ReleaseRecord(int number, ReleaseState state)
     public void SetEnvironmentHash(string hash)
     {
         lock (_sync)
+        {
             EnvironmentHash = hash;
+        }
     }
 
     public void MarkBuilt(string lockFile)
@@ -75,7 +90,9 @@ public sealed class ReleaseRecord(int number, ReleaseState state)
     public void MarkState(ReleaseState state)
     {
         lock (_sync)
+        {
             State = state;
+        }
     }
 
     public void MarkFailed(string error)
@@ -90,7 +107,9 @@ public sealed class ReleaseRecord(int number, ReleaseState state)
     public ReleaseStatus ToStatus()
     {
         lock (_sync)
+        {
             return new ReleaseStatus(Number, State, _log.ToString(), LockFile, EnvironmentHash, Error);
+        }
     }
 }
 
@@ -116,25 +135,34 @@ public sealed class ServerRecord(Guid id, CancellationToken stopping)
     public void Track(Task work)
     {
         lock (_workSync)
+        {
             _work.Add(work);
+        }
 
         work.ContinueWith(completed =>
         {
             lock (_workSync)
+            {
                 _work.Remove(completed);
+            }
         }, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
     }
 
     public Task WorkFinishedAsync()
     {
         lock (_workSync)
+        {
             return Task.WhenAll(_work.ToArray());
+        }
     }
 
     public ServerState ToState()
     {
         lock (Sync)
-            return new ServerState(Id, ActiveRelease, Releases.Values.OrderBy(release => release.Number).Select(release => release.ToStatus()).ToList());
+        {
+            return new ServerState(Id, ActiveRelease,
+                Releases.Values.OrderBy(release => release.Number).Select(release => release.ToStatus()).ToList());
+        }
     }
 
     public ReleaseRecord RequireRelease(int number)
@@ -142,7 +170,7 @@ public sealed class ServerRecord(Guid id, CancellationToken stopping)
         lock (Sync)
         {
             return Releases.GetValueOrDefault(number)
-                ?? throw RunnerRequestException.NotFound($"Release {number} of server {Id} is not known.");
+                   ?? throw RunnerRequestException.NotFound($"Release {number} of server {Id} is not known.");
         }
     }
 }
@@ -151,12 +179,23 @@ public sealed class ServerRegistry(CancellationToken stopping)
 {
     private readonly ConcurrentDictionary<Guid, ServerRecord> _servers = new();
 
-    public ServerRecord GetOrAdd(Guid id) => _servers.GetOrAdd(id, key => new ServerRecord(key, stopping));
+    public ServerRecord GetOrAdd(Guid id)
+    {
+        return _servers.GetOrAdd(id, key => new ServerRecord(key, stopping));
+    }
 
-    public ServerRecord? Find(Guid id) => _servers.GetValueOrDefault(id);
+    public ServerRecord? Find(Guid id)
+    {
+        return _servers.GetValueOrDefault(id);
+    }
 
-    public ServerRecord Require(Guid id) =>
-        Find(id) ?? throw RunnerRequestException.UnknownServer(id);
+    public ServerRecord Require(Guid id)
+    {
+        return Find(id) ?? throw RunnerRequestException.UnknownServer(id);
+    }
 
-    public ServerRecord? Remove(Guid id) => _servers.TryRemove(id, out var server) ? server : null;
+    public ServerRecord? Remove(Guid id)
+    {
+        return _servers.TryRemove(id, out var server) ? server : null;
+    }
 }

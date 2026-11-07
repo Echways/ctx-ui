@@ -22,4 +22,12 @@ public sealed record HttpInboundDraft(
 
 public sealed record ApiKeySummary(Guid Id, string Name);
 
-public sealed record UsageDay(DateOnly Day, Guid ClientId, Guid InboundId, int Calls, int ToolCalls, int Errors, int Refused, long DurationMs);
+public sealed record UsageDay(
+    DateOnly Day,
+    Guid ClientId,
+    Guid InboundId,
+    int Calls,
+    int ToolCalls,
+    int Errors,
+    int Refused,
+    long DurationMs);

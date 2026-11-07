@@ -14,14 +14,22 @@ public class MetricsServiceTests
     private readonly FakeVault _vault = new();
     private readonly FakeTimeProvider _clock = new(TestData.Now);
 
-    private MetricsService Metrics(TestDatabase database, int retentionDays = 30) =>
-        new(database.NewContext(), Options.Create(new UsageOptions { UsageRetentionDays = retentionDays }), _clock);
+    private MetricsService Metrics(TestDatabase database, int retentionDays = 30)
+    {
+        return new MetricsService(database.NewContext(),
+            Options.Create(new UsageOptions { UsageRetentionDays = retentionDays }),
+            _clock);
+    }
 
-    private Task<MetricsReport> LoadAsync(TestDatabase database, MetricsFilter? filter = null, int? days = null) =>
-        Metrics(database).LoadAsync(filter ?? MetricsFilter.All, days);
+    private Task<MetricsReport> LoadAsync(TestDatabase database, MetricsFilter? filter = null, int? days = null)
+    {
+        return Metrics(database).LoadAsync(filter ?? MetricsFilter.All, days);
+    }
 
-    private static Task AppendAsync(TestDatabase database, params UsageRecord[] records) =>
-        new UsageStore(database.NewContext()).AppendAsync(records);
+    private static Task AppendAsync(TestDatabase database, params UsageRecord[] records)
+    {
+        return new UsageStore(database.NewContext()).AppendAsync(records);
+    }
 
     private static UsageRecord Call(
         Guid client,
@@ -32,13 +40,17 @@ public class MetricsServiceTests
         int durationMs = 100,
         DateTimeOffset? at = null,
         int status = 200,
-        Guid? device = null) =>
-        new(client, inbound, at ?? TestData.Now.AddMinutes(-5), method, method == "tools/call" ? tool : null, durationMs, outcome, device)
+        Guid? device = null)
+    {
+        return new UsageRecord(client, inbound, at ?? TestData.Now.AddMinutes(-5), method,
+            method == "tools/call" ? tool : null,
+            durationMs, outcome, device)
         {
             Status = status,
             RequestBytes = 10,
-            ResponseBytes = 1_000,
+            ResponseBytes = 1_000
         };
+    }
 
     private async Task<(Guid Echo, Guid Docs, Guid Ivanov, Guid Petrov)> SeedAsync(TestDatabase database)
     {
@@ -76,17 +88,19 @@ public class MetricsServiceTests
     {
         await using var database = await TestDatabase.CreateAsync();
         var (echo, _, ivanov, petrov) = await SeedAsync(database);
-        await AppendAsync(database, Enumerable.Range(1, 100).Select(ms => Call(ivanov, echo, durationMs: ms)).ToArray());
+        await AppendAsync(database,
+            Enumerable.Range(1, 100).Select(ms => Call(ivanov, echo, durationMs: ms)).ToArray());
         await AppendAsync(
             database,
             Call(petrov, echo, outcome: UsageOutcome.UpstreamFailed, status: 502, durationMs: 1),
             Call(petrov, echo, outcome: UsageOutcome.UpstreamRejected, status: 404, durationMs: 1),
-            Call(petrov, echo, method: "tools/list", outcome: UsageOutcome.ClientAborted, durationMs: 1),
+            Call(petrov, echo, "tools/list", outcome: UsageOutcome.ClientAborted, durationMs: 1),
             Call(petrov, echo, outcome: UsageOutcome.QuotaExhausted, durationMs: 0));
 
         var totals = (await LoadAsync(database)).Totals;
 
-        Assert.Equal((103, 102, 1, 1, 1, 2), (totals.Calls, totals.ToolCalls, totals.Failures, totals.Rejected, totals.Aborted, totals.Clients));
+        Assert.Equal((103, 102, 1, 1, 1, 2),
+            (totals.Calls, totals.ToolCalls, totals.Failures, totals.Rejected, totals.Aborted, totals.Clients));
         Assert.Equal((1_030L, 103_000L), (totals.RequestBytes, totals.ResponseBytes));
         Assert.Equal(new Latency(49, 95, 99, 100), totals.Latency);
         Assert.Equal(2, totals.Errors);
@@ -126,8 +140,8 @@ public class MetricsServiceTests
             Call(ivanov, echo, tool: "search"),
             Call(ivanov, docs, tool: "read"),
             Call(ivanov, docs, tool: "read"),
-            Call(petrov, echo, method: "initialize"),
-            Call(petrov, echo, method: "tools/list"),
+            Call(petrov, echo, "initialize"),
+            Call(petrov, echo, "tools/list"),
             Call(Stranger, Stranger, tool: "lost"));
 
         var report = await LoadAsync(database);
@@ -135,9 +149,12 @@ public class MetricsServiceTests
         Assert.Equal(
             [("echo", "Эхо", 5), ("docs", "docs", 2), (null, null, 1)],
             report.Inbounds.Select(row => (row.Slug, row.Name, row.Stats.Calls)));
-        Assert.Equal([("echo", "search", 3), ("docs", "read", 2), (null, "lost", 1)], report.Tools.Select(row => (row.Slug, row.Tool, row.Stats.Calls)));
-        Assert.Equal([("tools/call", 6), ("initialize", 1), ("tools/list", 1)], report.Methods.Select(row => (row.Method, row.Stats.Calls)));
-        Assert.Equal([("Иванов", 5), ("Петров", 2), (null, 1)], report.Clients.Select(row => (row.Name, row.Stats.Calls)));
+        Assert.Equal([("echo", "search", 3), ("docs", "read", 2), (null, "lost", 1)],
+            report.Tools.Select(row => (row.Slug, row.Tool, row.Stats.Calls)));
+        Assert.Equal([("tools/call", 6), ("initialize", 1), ("tools/list", 1)],
+            report.Methods.Select(row => (row.Method, row.Stats.Calls)));
+        Assert.Equal([("Иванов", 5), ("Петров", 2), (null, 1)],
+            report.Clients.Select(row => (row.Name, row.Stats.Calls)));
         Assert.Empty(report.Devices);
     }
 
@@ -153,10 +170,10 @@ public class MetricsServiceTests
             Call(ivanov, echo),
             Call(ivanov, docs),
             Call(petrov, echo),
-            Call(ivanov, echo, method: null, outcome: UsageOutcome.RateLimited),
-            Call(petrov, echo, method: null, outcome: UsageOutcome.RateLimited));
+            Call(ivanov, echo, null, outcome: UsageOutcome.RateLimited),
+            Call(petrov, echo, null, outcome: UsageOutcome.RateLimited));
 
-        var report = await LoadAsync(database, new MetricsFilter(ClientId: ivanov));
+        var report = await LoadAsync(database, new MetricsFilter(ivanov));
 
         Assert.Equal(new MetricsSubject("Иванов", null, null), report.Subject);
         Assert.Equal(3, report.Totals.Calls);
@@ -179,8 +196,8 @@ public class MetricsServiceTests
             Call(petrov, echo, tool: "search", outcome: UsageOutcome.QuotaExhausted),
             Call(ivanov, echo, tool: "fetch"),
             Call(ivanov, docs, tool: "search"),
-            Call(ivanov, echo, method: "tools/list"),
-            Call(ivanov, echo, method: null, outcome: UsageOutcome.BodyTooLarge));
+            Call(ivanov, echo, "tools/list"),
+            Call(ivanov, echo, null, outcome: UsageOutcome.BodyTooLarge));
 
         var report = await LoadAsync(database, new MetricsFilter(InboundId: echo, Tool: "search"));
 
@@ -201,10 +218,10 @@ public class MetricsServiceTests
         var (echo, _, ivanov, petrov) = await SeedAsync(database);
         await AppendAsync(
             database,
-            Call(ivanov, echo, method: "initialize"),
-            Call(ivanov, echo, method: "tools/list"),
+            Call(ivanov, echo, "initialize"),
+            Call(ivanov, echo, "tools/list"),
             Call(ivanov, echo),
-            Call(petrov, echo, method: "initialize"),
+            Call(petrov, echo, "initialize"),
             Call(petrov, echo, outcome: UsageOutcome.UpstreamFailed));
 
         var report = await LoadAsync(database);
@@ -223,14 +240,17 @@ public class MetricsServiceTests
             Call(ivanov, echo, outcome: UsageOutcome.UpstreamFailed, status: 504, at: TestData.Now.AddMinutes(-9)),
             Call(ivanov, echo, outcome: UsageOutcome.UpstreamFailed, status: 504, at: TestData.Now.AddMinutes(-2)),
             Call(ivanov, echo, outcome: UsageOutcome.UpstreamFailed, status: 502),
-            Call(ivanov, docs, method: "tools/list", outcome: UsageOutcome.UpstreamRejected, status: 404),
+            Call(ivanov, docs, "tools/list", outcome: UsageOutcome.UpstreamRejected, status: 404),
             Call(ivanov, docs));
 
         var errors = (await LoadAsync(database)).Errors;
 
         Assert.Equal(3, errors.Count);
-        Assert.Equal(new ErrorGroup(echo, "echo", "tools/call", "echo", UsageOutcome.UpstreamFailed, 504, 2, TestData.Now.AddMinutes(-2)), errors[0]);
-        Assert.Contains(errors, error => error is { Slug: "docs", Method: "tools/list", Tool: null, Status: 404, Count: 1 });
+        Assert.Equal(
+            new ErrorGroup(echo, "echo", "tools/call", "echo", UsageOutcome.UpstreamFailed, 504, 2,
+                TestData.Now.AddMinutes(-2)), errors[0]);
+        Assert.Contains(errors,
+            error => error is { Slug: "docs", Method: "tools/list", Tool: null, Status: 404, Count: 1 });
     }
 
     [Fact]
@@ -257,9 +277,9 @@ public class MetricsServiceTests
         await using var database = await TestDatabase.CreateAsync();
 
         Assert.Equal([1, 7, 30], Metrics(database).Periods.Select(period => period.Days));
-        Assert.Equal([1, 7, 30, 90], Metrics(database, retentionDays: 365).Periods.Select(period => period.Days));
-        Assert.Equal([1], Metrics(database, retentionDays: 3).Periods.Select(period => period.Days));
-        Assert.Equal(1, Metrics(database, retentionDays: 3).Resolve(null).Days);
+        Assert.Equal([1, 7, 30, 90], Metrics(database, 365).Periods.Select(period => period.Days));
+        Assert.Equal([1], Metrics(database, 3).Periods.Select(period => period.Days));
+        Assert.Equal(1, Metrics(database, 3).Resolve(null).Days);
         var refused = await Assert.ThrowsAsync<DomainException>(() => LoadAsync(database, days: 90));
         Assert.Contains("1, 7, 30", refused.Message);
     }

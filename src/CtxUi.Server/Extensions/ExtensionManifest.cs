@@ -15,7 +15,8 @@ public sealed record ExtensionManifest(string Id, string Name, string Version, s
         if (fields.Any(string.IsNullOrWhiteSpace))
             throw new InvalidDataException(ServerText.ExtensionManifestIncomplete);
         if (Path.GetFileName(manifest.Assembly) != manifest.Assembly)
-            throw new InvalidDataException(string.Format(ServerText.ExtensionManifestAssemblyOutside, manifest.Assembly));
+            throw new InvalidDataException(
+                string.Format(ServerText.ExtensionManifestAssemblyOutside, manifest.Assembly));
         return manifest;
     }
 
@@ -24,7 +25,7 @@ public sealed record ExtensionManifest(string Id, string Name, string Version, s
         try
         {
             return JsonSerializer.Deserialize<ExtensionManifest>(File.ReadAllText(path), Json)
-                ?? throw new InvalidDataException(ServerText.ExtensionManifestBroken);
+                   ?? throw new InvalidDataException(ServerText.ExtensionManifestBroken);
         }
         catch (Exception failure) when (failure is IOException or JsonException)
         {

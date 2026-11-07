@@ -51,9 +51,10 @@ public class OAuthMcpClientTests
         await using var gateway = await OAuthHarness.StartAsync();
         await gateway.AddInboundAsync("echo", server.Urls.First() + "/mcp");
         var issued = await gateway.AddClientAsync("Иванов", ["echo"]);
-        using var browser = new HttpClient(new HttpClientHandler { AllowAutoRedirect = false, CookieContainer = new CookieContainer() })
+        using var browser = new HttpClient(new HttpClientHandler
+        { AllowAutoRedirect = false, CookieContainer = new CookieContainer() })
         {
-            BaseAddress = new Uri(gateway.BaseUrl),
+            BaseAddress = new Uri(gateway.BaseUrl)
         };
         var transport = new HttpClientTransport(new HttpClientTransportOptions
         {
@@ -62,8 +63,9 @@ public class OAuthMcpClientTests
             {
                 RedirectUri = new Uri(OAuthFlow.Callback),
                 DynamicClientRegistration = new DynamicClientRegistrationOptions { ClientName = "MCP SDK" },
-                AuthorizationCallbackHandler = (context, _) => SignInAsync(browser, context.AuthorizationUri, issued.Token),
-            },
+                AuthorizationCallbackHandler =
+                    (context, _) => SignInAsync(browser, context.AuthorizationUri, issued.Token)
+            }
         });
 
         await using var client = await McpClient.CreateAsync(transport);

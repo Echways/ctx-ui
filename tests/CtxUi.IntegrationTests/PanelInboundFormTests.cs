@@ -14,13 +14,14 @@ public class PanelInboundFormTests
         await using var session = await PanelSession.SignInAsync(gateway);
         var page = await OpenInboundsAsync(session);
 
-        await page.GetByRole(AriaRole.Button, new() { Name = "Добавить inbound" }).ClickAsync();
+        await page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Добавить inbound" }).ClickAsync();
         await Dialog(page).GetByLabel("Slug").FillAsync("learn");
         await Dialog(page).GetByLabel("Название").FillAsync("Учебный");
         await Dialog(page).GetByLabel("Адрес MCP-сервера").FillAsync("https://learn.example.org/api/mcp");
         await Dialog(page).GetByLabel("Заголовки для upstream").FillAsync("Authorization=Bearer s3cret\nX-Tenant=7");
         await Dialog(page).GetByLabel("Передавать upstream личность клиента").CheckAsync();
-        await Dialog(page).GetByRole(AriaRole.Button, new() { Name = "Добавить inbound" }).ClickAsync();
+        await Dialog(page).GetByRole(AriaRole.Button, new LocatorGetByRoleOptions { Name = "Добавить inbound" })
+            .ClickAsync();
 
         await Expect(Dialog(page)).ToHaveCountAsync(0);
         await Expect(Row(page, "learn")).ToContainTextAsync("Учебный");
@@ -42,24 +43,28 @@ public class PanelInboundFormTests
         await gateway.AddInboundAsync("echo", "https://echo.example.org/mcp");
         await using var session = await PanelSession.SignInAsync(gateway);
         var page = await OpenInboundsAsync(session);
-        await page.GetByRole(AriaRole.Button, new() { Name = "Добавить inbound" }).ClickAsync();
+        await page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Добавить inbound" }).ClickAsync();
 
         await Dialog(page).GetByLabel("Slug").FillAsync("Мой сервер");
         await Dialog(page).GetByLabel("Адрес MCP-сервера").FillAsync("https://learn.example.org/mcp");
-        await Dialog(page).GetByRole(AriaRole.Button, new() { Name = "Добавить inbound" }).ClickAsync();
+        await Dialog(page).GetByRole(AriaRole.Button, new LocatorGetByRoleOptions { Name = "Добавить inbound" })
+            .ClickAsync();
         await Expect(Dialog(page).GetByRole(AriaRole.Alert)).ToContainTextAsync("Slug «Мой сервер» недопустим");
 
         await Dialog(page).GetByLabel("Slug").FillAsync("echo");
-        await Dialog(page).GetByRole(AriaRole.Button, new() { Name = "Добавить inbound" }).ClickAsync();
+        await Dialog(page).GetByRole(AriaRole.Button, new LocatorGetByRoleOptions { Name = "Добавить inbound" })
+            .ClickAsync();
         await Expect(Dialog(page).GetByRole(AriaRole.Alert)).ToContainTextAsync("Inbound «echo» уже есть");
 
         await Dialog(page).GetByLabel("Slug").FillAsync("learn");
         await Dialog(page).GetByLabel("Заголовки для upstream").FillAsync("без знака равно");
-        await Dialog(page).GetByRole(AriaRole.Button, new() { Name = "Добавить inbound" }).ClickAsync();
+        await Dialog(page).GetByRole(AriaRole.Button, new LocatorGetByRoleOptions { Name = "Добавить inbound" })
+            .ClickAsync();
         await Expect(Dialog(page).GetByRole(AriaRole.Alert)).ToContainTextAsync("ключ=значение");
 
         await Dialog(page).GetByLabel("Заголовки для upstream").FillAsync("");
-        await Dialog(page).GetByRole(AriaRole.Button, new() { Name = "Добавить inbound" }).ClickAsync();
+        await Dialog(page).GetByRole(AriaRole.Button, new LocatorGetByRoleOptions { Name = "Добавить inbound" })
+            .ClickAsync();
         await Expect(Row(page, "learn")).ToBeVisibleAsync();
         await Expect(page.GetByRole(AriaRole.Row)).ToHaveCountAsync(3);
     }
@@ -70,11 +75,11 @@ public class PanelInboundFormTests
         await using var gateway = await GatewayHost.StartAsync();
         await using var session = await PanelSession.SignInAsync(gateway);
         var page = await OpenInboundsAsync(session);
-        await page.GetByRole(AriaRole.Button, new() { Name = "Добавить inbound" }).ClickAsync();
+        await page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Добавить inbound" }).ClickAsync();
         await Dialog(page).GetByLabel("Slug").FillAsync("learn");
         await Dialog(page).GetByLabel("Адрес MCP-сервера").FillAsync("https://learn.example.org/mcp");
 
-        await Dialog(page).GetByRole(AriaRole.Button, new() { Name = "Отмена" }).ClickAsync();
+        await Dialog(page).GetByRole(AriaRole.Button, new LocatorGetByRoleOptions { Name = "Отмена" }).ClickAsync();
 
         await Expect(Dialog(page)).ToHaveCountAsync(0);
         await Expect(page.GetByText("Inbound'ов пока нет")).ToBeVisibleAsync();

@@ -11,9 +11,15 @@ public static class ExternalIdentityReader
     public static ExternalIdentity? Read(string provider, ClaimsPrincipal principal)
     {
         var subject = First(principal, ClaimTypes.NameIdentifier, "sub");
-        return subject is null ? null : new ExternalIdentity(provider, subject, First(principal, EmailClaims) ?? First(principal, NameClaims) ?? subject);
+        return subject is null
+            ? null
+            : new ExternalIdentity(provider, subject,
+                First(principal, EmailClaims) ?? First(principal, NameClaims) ?? subject);
     }
 
-    private static string? First(ClaimsPrincipal principal, params string[] types) =>
-        types.Select(principal.FindFirstValue).FirstOrDefault(value => !string.IsNullOrWhiteSpace(value))?.Trim();
+    private static string? First(ClaimsPrincipal principal, params string[] types)
+    {
+        return types.Select(principal.FindFirstValue).FirstOrDefault(value => !string.IsNullOrWhiteSpace(value))
+            ?.Trim();
+    }
 }

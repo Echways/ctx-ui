@@ -67,7 +67,8 @@ public sealed class ReleaseArchivesTests : IDisposable
     {
         var archives = new ReleaseArchives(_directory);
 
-        var missing = await Assert.ThrowsAsync<PanelException>(() => archives.OpenVerifiedAsync(new Release { Id = Guid.NewGuid(), ArchiveHash = "00" }, default));
+        var missing = await Assert.ThrowsAsync<PanelException>(() =>
+            archives.OpenVerifiedAsync(new Release { Id = Guid.NewGuid(), ArchiveHash = "00" }, default));
 
         Assert.Equal(BuilderText.ArchiveMissing, missing.Message);
     }

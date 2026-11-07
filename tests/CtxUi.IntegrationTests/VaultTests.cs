@@ -5,8 +5,10 @@ namespace CtxUi.IntegrationTests;
 
 public class VaultTests
 {
-    private static DataProtectionVault VaultWithKeysIn(string directory) =>
-        new(DataProtectionProvider.Create(new DirectoryInfo(directory)));
+    private static DataProtectionVault VaultWithKeysIn(string directory)
+    {
+        return new DataProtectionVault(DataProtectionProvider.Create(new DirectoryInfo(directory)));
+    }
 
     [Fact]
     public void Sealed_value_opens_with_the_same_keys()

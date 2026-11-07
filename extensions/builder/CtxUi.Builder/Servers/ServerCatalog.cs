@@ -35,20 +35,8 @@ public sealed partial class ServerCatalog(IDbContextFactory<BuilderDatabase> dat
 
     public Task<BuilderServer> ImportAsync(string slug, string name, ProjectImport import, CancellationToken ct) => CreateCoreAsync(slug, name, import, ct);
 
-    public async Task<BuilderServer> ImportArchiveAsync(string slug, string name, Stream archive, CancellationToken ct)
-    {
-        ProjectImport import;
-        try
-        {
-            import = await ProjectFiles.ImportArchiveAsync(archive, ct);
-        }
-        catch (ProjectFileException failure)
-        {
-            throw new PanelException(failure.Message);
-        }
-
-        return await CreateCoreAsync(slug, name, import, ct);
-    }
+    public async Task<BuilderServer> ImportArchiveAsync(string slug, string name, Stream archive, CancellationToken ct) =>
+        await CreateCoreAsync(slug, name, await ProjectFiles.ImportArchiveAsync(archive, ct), ct);
 
     private async Task<BuilderServer> CreateCoreAsync(string slug, string name, ProjectImport? import, CancellationToken ct)
     {
@@ -130,7 +118,7 @@ public sealed partial class ServerCatalog(IDbContextFactory<BuilderDatabase> dat
     {
         if (!path.StartsWith(ProjectRoot, StringComparison.Ordinal))
             throw new PanelException(BuilderText.PathInvalid);
-        path = ProjectPath(path);
+        path = ProjectFiles.ValidatePath(path);
         await using var database = await databases.CreateDbContextAsync(ct);
         await RequireServerAsync(database, id, ct);
         await RequireNoFormToolClashAsync(database, id, path, content, ct);
@@ -301,7 +289,7 @@ public sealed partial class ServerCatalog(IDbContextFactory<BuilderDatabase> dat
     {
         await using var database = await databases.CreateDbContextAsync(ct);
         var server = await database.Servers.AsNoTracking().SingleOrDefaultAsync(server => server.Id == id, ct)
-            ?? throw new PanelException(BuilderText.ServerNotFound);
+            ?? throw Failures.ServerNotFound();
         var draft = await database.Drafts.AsNoTracking().SingleAsync(draft => draft.ServerId == id, ct);
         var names = await database.Secrets.AsNoTracking().Where(secret => secret.ServerId == id).Select(secret => secret.Name).OrderBy(name => name).ToListAsync(ct);
         var auth = OpenAuth(draft.ApiAuthSealed);
@@ -340,16 +328,7 @@ public sealed partial class ServerCatalog(IDbContextFactory<BuilderDatabase> dat
 
     public async Task<long> SetDependenciesAsync(Guid id, string? text, long expectedRevision, CancellationToken ct)
     {
-        IReadOnlyList<string> lines;
-        try
-        {
-            lines = ProjectFiles.ParseDependencies(text);
-        }
-        catch (ProjectFileException failure)
-        {
-            throw new PanelException(failure.Message);
-        }
-
+        var lines = ProjectFiles.ParseDependencies(text);
         await using var database = await databases.CreateDbContextAsync(ct);
         await RequireServerAsync(database, id, ct);
         var joined = lines.Count == 0 ? null : string.Join('\n', lines);
@@ -381,7 +360,7 @@ public sealed partial class ServerCatalog(IDbContextFactory<BuilderDatabase> dat
     {
         await using var database = await databases.CreateDbContextAsync(ct);
         var server = await database.Servers.AsNoTracking().SingleOrDefaultAsync(server => server.Id == id, ct)
-            ?? throw new PanelException(BuilderText.ServerNotFound);
+            ?? throw Failures.ServerNotFound();
         return box.Open(server.RouteSecretSealed);
     }
 
@@ -389,7 +368,7 @@ public sealed partial class ServerCatalog(IDbContextFactory<BuilderDatabase> dat
     {
         await using var database = await databases.CreateDbContextAsync(ct);
         var server = await database.Servers.AsNoTracking().SingleOrDefaultAsync(server => server.Id == id, ct)
-            ?? throw new PanelException(BuilderText.ServerNotFound);
+            ?? throw Failures.ServerNotFound();
         var draft = await database.Drafts.AsNoTracking().SingleAsync(draft => draft.ServerId == id, ct);
         var secrets = await database.Secrets.AsNoTracking().Where(secret => secret.ServerId == id).ToListAsync(ct);
 
@@ -410,16 +389,9 @@ public sealed partial class ServerCatalog(IDbContextFactory<BuilderDatabase> dat
     {
         await using var database = await databases.CreateDbContextAsync(ct);
         var server = await database.Servers.AsNoTracking().SingleOrDefaultAsync(server => server.Id == id, ct)
-            ?? throw new PanelException(BuilderText.ServerNotFound);
+            ?? throw Failures.ServerNotFound();
         var draft = await DraftAsync(database, id, ct);
-        try
-        {
-            return new ProjectExport($"{server.Slug}.tar.gz", await ProjectFiles.SnapshotAsync(draft, draft.Files, ProjectFiles.FastMcpVersion, ct));
-        }
-        catch (ProjectFileException failure)
-        {
-            throw new PanelException(failure.Message);
-        }
+        return new ProjectExport($"{server.Slug}.tar.gz", await ProjectFiles.SnapshotAsync(draft, draft.Files, ProjectFiles.FastMcpVersion, ct));
     }
 
     private static string AuthValue(StoredAuth auth) => auth.Kind switch
@@ -434,7 +406,7 @@ public sealed partial class ServerCatalog(IDbContextFactory<BuilderDatabase> dat
 
     private static async Task<ServerDraft> DraftAsync(BuilderDatabase database, Guid id, CancellationToken ct) =>
         await database.Drafts.AsNoTracking().Include(draft => draft.Files).SingleOrDefaultAsync(draft => draft.ServerId == id, ct)
-        ?? throw new PanelException(BuilderText.ServerNotFound);
+        ?? throw Failures.ServerNotFound();
 
     private async Task<bool> SlugExistsAsync(string slug, CancellationToken ct)
     {
@@ -516,19 +488,7 @@ public sealed partial class ServerCatalog(IDbContextFactory<BuilderDatabase> dat
     private static async Task RequireServerAsync(BuilderDatabase database, Guid id, CancellationToken ct)
     {
         if (!await database.Servers.AnyAsync(server => server.Id == id, ct))
-            throw new PanelException(BuilderText.ServerNotFound);
-    }
-
-    private static string ProjectPath(string path)
-    {
-        try
-        {
-            return ProjectFiles.ValidatePath(path);
-        }
-        catch (ProjectFileException failure)
-        {
-            throw new PanelException(failure.Message);
-        }
+            throw Failures.ServerNotFound();
     }
 
     private static ServerDraft DraftOf(Guid id, ProjectImport import, DateTimeOffset now)
@@ -538,7 +498,7 @@ public sealed partial class ServerCatalog(IDbContextFactory<BuilderDatabase> dat
         foreach (var (path, content) in import.Files)
         {
             bytes += Encoding.UTF8.GetByteCount(content);
-            switch (ProjectPath(path))
+            switch (ProjectFiles.ValidatePath(path))
             {
                 case "openapi.json":
                     draft.OpenApiJson = content;

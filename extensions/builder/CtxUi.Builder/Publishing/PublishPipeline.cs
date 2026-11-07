@@ -44,7 +44,7 @@ public sealed class PublishPipeline(
     {
         await using var run = Open(serverId);
         if (await HasBuildingReleaseAsync(run, ct))
-            throw new PanelException(BuilderText.PublishBusy);
+            throw Failures.Conflict(BuilderText.PublishBusy);
 
         var draft = await catalog.DraftAsync(serverId, ct);
         if (draft.OpenApiJson is not null && string.IsNullOrWhiteSpace(draft.BaseUrl))
@@ -58,22 +58,13 @@ public sealed class PublishPipeline(
         }
         catch (RunnerException failure)
         {
-            throw new PanelException(Describe(failure));
+            throw Failures.Upstream(Describe(failure));
         }
 
         if (state.Releases.Any(release => release.State == ReleaseState.Building))
-            throw new PanelException(BuilderText.PublishBusy);
+            throw Failures.Conflict(BuilderText.PublishBusy);
 
-        byte[] archive;
-        try
-        {
-            archive = await ProjectFiles.SnapshotAsync(draft, draft.Files, ProjectFiles.FastMcpVersion, ct);
-        }
-        catch (ProjectFileException failure)
-        {
-            throw new PanelException(failure.Message);
-        }
-
+        var archive = await ProjectFiles.SnapshotAsync(draft, draft.Files, ProjectFiles.FastMcpVersion, ct);
         var stored = await run.Database.Releases.Where(release => release.ServerId == serverId).MaxAsync(release => (int?)release.Number, ct) ?? 0;
         var number = Math.Max(stored, state.Releases.Select(release => release.Number).DefaultIfEmpty(0).Max()) + 1;
         var created = new Release
@@ -97,13 +88,13 @@ public sealed class PublishPipeline(
     {
         await using var run = Open(serverId);
         if (await HasBuildingReleaseAsync(run, ct))
-            throw new PanelException(BuilderText.PublishBusy);
+            throw Failures.Conflict(BuilderText.PublishBusy);
 
         var activeId = await run.Database.Servers.Where(server => server.Id == serverId).Select(server => server.ActiveReleaseId).SingleOrDefaultAsync(ct);
         var release = await run.Database.Releases.AsNoTracking().SingleOrDefaultAsync(release => release.ServerId == serverId && release.Number == number, ct)
-            ?? throw new PanelException(BuilderText.ReleaseNotFound);
+            ?? throw Failures.ReleaseNotFound();
         if (release.Id == activeId || release.Status is not (ReleaseState.Retired or ReleaseState.Candidate))
-            throw new PanelException(BuilderText.RollbackUnavailable);
+            throw Failures.Conflict(BuilderText.RollbackUnavailable);
     }
 
     public async Task MarkInterruptedAsync(CancellationToken ct)

@@ -53,9 +53,9 @@ public sealed class PublishQueue : BackgroundService, IExtensionInitializer
         lock (_gate)
         {
             if (_connecting.Contains(serverId) || _deleting.Contains(serverId))
-                throw new PanelException(BuilderText.ConnectionBusy);
+                throw Failures.Conflict(BuilderText.ConnectionBusy);
             if (_outstanding.ContainsKey(serverId) || _preparing.Contains(serverId))
-                throw new PanelException(BuilderText.PublishBusy);
+                throw Failures.Conflict(BuilderText.PublishBusy);
             _deleting.Add(serverId);
         }
     }
@@ -71,9 +71,9 @@ public sealed class PublishQueue : BackgroundService, IExtensionInitializer
         lock (_gate)
         {
             if (_deleting.Contains(serverId))
-                throw new PanelException(BuilderText.ServerDeleting);
+                throw Failures.Conflict(BuilderText.ServerDeleting);
             if (!_connecting.Add(serverId))
-                throw new PanelException(BuilderText.ConnectionBusy);
+                throw Failures.Conflict(BuilderText.ConnectionBusy);
         }
     }
 
@@ -89,9 +89,9 @@ public sealed class PublishQueue : BackgroundService, IExtensionInitializer
         lock (_gate)
         {
             if (_deleting.Contains(serverId))
-                throw new PanelException(BuilderText.ServerDeleting);
+                throw Failures.Conflict(BuilderText.ServerDeleting);
             if (!_preparing.Add(serverId))
-                throw new PanelException(BuilderText.PublishBusy);
+                throw Failures.Conflict(BuilderText.PublishBusy);
         }
 
         try
@@ -203,7 +203,7 @@ public sealed class PublishQueue : BackgroundService, IExtensionInitializer
     private void Enqueue(Guid serverId, Func<CancellationToken, Task> run)
     {
         if (!TryEnqueue(serverId, run))
-            throw new PanelException(BuilderText.ServerDeleting);
+            throw Failures.Conflict(BuilderText.ServerDeleting);
     }
 
     private bool TryEnqueue(Guid serverId, Func<CancellationToken, Task> run)

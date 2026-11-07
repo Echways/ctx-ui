@@ -166,6 +166,20 @@ public sealed class BuilderEndpointsTests
     }
 
     [Fact]
+    public async Task Unreachable_runner_is_a_bad_gateway()
+    {
+        var (harness, host, server) = await StartedAsync();
+        await using var _ = harness;
+        await using var __ = host;
+        harness.Runner.Unreachable = true;
+
+        var response = await host.Client.PostAsync($"/servers/{server}/publish", null);
+
+        Assert.Equal(HttpStatusCode.BadGateway, response.StatusCode);
+        Assert.False(string.IsNullOrEmpty((await JsonOf(response)).GetProperty("detail").GetString()));
+    }
+
+    [Fact]
     public async Task Unconfigured_runner_is_service_unavailable()
     {
         var (harness, host, server) = await StartedAsync(configured: false);

@@ -175,7 +175,7 @@
 
     private async Task<DraftFile> LatestAsync() =>
         (await Catalog.DraftAsync(ServerId, CancellationToken.None)).Files.SingleOrDefault(file => file.Path == Path)
-        ?? throw new PanelException(BuilderText.ServerNotFound);
+        ?? throw Failures.ServerNotFound();
 
     public async ValueTask DisposeAsync()
     {

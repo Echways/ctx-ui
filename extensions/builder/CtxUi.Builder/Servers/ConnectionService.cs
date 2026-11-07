@@ -91,7 +91,7 @@ public sealed class ConnectionService(
         var server = await FindServerAsync(serverId, ct);
         var inbounds = await data.InboundsAsync(ct);
         if (OwnInbound(server, inbounds) is not null)
-            throw new PanelException(BuilderText.ConnectionAlreadyConnected);
+            throw Failures.Conflict(BuilderText.ConnectionAlreadyConnected);
 
         var wanted = slug.Trim();
         if (inbounds.Any(inbound => inbound.Slug == wanted))
@@ -107,7 +107,7 @@ public sealed class ConnectionService(
             var updated = await database.Servers.Where(known => known.Id == serverId && known.InboundId == previous)
                 .ExecuteUpdateAsync(setters => setters.SetProperty(known => known.InboundId, inbound.Id.ToString()), ct);
             if (updated == 0)
-                throw new PanelException(await database.Servers.AnyAsync(known => known.Id == serverId, ct) ? BuilderText.ConnectionAlreadyConnected : BuilderText.ServerNotFound);
+                throw await database.Servers.AnyAsync(known => known.Id == serverId, ct) ? Failures.Conflict(BuilderText.ConnectionAlreadyConnected) : Failures.ServerNotFound();
         }
         catch
         {
@@ -168,7 +168,7 @@ public sealed class ConnectionService(
     {
         await using var database = await databases.CreateDbContextAsync(ct);
         return await database.Servers.AsNoTracking().SingleOrDefaultAsync(server => server.Id == serverId, ct)
-            ?? throw new PanelException(BuilderText.ServerNotFound);
+            ?? throw Failures.ServerNotFound();
     }
 
     private void RequireConfigured()

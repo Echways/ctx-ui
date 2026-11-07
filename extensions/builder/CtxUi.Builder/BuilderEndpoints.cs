@@ -89,15 +89,11 @@ public static class BuilderEndpoints
         }
         catch (PanelException failure)
         {
-            return Results.Problem(failure.Message, statusCode: StatusOf(failure.Message));
+            return Results.Problem(failure.Message, statusCode: StatusOf(Failures.KindOf(failure)));
         }
         catch (DraftConflictException failure)
         {
             return Results.Problem(failure.Message, statusCode: StatusCodes.Status409Conflict);
-        }
-        catch (ProjectFileException failure)
-        {
-            return Results.Problem(failure.Message, statusCode: StatusCodes.Status400BadRequest);
         }
         catch (RunnerException failure)
         {
@@ -105,12 +101,11 @@ public static class BuilderEndpoints
         }
     }
 
-    private static int StatusOf(string message)
+    private static int StatusOf(FailureKind kind) => kind switch
     {
-        if (message == BuilderText.ServerNotFound || message == BuilderText.ReleaseNotFound)
-            return StatusCodes.Status404NotFound;
-        if (message == BuilderText.PublishBusy || message == BuilderText.ServerDeleting || message == BuilderText.RollbackUnavailable)
-            return StatusCodes.Status409Conflict;
-        return StatusCodes.Status400BadRequest;
-    }
+        FailureKind.NotFound => StatusCodes.Status404NotFound,
+        FailureKind.Conflict => StatusCodes.Status409Conflict,
+        FailureKind.Upstream => StatusCodes.Status502BadGateway,
+        _ => StatusCodes.Status400BadRequest,
+    };
 }

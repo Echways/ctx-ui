@@ -6,6 +6,7 @@ using CtxUi.Builder.Publishing;
 using CtxUi.Builder.Runner;
 using CtxUi.Builder.Servers;
 using CtxUi.Extensions;
+using Enfilade;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -265,6 +266,7 @@ public sealed class PublishHarness : IAsyncDisposable
             TimeSpan.FromSeconds(10), TimeSpan.FromMilliseconds(300), TimeSpan.FromMilliseconds(300), RepairInterval));
         services.AddSingleton<IToolInspector>(Inspector);
         services.AddSingleton<IPanelData>(Data);
+        services.AddScoped<ErrorMessages>();
         services.AddSingleton(Connected);
         services.AddScoped<ConnectionService>();
         return services.BuildServiceProvider();

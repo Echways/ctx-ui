@@ -41,7 +41,7 @@ public class ConnectionTextTests
         client.QuotaCalls = 500;
         client.ResetEveryDays = 30;
 
-        var message = ConnectionText.Message("https://mcp.example.org/", client, Token);
+        var message = ConnectionText.Message("https://mcp.example.org/", client, Token, TimeZoneInfo.Utc);
 
         Assert.Equal(
             $"""
@@ -71,7 +71,7 @@ public class ConnectionTextTests
     [Fact]
     public void Message_for_a_client_without_restrictions_says_so_briefly()
     {
-        var message = ConnectionText.Message("https://mcp.example.org", Client("learn"), Token);
+        var message = ConnectionText.Message("https://mcp.example.org", Client("learn"), Token, TimeZoneInfo.Utc);
 
         Assert.Contains("\nДоступ бессрочный.\n", message);
         Assert.DoesNotContain("Вызовов инструментов", message);
@@ -84,7 +84,7 @@ public class ConnectionTextTests
         client.QuotaCalls = 100;
 
         Assert.Contains("\nВызовов инструментов: 100 на всё время.\n",
-            ConnectionText.Message("https://mcp.example.org", client, Token));
+            ConnectionText.Message("https://mcp.example.org", client, Token, TimeZoneInfo.Utc));
     }
 
     [Fact]
@@ -93,15 +93,15 @@ public class ConnectionTextTests
         var client = Client("learn", "docs");
 
         Assert.Equal(
-            ConnectionText.Message("https://mcp.example.org/", client, Token),
-            ConnectionText.Message("https://mcp.example.org/", client, Token, new ConnectionMode(false, true, true),
+            ConnectionText.Message("https://mcp.example.org/", client, Token, TimeZoneInfo.Utc),
+            ConnectionText.Message("https://mcp.example.org/", client, Token, TimeZoneInfo.Utc, new ConnectionMode(false, true, true),
                 "https://mcp.example.org/connect/invite/x"));
     }
 
     [Fact]
     public void Message_with_oauth_and_no_direct_key_has_no_header_or_path_lines()
     {
-        var message = ConnectionText.Message("https://mcp.example.org/", Client("learn"), Token,
+        var message = ConnectionText.Message("https://mcp.example.org/", Client("learn"), Token, TimeZoneInfo.Utc,
             new ConnectionMode(true, true, false));
 
         Assert.Contains("адрес: https://mcp.example.org/mcp/learn", message);
@@ -113,7 +113,7 @@ public class ConnectionTextTests
     [Fact]
     public void Message_with_oauth_and_key_sign_in_off_hides_the_key()
     {
-        var message = ConnectionText.Message("https://mcp.example.org/", Client("learn"), Token,
+        var message = ConnectionText.Message("https://mcp.example.org/", Client("learn"), Token, TimeZoneInfo.Utc,
             new ConnectionMode(true, false, false));
 
         Assert.DoesNotContain(Token, message);
@@ -124,7 +124,7 @@ public class ConnectionTextTests
     public void Message_includes_the_invite_link()
     {
         var message = ConnectionText.Message(
-            "https://mcp.example.org/", Client("learn"), Token, new ConnectionMode(true, true, true),
+            "https://mcp.example.org/", Client("learn"), Token, TimeZoneInfo.Utc, new ConnectionMode(true, true, true),
             "https://mcp.example.org/connect/invite/abc");
 
         Assert.Contains("https://mcp.example.org/connect/invite/abc", message);

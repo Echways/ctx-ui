@@ -146,7 +146,7 @@
         }
         catch (DraftConflictException failure)
         {
-            throw new PanelException(failure.Message);
+            throw new BuilderException(failure.Message);
         }
     }
 
@@ -160,7 +160,7 @@
     private async Task SaveAccessAsync()
     {
         if (_access.Access == NetworkAccess.FullNetwork && Settings.Access != NetworkAccess.FullNetwork && !_confirmed)
-            throw new PanelException(BuilderText.AccessNotConfirmed);
+            throw new BuilderException(BuilderText.AccessNotConfirmed);
         await Catalog.SetAccessAsync(Settings.ServerId, _access.Access, new ServerLimits(_access.MemoryMb, _access.Cpus, _access.Pids), CancellationToken.None);
         Queue.ApplySettings(Settings.ServerId);
         await OnChanged.InvokeAsync();

@@ -1,7 +1,6 @@
 using System.Security.Cryptography;
 using CtxUi.Builder.Data;
 using CtxUi.Builder.Publishing;
-using Enfilade;
 
 namespace CtxUi.Builder.Tests;
 
@@ -58,7 +57,7 @@ public sealed class ReleaseArchivesTests : IDisposable
         }
 
         await File.WriteAllBytesAsync(archives.PathOf(id), [1, 2, 4]);
-        var corrupted = await Assert.ThrowsAsync<PanelException>(() => archives.OpenVerifiedAsync(release, default));
+        var corrupted = await Assert.ThrowsAsync<BuilderException>(() => archives.OpenVerifiedAsync(release, default));
         Assert.Equal(BuilderText.ArchiveCorrupted, corrupted.Message);
     }
 
@@ -67,7 +66,7 @@ public sealed class ReleaseArchivesTests : IDisposable
     {
         var archives = new ReleaseArchives(_directory);
 
-        var missing = await Assert.ThrowsAsync<PanelException>(() =>
+        var missing = await Assert.ThrowsAsync<BuilderException>(() =>
             archives.OpenVerifiedAsync(new Release { Id = Guid.NewGuid(), ArchiveHash = "00" }, default));
 
         Assert.Equal(BuilderText.ArchiveMissing, missing.Message);

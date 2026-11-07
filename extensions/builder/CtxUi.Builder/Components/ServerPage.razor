@@ -174,7 +174,7 @@ else
             _formTools = OpenApiDraft.Read(_openApiJson);
             _openApiError = null;
         }
-        catch (PanelException failure)
+        catch (BuilderException failure)
         {
             _formTools = [];
             _openApiError = failure.Message;
@@ -185,7 +185,7 @@ else
             _document = BuilderDocument.Read(draft.BuilderJson);
             _documentError = null;
         }
-        catch (PanelException failure)
+        catch (BuilderException failure)
         {
             _document = BuilderDocumentModel.Empty;
             _documentError = failure.Message;
@@ -286,7 +286,7 @@ else
     private async Task CreateToolAsync(string name)
     {
         if (!await FlushAsync())
-            throw new PanelException(BuilderText.UnsavedBlocked);
+            throw new BuilderException(BuilderText.UnsavedBlocked);
         _selected = await Catalog.CreateToolAsync(Id, name, CancellationToken.None);
         await LoadAsync();
         _view = ServerView.Editor;

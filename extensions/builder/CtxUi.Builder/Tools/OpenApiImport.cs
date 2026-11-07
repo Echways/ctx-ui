@@ -1,6 +1,5 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using Enfilade;
 using Microsoft.OpenApi;
 using Microsoft.OpenApi.Reader;
 
@@ -28,16 +27,16 @@ public static class OpenApiImport
     {
         var bytes = await ReadLimitedAsync(document, ct);
         if (bytes.Length == 0 || bytes.All(value => value is (byte)' ' or (byte)'\t' or (byte)'\r' or (byte)'\n'))
-            throw new PanelException(BuilderText.ImportEmpty);
+            throw new BuilderException(BuilderText.ImportEmpty);
 
         JsonObject root;
         try
         {
-            root = JsonNode.Parse(bytes) as JsonObject ?? throw new PanelException(BuilderText.ImportBroken);
+            root = JsonNode.Parse(bytes) as JsonObject ?? throw new BuilderException(BuilderText.ImportBroken);
         }
         catch (JsonException)
         {
-            throw new PanelException(BuilderText.ImportBroken);
+            throw new BuilderException(BuilderText.ImportBroken);
         }
 
         root = await ValidatedAsync(root, bytes, ct);
@@ -49,7 +48,7 @@ public static class OpenApiImport
         }
 
         if (operations.Count == 0)
-            throw new PanelException(BuilderText.ImportNoOperations);
+            throw new BuilderException(BuilderText.ImportNoOperations);
         return new ImportedApi(BaseUrlOf(root), operations, OpenApiDraft.Serialize(root));
     }
 
@@ -62,7 +61,7 @@ public static class OpenApiImport
         CancellationToken ct)
     {
         if (!address.IsAbsoluteUri || address.Scheme is not ("http" or "https"))
-            throw new PanelException(BuilderText.ImportAddressInvalid);
+            throw new BuilderException(BuilderText.ImportAddressInvalid);
 
         using var limit = CancellationTokenSource.CreateLinkedTokenSource(ct);
         limit.CancelAfter(timeout);
@@ -70,9 +69,9 @@ public static class OpenApiImport
         {
             using var response = await client.GetAsync(address, HttpCompletionOption.ResponseHeadersRead, limit.Token);
             if (!response.IsSuccessStatusCode)
-                throw new PanelException(string.Format(BuilderText.ImportFetchFailed, (int)response.StatusCode));
+                throw new BuilderException(string.Format(BuilderText.ImportFetchFailed, (int)response.StatusCode));
             if (response.Content.Headers.ContentLength > MaxDocumentBytes)
-                throw new PanelException(BuilderText.ImportTooLarge);
+                throw new BuilderException(BuilderText.ImportTooLarge);
 
             await using var stream = await response.Content.ReadAsStreamAsync(limit.Token);
             var buffered = new MemoryStream(await ReadLimitedAsync(stream, limit.Token));
@@ -81,11 +80,11 @@ public static class OpenApiImport
         }
         catch (OperationCanceledException) when (!ct.IsCancellationRequested)
         {
-            throw new PanelException(BuilderText.ImportTimedOut);
+            throw new BuilderException(BuilderText.ImportTimedOut);
         }
         catch (HttpRequestException failure)
         {
-            throw new PanelException(failure.StatusCode is { } status
+            throw new BuilderException(failure.StatusCode is { } status
                 ? string.Format(BuilderText.ImportFetchFailed, (int)status)
                 : failure.HttpRequestError switch
                 {
@@ -96,7 +95,7 @@ public static class OpenApiImport
         }
         catch (IOException)
         {
-            throw new PanelException(BuilderText.ImportInterrupted);
+            throw new BuilderException(BuilderText.ImportInterrupted);
         }
     }
 
@@ -105,15 +104,15 @@ public static class OpenApiImport
         JsonObject root;
         try
         {
-            root = JsonNode.Parse(json) as JsonObject ?? throw new PanelException(BuilderText.OpenApiInvalid);
+            root = JsonNode.Parse(json) as JsonObject ?? throw new BuilderException(BuilderText.OpenApiInvalid);
         }
         catch (JsonException)
         {
-            throw new PanelException(BuilderText.OpenApiInvalid);
+            throw new BuilderException(BuilderText.OpenApiInvalid);
         }
 
         if (root["swagger"] is not null)
-            throw new PanelException(string.Format(BuilderText.ImportUnsupported, BuilderText.ImportSwaggerNotStored));
+            throw new BuilderException(string.Format(BuilderText.ImportUnsupported, BuilderText.ImportSwaggerNotStored));
         await ValidatedAsync(root, System.Text.Encoding.UTF8.GetBytes(json), ct);
     }
 
@@ -150,7 +149,7 @@ public static class OpenApiImport
     {
         var isSwagger = root["swagger"] is not null;
         if (!isSwagger && root["openapi"] is null)
-            throw new PanelException(string.Format(BuilderText.ImportUnsupported, BuilderText.ImportNotOpenApi));
+            throw new BuilderException(string.Format(BuilderText.ImportUnsupported, BuilderText.ImportNotOpenApi));
 
         ReadResult result;
         try
@@ -159,18 +158,18 @@ public static class OpenApiImport
         }
         catch (Exception failure) when (failure is not OperationCanceledException)
         {
-            throw new PanelException(string.Format(BuilderText.ImportUnsupported, failure.Message));
+            throw new BuilderException(string.Format(BuilderText.ImportUnsupported, failure.Message));
         }
 
         var errors = result.Diagnostic?.Errors ?? [];
         if (result.Document is null || errors.Count > 0)
-            throw new PanelException(string.Format(BuilderText.ImportUnsupported,
+            throw new BuilderException(string.Format(BuilderText.ImportUnsupported,
                 errors.FirstOrDefault()?.Message ?? BuilderText.ImportNotOpenApi));
         if (!isSwagger)
             return root;
 
         var converted = await result.Document.SerializeAsJsonAsync(OpenApiSpecVersion.OpenApi3_0, ct);
-        return JsonNode.Parse(converted) as JsonObject ?? throw new PanelException(BuilderText.ImportBroken);
+        return JsonNode.Parse(converted) as JsonObject ?? throw new BuilderException(BuilderText.ImportBroken);
     }
 
     private static async Task<byte[]> ReadLimitedAsync(Stream source, CancellationToken ct)
@@ -181,7 +180,7 @@ public static class OpenApiImport
         while ((read = await source.ReadAsync(chunk, ct)) > 0)
         {
             if (buffer.Length + read > MaxDocumentBytes)
-                throw new PanelException(BuilderText.ImportTooLarge);
+                throw new BuilderException(BuilderText.ImportTooLarge);
             buffer.Write(chunk, 0, read);
         }
 

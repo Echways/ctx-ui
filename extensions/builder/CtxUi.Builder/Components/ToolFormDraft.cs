@@ -3,7 +3,6 @@ using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using CtxUi.Builder.Tools;
-using Enfilade;
 
 namespace CtxUi.Builder.Components;
 
@@ -61,7 +60,7 @@ public sealed class ParameterRow
             "array" or "object" => ParseStructure(text),
             _ => null
         };
-        return parsed ?? throw new PanelException(string.Format(BuilderText.ParameterDefaultInvalid, Name));
+        return parsed ?? throw new BuilderException(string.Format(BuilderText.ParameterDefaultInvalid, Name));
     }
 
     private JsonNode? ParseStructure(string text)

@@ -33,7 +33,7 @@
     {
         var withDocument = OpenApiSource.IsGiven(_draft.ImportAddress, _draft.ImportPaste);
         if (_archive is not null && withDocument)
-            throw new PanelException(BuilderText.NewServerChooseOne);
+            throw new BuilderException(BuilderText.NewServerChooseOne);
 
         if (_archive is not null)
         {

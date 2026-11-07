@@ -4,7 +4,6 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using CtxUi.Builder.Servers;
-using Enfilade;
 
 namespace CtxUi.Builder.Tools;
 
@@ -94,7 +93,7 @@ public static partial class OpenApiDraft
         var method = tool.Method.ToLowerInvariant();
         var pathItem = paths[tool.Path] as JsonObject ?? (JsonObject)(paths[tool.Path] = new JsonObject());
         if (pathItem[method] is JsonObject occupant && !IsSameOperation(occupant, tool.Name))
-            throw new PanelException(string.Format(BuilderText.ToolRouteTaken, tool.Method.ToUpperInvariant(),
+            throw new BuilderException(string.Format(BuilderText.ToolRouteTaken, tool.Method.ToUpperInvariant(),
                 tool.Path));
 
         pathItem[method] = Compose(root, previous, previousPathItem, previousPath == tool.Path, tool);
@@ -107,7 +106,7 @@ public static partial class OpenApiDraft
         var paths = root["paths"] as JsonObject;
         var found = Operations(root).Where(entry => entry.Name == toolName).ToList();
         if (paths is null || found.Count == 0)
-            throw new PanelException(BuilderText.ToolNotFound);
+            throw new BuilderException(BuilderText.ToolNotFound);
         foreach (var entry in found)
             Detach(paths, entry.Path, entry.Method);
         return Serialize(root);
@@ -116,7 +115,7 @@ public static partial class OpenApiDraft
     public static (string OpenApiJson, string PythonFile) ConvertToCode(string openApiJson, string toolName)
     {
         var tool = Read(openApiJson).FirstOrDefault(candidate => candidate.Name == toolName) ??
-                   throw new PanelException(BuilderText.ToolNotFound);
+                   throw new BuilderException(BuilderText.ToolNotFound);
         return (Remove(openApiJson, toolName), PythonToolSource.Render(tool));
     }
 
@@ -139,7 +138,7 @@ public static partial class OpenApiDraft
         var clashes = incoming.Select(entry => entry.Name)
             .Where(name => present.Contains(name) || reserved.Contains(name)).ToList();
         if (clashes.Count > 0)
-            throw new PanelException(string.Format(BuilderText.ImportNameTaken, string.Join(", ", clashes)));
+            throw new BuilderException(string.Format(BuilderText.ImportNameTaken, string.Join(", ", clashes)));
 
         if (present.Count == 0)
         {
@@ -148,7 +147,7 @@ public static partial class OpenApiDraft
         }
         else if (Family(Str(root["openapi"])) != Family(Str(additions["openapi"])))
         {
-            throw new PanelException(string.Format(BuilderText.OpenApiVersionMismatch, Str(root["openapi"]),
+            throw new BuilderException(string.Format(BuilderText.OpenApiVersionMismatch, Str(root["openapi"]),
                 Str(additions["openapi"])));
         }
 
@@ -157,7 +156,7 @@ public static partial class OpenApiDraft
         {
             var pathItem = paths[entry.Path] as JsonObject ?? (JsonObject)(paths[entry.Path] = new JsonObject());
             if (pathItem[entry.Method] is not null)
-                throw new PanelException(string.Format(BuilderText.ToolRouteTaken, entry.Method.ToUpperInvariant(),
+                throw new BuilderException(string.Format(BuilderText.ToolRouteTaken, entry.Method.ToUpperInvariant(),
                     entry.Path));
             pathItem[entry.Method] = entry.Operation.DeepClone();
             foreach (var (key, value) in entry.PathItem.Where(pair =>
@@ -200,11 +199,11 @@ public static partial class OpenApiDraft
     {
         try
         {
-            return JsonNode.Parse(json) as JsonObject ?? throw new PanelException(BuilderText.OpenApiInvalid);
+            return JsonNode.Parse(json) as JsonObject ?? throw new BuilderException(BuilderText.OpenApiInvalid);
         }
         catch (JsonException)
         {
-            throw new PanelException(BuilderText.OpenApiInvalid);
+            throw new BuilderException(BuilderText.OpenApiInvalid);
         }
     }
 
@@ -236,32 +235,32 @@ public static partial class OpenApiDraft
     private static void Validate(FormTool tool)
     {
         if (!NamePattern().IsMatch(tool.Name))
-            throw new PanelException(BuilderText.ToolNameInvalid);
+            throw new BuilderException(BuilderText.ToolNameInvalid);
         if (!Methods.Contains(tool.Method.ToLowerInvariant()))
-            throw new PanelException(BuilderText.ToolMethodInvalid);
+            throw new BuilderException(BuilderText.ToolMethodInvalid);
         if (!tool.Path.StartsWith('/') || tool.Path.Any(char.IsControl) || tool.Path.Any(char.IsWhiteSpace))
-            throw new PanelException(BuilderText.ToolPathInvalid);
+            throw new BuilderException(BuilderText.ToolPathInvalid);
 
         var placeholders = Placeholder().Matches(tool.Path).Select(match => match.Groups[1].Value).ToList();
         var declared = tool.Parameters.Where(parameter => parameter.Place == ParameterPlace.Path)
             .Select(parameter => parameter.Name).ToList();
         foreach (var name in declared.Where(name => !placeholders.Contains(name)))
-            throw new PanelException(string.Format(BuilderText.ToolPathParameterMissing, name));
+            throw new BuilderException(string.Format(BuilderText.ToolPathParameterMissing, name));
         foreach (var name in placeholders.Where(name => !declared.Contains(name)))
-            throw new PanelException(string.Format(BuilderText.ToolPathPlaceholderUndeclared, name));
+            throw new BuilderException(string.Format(BuilderText.ToolPathPlaceholderUndeclared, name));
 
         foreach (var parameter in tool.Parameters)
         {
             if (string.IsNullOrWhiteSpace(parameter.Name))
-                throw new PanelException(BuilderText.ParameterNameRequired);
+                throw new BuilderException(BuilderText.ParameterNameRequired);
             if (!Types.Contains(parameter.Type) && parameter.Type != ComplexType)
-                throw new PanelException(string.Format(BuilderText.ParameterTypeInvalid, parameter.Name));
+                throw new BuilderException(string.Format(BuilderText.ParameterTypeInvalid, parameter.Name));
         }
 
         var duplicate = tool.Parameters.GroupBy(parameter => (parameter.Name, parameter.Place))
             .FirstOrDefault(group => group.Count() > 1);
         if (duplicate is not null)
-            throw new PanelException(string.Format(BuilderText.ParameterDuplicate, duplicate.Key.Name));
+            throw new BuilderException(string.Format(BuilderText.ParameterDuplicate, duplicate.Key.Name));
     }
 
     private static bool IsSameOperation(JsonObject operation, string name)
@@ -530,7 +529,7 @@ public static partial class OpenApiDraft
         if (existingSchema is not null && !IsFormBody(existingSchema))
         {
             if (bodyParameters.Count > 0)
-                throw new PanelException(BuilderText.ToolBodyNotEditable);
+                throw new BuilderException(BuilderText.ToolBodyNotEditable);
             return;
         }
 

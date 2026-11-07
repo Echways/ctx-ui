@@ -1,24 +1,5 @@
 <div align="center">
 
-# ctx-ui
-
-**A gateway and web panel for sharing access to MCP servers.**
-Put a remote MCP server behind your own address, hand out tokens with an expiry date and limits, and see who calls what.
-
-**English** · [Русский](README.ru.md)
-
-[![Release](https://img.shields.io/github/v/release/Echways/ctx-ui)](https://github.com/Echways/ctx-ui/releases/latest)
-[![CI](https://github.com/Echways/ctx-ui/actions/workflows/ci.yml/badge.svg)](https://github.com/Echways/ctx-ui/actions/workflows/ci.yml)
-[![License](https://img.shields.io/badge/license-GPL--3.0-blue)](LICENSE)
-
-</div>
-
-```bash
-sudo ctx-ui admin add admin
-sudo ctx-ui inbound add learn --url https://learn.microsoft.com/api/mcp
-sudo ctx-ui client add "Ivanov 4419" --inbound learn --expires 2027-07-01
-```
-
 ## Why ctx-ui
 
 An MCP server is usually one URL and one shared secret. ctx-ui puts a layer between that server and the people who use it, so access can be given, limited and withdrawn one client at a time.
@@ -64,33 +45,33 @@ More in [Getting started](docs/en/getting-started.md).
 
 ## What is included
 
-| Area | Highlights |
-| ---- | ---------- |
-| Gateway | Streamable HTTP inbounds, per-client tokens, expiry, header and path authentication. |
-| Limits | Rate, concurrency, tool-call quota with a reset period, request timeout and body size. |
-| Browser sign-in | OAuth for MCP apps, nine sign-in providers, invite links, devices with a limit. |
-| Panel | Overview, metrics, call log, clients, inbounds, API keys, English and Russian. |
-| CLI | `admin`, `inbound`, `client`, `usage`, `oauth`, `apikey`, `backup`, `extension`. |
-| REST API | The whole panel under `/api/v1`, OpenAPI 3.1 document, Swagger UI. |
-| Extensions | Sections, slots, actions, endpoints, hosted services and a database, with a project template and browser tests. |
-| Builder | FastMCP servers from forms, OpenAPI import or code; isolated containers; versions and rollback. |
-| Operations | Install, update and uninstall with one command, consistent backup of a running service. |
+| Area            | Highlights                                                                                                      |
+| --------------- | --------------------------------------------------------------------------------------------------------------- |
+| Gateway         | Streamable HTTP inbounds, per-client tokens, expiry, header and path authentication.                            |
+| Limits          | Rate, concurrency, tool-call quota with a reset period, request timeout and body size.                          |
+| Browser sign-in | OAuth for MCP apps, nine sign-in providers, invite links, devices with a limit.                                 |
+| Panel           | Overview, metrics, call log, clients, inbounds, API keys, English and Russian.                                  |
+| CLI             | `admin`, `inbound`, `client`, `usage`, `oauth`, `apikey`, `backup`, `extension`.                |
+| REST API        | The whole panel under `/api/v1`, OpenAPI 3.1 document, Swagger UI.                                            |
+| Extensions      | Sections, slots, actions, endpoints, hosted services and a database, with a project template and browser tests. |
+| Builder         | FastMCP servers from forms, OpenAPI import or code; isolated containers; versions and rollback.                 |
+| Operations      | Install, update and uninstall with one command, consistent backup of a running service.                         |
 
 ## Documentation
 
-| | |
-| - | - |
+|                                              |                                                   |
+| -------------------------------------------- | ------------------------------------------------- |
 | [Getting started](docs/en/getting-started.md) | Installation, the first client, connecting an app |
-| [Installation](docs/en/install.md) | systemd, Docker, TLS, updating, backup |
-| [Configuration](docs/en/configuration.md) | Variables, language, data directory |
-| [Panel](docs/en/panel.md) | Sections, sign-in, security |
-| [CLI](docs/en/cli.md) | Every command and option |
-| [REST API](docs/en/api.md) | Resources, errors, Swagger |
-| [Gateway](docs/en/gateway.md) | Authentication, limits, responses, upstream |
-| [Browser sign-in (OAuth)](docs/en/oauth.md) | Devices, invites, providers |
-| [Panel extensions](docs/en/extensions.md) | Building and installing extensions |
-| [Server builder](docs/en/builder.md) | FastMCP servers in the panel |
-| [Troubleshooting](docs/en/troubleshooting.md) | Common problems and what to check |
+| [Installation](docs/en/install.md)            | systemd, Docker, TLS, updating, backup            |
+| [Configuration](docs/en/configuration.md)     | Variables, language, data directory               |
+| [Panel](docs/en/panel.md)                     | Sections, sign-in, security                       |
+| [CLI](docs/en/cli.md)                         | Every command and option                          |
+| [REST API](docs/en/api.md)                    | Resources, errors, Swagger                        |
+| [Gateway](docs/en/gateway.md)                 | Authentication, limits, responses, upstream       |
+| [Browser sign-in (OAuth)](docs/en/oauth.md)   | Devices, invites, providers                       |
+| [Panel extensions](docs/en/extensions.md)     | Building and installing extensions                |
+| [Server builder](docs/en/builder.md)          | FastMCP servers in the panel                      |
+| [Troubleshooting](docs/en/troubleshooting.md) | Common problems and what to check                 |
 
 ## License
 

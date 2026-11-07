@@ -21,7 +21,8 @@ public static class ConnectionText
         return client.Inbounds.Select(link => link.Inbound!.Slug).Order(StringComparer.Ordinal).ToList();
     }
 
-    public static string Message(string publicUrl, Client client, string token, ConnectionMode? mode = null,
+    public static string Message(string publicUrl, Client client, string token, TimeZoneInfo zone,
+        ConnectionMode? mode = null,
         string? inviteUrl = null)
     {
         mode ??= ConnectionMode.Off;
@@ -56,7 +57,7 @@ public static class ConnectionText
         }
 
         var validity = client.ExpiresAt is { } expiresAt
-            ? string.Format(PanelText.MessageExpires, Words.Day(expiresAt))
+            ? string.Format(PanelText.MessageExpires, Words.Day(expiresAt, zone))
             : PanelText.MessageNoExpiry;
         text.Append($"{validity}\n");
         if (client.QuotaCalls is { } quota)

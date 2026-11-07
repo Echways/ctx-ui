@@ -38,17 +38,17 @@ public sealed record TimelineScale(TimeSpan Length)
 
     public string Tick(DateTimeOffset start)
     {
-        return TickEvery < TimeSpan.FromDays(1) ? Words.Clock(start) : Date(start, "d MMM");
+        return TickEvery < TimeSpan.FromDays(1) ? Words.Clock(start, TimeZoneInfo.Utc) : Date(start, "d MMM");
     }
 
     public string Slot(DateTimeOffset start)
     {
         return Length switch
         {
-            _ when Length <= Quarter => string.Format(PanelText.HorizonQuarter, Words.Clock(start),
-                Words.Clock(start + Length)),
+            _ when Length <= Quarter => string.Format(PanelText.HorizonQuarter, Words.Clock(start, TimeZoneInfo.Utc),
+                Words.Clock(start + Length, TimeZoneInfo.Utc)),
             _ when Length < TimeSpan.FromDays(1) => string.Format(PanelText.HorizonSlot, Date(start, "d MMMM"),
-                Words.Clock(start), Words.Clock(start + Length)),
+                Words.Clock(start, TimeZoneInfo.Utc), Words.Clock(start + Length, TimeZoneInfo.Utc)),
             _ => Date(start, "d MMMM")
         };
     }

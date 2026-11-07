@@ -3,7 +3,6 @@ using System.Text;
 using System.Text.Json.Nodes;
 using CtxUi.Builder.Components;
 using CtxUi.Builder.Tools;
-using Enfilade;
 
 namespace CtxUi.Builder.Tests;
 
@@ -166,7 +165,7 @@ public sealed class OpenApiImportTests
         var subset = OpenApiImport.Select(api, new HashSet<string> { "listPets" });
         var merged = OpenApiDraft.Merge(string.Empty, subset, new HashSet<string>());
 
-        Assert.Throws<PanelException>(() => OpenApiDraft.Merge(merged, subset, new HashSet<string>()));
+        Assert.Throws<BuilderException>(() => OpenApiDraft.Merge(merged, subset, new HashSet<string>()));
     }
 
     [Theory]
@@ -176,7 +175,7 @@ public sealed class OpenApiImportTests
     {
         await using var stream = Fixture(file);
 
-        var failure = await Assert.ThrowsAsync<PanelException>(() => OpenApiImport.ParseAsync(stream, default));
+        var failure = await Assert.ThrowsAsync<BuilderException>(() => OpenApiImport.ParseAsync(stream, default));
 
         Assert.Equal(file == "empty.json" ? BuilderText.ImportEmpty : BuilderText.ImportBroken, failure.Message);
     }
@@ -185,7 +184,7 @@ public sealed class OpenApiImportTests
     public async Task A_json_document_that_is_not_openapi_is_refused()
     {
         var failure =
-            await Assert.ThrowsAsync<PanelException>(() =>
+            await Assert.ThrowsAsync<BuilderException>(() =>
                 OpenApiImport.ParseAsync(Text("""{"name":"package"}"""), default));
 
         Assert.StartsWith(BuilderText.ImportUnsupported.Split("{0}")[0], failure.Message);
@@ -209,7 +208,7 @@ public sealed class OpenApiImportTests
     [Fact]
     public async Task Document_without_operations_is_refused()
     {
-        var failure = await Assert.ThrowsAsync<PanelException>(() =>
+        var failure = await Assert.ThrowsAsync<BuilderException>(() =>
             OpenApiImport.ParseAsync(Text("""{"openapi":"3.0.3","info":{"title":"t","version":"1"},"paths":{}}"""),
                 default));
 
@@ -236,7 +235,7 @@ public sealed class OpenApiImportTests
         using var big = new HttpClient(new StubHandler((_, _) =>
             Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = new StreamContent(oversized) })));
 
-        var tooLarge = await Assert.ThrowsAsync<PanelException>(() =>
+        var tooLarge = await Assert.ThrowsAsync<BuilderException>(() =>
             OpenApiImport.FetchAsync(new Uri("https://docs.example.com/big.json"), big, default));
 
         Assert.Equal(BuilderText.ImportTooLarge, tooLarge.Message);
@@ -245,7 +244,7 @@ public sealed class OpenApiImportTests
         var slow = new EndlessStream("{"u8.ToArray(), TimeSpan.FromMilliseconds(200));
         using var trickle = new HttpClient(new StubHandler((_, _) =>
             Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = new StreamContent(slow) })));
-        var timedOut = await Assert.ThrowsAsync<PanelException>(() =>
+        var timedOut = await Assert.ThrowsAsync<BuilderException>(() =>
             OpenApiImport.FetchAsync(new Uri("https://docs.example.com/slow.json"), trickle, TimeSpan.FromSeconds(1),
                 default));
 
@@ -261,7 +260,7 @@ public sealed class OpenApiImportTests
         using var client = new HttpClient(new StubHandler((_, _) =>
             Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = content })));
 
-        var failure = await Assert.ThrowsAsync<PanelException>(() =>
+        var failure = await Assert.ThrowsAsync<BuilderException>(() =>
             OpenApiImport.FetchAsync(new Uri("https://docs.example.com/big.json"), client, default));
 
         Assert.Equal(BuilderText.ImportTooLarge, failure.Message);
@@ -274,9 +273,9 @@ public sealed class OpenApiImportTests
             new HttpClient(new StubHandler((_, _) =>
                 Task.FromResult(new HttpResponseMessage(HttpStatusCode.NotFound))));
 
-        var missing = await Assert.ThrowsAsync<PanelException>(() =>
+        var missing = await Assert.ThrowsAsync<BuilderException>(() =>
             OpenApiImport.FetchAsync(new Uri("https://docs.example.com/x.json"), client, default));
-        var scheme = await Assert.ThrowsAsync<PanelException>(() =>
+        var scheme = await Assert.ThrowsAsync<BuilderException>(() =>
             OpenApiImport.FetchAsync(new Uri("file:///etc/passwd"), client, default));
 
         Assert.Equal(string.Format(BuilderText.ImportFetchFailed, 404), missing.Message);
@@ -331,7 +330,7 @@ public sealed class OpenApiImportTests
         var api = await OpenApiImport.ParseAsync(Text(Nullable31), default);
         var existing = OpenApiDraft.Upsert(string.Empty, new FormTool("x", "GET", "/x", null, [], null));
 
-        var failure = Assert.Throws<PanelException>(() =>
+        var failure = Assert.Throws<BuilderException>(() =>
             OpenApiDraft.Merge(existing, OpenApiImport.Select(api, new HashSet<string> { "a" }),
                 new HashSet<string>()));
 
@@ -359,7 +358,7 @@ public sealed class OpenApiImportTests
         var api = await OpenApiImport.ParseAsync(Text(Pets), default);
         var subset = OpenApiImport.Select(api, new HashSet<string> { "listPets", "getOwner" });
 
-        var failure = Assert.Throws<PanelException>(() =>
+        var failure = Assert.Throws<BuilderException>(() =>
             OpenApiDraft.Merge(string.Empty, subset, new HashSet<string> { "listPets", "getOwner" }));
 
         Assert.Equal(string.Format(BuilderText.ImportNameTaken, "listPets, getOwner"), failure.Message);
@@ -419,7 +418,7 @@ public sealed class OpenApiImportTests
     {
         using var client = new HttpClient(new StubHandler((_, _) => throw new HttpRequestException(error, "boom")));
 
-        var failure = await Assert.ThrowsAsync<PanelException>(() =>
+        var failure = await Assert.ThrowsAsync<BuilderException>(() =>
             OpenApiImport.FetchAsync(new Uri("https://docs.example.com/x.json"), client, default));
 
         Assert.Equal(
@@ -438,7 +437,7 @@ public sealed class OpenApiImportTests
         using var client = new HttpClient(new StubHandler((_, _) =>
             Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = content })));
 
-        var failure = await Assert.ThrowsAsync<PanelException>(() =>
+        var failure = await Assert.ThrowsAsync<BuilderException>(() =>
             OpenApiImport.FetchAsync(new Uri("https://docs.example.com/x.json"), client, default));
 
         Assert.Equal(BuilderText.ImportInterrupted, failure.Message);

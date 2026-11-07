@@ -1,46 +1,24 @@
-using Enfilade;
-
 namespace CtxUi.Builder;
-
-public enum FailureKind
-{
-    Invalid,
-    NotFound,
-    Conflict,
-    Upstream
-}
 
 public static class Failures
 {
-    private const string KindKey = "CtxUi.Builder.FailureKind";
-
-    public static PanelException ServerNotFound()
+    public static BuilderException ServerNotFound()
     {
-        return Of(FailureKind.NotFound, BuilderText.ServerNotFound);
+        return new BuilderException(BuilderText.ServerNotFound, FailureKind.NotFound);
     }
 
-    public static PanelException ReleaseNotFound()
+    public static BuilderException ReleaseNotFound()
     {
-        return Of(FailureKind.NotFound, BuilderText.ReleaseNotFound);
+        return new BuilderException(BuilderText.ReleaseNotFound, FailureKind.NotFound);
     }
 
-    public static PanelException Conflict(string message)
+    public static BuilderException Conflict(string message)
     {
-        return Of(FailureKind.Conflict, message);
+        return new BuilderException(message, FailureKind.Conflict);
     }
 
-    public static PanelException Upstream(string message)
+    public static BuilderException Upstream(string message)
     {
-        return Of(FailureKind.Upstream, message);
-    }
-
-    public static FailureKind KindOf(PanelException failure)
-    {
-        return failure.Data[KindKey] is FailureKind kind ? kind : FailureKind.Invalid;
-    }
-
-    private static PanelException Of(FailureKind kind, string message)
-    {
-        return new PanelException(message) { Data = { [KindKey] = kind } };
+        return new BuilderException(message, FailureKind.Upstream);
     }
 }

@@ -4,6 +4,7 @@
 @inject IDialogService Dialogs
 @inject PanelActions Actions
 @inject TimeProvider Clock
+@inject ViewerTime Viewer
 
 <PageHead Title="@Layout.TitleOf(PanelSections.Clients)" Count="_clients?.Count"
           UpdatedAt="_clients is null ? null : _loadedAt" OnRefresh="LoadAsync">
@@ -64,12 +65,12 @@ else
                 <Status Value="ClientState.Of(context, _loadedAt)"/>
             </MudTd>
             <MudTd DataLabel="@PanelText.ExpiryColumn">
-                @(context.ExpiresAt is { } expiresAt ? string.Format(PanelText.ExpiresOn, Words.Day(expiresAt)) : PanelText.NoExpiry)
+                @(context.ExpiresAt is { } expiresAt ? string.Format(PanelText.ExpiresOn, Viewer.Day(expiresAt)) : PanelText.NoExpiry)
             </MudTd>
             <MudTd DataLabel="@PanelText.LastSeenColumn">
                 @if (context.LastUsedAt is { } usedAt)
                 {
-                    @Words.Minute(usedAt)
+                    @Viewer.Minute(usedAt)
                 }
                 else
                 {

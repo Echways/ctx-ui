@@ -4,6 +4,7 @@
 @inject IDialogService Dialogs
 @inject PanelActions Actions
 @inject TimeProvider Clock
+@inject ViewerTime Viewer
 
 <PageHead Title="@Layout.TitleOf(PanelSections.ApiKeys)" Count="_keys?.Count" UpdatedAt="_loadedAt"
           OnRefresh="LoadAsync">
@@ -44,7 +45,7 @@ else
         <RowTemplate>
             <MudTd>@context.Name</MudTd>
             <MudTd DataLabel="@PanelText.Key"><code>@(context.SecretPrefix)…</code></MudTd>
-            <MudTd DataLabel="@PanelText.IssuedColumn">@Words.Day(context.CreatedAt)</MudTd>
+            <MudTd DataLabel="@PanelText.IssuedColumn">@Viewer.Day(context.CreatedAt)</MudTd>
             <MudTd Class="acts">
                 <MudMenu Label="⋯" AriaLabel="@string.Format(PanelText.MoreActions, context.Name)" Class="more"
                          AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">

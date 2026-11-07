@@ -41,6 +41,7 @@ public sealed class BuilderEntry : IPanelExtension
         context.Services.AddScoped<ConnectionService>();
         context.Services.AddScoped<RunnerAvailability>();
         context.Services.AddPublishing(context.DataDirectory);
+        context.Services.ShowMessageOf<BuilderException>(failure => failure.Message);
 
         context.Panel
             .AddCaption(() => BuilderText.Caption)
@@ -60,7 +61,7 @@ public sealed class BuilderEntry : IPanelExtension
     {
         var connections = args.Services.GetRequiredService<ConnectionService>();
         var serverId = await connections.FindServerIdAsync(args.Context, CancellationToken.None)
-                       ?? throw new PanelException(BuilderText.InboundNotBuilt);
+                       ?? throw new BuilderException(BuilderText.InboundNotBuilt);
         args.Services.GetRequiredService<NavigationManager>().NavigateTo($"builder/{serverId}");
     }
 }

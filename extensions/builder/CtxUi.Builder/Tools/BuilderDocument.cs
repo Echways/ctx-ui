@@ -2,7 +2,6 @@ using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
-using Enfilade;
 
 namespace CtxUi.Builder.Tools;
 
@@ -115,9 +114,9 @@ public static partial class BuilderDocument
         var resources = model.Resources.ToList();
         var index = replacing is null ? -1 : resources.FindIndex(existing => existing.Uri == replacing);
         if (replacing is not null && index < 0)
-            throw new PanelException(string.Format(BuilderText.ResourceNotFound, replacing));
+            throw new BuilderException(string.Format(BuilderText.ResourceNotFound, replacing));
         if (resources.Where((existing, position) => position != index).Any(existing => existing.Uri == resource.Uri))
-            throw new PanelException(string.Format(BuilderText.ResourceUriTaken, resource.Uri));
+            throw new BuilderException(string.Format(BuilderText.ResourceUriTaken, resource.Uri));
 
         if (index < 0)
             resources.Add(resource);
@@ -131,7 +130,7 @@ public static partial class BuilderDocument
     public static BuilderDocumentModel WithoutResource(BuilderDocumentModel model, string uri)
     {
         if (model.Resources.All(resource => resource.Uri != uri))
-            throw new PanelException(string.Format(BuilderText.ResourceNotFound, uri));
+            throw new BuilderException(string.Format(BuilderText.ResourceNotFound, uri));
         return model with { Resources = [.. model.Resources.Where(resource => resource.Uri != uri)] };
     }
 
@@ -140,9 +139,9 @@ public static partial class BuilderDocument
         var prompts = model.Prompts.ToList();
         var index = replacing is null ? -1 : prompts.FindIndex(existing => existing.Name == replacing);
         if (replacing is not null && index < 0)
-            throw new PanelException(string.Format(BuilderText.PromptNotFound, replacing));
+            throw new BuilderException(string.Format(BuilderText.PromptNotFound, replacing));
         if (prompts.Where((existing, position) => position != index).Any(existing => existing.Name == prompt.Name))
-            throw new PanelException(string.Format(BuilderText.PromptNameTaken, prompt.Name));
+            throw new BuilderException(string.Format(BuilderText.PromptNameTaken, prompt.Name));
 
         if (index < 0)
             prompts.Add(prompt);
@@ -156,7 +155,7 @@ public static partial class BuilderDocument
     public static BuilderDocumentModel WithoutPrompt(BuilderDocumentModel model, string name)
     {
         if (model.Prompts.All(prompt => prompt.Name != name))
-            throw new PanelException(string.Format(BuilderText.PromptNotFound, name));
+            throw new BuilderException(string.Format(BuilderText.PromptNotFound, name));
         return model with { Prompts = [.. model.Prompts.Where(prompt => prompt.Name != name)] };
     }
 
@@ -166,26 +165,26 @@ public static partial class BuilderDocument
         {
             if (!UriSchemePattern().IsMatch(resource.Uri) || !Uri.TryCreate(resource.Uri, UriKind.Absolute, out _) ||
                 resource.Uri.Any(char.IsWhiteSpace))
-                throw new PanelException(string.Format(BuilderText.ResourceUriInvalid, resource.Uri));
+                throw new BuilderException(string.Format(BuilderText.ResourceUriInvalid, resource.Uri));
             if (string.IsNullOrWhiteSpace(resource.Name) || resource.Name.Length > MaxNameLength)
-                throw new PanelException(string.Format(BuilderText.BuilderNameInvalid, resource.Name));
+                throw new BuilderException(string.Format(BuilderText.BuilderNameInvalid, resource.Name));
             if (!MimeTypePattern().IsMatch(resource.MimeType))
-                throw new PanelException(string.Format(BuilderText.ResourceMimeTypeInvalid, resource.MimeType));
+                throw new BuilderException(string.Format(BuilderText.ResourceMimeTypeInvalid, resource.MimeType));
         }
 
         foreach (var prompt in model.Prompts)
         {
             if (!PromptNamePattern().IsMatch(prompt.Name) || prompt.Name.Length > MaxNameLength)
-                throw new PanelException(string.Format(BuilderText.BuilderNameInvalid, prompt.Name));
+                throw new BuilderException(string.Format(BuilderText.BuilderNameInvalid, prompt.Name));
             if (string.IsNullOrWhiteSpace(prompt.Template))
-                throw new PanelException(string.Format(BuilderText.PromptTemplateRequired, prompt.Name));
+                throw new BuilderException(string.Format(BuilderText.PromptTemplateRequired, prompt.Name));
         }
 
         if (model.Resources.GroupBy(resource => resource.Uri).FirstOrDefault(group => group.Count() > 1) is
             { } uriClash)
-            throw new PanelException(string.Format(BuilderText.ResourceUriTaken, uriClash.Key));
+            throw new BuilderException(string.Format(BuilderText.ResourceUriTaken, uriClash.Key));
         if (model.Prompts.GroupBy(prompt => prompt.Name).FirstOrDefault(group => group.Count() > 1) is { } nameClash)
-            throw new PanelException(string.Format(BuilderText.PromptNameTaken, nameClash.Key));
+            throw new BuilderException(string.Format(BuilderText.PromptNameTaken, nameClash.Key));
     }
 
     private static IEnumerable<JsonObject> Entries(JsonObject root, string key)
@@ -209,8 +208,8 @@ public static partial class BuilderDocument
         return entry[key] is JsonValue value && value.TryGetValue<string>(out var text) ? text : throw Invalid();
     }
 
-    private static PanelException Invalid()
+    private static BuilderException Invalid()
     {
-        return new PanelException(BuilderText.BuilderDocumentInvalid);
+        return new BuilderException(BuilderText.BuilderDocumentInvalid);
     }
 }

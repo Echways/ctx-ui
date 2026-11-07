@@ -55,7 +55,7 @@ public sealed class ConnectionServiceTests
         var client = harness.Data.AddClient("first");
         harness.Data.AddInbound("weather-mcp");
 
-        var failure = await Assert.ThrowsAsync<PanelException>(() =>
+        var failure = await Assert.ThrowsAsync<BuilderException>(() =>
             harness.ConnectAsync(server, "weather-mcp", "Weather", false, client.Id));
 
         Assert.Equal(BuilderText.InboundSlugTaken, failure.Message);
@@ -72,7 +72,7 @@ public sealed class ConnectionServiceTests
         var server = await harness.CreateServerAsync();
         harness.Data.AddFailure = new PanelException("Slug is invalid.");
 
-        var failure = await Assert.ThrowsAsync<PanelException>(() => harness.ConnectAsync(server, "Bad Slug"));
+        var failure = await Assert.ThrowsAsync<BuilderException>(() => harness.ConnectAsync(server, "Bad Slug"));
 
         Assert.Equal(string.Format(BuilderText.InboundRejected, "Slug is invalid."), failure.Message);
         Assert.Null((await harness.ServerAsync(server)).InboundId);
@@ -98,7 +98,7 @@ public sealed class ConnectionServiceTests
         var server = await harness.CreateServerAsync();
         await harness.ConnectAsync(server, "weather-mcp");
 
-        var failure = await Assert.ThrowsAsync<PanelException>(() => harness.ConnectAsync(server, "another"));
+        var failure = await Assert.ThrowsAsync<BuilderException>(() => harness.ConnectAsync(server, "another"));
 
         Assert.Equal(BuilderText.ConnectionAlreadyConnected, failure.Message);
         Assert.Single(harness.Data.Inbounds);
@@ -110,7 +110,7 @@ public sealed class ConnectionServiceTests
         await using var harness = await PublishHarness.CreateAsync(false);
         var server = await harness.CreateServerAsync();
 
-        var failure = await Assert.ThrowsAsync<PanelException>(() => harness.ConnectAsync(server, "weather-mcp"));
+        var failure = await Assert.ThrowsAsync<BuilderException>(() => harness.ConnectAsync(server, "weather-mcp"));
 
         Assert.Equal(string.Format(BuilderText.RunnerNotConfigured, "RunnerUrl, RunnerIngressUrl, RunnerToken"),
             failure.Message);
@@ -173,7 +173,7 @@ public sealed class ConnectionServiceTests
         await harness.ConnectAsync(server, "weather-mcp");
         harness.Runner.FailDeletes = true;
 
-        var failure = await Assert.ThrowsAsync<PanelException>(() => harness.DeleteServerAsync(server));
+        var failure = await Assert.ThrowsAsync<BuilderException>(() => harness.DeleteServerAsync(server));
 
         Assert.Equal(string.Format(BuilderText.RunnerDeleteFailed, "The runner could not remove the server."),
             failure.Message);
@@ -191,7 +191,7 @@ public sealed class ConnectionServiceTests
         harness.Runner.HoldBuilds = true;
         await harness.Queue.PublishAsync(server, PublishMode.Activate, default);
 
-        var failure = await Assert.ThrowsAsync<PanelException>(() => harness.DeleteServerAsync(server));
+        var failure = await Assert.ThrowsAsync<BuilderException>(() => harness.DeleteServerAsync(server));
 
         Assert.Equal(BuilderText.PublishBusy, failure.Message);
         Assert.True(await harness.ServerExistsAsync(server));
@@ -246,7 +246,7 @@ public sealed class ConnectionServiceTests
             {
                 await harness.ConnectAsync(server, "second-mcp");
             }
-            catch (PanelException failure)
+            catch (BuilderException failure)
             {
                 refused = failure;
             }
@@ -268,7 +268,7 @@ public sealed class ConnectionServiceTests
         var other = Guid.NewGuid();
         harness.Data.DuringAdd = () => harness.SetInboundIdAsync(server, other);
 
-        var failure = await Assert.ThrowsAsync<PanelException>(() =>
+        var failure = await Assert.ThrowsAsync<BuilderException>(() =>
             harness.ConnectAsync(server, "weather-mcp", "Weather", false, client.Id));
 
         Assert.Equal(BuilderText.ConnectionAlreadyConnected, failure.Message);
@@ -283,7 +283,7 @@ public sealed class ConnectionServiceTests
         var server = await harness.CreateServerAsync();
         harness.Data.DuringAdd = () => harness.RemoveServerRowAsync(server);
 
-        var failure = await Assert.ThrowsAsync<PanelException>(() => harness.ConnectAsync(server, "weather-mcp"));
+        var failure = await Assert.ThrowsAsync<BuilderException>(() => harness.ConnectAsync(server, "weather-mcp"));
 
         Assert.Equal(BuilderText.ServerNotFound, failure.Message);
         Assert.Empty(harness.Data.Inbounds);
@@ -301,7 +301,7 @@ public sealed class ConnectionServiceTests
             {
                 await harness.DeleteServerAsync(server);
             }
-            catch (PanelException failure)
+            catch (BuilderException failure)
             {
                 refused = failure;
             }
@@ -340,10 +340,10 @@ public sealed class ConnectionServiceTests
         harness.Queue.ReserveForDeletion(server);
 
         var publish =
-            await Assert.ThrowsAsync<PanelException>(() =>
+            await Assert.ThrowsAsync<BuilderException>(() =>
                 harness.Queue.PublishAsync(server, PublishMode.Activate, default));
-        var rollback = await Assert.ThrowsAsync<PanelException>(() => harness.Queue.RollbackAsync(server, 1, default));
-        var settings = Assert.Throws<PanelException>(() => harness.Queue.ApplySettings(server));
+        var rollback = await Assert.ThrowsAsync<BuilderException>(() => harness.Queue.RollbackAsync(server, 1, default));
+        var settings = Assert.Throws<BuilderException>(() => harness.Queue.ApplySettings(server));
 
         Assert.All([publish, rollback, settings], failure => Assert.Equal(BuilderText.ServerDeleting, failure.Message));
         Assert.False(harness.Queue.IsBusy(server));
@@ -361,7 +361,7 @@ public sealed class ConnectionServiceTests
         harness.Runner.HoldBuilds = true;
         await harness.Queue.PublishAsync(server, PublishMode.Activate, default);
 
-        var failure = Assert.Throws<PanelException>(() => harness.Queue.ReserveForDeletion(server));
+        var failure = Assert.Throws<BuilderException>(() => harness.Queue.ReserveForDeletion(server));
 
         Assert.Equal(BuilderText.PublishBusy, failure.Message);
     }
@@ -393,7 +393,7 @@ public sealed class ConnectionServiceTests
         await harness.StartAsync();
         harness.Runner.FailDeletes = true;
 
-        await Assert.ThrowsAsync<PanelException>(() => harness.DeleteServerAsync(server));
+        await Assert.ThrowsAsync<BuilderException>(() => harness.DeleteServerAsync(server));
 
         harness.Runner.FailDeletes = false;
         await harness.PublishAndWaitAsync(server);

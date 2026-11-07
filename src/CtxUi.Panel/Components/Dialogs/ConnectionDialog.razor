@@ -3,6 +3,7 @@
 @inject IOptions<PanelOptions> Options
 @inject ISnackbar Snackbar
 @inject TimeProvider Clock
+@inject ViewerTime Viewer
 
 <Sheet>
     <ChildContent>
@@ -62,7 +63,7 @@
                     else
                     {
                         <CopyLine Label="@PanelText.InviteLink" Value="@_inviteUrl" CopyLabel="@PanelText.InviteCopy"/>
-                        <p class="hint">@string.Format(PanelText.InviteValidUntil, Words.Day(_inviteUntil))</p>
+                        <p class="hint">@string.Format(PanelText.InviteValidUntil, Viewer.Day(_inviteUntil))</p>
                     }
                 </section>
             }
@@ -130,7 +131,7 @@
     private void Describe()
     {
         if (_token is not null)
-            _message = ConnectionText.Message(PublicUrl, _client!, _token, _mode, _inviteUrl);
+            _message = ConnectionText.Message(PublicUrl, _client!, _token, Viewer.Zone, _mode, _inviteUrl);
     }
 
     private async Task InviteAsync()

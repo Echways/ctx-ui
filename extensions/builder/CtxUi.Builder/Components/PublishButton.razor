@@ -75,7 +75,7 @@
     private async Task PublishAsync(PublishMode mode)
     {
         if (Prepare is not null && !await Prepare())
-            throw new PanelException(BuilderText.UnsavedBlocked);
+            throw new BuilderException(BuilderText.UnsavedBlocked);
         await Queue.PublishAsync(ServerId, mode, CancellationToken.None);
         await LoadAsync();
     }

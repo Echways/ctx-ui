@@ -144,7 +144,7 @@
                 _dirty = true;
                 _state = SaveState.Conflict;
             }
-            catch (PanelException failure)
+            catch (BuilderException failure)
             {
                 _dirty = true;
                 _error = failure.Message;

@@ -6,7 +6,6 @@ using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using CtxUi.Builder.Data;
-using Enfilade;
 
 namespace CtxUi.Builder.Servers;
 
@@ -64,7 +63,7 @@ public static partial class ProjectFiles
         if (segments.Any(segment => segment.Length is 0 or > MaxSegmentLength || segment is "." or ".."))
             throw Unsafe(path);
         if (!DataExtensions.Contains(Path.GetExtension(segments[^1])))
-            throw new PanelException(string.Format(BuilderText.ProjectFileTypeNotAllowed, path));
+            throw new BuilderException(string.Format(BuilderText.ProjectFileTypeNotAllowed, path));
         return path;
     }
 
@@ -94,7 +93,7 @@ public static partial class ProjectFiles
                  .Where(line => line.Length > 0))
         {
             if (line.StartsWith('-') || line.Length > MaxDependencyLength || line.Any(char.IsControl))
-                throw new PanelException(string.Format(BuilderText.DependencyInvalid, line));
+                throw new BuilderException(string.Format(BuilderText.DependencyInvalid, line));
             if (!FastMcpRequirement().IsMatch(line) && !result.Contains(line))
                 result.Add(line);
         }
@@ -148,12 +147,12 @@ public static partial class ProjectFiles
             else if (IsZip(buffer))
                 await ReadZipAsync(buffer, collector, ct);
             else
-                throw new PanelException(BuilderText.ArchiveUnreadable);
+                throw new BuilderException(BuilderText.ArchiveUnreadable);
         }
         catch (Exception failure) when (failure is InvalidDataException or EndOfStreamException or IOException
                                             or ArgumentException or NotSupportedException)
         {
-            throw new PanelException(BuilderText.ArchiveUnreadable);
+            throw new BuilderException(BuilderText.ArchiveUnreadable);
         }
 
         return new ProjectImport([.. collector.Files.Select(file => (file.Key, file.Value))],
@@ -172,7 +171,7 @@ public static partial class ProjectFiles
                 case TarEntryType.GlobalExtendedAttributes:
                     continue;
                 case TarEntryType.SymbolicLink or TarEntryType.HardLink:
-                    throw new PanelException(string.Format(BuilderText.ArchiveLinkRefused, entry.Name));
+                    throw new BuilderException(string.Format(BuilderText.ArchiveLinkRefused, entry.Name));
                 case TarEntryType.Directory:
                     collector.Admit(entry.Name, true);
                     break;
@@ -181,7 +180,7 @@ public static partial class ProjectFiles
                         await collector.AddAsync(name, entry.DataStream, ct);
                     break;
                 default:
-                    throw new PanelException(string.Format(BuilderText.ArchiveEntryKindRefused, entry.Name));
+                    throw new BuilderException(string.Format(BuilderText.ArchiveEntryKindRefused, entry.Name));
             }
     }
 
@@ -189,15 +188,15 @@ public static partial class ProjectFiles
     {
         using var zip = new ZipArchive(buffer, ZipArchiveMode.Read);
         if (zip.Entries.Count > MaxArchiveEntries)
-            throw new PanelException(string.Format(BuilderText.ArchiveTooManyEntries, MaxArchiveEntries));
+            throw new BuilderException(string.Format(BuilderText.ArchiveTooManyEntries, MaxArchiveEntries));
         foreach (var entry in zip.Entries)
         {
             var isDirectory = entry.FullName.EndsWith('/');
             var kind = (entry.ExternalAttributes >> 16) & 0xF000;
             if (kind == 0xA000)
-                throw new PanelException(string.Format(BuilderText.ArchiveLinkRefused, entry.FullName));
+                throw new BuilderException(string.Format(BuilderText.ArchiveLinkRefused, entry.FullName));
             if (kind is not (0 or 0x8000 or 0x4000))
-                throw new PanelException(string.Format(BuilderText.ArchiveEntryKindRefused, entry.FullName));
+                throw new BuilderException(string.Format(BuilderText.ArchiveEntryKindRefused, entry.FullName));
 
             if (collector.Admit(entry.FullName, isDirectory) is { } name && collector.Wants(name))
             {
@@ -215,7 +214,7 @@ public static partial class ProjectFiles
         while ((read = await archive.ReadAsync(chunk, ct)) > 0)
         {
             if (buffer.Length + read > MaxProjectBytes * 2)
-                throw new PanelException(BuilderText.ArchiveTooLarge);
+                throw new BuilderException(BuilderText.ArchiveTooLarge);
             buffer.Write(chunk, 0, read);
         }
 
@@ -298,9 +297,9 @@ public static partial class ProjectFiles
         return output.ToArray();
     }
 
-    private static PanelException Unsafe(string path)
+    private static BuilderException Unsafe(string path)
     {
-        return new PanelException(string.Format(BuilderText.ProjectPathInvalid, path));
+        return new BuilderException(string.Format(BuilderText.ProjectPathInvalid, path));
     }
 
     private sealed class ArchiveCollector
@@ -315,7 +314,7 @@ public static partial class ProjectFiles
         public string? Admit(string rawName, bool directory)
         {
             if (++_entries > MaxArchiveEntries)
-                throw new PanelException(string.Format(BuilderText.ArchiveTooManyEntries, MaxArchiveEntries));
+                throw new BuilderException(string.Format(BuilderText.ArchiveTooManyEntries, MaxArchiveEntries));
             var name = Normalize(rawName, directory);
             return directory || name.Length == 0 ? null : name;
         }
@@ -332,7 +331,7 @@ public static partial class ProjectFiles
             {
                 ValidatePath(name);
                 if (Files.ContainsKey(name))
-                    throw new PanelException(string.Format(BuilderText.ArchiveDuplicate, name));
+                    throw new BuilderException(string.Format(BuilderText.ArchiveDuplicate, name));
             }
 
             var content = await ReadAsync(data, ct);
@@ -343,7 +342,7 @@ public static partial class ProjectFiles
             }
             catch (DecoderFallbackException)
             {
-                throw new PanelException(string.Format(BuilderText.ArchiveNotUtf8, name));
+                throw new BuilderException(string.Format(BuilderText.ArchiveNotUtf8, name));
             }
 
             if (kept)
@@ -363,7 +362,7 @@ public static partial class ProjectFiles
             {
                 _bytes += read;
                 if (_bytes > MaxProjectBytes)
-                    throw new PanelException(BuilderText.ArchiveTooLarge);
+                    throw new BuilderException(BuilderText.ArchiveTooLarge);
                 output.Write(chunk, 0, read);
             }
 
@@ -446,7 +445,7 @@ public static partial class ProjectFiles
         {
             _read += read;
             if (_read > limit)
-                throw new PanelException(BuilderText.ArchiveTooLarge);
+                throw new BuilderException(BuilderText.ArchiveTooLarge);
             return read;
         }
     }

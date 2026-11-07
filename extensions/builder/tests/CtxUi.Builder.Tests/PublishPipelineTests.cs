@@ -5,7 +5,6 @@ using CtxUi.Builder.Contracts;
 using CtxUi.Builder.Data;
 using CtxUi.Builder.Publishing;
 using CtxUi.Builder.Servers;
-using Enfilade;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -121,7 +120,7 @@ public sealed class PublishPipelineTests
         await harness.Queue.PublishAsync(server, PublishMode.Activate, default);
 
         var refused =
-            await Assert.ThrowsAsync<PanelException>(() =>
+            await Assert.ThrowsAsync<BuilderException>(() =>
                 harness.Queue.PublishAsync(server, PublishMode.Activate, default));
 
         Assert.Equal(BuilderText.PublishBusy, refused.Message);
@@ -143,7 +142,7 @@ public sealed class PublishPipelineTests
         await harness.StartAsync();
 
         var refused =
-            await Assert.ThrowsAsync<PanelException>(() =>
+            await Assert.ThrowsAsync<BuilderException>(() =>
                 harness.Queue.PublishAsync(server, PublishMode.Activate, default));
 
         Assert.Equal(BuilderText.PublishBusy, refused.Message);
@@ -360,9 +359,9 @@ public sealed class PublishPipelineTests
         harness.Runner.FailBuilds.Add(2);
         await harness.PublishAndWaitAsync(server);
 
-        await Assert.ThrowsAsync<PanelException>(() => harness.Queue.RollbackAsync(server, 1, default));
-        await Assert.ThrowsAsync<PanelException>(() => harness.Queue.RollbackAsync(server, 2, default));
-        await Assert.ThrowsAsync<PanelException>(() => harness.Queue.RollbackAsync(server, 9, default));
+        await Assert.ThrowsAsync<BuilderException>(() => harness.Queue.RollbackAsync(server, 1, default));
+        await Assert.ThrowsAsync<BuilderException>(() => harness.Queue.RollbackAsync(server, 2, default));
+        await Assert.ThrowsAsync<BuilderException>(() => harness.Queue.RollbackAsync(server, 9, default));
         Assert.False(harness.Queue.IsBusy(server));
     }
 
@@ -595,7 +594,7 @@ public sealed class PublishPipelineTests
         await harness.StartAsync();
 
         var refused =
-            await Assert.ThrowsAsync<PanelException>(() =>
+            await Assert.ThrowsAsync<BuilderException>(() =>
                 harness.Queue.PublishAsync(server, PublishMode.Activate, default));
 
         Assert.Equal(string.Format(BuilderText.RunnerNotConfigured, "RunnerUrl, RunnerIngressUrl, RunnerToken"),
@@ -617,7 +616,7 @@ public sealed class PublishPipelineTests
         });
 
         var refused =
-            await Assert.ThrowsAsync<PanelException>(() =>
+            await Assert.ThrowsAsync<BuilderException>(() =>
                 harness.Queue.PublishAsync(server, PublishMode.Activate, default));
 
         Assert.Equal(BuilderText.PublishBaseUrlRequired, refused.Message);

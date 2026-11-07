@@ -1,6 +1,5 @@
 using System.Text.Json.Nodes;
 using CtxUi.Builder.Tools;
-using Enfilade;
 
 namespace CtxUi.Builder.Tests;
 
@@ -70,8 +69,8 @@ public sealed class OpenApiDraftTests
         var missing = Forecast() with { Path = "/v1/forecast" };
         var undeclared = Forecast() with { Parameters = [] };
 
-        Assert.Throws<PanelException>(() => OpenApiDraft.Upsert(string.Empty, missing));
-        Assert.Throws<PanelException>(() => OpenApiDraft.Upsert(string.Empty, undeclared));
+        Assert.Throws<BuilderException>(() => OpenApiDraft.Upsert(string.Empty, missing));
+        Assert.Throws<BuilderException>(() => OpenApiDraft.Upsert(string.Empty, undeclared));
     }
 
     [Fact]
@@ -81,7 +80,7 @@ public sealed class OpenApiDraftTests
 
         Assert.Equal("get_forecast", json["paths"]!["/v1/forecast/{city}"]!["get"]!["operationId"]!.GetValue<string>());
         foreach (var invalid in new[] { "get forecast", "get-forecast", "a__b", "_a", "a_", new string('x', 57) })
-            Assert.Throws<PanelException>(() => OpenApiDraft.Upsert(string.Empty, Forecast() with { Name = invalid }));
+            Assert.Throws<BuilderException>(() => OpenApiDraft.Upsert(string.Empty, Forecast() with { Name = invalid }));
         Assert.NotNull(OpenApiDraft.Upsert(string.Empty, Forecast() with { Name = new string('x', 56) }));
     }
 
@@ -142,7 +141,7 @@ public sealed class OpenApiDraftTests
     {
         var first = OpenApiDraft.Upsert(string.Empty, Forecast());
 
-        Assert.Throws<PanelException>(() => OpenApiDraft.Upsert(first, Forecast() with { Name = "other" }));
+        Assert.Throws<BuilderException>(() => OpenApiDraft.Upsert(first, Forecast() with { Name = "other" }));
     }
 
     [Fact]
@@ -154,7 +153,7 @@ public sealed class OpenApiDraftTests
 
         Assert.Empty(OpenApiDraft.Read(removed));
         Assert.Empty(JsonNode.Parse(removed)!["paths"]!.AsObject());
-        Assert.Throws<PanelException>(() => OpenApiDraft.Remove(removed, "get_forecast"));
+        Assert.Throws<BuilderException>(() => OpenApiDraft.Remove(removed, "get_forecast"));
     }
 
     [Fact]
@@ -218,7 +217,7 @@ public sealed class OpenApiDraftTests
     [Fact]
     public void Broken_document_is_refused_with_a_message()
     {
-        var failure = Assert.Throws<PanelException>(() => OpenApiDraft.Read("{ not json"));
+        var failure = Assert.Throws<BuilderException>(() => OpenApiDraft.Read("{ not json"));
 
         Assert.Equal(BuilderText.OpenApiInvalid, failure.Message);
     }
@@ -341,7 +340,7 @@ public sealed class OpenApiDraftTests
             Parameters = [new ToolParameter("note", "string", ParameterPlace.Body, false, null, null)]
         };
 
-        var failure = Assert.Throws<PanelException>(() => OpenApiDraft.Upsert(Imported, extra));
+        var failure = Assert.Throws<BuilderException>(() => OpenApiDraft.Upsert(Imported, extra));
 
         Assert.Equal(BuilderText.ToolBodyNotEditable, failure.Message);
     }

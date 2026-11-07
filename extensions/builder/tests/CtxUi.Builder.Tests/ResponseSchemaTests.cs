@@ -1,5 +1,4 @@
 using CtxUi.Builder.Tools;
-using Enfilade;
 
 namespace CtxUi.Builder.Tests;
 
@@ -24,7 +23,7 @@ public sealed class ResponseSchemaTests
     [InlineData("")]
     public void Invalid_example_is_refused_with_a_message(string example)
     {
-        var failure = Assert.Throws<PanelException>(() => ResponseSchema.FromExample(example));
+        var failure = Assert.Throws<BuilderException>(() => ResponseSchema.FromExample(example));
 
         Assert.Equal(example.Length == 0 ? BuilderText.ResponseExampleEmpty : BuilderText.ResponseExampleInvalid,
             failure.Message);

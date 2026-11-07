@@ -83,7 +83,8 @@ public static partial class PanelServices
         });
         var layout = CreateLayout();
         extend(layout);
-        layout.Apply(services.AddEnfilade());
+        layout.Apply(services.AddEnfilade()
+            .ShowMessageOf<DomainException>(failure => Words.Sentence(failure.Message)));
         services.AddSingleton(layout);
         services.AddScoped<AuthenticationStateProvider, AdminSessionState>();
         return services;

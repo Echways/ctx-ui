@@ -75,7 +75,7 @@
 
     private async Task ReactivateAsync()
     {
-        await Queue.ApplySettingsAsync(ServerId, CancellationToken.None);
+        Queue.ApplySettings(ServerId);
         await LoadAsync();
     }
 }

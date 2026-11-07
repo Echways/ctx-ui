@@ -145,7 +145,10 @@ public sealed class PublishPipeline(
         {
             var state = await run.Runner.ServerAsync(serverId, ct);
             if (state.ActiveRelease is null && state.Releases.Any(release => release.Number == active.Number && release.State == ReleaseState.Candidate))
+            {
                 await run.Runner.ActivateReleaseAsync(serverId, active.Number, ct);
+                Raise(serverId);
+            }
         }
         catch (RunnerException failure)
         {

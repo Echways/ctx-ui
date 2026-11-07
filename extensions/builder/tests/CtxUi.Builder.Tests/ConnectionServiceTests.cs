@@ -335,7 +335,7 @@ public sealed class ConnectionServiceTests
 
         var publish = await Assert.ThrowsAsync<PanelException>(() => harness.Queue.PublishAsync(server, PublishMode.Activate, default));
         var rollback = await Assert.ThrowsAsync<PanelException>(() => harness.Queue.RollbackAsync(server, 1, default));
-        var settings = await Assert.ThrowsAsync<PanelException>(() => harness.Queue.ApplySettingsAsync(server, default));
+        var settings = Assert.Throws<PanelException>(() => harness.Queue.ApplySettings(server));
 
         Assert.All([publish, rollback, settings], failure => Assert.Equal(BuilderText.ServerDeleting, failure.Message));
         Assert.False(harness.Queue.IsBusy(server));

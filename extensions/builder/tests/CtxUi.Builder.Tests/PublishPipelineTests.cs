@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Security.Cryptography;
 using System.Text.Json;
 using CtxUi.Builder.Contracts;
@@ -356,7 +357,7 @@ public sealed class PublishPipelineTests
         });
         var startsBefore = harness.Runner.Starts.Count;
 
-        await harness.Queue.ApplySettingsAsync(server, default);
+        harness.Queue.ApplySettings(server);
         await harness.WaitIdleAsync(server);
 
         Assert.Equal(builds, harness.Runner.CallsSnapshot().Count(call => call == "POST release 1"));
@@ -381,7 +382,7 @@ public sealed class PublishPipelineTests
         await harness.PublishAndWaitAsync(server);
         harness.Runner.FailStarts.Add(1);
 
-        await harness.Queue.ApplySettingsAsync(server, default);
+        harness.Queue.ApplySettings(server);
         await harness.WaitIdleAsync(server);
 
         var release = await harness.ReleaseAsync(server, 1);
@@ -397,7 +398,7 @@ public sealed class PublishPipelineTests
         var (harness, server) = await StartedAsync();
         await using var _ = harness;
 
-        await harness.Queue.ApplySettingsAsync(server, default);
+        harness.Queue.ApplySettings(server);
         await harness.WaitIdleAsync(server);
 
         Assert.Empty(harness.Runner.CallsSnapshot());
@@ -412,7 +413,7 @@ public sealed class PublishPipelineTests
         harness.Runner.HoldBuilds = true;
         await harness.Queue.PublishAsync(server, PublishMode.Activate, default);
 
-        await harness.Queue.ApplySettingsAsync(server, default);
+        harness.Queue.ApplySettings(server);
         await harness.WaitForAsync(() => Task.FromResult(harness.Runner.CallsSnapshot().Count(call => call == "POST release 2") == 1));
         var startsBefore = harness.Runner.Starts.Count;
         harness.Runner.HoldBuilds = false;
@@ -627,6 +628,26 @@ public sealed class PublishPipelineTests
     }
 
     [Fact]
+    public async Task Repair_announces_a_reactivation_and_nothing_else()
+    {
+        await using var harness = await PublishHarness.CreateAsync();
+        var server = await harness.CreateServerAsync();
+        harness.RepairInterval = TimeSpan.FromMilliseconds(40);
+        await harness.StartAsync();
+        await harness.PublishAndWaitAsync(server);
+        await harness.WaitIdleAsync(server);
+        var raised = new ConcurrentQueue<Guid>();
+        harness.Queue.Changed += raised.Enqueue;
+
+        await Task.Delay(200);
+        Assert.Empty(raised);
+
+        harness.Runner.Restart(loseMarker: true);
+        await harness.WaitForAsync(() => Task.FromResult(!raised.IsEmpty));
+        Assert.Equal(1, harness.Runner.Active);
+    }
+
+    [Fact]
     public async Task A_changed_api_credential_restarts_through_candidate_and_activate_with_the_new_value()
     {
         var (harness, server) = await StartedAsync();
@@ -636,7 +657,7 @@ public sealed class PublishPipelineTests
         var startsBefore = harness.Runner.Starts.Count;
         await SetApiAsync(harness, server, "https://api.example.com", "rotated");
 
-        await harness.Queue.ApplySettingsAsync(server, default);
+        harness.Queue.ApplySettings(server);
         await harness.WaitIdleAsync(server);
 
         Assert.Equal(startsBefore + 1, harness.Runner.Starts.Count);
@@ -653,7 +674,7 @@ public sealed class PublishPipelineTests
         await harness.PublishAndWaitAsync(server);
         await SetApiAsync(harness, server, "https://draft.example.com", "token");
 
-        await harness.Queue.ApplySettingsAsync(server, default);
+        harness.Queue.ApplySettings(server);
         await harness.WaitIdleAsync(server);
 
         Assert.Equal("https://live.example.com", harness.Runner.Starts[^1].Start.Environment["BUILDER_BASE_URL"]);

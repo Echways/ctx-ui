@@ -125,7 +125,7 @@
         _settingsRevision = await SavedAsync(() => Catalog.SetApiAsync(Settings.ServerId, _api.BaseUrl, new ApiAuthInput(_api.Kind, _api.HeaderName, _api.Username, _api.Secret), _settingsRevision, CancellationToken.None));
         _api.Secret = null;
         if (authChanged)
-            await Queue.ApplySettingsAsync(Settings.ServerId, CancellationToken.None);
+            Queue.ApplySettings(Settings.ServerId);
         await OnChanged.InvokeAsync();
     }
 
@@ -150,7 +150,7 @@
     private async Task SaveSecretAsync()
     {
         await Catalog.SetSecretAsync(Settings.ServerId, _secret.Name, _secret.Value, CancellationToken.None);
-        await Queue.ApplySettingsAsync(Settings.ServerId, CancellationToken.None);
+        Queue.ApplySettings(Settings.ServerId);
         await OnChanged.InvokeAsync();
     }
 
@@ -159,7 +159,7 @@
         if (_access.Access == NetworkAccess.FullNetwork && Settings.Access != NetworkAccess.FullNetwork && !_confirmed)
             throw new PanelException(BuilderText.AccessNotConfirmed);
         await Catalog.SetAccessAsync(Settings.ServerId, _access.Access, new ServerLimits(_access.MemoryMb, _access.Cpus, _access.Pids), CancellationToken.None);
-        await Queue.ApplySettingsAsync(Settings.ServerId, CancellationToken.None);
+        Queue.ApplySettings(Settings.ServerId);
         await OnChanged.InvokeAsync();
     }
 

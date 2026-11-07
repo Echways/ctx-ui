@@ -43,9 +43,7 @@ public static class ProjectArchive
                 }
 
                 if (Normalize(entry.Name) == ConfigFile)
-                {
                     config = ReadConfigEntry(entry);
-                }
             }
         }
         catch (Exception failure) when (failure is InvalidDataException or FormatException or EndOfStreamException or ArgumentException)
@@ -127,9 +125,7 @@ public static class ProjectArchive
 
         var canonical = (JsonObject)Sorted(environment)!;
         if (dependencies is not null)
-        {
             canonical[DependenciesKey] = dependencies;
-        }
 
         return canonical;
     }

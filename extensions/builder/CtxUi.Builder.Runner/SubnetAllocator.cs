@@ -26,9 +26,7 @@ public static class SubnetAllocator
             }
 
             if (end == uint.MaxValue)
-            {
                 break;
-            }
         }
 
         throw new InvalidOperationException($"The subnet pool {pool} has no free /{BlockPrefix} network left. Enlarge the pool or remove unused servers.");

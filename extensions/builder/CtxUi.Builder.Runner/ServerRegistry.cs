@@ -41,18 +41,14 @@ public sealed class ReleaseRecord(int number, ReleaseState state)
         {
             _log.Append(text);
             if (_log.Length > MaxLogCharacters)
-            {
                 _log.Remove(0, _log.Length - MaxLogCharacters);
-            }
         }
     }
 
     public void SetEnvironmentHash(string hash)
     {
         lock (_sync)
-        {
             EnvironmentHash = hash;
-        }
     }
 
     public void MarkBuilt(string lockFile)
@@ -79,9 +75,7 @@ public sealed class ReleaseRecord(int number, ReleaseState state)
     public void MarkState(ReleaseState state)
     {
         lock (_sync)
-        {
             State = state;
-        }
     }
 
     public void MarkFailed(string error)
@@ -96,9 +90,7 @@ public sealed class ReleaseRecord(int number, ReleaseState state)
     public ReleaseStatus ToStatus()
     {
         lock (_sync)
-        {
             return new ReleaseStatus(Number, State, _log.ToString(), LockFile, EnvironmentHash, Error);
-        }
     }
 }
 
@@ -124,33 +116,25 @@ public sealed class ServerRecord(Guid id, CancellationToken stopping)
     public void Track(Task work)
     {
         lock (_workSync)
-        {
             _work.Add(work);
-        }
 
         work.ContinueWith(completed =>
         {
             lock (_workSync)
-            {
                 _work.Remove(completed);
-            }
         }, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
     }
 
     public Task WorkFinishedAsync()
     {
         lock (_workSync)
-        {
             return Task.WhenAll(_work.ToArray());
-        }
     }
 
     public ServerState ToState()
     {
         lock (Sync)
-        {
             return new ServerState(Id, ActiveRelease, Releases.Values.OrderBy(release => release.Number).Select(release => release.ToStatus()).ToList());
-        }
     }
 
     public ReleaseRecord RequireRelease(int number)

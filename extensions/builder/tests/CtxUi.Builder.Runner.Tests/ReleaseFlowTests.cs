@@ -410,9 +410,7 @@ public sealed class ReleaseFlowTests
         await Eventually.TrueAsync(() => harness.Docker.Find(Server(2))?.Running == false);
 
         for (var release = 3; release <= 8; release++)
-        {
             await harness.BuildAsync(release);
-        }
 
         await harness.StartCandidateAsync(8);
         using var activated = await harness.ActivateAsync(8);

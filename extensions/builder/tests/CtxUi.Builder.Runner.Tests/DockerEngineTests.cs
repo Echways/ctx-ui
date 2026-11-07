@@ -264,9 +264,7 @@ public sealed class DockerEngineTests : IAsyncLifetime
         ];
 
         foreach (var operation in operations)
-        {
             await Assert.ThrowsAsync<BuilderObjectRefusedException>(operation);
-        }
 
         Assert.Empty(_api.Mutations);
     }

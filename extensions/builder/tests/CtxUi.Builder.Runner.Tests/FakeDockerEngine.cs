@@ -55,9 +55,7 @@ internal sealed class FakeDockerEngine : IDockerEngine
     public FakeContainer? Find(string name)
     {
         lock (_sync)
-        {
             return _containers.GetValueOrDefault(name);
-        }
     }
 
     public void LoseActivationMarkers()
@@ -65,14 +63,10 @@ internal sealed class FakeDockerEngine : IDockerEngine
         lock (_sync)
         {
             foreach (var marker in _containers.Values.Where(container => container.Role == BuilderLabels.ActivationRole).ToList())
-            {
                 _containers.Remove(marker.Name);
-            }
 
             foreach (var marker in _volumes.Where(volume => volume.Value.TryGetValue(BuilderLabels.Role, out var role) && role == BuilderLabels.ActivationRole).ToList())
-            {
                 _volumes.Remove(marker.Key);
-            }
         }
     }
 
@@ -136,9 +130,7 @@ internal sealed class FakeDockerEngine : IDockerEngine
     public Task StartContainerAsync(Guid server, string name, CancellationToken ct)
     {
         lock (_sync)
-        {
             _containers[name].Running = true;
-        }
 
         return Task.CompletedTask;
     }
@@ -148,9 +140,7 @@ internal sealed class FakeDockerEngine : IDockerEngine
         lock (_sync)
         {
             if (_containers.TryGetValue(name, out var container))
-            {
                 container.Running = false;
-            }
         }
 
         return Task.CompletedTask;
@@ -160,9 +150,7 @@ internal sealed class FakeDockerEngine : IDockerEngine
     {
         ThrowIfInjected(BeforeRemove, name);
         lock (_sync)
-        {
             _containers.Remove(name);
-        }
 
         return Task.CompletedTask;
     }
@@ -170,18 +158,14 @@ internal sealed class FakeDockerEngine : IDockerEngine
     public async Task<long> WaitContainerAsync(Guid server, string name, CancellationToken ct)
     {
         if (BuildGate is { } gate)
-        {
             await gate.Task.WaitAsync(ct);
-        }
 
         lock (_sync)
         {
             var container = _containers[name];
             container.Running = false;
             if (BuildExitCode == 0 && container.MountSource("/env") is { } environment)
-            {
                 _completedEnvironments.Add(environment);
-            }
         }
 
         return BuildExitCode;
@@ -192,9 +176,7 @@ internal sealed class FakeDockerEngine : IDockerEngine
         using var buffer = new MemoryStream();
         await archive.CopyToAsync(buffer, ct);
         lock (_sync)
-        {
             _extractions.Add(new Extraction(name, path, buffer.ToArray(), _containers[name].Running));
-        }
     }
 
     public Task<string?> ReadFileAsync(Guid server, string name, string path, long maxBytes, CancellationToken ct)
@@ -204,9 +186,7 @@ internal sealed class FakeDockerEngine : IDockerEngine
             var environment = _containers[name].MountSource("/env");
             var complete = path == "/env/requirements.lock" && environment is not null && _completedEnvironments.Contains(environment);
             if (complete && LockFile.Length > maxBytes)
-            {
                 throw new BuilderFileTooLargeException(path, maxBytes);
-            }
 
             return Task.FromResult(complete ? LockFile : null);
         }
@@ -217,9 +197,7 @@ internal sealed class FakeDockerEngine : IDockerEngine
         await Task.Yield();
         string? role;
         lock (_sync)
-        {
             role = _containers[name].Role;
-        }
 
         yield return role == "build" ? BuildLog : ServerLog;
     }
@@ -228,9 +206,7 @@ internal sealed class FakeDockerEngine : IDockerEngine
     {
         ThrowIfInjected(BeforeCreate, parameters.Name);
         lock (_sync)
-        {
             _volumes.TryAdd(parameters.Name, parameters.Labels);
-        }
 
         await CompleteCreateAsync(parameters.Name, ct);
     }
@@ -286,17 +262,13 @@ internal sealed class FakeDockerEngine : IDockerEngine
     public Task<bool> NetworkExistsAsync(Guid server, string name, CancellationToken ct)
     {
         lock (_sync)
-        {
             return Task.FromResult(_networks.ContainsKey(name));
-        }
     }
 
     public Task CreateNetworkAsync(Guid server, NetworksCreateParameters parameters, CancellationToken ct)
     {
         lock (_sync)
-        {
             _networks[parameters.Name] = parameters;
-        }
 
         return Task.CompletedTask;
     }
@@ -320,9 +292,7 @@ internal sealed class FakeDockerEngine : IDockerEngine
     public Task ConnectAsync(Guid server, string network, string container, CancellationToken ct)
     {
         lock (_sync)
-        {
             _attachments.Add((network, container));
-        }
 
         return Task.CompletedTask;
     }
@@ -330,9 +300,7 @@ internal sealed class FakeDockerEngine : IDockerEngine
     public Task DisconnectAsync(Guid server, string network, string container, CancellationToken ct)
     {
         lock (_sync)
-        {
             _attachments.Remove((network, container));
-        }
 
         return Task.CompletedTask;
     }
@@ -345,17 +313,13 @@ internal sealed class FakeDockerEngine : IDockerEngine
     private static void ThrowIfInjected(Func<string, Exception?>? injection, string name)
     {
         if (injection?.Invoke(name) is { } failure)
-        {
             throw failure;
-        }
     }
 
     private async Task CompleteCreateAsync(string name, CancellationToken ct)
     {
         ThrowIfInjected(AfterCreate, name);
         if (AfterCreateGate?.Invoke(name) is { } gate)
-        {
             await gate.Task.WaitAsync(ct);
-        }
     }
 }

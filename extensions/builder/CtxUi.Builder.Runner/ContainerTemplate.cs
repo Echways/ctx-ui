@@ -74,9 +74,7 @@ public static class ContainerTemplate
         foreach (var (key, value) in environment)
         {
             if (key.Length > 0 && !key.Contains('=') && !ReservedVariables.Contains(key))
-            {
                 variables[key] = value;
-            }
         }
 
         variables["FASTMCP_STATELESS_HTTP"] = "true";
@@ -168,9 +166,7 @@ public static class ContainerTemplate
         }
 
         if (limits.Pids < 1)
-        {
             throw new ArgumentOutOfRangeException(nameof(limits), limits.Pids, "Process limit must be at least 1.");
-        }
     }
 
     public static NetworksCreateParameters Network(Guid id, NetworkAccess access, string subnet)
@@ -262,15 +258,11 @@ public static class ContainerTemplate
     private static void AddProxy(Dictionary<string, string> variables, NetworkAccess access, RunnerOptions options)
     {
         if (access != NetworkAccess.InternetOnly)
-        {
             return;
-        }
 
         var proxy = $"http://{options.EgressContainer}:{ProxyPort}";
         foreach (var name in new[] { "HTTPS_PROXY", "HTTP_PROXY", "https_proxy", "http_proxy" })
-        {
             variables[name] = proxy;
-        }
 
         variables["NO_PROXY"] = NoProxy;
         variables["no_proxy"] = NoProxy;

@@ -207,15 +207,11 @@ public static class RunnerEndpoints
     private static IResult PutServer(Guid id, ServerSpec spec, ServerRegistry registry)
     {
         if (RejectionOf(spec) is { } reason)
-        {
             return Results.Problem(detail: reason, statusCode: StatusCodes.Status400BadRequest);
-        }
 
         var server = registry.GetOrAdd(id);
         lock (server.Sync)
-        {
             server.Spec = spec;
-        }
 
         return Results.NoContent();
     }
@@ -223,19 +219,13 @@ public static class RunnerEndpoints
     private static string? RejectionOf(ServerSpec spec)
     {
         if (!Enum.IsDefined(spec.Network))
-        {
             return "The network access mode is not known.";
-        }
 
         if (string.IsNullOrWhiteSpace(spec.RouteSecret))
-        {
             return "The route secret is required.";
-        }
 
         if (spec.Limits is null)
-        {
             return "The limits are required.";
-        }
 
         try
         {
@@ -271,9 +261,7 @@ public static class RunnerEndpoints
     private static async Task<byte[]?> ReadBoundedAsync(HttpContext context, CancellationToken ct)
     {
         if (context.Request.ContentLength > MaxArchiveBytes)
-        {
             return null;
-        }
 
         using var body = new MemoryStream();
         var buffer = new byte[ArchiveReadBufferBytes];
@@ -281,9 +269,7 @@ public static class RunnerEndpoints
         while ((read = await context.Request.Body.ReadAsync(buffer, ct)) > 0)
         {
             if (body.Length + read > MaxArchiveBytes)
-            {
                 return null;
-            }
 
             body.Write(buffer, 0, read);
         }
@@ -294,9 +280,7 @@ public static class RunnerEndpoints
     private static IResult StartRelease(Guid id, int number, StartRelease request, ReleaseRunner runner)
     {
         if (request.Environment is null)
-        {
             return Results.Problem(detail: "The environment is required.", statusCode: StatusCodes.Status400BadRequest);
-        }
 
         runner.BeginCandidate(id, number, request.Environment);
         return Results.Accepted();

@@ -79,9 +79,7 @@ public sealed class ReleaseRunner(
             if (!server.Candidates.TryGetValue(number, out var known))
             {
                 if (server.ActiveRelease == number)
-                {
                     return release.ToStatus();
-                }
 
                 throw RunnerRequestException.Conflict($"Release {number} is not a healthy candidate.");
             }
@@ -102,14 +100,10 @@ public sealed class ReleaseRunner(
 
         List<string> retiring;
         lock (server.Sync)
-        {
             retiring = server.Retiring.Union(server.Unmarked).Where(name => name != candidate).ToList();
-        }
 
         if (previous is not null)
-        {
             retiring.Add(previous);
-        }
 
         await RecordActivationAsync(id, number, candidate, retiring, ct);
 
@@ -122,9 +116,7 @@ public sealed class ReleaseRunner(
             server.ActiveContainer = candidate;
             release.MarkState(ReleaseState.Active);
             if (previousRelease is { } old && old != number && server.Releases.TryGetValue(old, out var retired))
-            {
                 retired.MarkState(ReleaseState.Retired);
-            }
 
             newlyRetiring = retiring.Where(name => !server.Retiring.Contains(name)).ToList();
             RetireUnmarked(server, containers, number);
@@ -132,9 +124,7 @@ public sealed class ReleaseRunner(
         }
 
         foreach (var container in newlyRetiring)
-        {
             ScheduleRetirement(server, container);
-        }
 
         return release.ToStatus();
     }
@@ -151,9 +141,7 @@ public sealed class ReleaseRunner(
             }
 
             if (number != activated && !server.Candidates.ContainsKey(number) && server.Releases.TryGetValue(number, out var release))
-            {
                 release.MarkState(ReleaseState.Retired);
-            }
         }
 
         server.Unmarked.Clear();
@@ -239,19 +227,13 @@ public sealed class ReleaseRunner(
     {
         routes.RemoveServer(id);
         foreach (var container in await engine.ListContainersAsync(id, ct))
-        {
             await engine.RemoveContainerAsync(id, container.Name, ct);
-        }
 
         foreach (var network in await engine.ListNetworksAsync(id, ct))
-        {
             await networks.RemoveAsync(id, network, ct);
-        }
 
         foreach (var volume in await engine.ListVolumesAsync(id, ct))
-        {
             await engine.RemoveVolumeAsync(id, volume.Name, ct);
-        }
     }
 
     public async Task<string> RequireLogContainerAsync(Guid id, CancellationToken ct)
@@ -261,14 +243,10 @@ public sealed class ReleaseRunner(
             lock (server.Sync)
             {
                 if (server.ActiveContainer is { } active)
-                {
                     return active;
-                }
 
                 if (server.Candidates.Count > 0)
-                {
                     return server.Candidates[server.Candidates.Keys.Max()];
-                }
             }
         }
 
@@ -309,9 +287,7 @@ public sealed class ReleaseRunner(
         }
 
         foreach (var old in markers)
-        {
             await RemoveMarkerBestEffortAsync(id, old.Name);
-        }
     }
 
     private async Task RemoveMarkerBestEffortAsync(Guid id, string marker)
@@ -360,9 +336,7 @@ public sealed class ReleaseRunner(
         {
             logger.LogWarning(failure, "Start of release {Release} of server {Server} failed", release.Number, id);
             if (!ct.IsCancellationRequested && created is not null)
-            {
                 await RemoveFailedCandidateAsync(id, release, created);
-            }
 
             lock (server.Sync)
             {
@@ -385,18 +359,14 @@ public sealed class ReleaseRunner(
             lock (server.Sync)
             {
                 if (server.ActiveContainer is { } active)
-                {
                     kept.Add(active);
-                }
 
                 kept.UnionWith(server.Retiring);
                 kept.UnionWith(server.Unmarked);
             }
 
             foreach (var container in containers.Where(container => IsServerContainerOf(container, number) && !kept.Contains(container.Name)))
-            {
                 await engine.RemoveContainerAsync(id, container.Name, ct);
-            }
 
             if (kept.Contains(parameters.Name))
             {
@@ -420,9 +390,7 @@ public sealed class ReleaseRunner(
         {
             candidates = server.Candidates.Where(candidate => !server.Unmarked.Contains(candidate.Value)).ToList();
             foreach (var (number, _) in candidates)
-            {
                 server.Candidates.Remove(number);
-            }
         }
 
         foreach (var (number, container) in candidates)
@@ -432,9 +400,7 @@ public sealed class ReleaseRunner(
             lock (server.Sync)
             {
                 if (server.ActiveRelease != number && server.Releases.TryGetValue(number, out var release))
-                {
                     release.MarkRunnable(ReleaseState.Built);
-                }
             }
         }
     }
@@ -450,9 +416,7 @@ public sealed class ReleaseRunner(
         try
         {
             while (!await probe.IsHealthyAsync(container, linked.Token))
-            {
                 await Task.Delay(HealthInterval, time, linked.Token);
-            }
         }
         catch (OperationCanceledException) when (timeout.IsCancellationRequested && !ct.IsCancellationRequested)
         {
@@ -516,14 +480,10 @@ public sealed class ReleaseRunner(
         var containers = await engine.ListContainersAsync(server.Id, ct);
         var retiring = containers.FirstOrDefault(candidate => candidate.Name == container);
         lock (server.Sync)
-        {
             server.Retiring.Remove(container);
-        }
 
         if (retiring is null)
-        {
             return;
-        }
 
         var release = retiring.Labels[BuilderLabels.Release];
         var replaced = containers.Any(other =>
@@ -531,13 +491,9 @@ public sealed class ReleaseRunner(
             && !other.Labels.ContainsKey(BuilderLabels.Role)
             && other.Labels.GetValueOrDefault(BuilderLabels.Release) == release);
         if (replaced)
-        {
             await engine.RemoveContainerAsync(server.Id, container, ct);
-        }
         else
-        {
             await engine.StopContainerAsync(server.Id, container, ct);
-        }
     }
 
     private async Task RemoveUnusedNetworksAsync(ServerRecord server, CancellationToken ct)
@@ -548,23 +504,17 @@ public sealed class ReleaseRunner(
         lock (server.Sync)
         {
             if (server.BuildingRelease is not null || server.StartingRelease is not null)
-            {
                 return;
-            }
 
             active = server.ActiveContainer;
             if (server.Spec is { } spec)
-            {
                 used.Add(spec.Network.ToString());
-            }
         }
 
         foreach (var container in containers.Where(container => !container.Labels.ContainsKey(BuilderLabels.Role) && (container.Running || container.Name == active)))
         {
             if (container.Labels.TryGetValue(BuilderLabels.Network, out var network))
-            {
                 used.Add(network);
-            }
         }
 
         var existing = await engine.ListNetworksAsync(server.Id, ct);
@@ -572,9 +522,7 @@ public sealed class ReleaseRunner(
         {
             var name = ContainerTemplate.NetworkName(server.Id, access);
             if (existing.Contains(name))
-            {
                 await networks.RemoveAsync(server.Id, name, ct);
-            }
         }
     }
 
@@ -599,52 +547,36 @@ public sealed class ReleaseRunner(
         {
             kept.UnionWith(server.Candidates.Keys);
             if (server.ActiveRelease is { } active)
-            {
                 kept.Add(active);
-            }
 
             if (server.BuildingRelease is { } building)
-            {
                 kept.Add(building);
-            }
 
             if (server.StartingRelease is { } starting)
-            {
                 kept.Add(starting);
-            }
         }
 
         foreach (var container in containers.Where(container => container.Running))
-        {
             kept.Add(int.Parse(container.Labels[BuilderLabels.Release], CultureInfo.InvariantCulture));
-        }
 
         foreach (var number in numbers.Where(number => !kept.Contains(number)))
         {
             foreach (var container in containers.Where(container => IsServerContainerOf(container, number)))
-            {
                 await engine.RemoveContainerAsync(id, container.Name, ct);
-            }
 
             await engine.RemoveVolumeAsync(id, ContainerTemplate.CodeVolume(id, number), ct);
             lock (server.Sync)
-            {
                 server.Releases.Remove(number);
-            }
         }
 
         var keptEnvironments = new HashSet<string>(StringComparer.Ordinal);
         lock (server.Sync)
         {
             foreach (var release in server.Releases.Values.Where(release => kept.Contains(release.Number) && release.EnvironmentHash is not null))
-            {
                 keptEnvironments.Add(ContainerTemplate.EnvironmentVolume(id, release.EnvironmentHash!));
-            }
         }
 
         foreach (var volume in volumes.Where(volume => volume.StartsWith(environmentPrefix, StringComparison.Ordinal) && !keptEnvironments.Contains(volume)))
-        {
             await engine.RemoveVolumeAsync(id, volume, ct);
-        }
     }
 }

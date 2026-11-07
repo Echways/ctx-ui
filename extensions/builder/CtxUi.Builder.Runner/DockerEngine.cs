@@ -99,9 +99,7 @@ public sealed class DockerEngine : IDockerEngine, IDisposable
     public async Task RemoveContainerAsync(Guid server, string name, CancellationToken ct)
     {
         if (await FindContainerAsync(name, ct) is not { } container)
-        {
             return;
-        }
 
         RequireOwnLabel(server, container.Config.Labels, $"container {name}");
         await IgnoreMissing(() => _client.Containers.RemoveContainerAsync(name, new ContainerRemoveParameters { Force = true }, ct));
@@ -127,22 +125,16 @@ public sealed class DockerEngine : IDockerEngine, IDisposable
             var response = await _client.Containers.GetArchiveFromContainerAsync(name, new GetArchiveFromContainerParameters { Path = path }, false, ct);
             await using var archive = response.Stream;
             if (response.Stat?.Size > maxBytes)
-            {
                 throw new BuilderFileTooLargeException(path, maxBytes);
-            }
 
             using var buffered = await BufferBoundedAsync(archive, path, maxBytes, ct);
             await using var tar = new TarReader(buffered);
             var entry = await tar.GetNextEntryAsync(copyData: false, ct);
             if (entry?.Length > maxBytes)
-            {
                 throw new BuilderFileTooLargeException(path, maxBytes);
-            }
 
             if (entry?.DataStream is not { } data)
-            {
                 return null;
-            }
 
             using var reader = new StreamReader(data, Encoding.UTF8);
             return await reader.ReadToEndAsync(ct);
@@ -191,15 +183,11 @@ public sealed class DockerEngine : IDockerEngine, IDisposable
         {
             var read = await stream.ReadOutputAsync(buffer, 0, buffer.Length, ct);
             if (read.EOF)
-            {
                 yield break;
-            }
 
             var count = decoder.GetChars(buffer, 0, read.Count, characters, 0);
             if (count > 0)
-            {
                 yield return new string(characters, 0, count);
-            }
         }
     }
 
@@ -226,9 +214,7 @@ public sealed class DockerEngine : IDockerEngine, IDisposable
     public async Task RemoveVolumeAsync(Guid server, string name, CancellationToken ct)
     {
         if (await FindVolumeAsync(name, ct) is not { } volume)
-        {
             return;
-        }
 
         RequireOwnLabel(server, volume.Labels, $"volume {name}");
         await IgnoreMissing(() => _client.Volumes.RemoveAsync(name, false, ct));
@@ -253,9 +239,7 @@ public sealed class DockerEngine : IDockerEngine, IDisposable
     public async Task<bool> NetworkExistsAsync(Guid server, string name, CancellationToken ct)
     {
         if (await FindNetworkAsync(name, ct) is not { } network)
-        {
             return false;
-        }
 
         RequireOwnLabel(server, network.Labels, $"network {name}");
         return true;
@@ -270,9 +254,7 @@ public sealed class DockerEngine : IDockerEngine, IDisposable
     public async Task RemoveNetworkAsync(Guid server, string name, CancellationToken ct)
     {
         if (await FindNetworkAsync(name, ct) is not { } network)
-        {
             return;
-        }
 
         RequireOwnLabel(server, network.Labels, $"network {name}");
         await IgnoreMissing(() => _client.Networks.DeleteNetworkAsync(name, ct));
@@ -282,9 +264,7 @@ public sealed class DockerEngine : IDockerEngine, IDisposable
     {
         var inspected = await RequireConnectableAsync(server, network, container, ct);
         if (inspected.NetworkSettings?.Networks?.ContainsKey(network) == true)
-        {
             return;
-        }
 
         await _client.Networks.ConnectNetworkAsync(network, new NetworkConnectParameters
         {
@@ -297,9 +277,7 @@ public sealed class DockerEngine : IDockerEngine, IDisposable
     {
         var inspected = await RequireConnectableAsync(server, network, container, ct);
         if (inspected.NetworkSettings?.Networks?.ContainsKey(network) != true)
-        {
             return;
-        }
 
         await _client.Networks.DisconnectNetworkAsync(network, new NetworkDisconnectParameters { Container = container, Force = true }, ct);
     }

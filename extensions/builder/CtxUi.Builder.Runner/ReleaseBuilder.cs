@@ -60,9 +60,7 @@ public sealed class ReleaseBuilder(
         {
             logger.LogWarning(failure, "Build of release {Release} of server {Server} failed", release.Number, server.Id);
             if (!ct.IsCancellationRequested)
-            {
                 await RemoveFailedBuildAsync(server.Id, release, attempt);
-            }
 
             lock (server.Sync)
             {
@@ -113,9 +111,7 @@ public sealed class ReleaseBuilder(
         ];
 
         foreach (var volume in volumes)
-        {
             await engine.EnsureVolumeAsync(id, ContainerTemplate.Volume(id, volume), ct);
-        }
     }
 
     private async Task<string?> UnpackAsync(Guid id, int number, string hash, byte[] archive, CancellationToken ct)
@@ -189,14 +185,10 @@ public sealed class ReleaseBuilder(
         {
             await engine.RemoveContainerAsync(id, ContainerTemplate.BuildContainerName(id, release.Number), CancellationToken.None);
             if (attempt.CodeVolume is { } code)
-            {
                 await engine.RemoveVolumeAsync(id, code, CancellationToken.None);
-            }
 
             if (attempt.EnvironmentVolume is { } environment)
-            {
                 await engine.RemoveVolumeAsync(id, environment, CancellationToken.None);
-            }
         }
         catch (Exception failure)
         {

@@ -55,9 +55,7 @@ public sealed class Reconciler(
         var servers = containers.Where(container => !container.Labels.ContainsKey(BuilderLabels.Role)).ToList();
         var marker = await CurrentMarkerAsync(id, servers, ct);
         if (marker is null)
-        {
             ProtectUnmarked(server, servers);
-        }
 
         var active = marker?.Labels[BuilderLabels.ActiveContainer];
         var retiring = (marker?.Labels.GetValueOrDefault(BuilderLabels.RetiringContainers) ?? "")
@@ -65,22 +63,16 @@ public sealed class Reconciler(
             .ToHashSet(StringComparer.Ordinal);
 
         foreach (var container in servers.OrderBy(container => StateRank(container, active, retiring)))
-        {
             await RestoreServerContainerAsync(server, container, active, retiring, ct);
-        }
     }
 
     private static int StateRank(BuilderContainer container, string? active, HashSet<string> retiring)
     {
         if (container.Name == active)
-        {
             return 3;
-        }
 
         if (!container.Running)
-        {
             return 0;
-        }
 
         return retiring.Contains(container.Name) ? 1 : 2;
     }
@@ -99,9 +91,7 @@ public sealed class Reconciler(
             release.SetEnvironmentHash(container.Labels[BuilderLabels.EnvironmentHash]);
             release.MarkFailed("The build was interrupted by a restart of Runner. Publish again.");
             lock (server.Sync)
-            {
                 server.Releases[number] = release;
-            }
 
             logger.LogWarning("Removed the interrupted build {Container}", container.Name);
         }
@@ -113,9 +103,7 @@ public sealed class Reconciler(
         {
             await engine.RemoveVolumeAsync(id, ContainerTemplate.CodeVolume(id, number), ct);
             if (container.Labels.GetValueOrDefault(BuilderLabels.Role) == BuilderLabels.BuildRole)
-            {
                 await engine.RemoveVolumeAsync(id, ContainerTemplate.EnvironmentVolume(id, container.Labels[BuilderLabels.EnvironmentHash]), ct);
-            }
         }
         catch (Exception failure) when (failure is not OperationCanceledException)
         {
@@ -127,14 +115,10 @@ public sealed class Reconciler(
     {
         var running = servers.Where(container => container.Running).Select(container => container.Name).ToList();
         if (running.Count == 0)
-        {
             return;
-        }
 
         lock (server.Sync)
-        {
             server.Unmarked.UnionWith(running);
-        }
 
         logger.LogWarning(
             "Server {Server} has {Count} running containers and no activation marker. None of them is routed as active, and they are kept running until a release is activated.",
@@ -172,9 +156,7 @@ public sealed class Reconciler(
         var isRetiring = retiring.Contains(container.Name) && container.Running;
 
         if ((container.Running || isActive) && Enum.TryParse<NetworkAccess>(container.Labels.GetValueOrDefault(BuilderLabels.Network), out var access))
-        {
             await networks.AttachAsync(id, access, ct);
-        }
 
         var secretHash = container.Labels[BuilderLabels.RouteSecretHash];
         ReleaseRecord release;
@@ -198,9 +180,7 @@ public sealed class Reconciler(
                 server.ActiveRelease = number;
                 server.ActiveContainer = container.Name;
                 if (!server.Candidates.ContainsKey(number))
-                {
                     release.MarkRunnable(ReleaseState.Active);
-                }
             }
         }
         else if (isRetiring)
@@ -223,8 +203,6 @@ public sealed class Reconciler(
             }
         }
         else
-        {
             release.MarkRunnable(ReleaseState.Retired);
-        }
     }
 }

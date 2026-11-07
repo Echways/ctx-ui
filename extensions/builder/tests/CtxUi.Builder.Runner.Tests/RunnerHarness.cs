@@ -29,9 +29,7 @@ internal static class Project
         {
             var all = files.ToList();
             if (config is not null)
-            {
                 all.Insert(0, ("fastmcp.json", config));
-            }
 
             foreach (var (path, content) in all)
             {
@@ -66,9 +64,7 @@ internal sealed class FakeServerProbe : IServerProbe
     {
         Interlocked.Increment(ref Probes);
         if (Gate is { } gate)
-        {
             await gate.Task;
-        }
 
         return _healthy.GetValueOrDefault(container, true);
     }
@@ -266,9 +262,7 @@ internal sealed class RunnerHarness : IAsyncDisposable
     {
         using var request = new HttpRequestMessage(HttpMethod.Post, path) { Content = new StringContent("{}") };
         if (secret is not null)
-        {
             request.Headers.Add(RouteSecret.Header, secret);
-        }
 
         return await Ingress.SendAsync(request);
     }
@@ -289,9 +283,7 @@ internal static class Eventually
         while (DateTime.UtcNow < deadline)
         {
             if (await condition())
-            {
                 return;
-            }
 
             await Task.Delay(10);
         }

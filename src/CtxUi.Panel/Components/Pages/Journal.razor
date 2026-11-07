@@ -12,8 +12,9 @@
         }
     </Summary>
     <Actions>
-        <PageButtons Section="@PanelSections.Journal" OnDone="LoadAsync" />
-        <MudSelect T="Guid?" Value="_clientId" ValueChanged="FilterAsync" Label="@PanelText.Client" Class="filter" Dense="true">
+        <PageButtons Section="@PanelSections.Journal" OnDone="LoadAsync"/>
+        <MudSelect T="Guid?" Value="_clientId" ValueChanged="FilterAsync" Label="@PanelText.Client" Class="filter"
+                   Dense="true">
             <MudSelectItem T="Guid?" Value="@((Guid?)null)">@PanelText.AllClients</MudSelectItem>
             @foreach (var (id, name) in _clients.OrderBy(pair => pair.Value, StringComparer.CurrentCultureIgnoreCase))
             {
@@ -22,12 +23,12 @@
         </MudSelect>
     </Actions>
 </PageHead>
-<PageTopBlocks Section="@PanelSections.Journal" />
-<AutoRefresh OnTick="LoadAsync" />
+<PageTopBlocks Section="@PanelSections.Journal"/>
+<AutoRefresh OnTick="LoadAsync"/>
 
 @if (_lines is null)
 {
-    <Placeholder />
+    <Placeholder/>
 }
 else if (_lines.Count == 0)
 {
@@ -48,13 +49,17 @@ else
             <MudTh Class="num">@PanelText.DurationColumn</MudTh>
         </HeaderContent>
         <GroupHeaderTemplate>
-            <MudTd colspan="7" Class="day-row">@(((DateOnly)context.Key!).ToString("d MMMM", CultureInfo.CurrentCulture))</MudTd>
+            <MudTd colspan="7"
+                   Class="day-row">@(((DateOnly)context.Key!).ToString("d MMMM", CultureInfo.CurrentCulture))</MudTd>
         </GroupHeaderTemplate>
         <RowTemplate>
-            <MudTd><code>@Words.Clock(context.At, seconds: true)</code></MudTd>
-            <MudTd DataLabel="@PanelText.Client">@_clients.GetValueOrDefault(context.ClientId, PanelText.Removed)</MudTd>
-            <MudTd DataLabel="@PanelText.Inbound"><code>@_inbounds.GetValueOrDefault(context.InboundId, PanelText.Removed)</code></MudTd>
-            <MudTd DataLabel="@PanelText.CallColumn"><code>@(context.Tool is null ? context.Method : $"{context.Method} {context.Tool}")</code></MudTd>
+            <MudTd><code>@Words.Clock(context.At, true)</code></MudTd>
+            <MudTd
+                DataLabel="@PanelText.Client">@_clients.GetValueOrDefault(context.ClientId, PanelText.Removed)</MudTd>
+            <MudTd DataLabel="@PanelText.Inbound">
+                <code>@_inbounds.GetValueOrDefault(context.InboundId, PanelText.Removed)</code></MudTd>
+            <MudTd DataLabel="@PanelText.CallColumn">
+                <code>@(context.Tool is null ? context.Method : $"{context.Method} {context.Tool}")</code></MudTd>
             <MudTd DataLabel="@PanelText.OutcomeColumn" Class="@Tone(context.Outcome)">
                 @UsageOutcomes.Text(context.Outcome)
                 @if (context.Outcome is UsageOutcome.UpstreamFailed or UsageOutcome.UpstreamRejected && context.Status > 0)
@@ -62,8 +67,10 @@ else
                     @(" ")<span class="note">HTTP @context.Status</span>
                 }
             </MudTd>
-            <MudTd DataLabel="@PanelText.DeviceColumn">@(context.DeviceId is { } deviceId && _devices.TryGetValue(deviceId, out var device) ? device : "—")</MudTd>
-            <MudTd DataLabel="@PanelText.DurationColumn" Class="num">@string.Format(PanelText.Milliseconds, Words.Number(context.DurationMs))</MudTd>
+            <MudTd
+                DataLabel="@PanelText.DeviceColumn">@(context.DeviceId is { } deviceId && _devices.TryGetValue(deviceId, out var device) ? device : "—")</MudTd>
+            <MudTd DataLabel="@PanelText.DurationColumn"
+                   Class="num">@string.Format(PanelText.Milliseconds, Words.Number(context.DurationMs))</MudTd>
         </RowTemplate>
     </MudTable>
     @if (_lines.Count == Shown)
@@ -72,7 +79,7 @@ else
     }
 }
 
-<PageBottomBlocks Section="@PanelSections.Journal" />
+<PageBottomBlocks Section="@PanelSections.Journal"/>
 
 @code {
     private const int Shown = 200;
@@ -81,7 +88,7 @@ else
     {
         Selector = line => DateOnly.FromDateTime(line.At.UtcDateTime),
         Expandable = false,
-        Indentation = false,
+        Indentation = false
     };
 
     private Dictionary<Guid, string> _clients = new();
@@ -100,12 +107,15 @@ else
         return LoadAsync();
     }
 
-    private static string Tone(UsageOutcome outcome) => outcome switch
+    private static string Tone(UsageOutcome outcome)
     {
-        UsageOutcome.UpstreamFailed => "bad-t",
-        _ when !UsageRecord.IsForwarded(outcome) => "warn-t",
-        _ => "",
-    };
+        return outcome switch
+        {
+            UsageOutcome.UpstreamFailed => "bad-t",
+            _ when !UsageRecord.IsForwarded(outcome) => "warn-t",
+            _ => ""
+        };
+    }
 
     private Task FilterAsync(Guid? clientId)
     {
@@ -119,12 +129,16 @@ else
         _loadedAt = Clock.GetUtcNow();
     }
 
-    private Task<(Dictionary<Guid, string>, Dictionary<Guid, string>, Dictionary<Guid, string>, List<UsageEvent>)> ReadAsync() => Backend.ReadAsync(async services =>
+    private Task<(Dictionary<Guid, string>, Dictionary<Guid, string>, Dictionary<Guid, string>, List<UsageEvent>)> ReadAsync()
     {
-        var clients = await services.GetRequiredService<ClientService>().NamesAsync();
-        var inbounds = await services.GetRequiredService<InboundService>().SlugsAsync();
-        var devices = await services.GetRequiredService<DeviceService>().NamesAsync();
-        var lines = await services.GetRequiredService<UsageStore>().RecentAsync(_clientId, Shown);
-        return (clients, inbounds, devices, lines);
-    });
+        return Backend.ReadAsync(async services =>
+        {
+            var clients = await services.GetRequiredService<ClientService>().NamesAsync();
+            var inbounds = await services.GetRequiredService<InboundService>().SlugsAsync();
+            var devices = await services.GetRequiredService<DeviceService>().NamesAsync();
+            var lines = await services.GetRequiredService<UsageStore>().RecentAsync(_clientId, Shown);
+            return (clients, inbounds, devices, lines);
+        });
+    }
+
 }

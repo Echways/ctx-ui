@@ -6,7 +6,8 @@
 @inject TimeProvider Clock
 @inject NavigationManager Navigation
 
-<PageHead Title="@Layout.TitleOf(PanelSections.Inbounds)" Count="_rows?.Count" UpdatedAt="_loadedAt" OnRefresh="LoadAsync">
+<PageHead Title="@Layout.TitleOf(PanelSections.Inbounds)" Count="_rows?.Count" UpdatedAt="_loadedAt"
+          OnRefresh="LoadAsync">
     <Summary>
         @if (_rows is { Count: > 0 })
         {
@@ -14,18 +15,18 @@
         }
     </Summary>
     <Actions>
-        <PageButtons Section="@PanelSections.Inbounds" OnDone="LoadAsync" />
+        <PageButtons Section="@PanelSections.Inbounds" OnDone="LoadAsync"/>
         @if (_rows is { Count: > 0 })
         {
             <button type="button" class="btn-k pigment" @onclick="AddAsync">@PanelText.AddInbound</button>
         }
     </Actions>
 </PageHead>
-<PageTopBlocks Section="@PanelSections.Inbounds" />
+<PageTopBlocks Section="@PanelSections.Inbounds"/>
 
 @if (_rows is null)
 {
-    <Placeholder />
+    <Placeholder/>
 }
 else if (_rows.Count == 0)
 {
@@ -36,7 +37,8 @@ else if (_rows.Count == 0)
 }
 else
 {
-    <MudTable Items="_rows" Elevation="0" Class="tbl" RowClassFunc="@((row, _) => row.Inbound.Enabled ? "click" : "click dim")"
+    <MudTable Items="_rows" Elevation="0" Class="tbl"
+              RowClassFunc="@((row, _) => row.Inbound.Enabled ? "click" : "click dim")"
               OnRowClick="@((TableRowClickEventArgs<Row> row) => EditAsync(row.Item!.Inbound))">
         <HeaderContent>
             <MudTh>@PanelText.Address</MudTh>
@@ -49,20 +51,26 @@ else
         <RowTemplate>
             <MudTd><code>/mcp/@context.Inbound.Slug</code></MudTd>
             <MudTd DataLabel="@PanelText.Title">@context.Inbound.Name</MudTd>
-            <MudTd DataLabel="@PanelText.McpServer"><code title="@context.Inbound.Url">@Words.Middle(context.Inbound.Url ?? "", 44)</code></MudTd>
+            <MudTd DataLabel="@PanelText.McpServer"><code
+                    title="@context.Inbound.Url">@Words.Middle(context.Inbound.Url ?? "", 44)</code></MudTd>
             <MudTd DataLabel="@PanelText.ClientCount" Class="num">@Words.OrDash(context.Clients)</MudTd>
             <MudTd DataLabel="@PanelText.Enabled">
                 <span @onclick:stopPropagation="true">
-                    <MudSwitch T="bool" Value="context.Inbound.Enabled" aria-label="@string.Format(PanelText.InboundTitle, context.Inbound.Slug)"
-                               ValueChanged="@(enabled => SwitchAsync(context.Inbound, enabled))" />
+                    <MudSwitch T="bool" Value="context.Inbound.Enabled"
+                               aria-label="@string.Format(PanelText.InboundTitle, context.Inbound.Slug)"
+                               ValueChanged="@(enabled => SwitchAsync(context.Inbound, enabled))"/>
                 </span>
             </MudTd>
             <MudTd Class="acts">
                 <span class="acts-in" @onclick:stopPropagation="true">
-                    <button type="button" class="link" @onclick="() => EditAsync(context.Inbound)">@PanelText.Edit</button>
-                    <MudMenu Label="⋯" AriaLabel="@string.Format(PanelText.MoreActions, context.Inbound.Slug)" Class="more"
+                    <button type="button" class="link"
+                            @onclick="() => EditAsync(context.Inbound)">@PanelText.Edit</button>
+                    <MudMenu Label="⋯" AriaLabel="@string.Format(PanelText.MoreActions, context.Inbound.Slug)"
+                             Class="more"
                              AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
-                        <SlotMenuItems Slot="PanelSlots.InboundActions" Context="() => PanelData.Summary(context.Inbound)" DividerAfter="true" OnDone="LoadAsync" />
+                        <SlotMenuItems Slot="PanelSlots.InboundActions"
+                                       Context="() => PanelData.Summary(context.Inbound)" DividerAfter="true"
+                                       OnDone="LoadAsync"/>
                         <MudMenuItem Class="danger" OnClick="() => RemoveAsync(context)">@PanelText.Delete</MudMenuItem>
                     </MudMenu>
                 </span>
@@ -71,7 +79,7 @@ else
     </MudTable>
 }
 
-<PageBottomBlocks Section="@PanelSections.Inbounds" />
+<PageBottomBlocks Section="@PanelSections.Inbounds"/>
 
 @code {
     private List<Row>? _rows;
@@ -80,7 +88,10 @@ else
     [SupplyParameterFromQuery(Name = "add")]
     private bool Add { get; set; }
 
-    protected override Task OnInitializedAsync() => LoadAsync();
+    protected override Task OnInitializedAsync()
+    {
+        return LoadAsync();
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -129,7 +140,7 @@ else
     {
         var slug = row.Inbound.Slug;
         if (await Dialogs.ConfirmAsync(string.Format(PanelText.RemoveInboundQuestion, slug), string.Format(PanelText.RemoveInboundWarning, slug, row.Clients),
-                PanelText.Delete, danger: true))
+                PanelText.Delete, true))
         {
             await Actions.ApplyAsync(
                 services => services.GetRequiredService<InboundService>().RemoveAsync(slug), string.Format(PanelText.InboundRemoved, slug));
@@ -138,4 +149,5 @@ else
     }
 
     private sealed record Row(Inbound Inbound, int Clients);
+
 }

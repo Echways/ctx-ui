@@ -31,7 +31,8 @@ public class PanelClientsTests
         await gateway.AddInboundAsync("echo", upstream.McpUrl);
         await gateway.AddInboundAsync("docs", upstream.McpUrl);
         await gateway.AddClientAsync(
-            "Активный", ["echo", "docs"], new DateTimeOffset(2099, 1, 1, 0, 0, 0, TimeSpan.Zero), limits: new ClientLimits(QuotaCalls: 100));
+            "Активный", ["echo", "docs"], new DateTimeOffset(2099, 1, 1, 0, 0, 0, TimeSpan.Zero),
+            limits: new ClientLimits(QuotaCalls: 100));
         var disabled = await gateway.AddClientAsync("Отключённый", ["echo"]);
         await gateway.AddClientAsync("Истёкший", ["echo"]);
         var spender = await gateway.AddClientAsync("Исчерпавший", ["echo"], limits: new ClientLimits(QuotaCalls: 1));
@@ -39,13 +40,15 @@ public class PanelClientsTests
         {
             await services.GetRequiredService<ClientService>().SetEnabledAsync(disabled.Client.Id, false);
             var db = services.GetRequiredService<CtxUiDbContext>();
-            (await db.Clients.SingleAsync(client => client.Name == "Истёкший")).ExpiresAt = new DateTimeOffset(2020, 2, 3, 0, 0, 0, TimeSpan.Zero);
+            (await db.Clients.SingleAsync(client => client.Name == "Истёкший")).ExpiresAt =
+                new DateTimeOffset(2020, 2, 3, 0, 0, 0, TimeSpan.Zero);
             return await db.SaveChangesAsync();
         });
         using var spent = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/echo", spender.Token, ToolCall));
         await Eventually.TrueAsync(
             () => gateway.ChangeAsync(async services =>
-                (await services.GetRequiredService<ClientService>().GetAsync("Исчерпавший")) is { UsedCalls: 1, LastUsedAt: not null }),
+                await services.GetRequiredService<ClientService>().GetAsync("Исчерпавший") is
+                { UsedCalls: 1, LastUsedAt: not null }),
             "счётчик и отметка обращения дошли до базы");
         await using var session = await PanelSession.SignInAsync(gateway);
 
@@ -90,7 +93,7 @@ public class PanelClientsTests
         await page.GetByLabel("Поиск по имени").FillAsync("никого");
         await Expect(page.GetByText("Никого с именем «никого»")).ToBeVisibleAsync();
 
-        await page.GetByRole(AriaRole.Button, new() { Name = "Сбросить поиск" }).ClickAsync();
+        await page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Сбросить поиск" }).ClickAsync();
         await Expect(page.GetByRole(AriaRole.Row)).ToHaveCountAsync(4);
         await Expect(page.GetByLabel("Поиск по имени")).ToHaveValueAsync("");
     }

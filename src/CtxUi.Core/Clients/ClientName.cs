@@ -19,5 +19,8 @@ public static class ClientName
         return name;
     }
 
-    public static string Key(string name) => name.Normalize(NormalizationForm.FormKC).ToUpperInvariant();
+    public static string Key(string name)
+    {
+        return name.Normalize(NormalizationForm.FormKC).ToUpperInvariant();
+    }
 }

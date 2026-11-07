@@ -6,8 +6,10 @@ namespace CtxUi.Core.Tests;
 
 public class InboundServiceTests
 {
-    private static InboundService Service(TestDatabase database, FakeVault? vault = null) =>
-        new(database.NewContext(), vault ?? new FakeVault(), new FakeTimeProvider(TestData.Now));
+    private static InboundService Service(TestDatabase database, FakeVault? vault = null)
+    {
+        return new InboundService(database.NewContext(), vault ?? new FakeVault(), new FakeTimeProvider(TestData.Now));
+    }
 
     [Fact]
     public async Task Added_inbound_is_listed_with_defaults()
@@ -35,7 +37,7 @@ public class InboundServiceTests
         var vault = new FakeVault();
 
         await Service(database, vault).AddHttpAsync(
-            "echo", "Эхо", "https://mcp.example.org/mcp", [KeyValuePair.Create("X-Api-Key", "s3cret")], forwardIdentity: true);
+            "echo", "Эхо", "https://mcp.example.org/mcp", [KeyValuePair.Create("X-Api-Key", "s3cret")], true);
 
         var inbound = Assert.Single(await Service(database).ListAsync());
         Assert.Equal("Эхо", inbound.Name);
@@ -64,8 +66,8 @@ public class InboundServiceTests
         await using var database = await TestDatabase.CreateAsync();
         await Service(database).AddHttpAsync("echo", null, "https://a.example.org/mcp");
 
-        var error = await Assert.ThrowsAsync<DomainException>(
-            () => Service(database).AddHttpAsync("echo", null, "https://b.example.org/mcp"));
+        var error = await Assert.ThrowsAsync<DomainException>(() =>
+            Service(database).AddHttpAsync("echo", null, "https://b.example.org/mcp"));
 
         Assert.Contains("echo", error.Message);
         Assert.Contains("уже есть", error.Message);

@@ -7,7 +7,7 @@ internal enum BodyStatus
 {
     Read,
     TooLarge,
-    Aborted,
+    Aborted
 }
 
 internal readonly record struct BufferedBody(BodyStatus Status, ArraySegment<byte> Bytes);

@@ -2,7 +2,15 @@ using CtxUi.Builder.Contracts;
 
 namespace CtxUi.Builder;
 
-public sealed record ServerSummaryModel(Guid Id, string Slug, string Name, string NetworkAccess, string State, int? ActiveRelease, int? BuildingRelease, string? InboundId);
+public sealed record ServerSummaryModel(
+    Guid Id,
+    string Slug,
+    string Name,
+    string NetworkAccess,
+    string State,
+    int? ActiveRelease,
+    int? BuildingRelease,
+    Guid? InboundId);
 
 public sealed record ReleaseModel(
     int Number,

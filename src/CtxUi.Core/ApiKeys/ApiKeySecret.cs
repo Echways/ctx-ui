@@ -8,11 +8,23 @@ public static class ApiKeySecret
 
     private static readonly PrefixedSecret Secret = new(Prefix, 40);
 
-    public static string Generate() => Secret.Generate();
+    public static string Generate()
+    {
+        return Secret.Generate();
+    }
 
-    public static bool IsWellFormed([NotNullWhen(true)] string? value) => Secret.IsWellFormed(value);
+    public static bool IsWellFormed([NotNullWhen(true)] string? value)
+    {
+        return Secret.IsWellFormed(value);
+    }
 
-    public static string Hash(string secret) => PrefixedSecret.Hash(secret);
+    public static string Hash(string secret)
+    {
+        return PrefixedSecret.Hash(secret);
+    }
 
-    public static string DisplayPrefix(string secret) => Secret.DisplayPrefix(secret);
+    public static string DisplayPrefix(string secret)
+    {
+        return Secret.DisplayPrefix(secret);
+    }
 }

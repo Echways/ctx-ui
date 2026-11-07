@@ -1,8 +1,10 @@
 using System.Net;
+using System.Net.Http.Json;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using CtxUi.Builder.Contracts;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Time.Testing;
 
 namespace CtxUi.Builder.Runner.Tests;
@@ -12,12 +14,20 @@ public sealed class ReleaseFlowTests
     private static readonly Guid Id = RunnerHarness.Id;
     private static readonly string Prefix = RunnerHarness.Prefix;
 
-    private static string Server(int release) => $"{Prefix}-r{release}";
+    private static string Server(int release)
+    {
+        return $"{Prefix}-r{release}";
+    }
 
-    private static string Code(int release) => $"{Prefix}-code-{release}";
+    private static string Code(int release)
+    {
+        return $"{Prefix}-code-{release}";
+    }
 
-    private static string Config(params string[] dependencies) =>
-        JsonSerializer.Serialize(new { environment = new { python = "3.13", dependencies } });
+    private static string Config(params string[] dependencies)
+    {
+        return JsonSerializer.Serialize(new { environment = new { python = "3.13", dependencies } });
+    }
 
     [Fact]
     public async Task Activating_keeps_the_route_on_the_old_release_until_the_new_one_is_healthy()
@@ -333,7 +343,8 @@ public sealed class ReleaseFlowTests
         await Eventually.TrueAsync(() => !harness.Docker.Volumes.Contains(oldEnvironment));
         Assert.Equal(
             Enumerable.Range(2, 5).Select(Code).Order().ToList(),
-            harness.Docker.Volumes.Where(volume => volume.StartsWith($"{Prefix}-code-", StringComparison.Ordinal)).Order().ToList());
+            harness.Docker.Volumes.Where(volume => volume.StartsWith($"{Prefix}-code-", StringComparison.Ordinal))
+                .Order().ToList());
         Assert.Contains(currentEnvironment, harness.Docker.Volumes);
         Assert.Contains($"{Prefix}-data", harness.Docker.Volumes);
         Assert.Contains($"{Prefix}-uvcache", harness.Docker.Volumes);
@@ -408,9 +419,7 @@ public sealed class ReleaseFlowTests
         await Eventually.TrueAsync(() => harness.Docker.Find(Server(2))?.Running == false);
 
         for (var release = 3; release <= 8; release++)
-        {
             await harness.BuildAsync(release);
-        }
 
         await harness.StartCandidateAsync(8);
         using var activated = await harness.ActivateAsync(8);
@@ -485,7 +494,8 @@ public sealed class ReleaseFlowTests
 
         Assert.Equal(2, harness.Docker.Networks.Count);
         Assert.True(harness.Docker.Find(Server(1))!.Running);
-        var candidate = harness.Docker.Containers.Single(container => container.Release == 1 && container.Role is null && container.Name != Server(1));
+        var candidate = harness.Docker.Containers.Single(container =>
+            container.Release == 1 && container.Role is null && container.Name != Server(1));
         Assert.Equal($"{Prefix}-full", candidate.Parameters.HostConfig.NetworkMode);
 
         using var activated = await harness.ActivateAsync(1);
@@ -623,7 +633,8 @@ public sealed class ReleaseFlowTests
         Assert.Equal(ReleaseState.Retired, (await restarted.StatusAsync(1)).State);
         Assert.Equal(ReleaseState.Retired, (await restarted.StatusAsync(2)).State);
         restarted.Time.Advance(TimeSpan.FromSeconds(30));
-        await Eventually.TrueAsync(() => docker.Find(Server(1))?.Running == false && docker.Find(Server(2))?.Running == false);
+        await Eventually.TrueAsync(() =>
+            docker.Find(Server(1))?.Running == false && docker.Find(Server(2))?.Running == false);
     }
 
     [Fact]
@@ -702,16 +713,21 @@ public sealed class ReleaseFlowTests
         Assert.Equal(HttpStatusCode.NotFound, unknown.StatusCode);
         using var withoutSpec = await restarted.PostStartAsync(1);
         Assert.Equal(HttpStatusCode.Conflict, withoutSpec.StatusCode);
-        Assert.Contains("PUT", await withoutSpec.Content.ReadAsStringAsync(), StringComparison.Ordinal);
+        Assert.Equal(RunnerProblems.SpecRequired,
+            (await withoutSpec.Content.ReadFromJsonAsync<ProblemDetails>())!.Type);
 
         await restarted.PutSpecAsync();
         using var unknownStart = await restarted.PostStartAsync(2);
         Assert.Equal(HttpStatusCode.NotFound, unknownStart.StatusCode);
     }
 
-    private static bool IsMarker(string name) => name.Contains("-active-", StringComparison.Ordinal);
+    private static bool IsMarker(string name)
+    {
+        return name.Contains("-active-", StringComparison.Ordinal);
+    }
 
-    private static async Task<(FakeDockerEngine Docker, FakeServerProbe Probe, FakeTimeProvider Time)> FirstRunAsync(Func<RunnerHarness, Task> run)
+    private static async Task<(FakeDockerEngine Docker, FakeServerProbe Probe, FakeTimeProvider Time)> FirstRunAsync(
+        Func<RunnerHarness, Task> run)
     {
         var docker = new FakeDockerEngine();
         var probe = new FakeServerProbe();
@@ -991,7 +1007,8 @@ public sealed class ReleaseFlowTests
         foreach (var container in harness.Docker.Containers)
         {
             Assert.DoesNotContain(RunnerHarness.Secret, container.Labels.Values);
-            Assert.DoesNotContain(container.Parameters.Env ?? [], entry => entry.Contains(RunnerHarness.Secret, StringComparison.Ordinal));
+            Assert.DoesNotContain(container.Parameters.Env ?? [],
+                entry => entry.Contains(RunnerHarness.Secret, StringComparison.Ordinal));
         }
     }
 }

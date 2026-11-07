@@ -6,11 +6,15 @@ namespace CtxUi.IntegrationTests;
 
 public sealed class CliLimitsTests : IDisposable
 {
-    private const string ToolCall = """{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"echo","arguments":{}}}""";
+    private const string ToolCall =
+        """{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"echo","arguments":{}}}""";
 
     private readonly string _dataDir = Directory.CreateTempSubdirectory("ctx-ui-cli-").FullName;
 
-    private Task<(int Code, string Output, string Error)> RunAsync(params string[] args) => CliRunner.RunAsync(_dataDir, args);
+    private Task<(int Code, string Output, string Error)> RunAsync(params string[] args)
+    {
+        return CliRunner.RunAsync(_dataDir, args);
+    }
 
     private async Task IssueAsync(string name, params string[] extra)
     {
@@ -24,7 +28,7 @@ public sealed class CliLimitsTests : IDisposable
         SqliteConnection.ClearAllPools();
         try
         {
-            Directory.Delete(_dataDir, recursive: true);
+            Directory.Delete(_dataDir, true);
         }
         catch (IOException)
         {
@@ -32,7 +36,10 @@ public sealed class CliLimitsTests : IDisposable
     }
 
     [Fact]
-    public void Usage_is_a_cli_command() => Assert.True(Cli.Handles(["usage", "days"]));
+    public void Usage_is_a_cli_command()
+    {
+        Assert.True(Cli.Handles(["usage", "days"]));
+    }
 
     [Fact]
     public async Task Limits_given_at_issue_are_printed_with_the_connection()
@@ -40,7 +47,8 @@ public sealed class CliLimitsTests : IDisposable
         await RunAsync("inbound", "add", "echo", "--url", "https://upstream.example.org/mcp");
 
         var added = await RunAsync(
-            "client", "add", "Иванов", "--inbound", "echo", "--rate", "60", "--concurrency", "2", "--quota", "100", "--reset-days", "30");
+            "client", "add", "Иванов", "--inbound", "echo", "--rate", "60", "--concurrency", "2", "--quota", "100",
+            "--reset-days", "30");
 
         Assert.Equal(0, added.Code);
         Assert.Contains("Лимиты:  запросов в минуту: 60, одновременно: 2", added.Output);
@@ -67,7 +75,8 @@ public sealed class CliLimitsTests : IDisposable
     {
         await IssueAsync("Иванов", "--rate", "60", "--concurrency", "2", "--quota", "100");
 
-        var changed = await RunAsync("client", "set", "Иванов", "--quota", "500", "--rate", "none", "--reset-days", "7");
+        var changed = await RunAsync("client", "set", "Иванов", "--quota", "500", "--rate", "none", "--reset-days",
+            "7");
         var shown = await RunAsync("client", "show", "Иванов");
 
         Assert.Equal(0, changed.Code);
@@ -131,7 +140,8 @@ public sealed class CliLimitsTests : IDisposable
         await using var upstream = await FakeUpstream.StartAsync();
         await using var gateway = await GatewayHost.StartAsync();
         await gateway.AddInboundAsync("echo", upstream.McpUrl);
-        var issued = await gateway.AddClientAsync("Иванов 4419", ["echo"], limits: new ClientLimits(QuotaCalls: 2, ResetEveryDays: 30));
+        var issued = await gateway.AddClientAsync("Иванов 4419", ["echo"],
+            limits: new ClientLimits(QuotaCalls: 2, ResetEveryDays: 30));
         await gateway.AddClientAsync("Петров", ["echo"]);
 
         for (var call = 0; call < 3; call++)
@@ -153,7 +163,8 @@ public sealed class CliLimitsTests : IDisposable
         var idle = await CliRunner.RunAsync(gateway.DataDir, "usage", "log", "--client", "Петров");
 
         var lines = listed.Output.Split('\n', StringSplitOptions.RemoveEmptyEntries);
-        Assert.Contains(lines, line => line.Contains("Иванов 4419") && line.Contains("исчерпан") && line.Contains("2/2"));
+        Assert.Contains(lines,
+            line => line.Contains("Иванов 4419") && line.Contains("исчерпан") && line.Contains("2/2"));
         Assert.Contains(lines, line => line.Contains("Петров") && line.Contains("активен") && line.Contains("0/∞"));
         Assert.Contains("Квота:   2 из 2 вызовов, обновится ", shown.Output);
         var logLines = log.Output.Split('\n', StringSplitOptions.RemoveEmptyEntries);
@@ -162,7 +173,8 @@ public sealed class CliLimitsTests : IDisposable
         Assert.All(logLines, line => Assert.Contains("Иванов 4419", line));
         Assert.All(logLines, line => Assert.EndsWith("tools/call echo", line.TrimEnd()));
         Assert.Equal(2, logLines.Count(line => line.Contains("выполнен")));
-        Assert.Contains("квота исчерпана", Assert.Single(lastLine.Output.Split('\n', StringSplitOptions.RemoveEmptyEntries)));
+        Assert.Contains("квота исчерпана",
+            Assert.Single(lastLine.Output.Split('\n', StringSplitOptions.RemoveEmptyEntries)));
         Assert.Contains("вызовов 2, из них tools/call 2, сбоев upstream 0, отказов шлюза 1", days.Output);
         Assert.Equal("Журнал пуст", idle.Output.Trim());
     }
@@ -207,7 +219,8 @@ public sealed class CliLimitsTests : IDisposable
         await Eventually.TrueAsync(
             async () =>
             {
-                using var response = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/echo", issued.Token, ToolCall));
+                using var response =
+                    await gateway.Http.SendAsync(GatewayHost.Post("/mcp/echo", issued.Token, ToolCall));
                 return !(await response.Content.ReadAsStringAsync()).Contains("Лимит вызовов исчерпан");
             },
             "после сброса из CLI вызовы снова проходят");
@@ -219,7 +232,7 @@ public sealed class CliLimitsTests : IDisposable
         await using var upstream = await FakeUpstream.StartAsync();
         await using var gateway = await GatewayHost.StartAsync();
         await gateway.AddInboundAsync("echo", upstream.McpUrl);
-        var issued = await gateway.AddClientAsync("Иванов", ["echo"], limits: new ClientLimits(RatePerMinute: 1));
+        var issued = await gateway.AddClientAsync("Иванов", ["echo"], limits: new ClientLimits(1));
         using var spent = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/echo", issued.Token));
 
         var changed = await CliRunner.RunAsync(gateway.DataDir, "client", "set", "Иванов", "--rate", "none");

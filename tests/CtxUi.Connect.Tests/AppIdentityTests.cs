@@ -7,7 +7,8 @@ public class AppIdentityTests
     [Fact]
     public void A_metadata_document_names_its_host_as_verifier()
     {
-        var app = AppIdentity.Of("https://claude.ai/oauth/mcp-oauth-client-metadata", "Claude", ["https://claude.ai/api/mcp/auth_callback"]);
+        var app = AppIdentity.Of("https://claude.ai/oauth/mcp-oauth-client-metadata", "Claude",
+            ["https://claude.ai/api/mcp/auth_callback"]);
 
         Assert.Equal("claude.ai", app.VerifiedBy);
     }

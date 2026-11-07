@@ -20,7 +20,8 @@ public static class CoreServices
 
     public static IServiceCollection AddCtxUiCore(this IServiceCollection services, string dataDir)
     {
-        var connection = new SqliteConnectionStringBuilder { DataSource = Path.Combine(dataDir, DatabaseFile) }.ToString();
+        var connection =
+            new SqliteConnectionStringBuilder { DataSource = Path.Combine(dataDir, DatabaseFile) }.ToString();
         services.AddDbContext<CtxUiDbContext>(options => options.UseSqlite(connection));
         services.TryAddSingleton(TimeProvider.System);
         services.AddScoped<InboundService>();

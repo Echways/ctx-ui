@@ -21,34 +21,45 @@ public sealed class ParameterRow
 
     public string? Description { get; set; }
 
-    public static ParameterRow From(ToolParameter parameter) => new()
+    public static ParameterRow From(ToolParameter parameter)
     {
-        Name = parameter.Name,
-        Type = parameter.Type,
-        Place = parameter.Place,
-        Required = parameter.Required,
-        DefaultText = DefaultTextOf(parameter.Default),
-        Description = parameter.Description,
-    };
+        return new ParameterRow
+        {
+            Name = parameter.Name,
+            Type = parameter.Type,
+            Place = parameter.Place,
+            Required = parameter.Required,
+            DefaultText = DefaultTextOf(parameter.Default),
+            Description = parameter.Description
+        };
+    }
 
-    public ToolParameter ToParameter() =>
-        new(Name.Trim(), Type, Place, Required || Place == ParameterPlace.Path, DefaultOf(), string.IsNullOrWhiteSpace(Description) ? null : Description.Trim());
+    public ToolParameter ToParameter()
+    {
+        return new ToolParameter(Name.Trim(), Type, Place, Required || Place == ParameterPlace.Path, DefaultOf(),
+            string.IsNullOrWhiteSpace(Description) ? null : Description.Trim());
+    }
 
-    private static string? DefaultTextOf(JsonNode? value) => value?.GetValueKind() == JsonValueKind.String ? value.GetValue<string>() : value?.ToJsonString();
+    private static string? DefaultTextOf(JsonNode? value)
+    {
+        return value?.GetValueKind() == JsonValueKind.String ? value.GetValue<string>() : value?.ToJsonString();
+    }
 
     private JsonNode? DefaultOf()
     {
         if (string.IsNullOrWhiteSpace(DefaultText) || Type == OpenApiDraft.ComplexType)
             return null;
         var text = DefaultText.Trim();
-        JsonNode? parsed = Type switch
+        var parsed = Type switch
         {
             "string" => JsonValue.Create(DefaultText),
-            "integer" when long.TryParse(text, NumberStyles.Integer, CultureInfo.InvariantCulture, out var whole) => JsonValue.Create(whole),
-            "number" when double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out var fraction) => JsonValue.Create(fraction),
+            "integer" when long.TryParse(text, NumberStyles.Integer, CultureInfo.InvariantCulture, out var whole) =>
+                JsonValue.Create(whole),
+            "number" when double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out var fraction) =>
+                JsonValue.Create(fraction),
             "boolean" when bool.TryParse(text, out var flag) => JsonValue.Create(flag),
             "array" or "object" => ParseStructure(text),
-            _ => null,
+            _ => null
         };
         return parsed ?? throw new PanelException(string.Format(BuilderText.ParameterDefaultInvalid, Name));
     }
@@ -69,14 +80,11 @@ public sealed class ParameterRow
 
 public sealed class ToolFormDraft
 {
-    [Required]
-    public string Name { get; set; } = string.Empty;
+    [Required] public string Name { get; set; } = string.Empty;
 
-    [Required]
-    public string Method { get; set; } = "GET";
+    [Required] public string Method { get; set; } = "GET";
 
-    [Required]
-    public string Path { get; set; } = "/";
+    [Required] public string Path { get; set; } = "/";
 
     public string? Description { get; set; }
 
@@ -88,21 +96,27 @@ public sealed class ToolFormDraft
 
     public bool LacksDescription => string.IsNullOrWhiteSpace(Description);
 
-    public static ToolFormDraft From(FormTool tool) => new()
+    public static ToolFormDraft From(FormTool tool)
     {
-        Name = tool.Name,
-        Method = tool.Method.ToUpperInvariant(),
-        Path = tool.Path,
-        Description = tool.Description,
-        Parameters = [.. tool.Parameters.Select(ParameterRow.From)],
-        ResponseSchema = tool.ResponseSchema?.DeepClone(),
-    };
+        return new ToolFormDraft
+        {
+            Name = tool.Name,
+            Method = tool.Method.ToUpperInvariant(),
+            Path = tool.Path,
+            Description = tool.Description,
+            Parameters = [.. tool.Parameters.Select(ParameterRow.From)],
+            ResponseSchema = tool.ResponseSchema?.DeepClone()
+        };
+    }
 
-    public FormTool ToTool() => new(
-        Name.Trim(),
-        Method,
-        Path.Trim(),
-        string.IsNullOrWhiteSpace(Description) ? null : Description.Trim(),
-        [.. Parameters.Select(row => row.ToParameter())],
-        ResponseSchema?.DeepClone());
+    public FormTool ToTool()
+    {
+        return new FormTool(
+            Name.Trim(),
+            Method,
+            Path.Trim(),
+            string.IsNullOrWhiteSpace(Description) ? null : Description.Trim(),
+            [.. Parameters.Select(row => row.ToParameter())],
+            ResponseSchema?.DeepClone());
+    }
 }

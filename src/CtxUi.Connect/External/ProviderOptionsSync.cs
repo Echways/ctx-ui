@@ -35,26 +35,35 @@ public sealed partial class ProviderOptionsSync<TOptions>(ISnapshotSource snapsh
                 if (name == ProviderCatalog.Oidc)
                     oidc.Authority = config?.Issuer ?? UnsetAuthority;
 
-                oidc.RequireHttpsMetadata = !(Uri.TryCreate(oidc.Authority, UriKind.Absolute, out var authority) && authority.IsLoopback);
+                oidc.RequireHttpsMetadata = !(Uri.TryCreate(oidc.Authority, UriKind.Absolute, out var authority) &&
+                                              authority.IsLoopback);
                 break;
         }
 
         options.Events.OnRemoteFailure = context =>
         {
-            RemoteFailed(context.HttpContext.RequestServices.GetRequiredService<ILoggerFactory>().CreateLogger("CtxUi.Connect"), name, context.Failure);
+            RemoteFailed(
+                context.HttpContext.RequestServices.GetRequiredService<ILoggerFactory>().CreateLogger("CtxUi.Connect"),
+                name, context.Failure);
             context.Response.Redirect(context.Request.PathBase + ExternalEndpoints.FailedPath);
             context.HandleResponse();
             return Task.CompletedTask;
         };
     }
 
-    public void Configure(TOptions options) => Configure(Options.DefaultName, options);
+    public void Configure(TOptions options)
+    {
+        Configure(Options.DefaultName, options);
+    }
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "sign-in through the provider {Provider} failed")]
     private static partial void RemoteFailed(ILogger logger, string provider, Exception? exception);
 }
 
-public sealed class ProviderOptionsCache(ISnapshotSource snapshot, IServiceProvider services, IEnumerable<ProviderInvalidator> invalidators)
+public sealed class ProviderOptionsCache(
+    ISnapshotSource snapshot,
+    IServiceProvider services,
+    IEnumerable<ProviderInvalidator> invalidators)
 {
     private readonly Dictionary<string, ProviderConfig?> _applied = [];
     private readonly Lock _gate = new();

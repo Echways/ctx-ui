@@ -7,7 +7,7 @@
     <ChildContent>
         @if (_devices is null)
         {
-            <Placeholder />
+            <Placeholder/>
         }
         else
         {
@@ -15,6 +15,7 @@
             {
                 <p class="hint">@PanelText.DevicesEmpty</p>
             }
+
             <ul class="devs">
                 @foreach (var device in _devices)
                 {
@@ -23,7 +24,8 @@
                             <strong>@device.Name</strong>
                             @if (device.RevokedAt is null)
                             {
-                                <button type="button" class="link danger" aria-label="@string.Format(PanelText.DisconnectDeviceOf, device.Name)"
+                                <button type="button" class="link danger"
+                                        aria-label="@string.Format(PanelText.DisconnectDeviceOf, device.Name)"
                                         @onclick="() => DisconnectAsync(device)">@PanelText.DisconnectDevice</button>
                             }
                         </div>
@@ -46,6 +48,7 @@
             {
                 <button type="button" class="btn-danger" @onclick="DisconnectAllAsync">@PanelText.DisconnectAll</button>
             }
+
             <section class="group">
                 <h3>@PanelText.LinkedAccounts</h3>
                 @if (_links!.Count == 0)
@@ -58,7 +61,8 @@
                         <li class="dev">
                             <div class="dev-head">
                                 <span>@LinkTitle(link) · <code>@link.Display</code></span>
-                                <button type="button" class="link danger" aria-label="@string.Format(PanelText.UnlinkOf, LinkTitle(link))"
+                                <button type="button" class="link danger"
+                                        aria-label="@string.Format(PanelText.UnlinkOf, LinkTitle(link))"
                                         @onclick="() => UnlinkAsync(link)">@PanelText.Unlink</button>
                             </div>
                             <p class="dev-meta">@string.Format(PanelText.LinkedOn, Words.Day(link.LinkedAt))</p>
@@ -76,10 +80,12 @@
     private string _name = "";
     private IReadOnlyDictionary<string, string> _titles = new Dictionary<string, string>();
 
-    [Parameter]
-    public Guid Id { get; set; }
+    [Parameter] public Guid Id { get; set; }
 
-    protected override Task OnInitializedAsync() => LoadAsync();
+    protected override Task OnInitializedAsync()
+    {
+        return LoadAsync();
+    }
 
     private async Task LoadAsync()
     {
@@ -93,13 +99,20 @@
         });
     }
 
-    private string SignedInWith(string method) =>
-        method == Device.ByKey ? PanelText.DeviceByKey : ProviderTitle(method);
+    private string SignedInWith(string method)
+    {
+        return method == Device.ByKey ? PanelText.DeviceByKey : ProviderTitle(method);
+    }
 
-    private string LinkTitle(ClientLink link) => ProviderTitle(link.Provider);
+    private string LinkTitle(ClientLink link)
+    {
+        return ProviderTitle(link.Provider);
+    }
 
-    private string ProviderTitle(string name) =>
-        _titles.GetValueOrDefault(name) ?? ProviderCatalog.Find(name)?.Title ?? name;
+    private string ProviderTitle(string name)
+    {
+        return _titles.GetValueOrDefault(name) ?? ProviderCatalog.Find(name)?.Title ?? name;
+    }
 
     private async Task DisconnectAsync(Device device)
     {
@@ -111,7 +124,7 @@
 
     private async Task DisconnectAllAsync()
     {
-        if (!await Dialogs.ConfirmAsync(string.Format(PanelText.DisconnectAllQuestion, _name), PanelText.DisconnectAllWarning, PanelText.DisconnectAll, danger: true))
+        if (!await Dialogs.ConfirmAsync(string.Format(PanelText.DisconnectAllQuestion, _name), PanelText.DisconnectAllWarning, PanelText.DisconnectAll, true))
             return;
 
         await Actions.ApplyAsync(
@@ -122,7 +135,7 @@
 
     private async Task UnlinkAsync(ClientLink link)
     {
-        if (!await Dialogs.ConfirmAsync(string.Format(PanelText.UnlinkQuestion, $"{LinkTitle(link)} · {link.Display}"), PanelText.UnlinkWarning, PanelText.Unlink, danger: true))
+        if (!await Dialogs.ConfirmAsync(string.Format(PanelText.UnlinkQuestion, $"{LinkTitle(link)} · {link.Display}"), PanelText.UnlinkWarning, PanelText.Unlink, true))
             return;
 
         await Actions.ApplyAsync(
@@ -130,4 +143,5 @@
             string.Format(PanelText.LinkRemoved, LinkTitle(link)));
         await LoadAsync();
     }
+
 }

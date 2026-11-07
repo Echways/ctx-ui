@@ -18,9 +18,12 @@ public sealed class PanelBackend(IServiceScopeFactory scopes, IRoutingRefresh ro
         return result;
     }
 
-    public Task ChangeAsync(Func<IServiceProvider, Task> change) => ChangeAsync(async services =>
+    public Task ChangeAsync(Func<IServiceProvider, Task> change)
     {
-        await change(services);
-        return true;
-    });
+        return ChangeAsync(async services =>
+        {
+            await change(services);
+            return true;
+        });
+    }
 }

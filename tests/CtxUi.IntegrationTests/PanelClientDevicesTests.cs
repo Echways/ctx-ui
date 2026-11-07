@@ -9,7 +9,8 @@ namespace CtxUi.IntegrationTests;
 
 public class PanelClientDevicesTests
 {
-    private static async Task<(GatewayHost Gateway, IssuedClient Issued, Device Device)> StartAsync(string signedInWith = "key")
+    private static async Task<(GatewayHost Gateway, IssuedClient Issued, Device Device)> StartAsync(
+        string signedInWith = "key")
     {
         var gateway = await StartWithoutPollingAsync();
         await gateway.AddInboundAsync("echo", "https://echo.example.org/mcp");
@@ -17,15 +18,19 @@ public class PanelClientDevicesTests
         var device = await gateway.ChangeAsync(async services =>
         {
             var devices = services.GetRequiredService<DeviceService>();
-            var admitted = (await devices.AdmitAsync(issued.Client.Id, DeviceMarker.Generate(), new DeviceSeen("Chrome · Windows", "203.0.113.7", signedInWith))).Device!;
+            var admitted = (await devices.AdmitAsync(issued.Client.Id, DeviceMarker.Generate(),
+                new DeviceSeen("Chrome · Windows", "203.0.113.7", signedInWith))).Device!;
             await devices.AddAppAsync(admitted.Id, "app-key", "Claude Code", "authorization-1");
             return await devices.GetAsync(admitted.Id);
         });
         return (gateway, issued, device);
     }
 
-    private static Task<List<Device>> DevicesAsync(GatewayHost gateway, Guid clientId) => gateway.ChangeAsync(services =>
-        services.GetRequiredService<DeviceService>().ListAsync(clientId, DateTimeOffset.MinValue));
+    private static Task<List<Device>> DevicesAsync(GatewayHost gateway, Guid clientId)
+    {
+        return gateway.ChangeAsync(services =>
+            services.GetRequiredService<DeviceService>().ListAsync(clientId, DateTimeOffset.MinValue));
+    }
 
     [Fact]
     public async Task Device_limit_and_direct_key_are_saved()
@@ -35,7 +40,8 @@ public class PanelClientDevicesTests
         await using var session = await PanelSession.SignInAsync(gateway);
         var page = await OpenClientsAsync(session);
 
-        await Row(page, "Иванов").GetByRole(AriaRole.Cell, new() { Name = "Иванов", Exact = true }).ClickAsync();
+        await Row(page, "Иванов")
+            .GetByRole(AriaRole.Cell, new LocatorGetByRoleOptions { Name = "Иванов", Exact = true }).ClickAsync();
         await Dialog(page).GetByLabel("Лимит устройств").FillAsync("3");
         await Dialog(page).GetByLabel("Постоянный ключ работает").UncheckAsync();
         await SaveAsync(page);
@@ -58,7 +64,9 @@ public class PanelClientDevicesTests
         await Expect(Dialog(page)).ToContainTextAsync("Chrome · Windows");
         await Expect(Dialog(page)).ToContainTextAsync("Claude Code");
         await Expect(Dialog(page)).ToContainTextAsync("203.0.113.7");
-        await Dialog(page).GetByRole(AriaRole.Button, new() { Name = "Отключить Chrome · Windows" }).ClickAsync();
+        await Dialog(page)
+            .GetByRole(AriaRole.Button, new LocatorGetByRoleOptions { Name = "Отключить Chrome · Windows" })
+            .ClickAsync();
 
         await Expect(page.GetByText("Устройство «Chrome · Windows» отключено")).ToBeVisibleAsync();
         var stored = Assert.Single(await DevicesAsync(gateway, issued.Client.Id));
@@ -73,7 +81,8 @@ public class PanelClientDevicesTests
         await using var _g = gateway;
         await gateway.ChangeAsync(async services =>
         {
-            await services.GetRequiredService<DeviceService>().RevokeAsync(issued.Client.Id, device.Id, DeviceRevocation.TokenReused);
+            await services.GetRequiredService<DeviceService>()
+                .RevokeAsync(issued.Client.Id, device.Id, DeviceRevocation.TokenReused);
             return true;
         });
         await using var session = await PanelSession.SignInAsync(gateway);
@@ -82,7 +91,8 @@ public class PanelClientDevicesTests
         await RowMenu.ChooseAsync(Row(page, "Иванов"), "Устройства");
 
         await Expect(Dialog(page)).ToContainTextAsync("Отключено: повторно предъявлен уже использованный токен");
-        await Expect(Dialog(page).GetByRole(AriaRole.Button, new() { Name = "Отключить Chrome · Windows" })).ToHaveCountAsync(0);
+        await Expect(Dialog(page).GetByRole(AriaRole.Button,
+            new LocatorGetByRoleOptions { Name = "Отключить Chrome · Windows" })).ToHaveCountAsync(0);
     }
 
     [Fact]
@@ -93,7 +103,8 @@ public class PanelClientDevicesTests
         await gateway.ChangeAsync(async services =>
         {
             var links = services.GetRequiredService<ClientLinkService>();
-            await links.LinkAsync(await links.InviteAsync(issued.Client.Id), new ExternalIdentity("github", "42", "ivanov@example.org"));
+            await links.LinkAsync(await links.InviteAsync(issued.Client.Id),
+                new ExternalIdentity("github", "42", "ivanov@example.org"));
             return true;
         });
         await using var session = await PanelSession.SignInAsync(gateway);
@@ -101,13 +112,17 @@ public class PanelClientDevicesTests
 
         await RowMenu.ChooseAsync(Row(page, "Иванов"), "Устройства");
         await Expect(Dialog(page)).ToContainTextAsync("ivanov@example.org");
-        await Dialog(page).GetByRole(AriaRole.Button, new() { Name = "Отвязать GitHub" }).ClickAsync();
-        var confirm = page.GetByRole(AriaRole.Dialog).Filter(new() { HasText = "Отвязать GitHub · ivanov@example.org?" });
+        await Dialog(page).GetByRole(AriaRole.Button, new LocatorGetByRoleOptions { Name = "Отвязать GitHub" })
+            .ClickAsync();
+        var confirm = page.GetByRole(AriaRole.Dialog).Filter(new LocatorFilterOptions
+        { HasText = "Отвязать GitHub · ivanov@example.org?" });
         await Expect(confirm).ToContainTextAsync("понадобится новая ссылка-приглашение");
-        await confirm.GetByRole(AriaRole.Button, new() { Name = "Отвязать", Exact = true }).ClickAsync();
+        await confirm.GetByRole(AriaRole.Button, new LocatorGetByRoleOptions { Name = "Отвязать", Exact = true })
+            .ClickAsync();
 
         await Expect(page.GetByText("Аккаунт GitHub отвязан")).ToBeVisibleAsync();
-        Assert.Empty(await gateway.ChangeAsync(services => services.GetRequiredService<ClientLinkService>().ListAsync(issued.Client.Id)));
+        Assert.Empty(await gateway.ChangeAsync(services =>
+            services.GetRequiredService<ClientLinkService>().ListAsync(issued.Client.Id)));
     }
 
     [Fact]
@@ -120,6 +135,7 @@ public class PanelClientDevicesTests
 
         await RowMenu.ChooseAsync(Row(page, "Иванов"), "Новый токен");
 
-        await Expect(page.GetByRole(AriaRole.Dialog)).ToContainTextAsync("Будет отключено 1 устройство, вошедшее по ключу.");
+        await Expect(page.GetByRole(AriaRole.Dialog))
+            .ToContainTextAsync("Будет отключено 1 устройство, вошедшее по ключу.");
     }
 }

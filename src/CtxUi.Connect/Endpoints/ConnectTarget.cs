@@ -23,6 +23,9 @@ public sealed class ConnectTargets(RegisteredApps apps, ResourceHandlers resourc
             : null;
     }
 
-    public async Task<string> InboundNameAsync(string slug, CancellationToken ct) =>
-        await db.Inbounds.AsNoTracking().Where(inbound => inbound.Slug == slug).Select(inbound => inbound.Name).SingleOrDefaultAsync(ct) ?? slug;
+    public async Task<string> InboundNameAsync(string slug, CancellationToken ct)
+    {
+        return await db.Inbounds.AsNoTracking().Where(inbound => inbound.Slug == slug).Select(inbound => inbound.Name)
+            .SingleOrDefaultAsync(ct) ?? slug;
+    }
 }

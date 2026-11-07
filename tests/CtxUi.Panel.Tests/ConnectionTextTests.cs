@@ -7,18 +7,21 @@ public class ConnectionTextTests
 {
     private const string Token = "tnk_AbCdEfGhIjKlMnOpQrStUvWxYz012345";
 
-    private static Client Client(params string[] slugs) => new()
+    private static Client Client(params string[] slugs)
     {
-        Id = Guid.NewGuid(),
-        Name = "Иванов 4419",
-        NameKey = "ИВАНОВ 4419",
-        TokenHash = "hash",
-        TokenSealed = "sealed",
-        TokenPrefix = "tnk_AbCdEf",
-        Inbounds = slugs
-            .Select(slug => new ClientInbound { Inbound = new Inbound { Slug = slug, Name = slug } })
-            .ToList(),
-    };
+        return new Client
+        {
+            Id = Guid.NewGuid(),
+            Name = "Иванов 4419",
+            NameKey = "ИВАНОВ 4419",
+            TokenHash = "hash",
+            TokenSealed = "sealed",
+            TokenPrefix = "tnk_AbCdEf",
+            Inbounds = slugs
+                .Select(slug => new ClientInbound { Inbound = new Inbound { Slug = slug, Name = slug } })
+                .ToList()
+        };
+    }
 
     [Fact]
     public void Addresses_start_with_the_public_url_whether_or_not_it_ends_with_a_slash()
@@ -42,26 +45,26 @@ public class ConnectionTextTests
 
         Assert.Equal(
             $"""
-            Доступ к MCP-серверам для «Иванов 4419».
+                 Доступ к MCP-серверам для «Иванов 4419».
 
-            Токен: {Token}
+                 Токен: {Token}
 
-            docs
-              адрес: https://mcp.example.org/mcp/docs
-              заголовок: Authorization: Bearer {Token}
-              если заголовок задать нельзя, адрес с токеном внутри:
-              https://mcp.example.org/k/{Token}/mcp/docs
+                 docs
+                   адрес: https://mcp.example.org/mcp/docs
+                   заголовок: Authorization: Bearer {Token}
+                   если заголовок задать нельзя, адрес с токеном внутри:
+                   https://mcp.example.org/k/{Token}/mcp/docs
 
-            learn
-              адрес: https://mcp.example.org/mcp/learn
-              заголовок: Authorization: Bearer {Token}
-              если заголовок задать нельзя, адрес с токеном внутри:
-              https://mcp.example.org/k/{Token}/mcp/learn
+                 learn
+                   адрес: https://mcp.example.org/mcp/learn
+                   заголовок: Authorization: Bearer {Token}
+                   если заголовок задать нельзя, адрес с токеном внутри:
+                   https://mcp.example.org/k/{Token}/mcp/learn
 
-            Доступ действует до 2027-07-01 (UTC).
-            Вызовов инструментов: 500 каждые 30 дн.
-            Токен и адрес с токеном равносильны паролю: не передавайте их дальше.
-            """.ReplaceLineEndings("\n"),
+                 Доступ действует до 2027-07-01 (UTC).
+                 Вызовов инструментов: 500 каждые 30 дн.
+                 Токен и адрес с токеном равносильны паролю: не передавайте их дальше.
+                 """.ReplaceLineEndings("\n"),
             message);
     }
 
@@ -80,7 +83,8 @@ public class ConnectionTextTests
         var client = Client("learn");
         client.QuotaCalls = 100;
 
-        Assert.Contains("\nВызовов инструментов: 100 на всё время.\n", ConnectionText.Message("https://mcp.example.org", client, Token));
+        Assert.Contains("\nВызовов инструментов: 100 на всё время.\n",
+            ConnectionText.Message("https://mcp.example.org", client, Token));
     }
 
     [Fact]
@@ -90,13 +94,15 @@ public class ConnectionTextTests
 
         Assert.Equal(
             ConnectionText.Message("https://mcp.example.org/", client, Token),
-            ConnectionText.Message("https://mcp.example.org/", client, Token, new ConnectionMode(false, true, true), "https://mcp.example.org/connect/invite/x"));
+            ConnectionText.Message("https://mcp.example.org/", client, Token, new ConnectionMode(false, true, true),
+                "https://mcp.example.org/connect/invite/x"));
     }
 
     [Fact]
     public void Message_with_oauth_and_no_direct_key_has_no_header_or_path_lines()
     {
-        var message = ConnectionText.Message("https://mcp.example.org/", Client("learn"), Token, new ConnectionMode(true, true, false));
+        var message = ConnectionText.Message("https://mcp.example.org/", Client("learn"), Token,
+            new ConnectionMode(true, true, false));
 
         Assert.Contains("адрес: https://mcp.example.org/mcp/learn", message);
         Assert.DoesNotContain("заголовок:", message);
@@ -107,7 +113,8 @@ public class ConnectionTextTests
     [Fact]
     public void Message_with_oauth_and_key_sign_in_off_hides_the_key()
     {
-        var message = ConnectionText.Message("https://mcp.example.org/", Client("learn"), Token, new ConnectionMode(true, false, false));
+        var message = ConnectionText.Message("https://mcp.example.org/", Client("learn"), Token,
+            new ConnectionMode(true, false, false));
 
         Assert.DoesNotContain(Token, message);
         Assert.Contains("войдите в браузере", message);
@@ -117,7 +124,8 @@ public class ConnectionTextTests
     public void Message_includes_the_invite_link()
     {
         var message = ConnectionText.Message(
-            "https://mcp.example.org/", Client("learn"), Token, new ConnectionMode(true, true, true), "https://mcp.example.org/connect/invite/abc");
+            "https://mcp.example.org/", Client("learn"), Token, new ConnectionMode(true, true, true),
+            "https://mcp.example.org/connect/invite/abc");
 
         Assert.Contains("https://mcp.example.org/connect/invite/abc", message);
         Assert.Contains("заголовок: Authorization: Bearer", message);

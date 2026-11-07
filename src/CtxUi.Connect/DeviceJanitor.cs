@@ -28,7 +28,6 @@ public sealed partial class DeviceJanitor(
         try
         {
             while (await timer.WaitForNextTickAsync(stoppingToken))
-            {
                 try
                 {
                     await SweepAsync(stoppingToken);
@@ -37,7 +36,6 @@ public sealed partial class DeviceJanitor(
                 {
                     SweepFailed(logger, exception);
                 }
-            }
         }
         catch (OperationCanceledException)
         {
@@ -59,11 +57,13 @@ public sealed partial class DeviceJanitor(
             .Select(app => app.AuthorizationId)
             .ToHashSetAsync(ct);
         var valid = await db.Set<OpenIddictEntityFrameworkCoreAuthorization>().AsNoTracking()
-            .Where(authorization => authorization.Id != null && authorization.Subject != null && authorization.Status == Statuses.Valid)
+            .Where(authorization => authorization.Id != null && authorization.Subject != null &&
+                                    authorization.Status == Statuses.Valid)
             .Select(authorization => new { Id = authorization.Id!, Subject = authorization.Subject! })
             .ToListAsync(ct);
         var liveClients = await db.Clients.AsNoTracking().Select(client => client.Id.ToString()).ToHashSetAsync(ct);
-        foreach (var authorization in valid.Where(authorization => ofRevokedDevices.Contains(authorization.Id) || !liveClients.Contains(authorization.Subject)))
+        foreach (var authorization in valid.Where(authorization =>
+                     ofRevokedDevices.Contains(authorization.Id) || !liveClients.Contains(authorization.Subject)))
             await RevokeAsync(authorizations, authorization.Id, ct);
 
         var pruned = await devices.PruneAsync(now - RevokedRetention, ct);
@@ -78,12 +78,14 @@ public sealed partial class DeviceJanitor(
             await snapshot.RefreshAsync();
     }
 
-    private static async Task RevokeAsync(IOpenIddictAuthorizationManager authorizations, string id, CancellationToken ct)
+    private static async Task RevokeAsync(IOpenIddictAuthorizationManager authorizations, string id,
+        CancellationToken ct)
     {
         if (await authorizations.FindByIdAsync(id, ct) is { } authorization)
             await authorizations.TryRevokeAsync(authorization, ct);
     }
 
-    [LoggerMessage(Level = LogLevel.Warning, Message = "sweeping devices and tokens failed, will retry on the next pass")]
+    [LoggerMessage(Level = LogLevel.Warning,
+        Message = "sweeping devices and tokens failed, will retry on the next pass")]
     private static partial void SweepFailed(ILogger logger, Exception exception);
 }

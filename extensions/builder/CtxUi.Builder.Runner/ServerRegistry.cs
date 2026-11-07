@@ -4,13 +4,34 @@ using CtxUi.Builder.Contracts;
 
 namespace CtxUi.Builder.Runner;
 
-public sealed class RunnerRequestException(int status, string message) : Exception(message)
+public sealed class RunnerRequestException(int status, string message, string? type = null) : Exception(message)
 {
     public int Status { get; } = status;
 
-    public static RunnerRequestException NotFound(string message) => new(StatusCodes.Status404NotFound, message);
+    public string? Type { get; } = type;
 
-    public static RunnerRequestException Conflict(string message) => new(StatusCodes.Status409Conflict, message);
+    public static RunnerRequestException NotFound(string message)
+    {
+        return new RunnerRequestException(StatusCodes.Status404NotFound, message);
+    }
+
+    public static RunnerRequestException Conflict(string message)
+    {
+        return new RunnerRequestException(StatusCodes.Status409Conflict, message);
+    }
+
+    public static RunnerRequestException UnknownServer(Guid id)
+    {
+        return new RunnerRequestException(StatusCodes.Status404NotFound,
+            $"Server {id} is not known. Send its specification with PUT first.",
+            RunnerProblems.SpecRequired);
+    }
+
+    public static RunnerRequestException SpecMissing(Guid id)
+    {
+        return new RunnerRequestException(StatusCodes.Status409Conflict,
+            $"The specification of server {id} is not known. Send it with PUT first.", RunnerProblems.SpecRequired);
+    }
 }
 
 public sealed class ReleaseRecord(int number, ReleaseState state)
@@ -33,9 +54,7 @@ public sealed class ReleaseRecord(int number, ReleaseState state)
         {
             _log.Append(text);
             if (_log.Length > MaxLogCharacters)
-            {
                 _log.Remove(0, _log.Length - MaxLogCharacters);
-            }
         }
     }
 
@@ -141,7 +160,8 @@ public sealed class ServerRecord(Guid id, CancellationToken stopping)
     {
         lock (Sync)
         {
-            return new ServerState(Id, ActiveRelease, Releases.Values.OrderBy(release => release.Number).Select(release => release.ToStatus()).ToList());
+            return new ServerState(Id, ActiveRelease,
+                Releases.Values.OrderBy(release => release.Number).Select(release => release.ToStatus()).ToList());
         }
     }
 
@@ -150,7 +170,7 @@ public sealed class ServerRecord(Guid id, CancellationToken stopping)
         lock (Sync)
         {
             return Releases.GetValueOrDefault(number)
-                ?? throw RunnerRequestException.NotFound($"Release {number} of server {Id} is not known.");
+                   ?? throw RunnerRequestException.NotFound($"Release {number} of server {Id} is not known.");
         }
     }
 }
@@ -159,12 +179,23 @@ public sealed class ServerRegistry(CancellationToken stopping)
 {
     private readonly ConcurrentDictionary<Guid, ServerRecord> _servers = new();
 
-    public ServerRecord GetOrAdd(Guid id) => _servers.GetOrAdd(id, key => new ServerRecord(key, stopping));
+    public ServerRecord GetOrAdd(Guid id)
+    {
+        return _servers.GetOrAdd(id, key => new ServerRecord(key, stopping));
+    }
 
-    public ServerRecord? Find(Guid id) => _servers.GetValueOrDefault(id);
+    public ServerRecord? Find(Guid id)
+    {
+        return _servers.GetValueOrDefault(id);
+    }
 
-    public ServerRecord Require(Guid id) =>
-        Find(id) ?? throw RunnerRequestException.NotFound($"Server {id} is not known. Send its specification with PUT first.");
+    public ServerRecord Require(Guid id)
+    {
+        return Find(id) ?? throw RunnerRequestException.UnknownServer(id);
+    }
 
-    public ServerRecord? Remove(Guid id) => _servers.TryRemove(id, out var server) ? server : null;
+    public ServerRecord? Remove(Guid id)
+    {
+        return _servers.TryRemove(id, out var server) ? server : null;
+    }
 }

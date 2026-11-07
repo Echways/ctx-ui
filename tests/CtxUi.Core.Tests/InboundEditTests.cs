@@ -14,12 +14,20 @@ public class InboundEditTests
     private readonly FakeVault _vault = new();
     private readonly FakeTimeProvider _clock = new(TestData.Now);
 
-    private InboundService Inbounds(TestDatabase database) => new(database.NewContext(), _vault, _clock);
+    private InboundService Inbounds(TestDatabase database)
+    {
+        return new InboundService(database.NewContext(), _vault, _clock);
+    }
 
-    private static Task<long> RevisionAsync(TestDatabase database) =>
-        database.NewContext().RoutingStates.AsNoTracking().Select(state => state.Revision).SingleAsync();
+    private static Task<long> RevisionAsync(TestDatabase database)
+    {
+        return database.NewContext().RoutingStates.AsNoTracking().Select(state => state.Revision).SingleAsync();
+    }
 
-    private static InboundSettings Settings(string url = Url) => new() { Url = url };
+    private static InboundSettings Settings(string url = Url)
+    {
+        return new InboundSettings { Url = url };
+    }
 
     [Fact]
     public async Task Inbound_can_be_added_with_its_own_timeout_and_body_limit()
@@ -27,7 +35,14 @@ public class InboundEditTests
         await using var database = await TestDatabase.CreateAsync();
 
         await Inbounds(database).AddHttpAsync(
-            "echo", Settings() with { Name = "Эхо", RequestTimeoutSeconds = 30, MaxBodyBytes = 65_536, ForwardIdentity = true });
+            "echo",
+            Settings() with
+            {
+                Name = "Эхо",
+                RequestTimeoutSeconds = 30,
+                MaxBodyBytes = 65_536,
+                ForwardIdentity = true
+            });
 
         var inbound = await Inbounds(database).GetAsync("echo");
         Assert.Equal("Эхо", inbound.Name);
@@ -62,7 +77,7 @@ public class InboundEditTests
             Url = "http://10.0.0.5:9000/mcp?tenant=7",
             ForwardIdentity = true,
             RequestTimeoutSeconds = 3_600,
-            MaxBodyBytes = 1_024,
+            MaxBodyBytes = 1_024
         });
 
         var inbound = await Inbounds(database).GetAsync("echo");
@@ -136,7 +151,8 @@ public class InboundEditTests
     {
         await using var database = await TestDatabase.CreateAsync();
         await Inbounds(database).AddHttpAsync("echo", "Эхо", Url);
-        var settings = new InboundSettings { Name = "Другое", Url = url, RequestTimeoutSeconds = timeout, MaxBodyBytes = bodyBytes };
+        var settings = new InboundSettings
+        { Name = "Другое", Url = url, RequestTimeoutSeconds = timeout, MaxBodyBytes = bodyBytes };
 
         await Assert.ThrowsAsync<DomainException>(() => Inbounds(database).UpdateAsync("echo", settings));
         await Assert.ThrowsAsync<DomainException>(() => Inbounds(database).AddHttpAsync("second", settings));
@@ -165,7 +181,8 @@ public class InboundEditTests
         await using var database = await TestDatabase.CreateAsync();
 
         var onGet = await Assert.ThrowsAsync<NotFoundException>(() => Inbounds(database).GetAsync("nope"));
-        var onUpdate = await Assert.ThrowsAsync<NotFoundException>(() => Inbounds(database).UpdateAsync("nope", Settings()));
+        var onUpdate =
+            await Assert.ThrowsAsync<NotFoundException>(() => Inbounds(database).UpdateAsync("nope", Settings()));
 
         Assert.Contains("nope", onGet.Message);
         Assert.Contains("nope", onUpdate.Message);
@@ -176,7 +193,8 @@ public class InboundEditTests
     {
         await using var database = await TestDatabase.CreateAsync();
         await Inbounds(database).AddHttpAsync(
-            "echo", null, Url, [KeyValuePair.Create("X-Api-Key", "s3cret"), KeyValuePair.Create("Authorization", "Bearer t")]);
+            "echo", null, Url,
+            [KeyValuePair.Create("X-Api-Key", "s3cret"), KeyValuePair.Create("Authorization", "Bearer t")]);
         await Inbounds(database).AddHttpAsync("plain", null, Url);
 
         var named = Inbounds(database).HeaderNames(await Inbounds(database).GetAsync("echo"));
@@ -224,10 +242,12 @@ public class InboundEditTests
             Url = "https://other.example.org/mcp",
             RequestTimeoutSeconds = 30,
             MaxBodyBytes = 2_048,
-            UpstreamHeaders = [KeyValuePair.Create("X-Api-Key", "s3cret")],
+            UpstreamHeaders = [KeyValuePair.Create("X-Api-Key", "s3cret")]
         });
 
-        var snapshot = await new RoutingSnapshotLoader(database.NewContext(), _vault, _clock, NullLogger<RoutingSnapshotLoader>.Instance).LoadAsync();
+        var snapshot =
+            await new RoutingSnapshotLoader(database.NewContext(), _vault, _clock,
+                NullLogger<RoutingSnapshotLoader>.Instance).LoadAsync();
         var route = snapshot.Authorize(Credential.FromKey(issued.Token), "echo", TestData.Now).Route!;
         Assert.Equal(new Uri("https://other.example.org/mcp"), route.Url);
         Assert.Equal(TimeSpan.FromSeconds(30), route.RequestTimeout);

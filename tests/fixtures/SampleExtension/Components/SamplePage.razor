@@ -1,6 +1,6 @@
 @page "/sample"
 
-<PageHead Title="@SampleText.Section" />
+<PageHead Title="@SampleText.Section"/>
 <p class="sample-note" data-testid="sample-note">@SampleText.Note</p>
 <p data-testid="sample-parser">UAParser @typeof(UAParser.Parser).Assembly.GetName().Version!.ToString(3)</p>
 <p data-testid="sample-context">@System.Runtime.Loader.AssemblyLoadContext.GetLoadContext(typeof(SamplePage).Assembly)?.Name</p>

@@ -1,7 +1,7 @@
 @inherits PanelBlock<InboundSummary>
 @inject ConnectionService Connections
 @inject ServerCatalog Catalog
-@inject ReleaseReader Reader
+@inject ReleaseCatalog Releases
 
 @if (_server is not null)
 {
@@ -22,7 +22,7 @@
         { State: ServerRunState.Building } status => string.Format(BuilderText.StateBuilding, status.BuildingNumber),
         { State: ServerRunState.RunnerUnavailable } => BuilderText.StateRunnerUnavailable,
         { State: ServerRunState.NeedsReactivation } status => string.Format(BuilderText.StateNeedsReactivation, status.ActiveNumber),
-        _ => BuilderText.StateNoRelease,
+        _ => BuilderText.StateNoRelease
     };
 
     protected override async Task OnInitializedAsync()
@@ -30,6 +30,7 @@
         if (await Connections.FindServerIdAsync(Context, CancellationToken.None) is not { } id)
             return;
         _server = await Catalog.SettingsAsync(id, CancellationToken.None);
-        _status = await Reader.StatusAsync(id, CancellationToken.None);
+        _status = await Releases.StatusAsync(id, CancellationToken.None);
     }
+
 }

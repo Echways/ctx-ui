@@ -10,13 +10,17 @@ public class ClientServiceTests
     private readonly FakeVault _vault = new();
     private readonly FakeTimeProvider _clock = new(TestData.Now);
 
-    private ClientService Clients(TestDatabase database) => new(database.NewContext(), _vault, _clock);
+    private ClientService Clients(TestDatabase database)
+    {
+        return new ClientService(database.NewContext(), _vault, _clock);
+    }
 
     private async Task<TestDatabase> DatabaseWithInboundsAsync(params string[] slugs)
     {
         var database = await TestDatabase.CreateAsync();
         foreach (var slug in slugs)
-            await new InboundService(database.NewContext(), _vault, _clock).AddHttpAsync(slug, null, "https://mcp.example.org/mcp");
+            await new InboundService(database.NewContext(), _vault, _clock).AddHttpAsync(slug, null,
+                "https://mcp.example.org/mcp");
 
         return database;
     }
@@ -59,7 +63,8 @@ public class ClientServiceTests
         await using var database = await DatabaseWithInboundsAsync("echo");
         await Clients(database).AddAsync("Иванов 4419", ["echo"]);
 
-        var error = await Assert.ThrowsAsync<DomainException>(() => Clients(database).AddAsync("иванов 4419", ["echo"]));
+        var error = await Assert.ThrowsAsync<DomainException>(() =>
+            Clients(database).AddAsync("иванов 4419", ["echo"]));
 
         Assert.Contains("уже есть", error.Message);
     }
@@ -69,7 +74,8 @@ public class ClientServiceTests
     {
         await using var database = await DatabaseWithInboundsAsync("echo");
 
-        var error = await Assert.ThrowsAsync<DomainException>(() => Clients(database).AddAsync("Иванов", ["echo", "nope"]));
+        var error = await Assert.ThrowsAsync<DomainException>(() =>
+            Clients(database).AddAsync("Иванов", ["echo", "nope"]));
 
         Assert.Contains("nope", error.Message);
         Assert.Empty(await Clients(database).ListAsync());
@@ -167,7 +173,7 @@ public class ClientServiceTests
             "reset-quota" => () => clients.ResetQuotaAsync(unknown),
             "enable" => () => clients.SetEnabledAsync(unknown, false),
             "remove" => () => clients.RemoveAsync(unknown),
-            _ => () => clients.ReissueAsync(unknown),
+            _ => () => clients.ReissueAsync(unknown)
         };
 
         await Assert.ThrowsAsync<NotFoundException>(act);
@@ -223,7 +229,8 @@ public class ClientServiceTests
         await Clients(database).UpdateAsync(issued.Client.Id, new ClientUpdate { InboundSlugs = ["echo"] });
         Assert.Equal(expires, Assert.Single(await Clients(database).ListAsync()).ExpiresAt);
 
-        await Clients(database).UpdateAsync(issued.Client.Id, new ClientUpdate { ChangeExpiry = true, ExpiresAt = null });
+        await Clients(database)
+            .UpdateAsync(issued.Client.Id, new ClientUpdate { ChangeExpiry = true, ExpiresAt = null });
         Assert.Null(Assert.Single(await Clients(database).ListAsync()).ExpiresAt);
 
         await Assert.ThrowsAsync<DomainException>(() => Clients(database).UpdateAsync(

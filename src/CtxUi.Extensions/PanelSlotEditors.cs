@@ -42,14 +42,22 @@ public sealed class PanelActionSlotEditor<TContext>
     }
 
     public PanelEditor AddSheet<TSheet>(Func<string> title, Func<TContext, string> sheetTitle, int order = 0)
-        where TSheet : PanelBlock<TContext> =>
-        AddAction(title, OpenSheet<TSheet>(sheetTitle), order);
+        where TSheet : PanelBlock<TContext>
+    {
+        return AddAction(title, OpenSheet<TSheet>(sheetTitle), order);
+    }
 
-    public PanelConditionalActionEditor<TContext> When(Func<TContext, bool> visible) => new(_editor, _registry, _slot, visible);
+    public PanelConditionalActionEditor<TContext> When(Func<TContext, bool> visible)
+    {
+        return new PanelConditionalActionEditor<TContext>(_editor, _registry, _slot, visible);
+    }
 
     internal static Func<PanelActionArgs<TContext>, Task> OpenSheet<TSheet>(Func<TContext, string> sheetTitle)
-        where TSheet : PanelBlock<TContext> =>
-        args => args.Services.GetRequiredService<IBlockSheets>().ShowAsync(sheetTitle(args.Context), typeof(TSheet), args.Context);
+        where TSheet : PanelBlock<TContext>
+    {
+        return args => args.Services.GetRequiredService<IBlockSheets>()
+            .ShowAsync(sheetTitle(args.Context), typeof(TSheet), args.Context);
+    }
 }
 
 public sealed class PanelConditionalActionEditor<TContext>
@@ -59,7 +67,8 @@ public sealed class PanelConditionalActionEditor<TContext>
     private readonly string _slot;
     private readonly Func<TContext, bool> _visible;
 
-    internal PanelConditionalActionEditor(PanelEditor editor, PanelSlotRegistry registry, string slot, Func<TContext, bool> visible)
+    internal PanelConditionalActionEditor(PanelEditor editor, PanelSlotRegistry registry, string slot,
+        Func<TContext, bool> visible)
     {
         _editor = editor;
         _registry = registry;
@@ -74,6 +83,8 @@ public sealed class PanelConditionalActionEditor<TContext>
     }
 
     public PanelEditor AddSheet<TSheet>(Func<string> title, Func<TContext, string> sheetTitle, int order = 0)
-        where TSheet : PanelBlock<TContext> =>
-        AddAction(title, PanelActionSlotEditor<TContext>.OpenSheet<TSheet>(sheetTitle), order);
+        where TSheet : PanelBlock<TContext>
+    {
+        return AddAction(title, PanelActionSlotEditor<TContext>.OpenSheet<TSheet>(sheetTitle), order);
+    }
 }

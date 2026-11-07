@@ -7,19 +7,20 @@
 @inject IOptions<PanelOptions> Options
 @inject TimeProvider Clock
 
-<PageHead Title="@Layout.TitleOf(PanelSections.OAuth)" UpdatedAt="_settings is null ? null : _loadedAt" OnRefresh="LoadAsync">
+<PageHead Title="@Layout.TitleOf(PanelSections.OAuth)" UpdatedAt="_settings is null ? null : _loadedAt"
+          OnRefresh="LoadAsync">
     <Summary>
         <span>@PanelText.OAuthLead</span>
     </Summary>
     <Actions>
-        <PageButtons Section="@PanelSections.OAuth" OnDone="LoadAsync" />
+        <PageButtons Section="@PanelSections.OAuth" OnDone="LoadAsync"/>
     </Actions>
 </PageHead>
-<PageTopBlocks Section="@PanelSections.OAuth" />
+<PageTopBlocks Section="@PanelSections.OAuth"/>
 
 @if (_settings is null)
 {
-    <Placeholder />
+    <Placeholder/>
 }
 else
 {
@@ -29,16 +30,20 @@ else
             {
                 <p class="hint" role="note">@string.Format(PanelText.OAuthNeedsHttps, PublicUrl)</p>
             }
-            <MudSwitch T="bool" Value="_settings.Enabled" Disabled="@(!Available && !_settings.Enabled)" Label="@PanelText.OAuthSwitch"
-                       ValueChanged="SwitchAsync" />
-            <MudSwitch T="bool" Value="_settings.KeySignIn" Label="@PanelText.KeySignInSwitch" ValueChanged="SwitchKeyAsync" />
+            <MudSwitch T="bool" Value="_settings.Enabled" Disabled="@(!Available && !_settings.Enabled)"
+                       Label="@PanelText.OAuthSwitch"
+                       ValueChanged="SwitchAsync"/>
+            <MudSwitch T="bool" Value="_settings.KeySignIn" Label="@PanelText.KeySignInSwitch"
+                       ValueChanged="SwitchKeyAsync"/>
             <p class="hint">@PanelText.KeySignInHelp</p>
             @if (_settings.Enabled && Available)
             {
-                <CopyLine Label="@PanelText.OAuthDiscovery" Value="@DiscoveryUrl" CopyLabel="@PanelText.CopyOAuthDiscovery" />
+                <CopyLine Label="@PanelText.OAuthDiscovery" Value="@DiscoveryUrl"
+                          CopyLabel="@PanelText.CopyOAuthDiscovery"/>
                 <p class="hint">
                     @PanelText.OAuthDiscoveryHelp
-                    <a class="link" href="@SignInUrl" target="_blank" rel="noopener noreferrer">@PanelText.OpenSignInPage</a>
+                    <a class="link" href="@SignInUrl" target="_blank"
+                       rel="noopener noreferrer">@PanelText.OpenSignInPage</a>
                 </p>
             }
         </section>
@@ -48,20 +53,24 @@ else
             <div class="providers">
                 @foreach (var info in ProviderCatalog.All)
                 {
-                    <ProviderCard @key="info.Name" Info="info" Stored="_providers.GetValueOrDefault(info.Name)" PublicUrl="@PublicUrl" OnChanged="LoadAsync" />
+                    <ProviderCard @key="info.Name" Info="info" Stored="_providers.GetValueOrDefault(info.Name)"
+                                  PublicUrl="@PublicUrl" OnChanged="LoadAsync"/>
                 }
             </div>
         </section>
         <section class="group" aria-labelledby="devices-head">
             <h2 id="devices-head">@PanelText.GroupDevices</h2>
-            <MudNumericField T="int?" @bind-Value="_idleDays" Label="@PanelText.IdleDays" Immediate="true" HideSpinButtons="true"
-                             Min="1" Max="SignInSettings.MaxIdleDays" HelperText="@string.Format(PanelText.IdleDaysHelp, SignInSettings.MaxIdleDays)" />
-            <MudSwitch T="bool" @bind-Value="_selfRevoke" Label="@PanelText.SelfRevoke" />
+            <MudNumericField T="int?" @bind-Value="_idleDays" Label="@PanelText.IdleDays" Immediate="true"
+                             HideSpinButtons="true"
+                             Min="1" Max="SignInSettings.MaxIdleDays"
+                             HelperText="@string.Format(PanelText.IdleDaysHelp, SignInSettings.MaxIdleDays)"/>
+            <MudSwitch T="bool" @bind-Value="_selfRevoke" Label="@PanelText.SelfRevoke"/>
             <p class="hint">@PanelText.SelfRevokeHelp</p>
             <h3>@PanelText.Defaults</h3>
-            <MudNumericField T="int?" @bind-Value="_limit" Label="@PanelText.DeviceLimit" Immediate="true" HideSpinButtons="true"
-                             HelperText="@PanelText.DeviceLimitHelp" />
-            <MudSwitch T="bool" @bind-Value="_directKey" Label="@PanelText.DirectKeyWorks" />
+            <MudNumericField T="int?" @bind-Value="_limit" Label="@PanelText.DeviceLimit" Immediate="true"
+                             HideSpinButtons="true"
+                             HelperText="@PanelText.DeviceLimitHelp"/>
+            <MudSwitch T="bool" @bind-Value="_directKey" Label="@PanelText.DirectKeyWorks"/>
             <p class="hint">@PanelText.DirectKeyHelp</p>
             <div class="actions">
                 <button type="button" class="btn-k pigment" @onclick="SaveDefaultsAsync">@PanelText.Save</button>
@@ -70,7 +79,7 @@ else
     </div>
 }
 
-<PageBottomBlocks Section="@PanelSections.OAuth" />
+<PageBottomBlocks Section="@PanelSections.OAuth"/>
 
 @code {
     private SignInSettings? _settings;
@@ -90,7 +99,10 @@ else
 
     private string SignInUrl => OAuthResource.Issuer(PublicUrl) + "/connect/signin";
 
-    protected override Task OnInitializedAsync() => LoadAsync();
+    protected override Task OnInitializedAsync()
+    {
+        return LoadAsync();
+    }
 
     private async Task LoadAsync()
     {
@@ -114,7 +126,7 @@ else
         {
             var withoutKey = await Backend.ReadAsync(services => services.GetRequiredService<SignInSettingsService>().ClientsWithoutDirectKeyAsync());
             if (withoutKey > 0
-                && !await Dialogs.ConfirmAsync(PanelText.OAuthOffQuestion, Words.Count(PanelText.OAuthOffWarning, withoutKey), PanelText.OAuthOffYes, danger: true))
+                && !await Dialogs.ConfirmAsync(PanelText.OAuthOffQuestion, Words.Count(PanelText.OAuthOffWarning, withoutKey), PanelText.OAuthOffYes, true))
             {
                 await LoadAsync();
                 return;
@@ -124,22 +136,29 @@ else
         await UpdateAsync(new SignInSettingsUpdate { Enabled = enabled }, enabled ? PanelText.OAuthOn : PanelText.OAuthOff);
     }
 
-    private Task SwitchKeyAsync(bool enabled) => UpdateAsync(new SignInSettingsUpdate { KeySignIn = enabled }, PanelText.OAuthSaved);
+    private Task SwitchKeyAsync(bool enabled)
+    {
+        return UpdateAsync(new SignInSettingsUpdate { KeySignIn = enabled }, PanelText.OAuthSaved);
+    }
 
-    private Task SaveDefaultsAsync() => UpdateAsync(
-        new SignInSettingsUpdate
-        {
-            ChangeDefaultMaxDevices = true,
-            DefaultMaxDevices = _limit,
-            DefaultDirectKey = _directKey,
-            IdleDays = _idleDays,
-            SelfRevoke = _selfRevoke,
-        },
-        PanelText.OAuthSaved);
+    private Task SaveDefaultsAsync()
+    {
+        return UpdateAsync(
+            new SignInSettingsUpdate
+            {
+                ChangeDefaultMaxDevices = true,
+                DefaultMaxDevices = _limit,
+                DefaultDirectKey = _directKey,
+                IdleDays = _idleDays,
+                SelfRevoke = _selfRevoke
+            },
+            PanelText.OAuthSaved);
+    }
 
     private async Task UpdateAsync(SignInSettingsUpdate update, string done)
     {
         await Actions.ApplyAsync(services => services.GetRequiredService<SignInSettingsService>().UpdateAsync(update, PublicUrl), done);
         await LoadAsync();
     }
+
 }

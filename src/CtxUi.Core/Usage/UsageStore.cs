@@ -16,7 +16,6 @@ public sealed class UsageStore(CtxUiDbContext db)
             return;
 
         foreach (var record in records.Where(record => record.Method is not null))
-        {
             db.UsageEvents.Add(new UsageEvent
             {
                 ClientId = record.ClientId,
@@ -29,18 +28,19 @@ public sealed class UsageStore(CtxUiDbContext db)
                 DeviceId = record.DeviceId,
                 Status = record.Status,
                 RequestBytes = record.RequestBytes,
-                ResponseBytes = record.ResponseBytes,
+                ResponseBytes = record.ResponseBytes
             });
-        }
 
         await AddUpDaysAsync(records, ct);
         await AddUpRefusalsAsync(records.Where(record => record.Method is null).ToList(), ct);
         await db.SaveChangesAsync(ct);
     }
 
-    public async Task<int> PruneAsync(DateTimeOffset olderThan, CancellationToken ct = default) =>
-        await db.UsageEvents.Where(usage => usage.At < olderThan).ExecuteDeleteAsync(ct)
-        + await db.UsageRefusals.Where(refusal => refusal.Minute < olderThan).ExecuteDeleteAsync(ct);
+    public async Task<int> PruneAsync(DateTimeOffset olderThan, CancellationToken ct = default)
+    {
+        return await db.UsageEvents.Where(usage => usage.At < olderThan).ExecuteDeleteAsync(ct)
+               + await db.UsageRefusals.Where(refusal => refusal.Minute < olderThan).ExecuteDeleteAsync(ct);
+    }
 
     public Task<List<UsageEvent>> RecentAsync(Guid? clientId, int limit, CancellationToken ct = default)
     {
@@ -130,7 +130,13 @@ public sealed class UsageStore(CtxUiDbContext db)
             var key = (minute, record.ClientId, record.InboundId, record.Outcome);
             if (!known.TryGetValue(key, out var refusal))
             {
-                refusal = new UsageRefusal { Minute = minute, ClientId = record.ClientId, InboundId = record.InboundId, Outcome = record.Outcome };
+                refusal = new UsageRefusal
+                {
+                    Minute = minute,
+                    ClientId = record.ClientId,
+                    InboundId = record.InboundId,
+                    Outcome = record.Outcome
+                };
                 known.Add(key, refusal);
                 db.UsageRefusals.Add(refusal);
             }

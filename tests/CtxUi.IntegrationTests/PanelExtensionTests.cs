@@ -7,7 +7,8 @@ public class PanelExtensionTests
 {
     private static async Task<string[]> MenuOfAsync(IPage page, string client)
     {
-        await ClientPages.Row(page, client).GetByRole(AriaRole.Button, new() { Name = "Ещё действия" }).ClickAsync();
+        await ClientPages.Row(page, client)
+            .GetByRole(AriaRole.Button, new LocatorGetByRoleOptions { Name = "Ещё действия" }).ClickAsync();
         await Expect(page.GetByRole(AriaRole.Menuitem).First).ToBeVisibleAsync();
         return [.. (await page.GetByRole(AriaRole.Menuitem).AllInnerTextsAsync()).Select(text => text.Trim())];
     }

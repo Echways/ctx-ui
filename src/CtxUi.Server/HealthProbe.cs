@@ -21,18 +21,23 @@ public static class HealthProbe
             .FirstOrDefault(url => url.StartsWith(Http, StringComparison.OrdinalIgnoreCase)) ?? DefaultListener;
         var authority = listener[Http.Length..].TrimEnd('/');
         var portAt = authority.LastIndexOf(':');
-        var (host, port) = portAt > authority.LastIndexOf(']') ? (authority[..portAt], authority[portAt..]) : (authority, "");
+        var (host, port) = portAt > authority.LastIndexOf(']')
+            ? (authority[..portAt], authority[portAt..])
+            : (authority, "");
         if (AnyAddress.Contains(host))
             host = "127.0.0.1";
 
         return Http + host + port + Path;
     }
 
-    public static IConfiguration Configuration() => new ConfigurationBuilder()
-        .AddEnvironmentVariables("ASPNETCORE_")
-        .AddJsonFile(System.IO.Path.Combine(AppContext.BaseDirectory, "appsettings.json"), optional: true)
-        .AddEnvironmentVariables()
-        .Build();
+    public static IConfiguration Configuration()
+    {
+        return new ConfigurationBuilder()
+            .AddEnvironmentVariables("ASPNETCORE_")
+            .AddJsonFile(System.IO.Path.Combine(AppContext.BaseDirectory, "appsettings.json"), true)
+            .AddEnvironmentVariables()
+            .Build();
+    }
 
     public static async Task<int> RunAsync(IConfiguration configuration, TextWriter error)
     {

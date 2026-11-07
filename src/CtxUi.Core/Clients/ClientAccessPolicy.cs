@@ -4,7 +4,10 @@ namespace CtxUi.Core.Clients;
 
 public sealed record ClientAccessPolicy(int? MaxDevices, bool DirectKey)
 {
-    public static ClientAccessPolicy Of(Client client) => new(client.MaxDevices, client.DirectKey);
+    public static ClientAccessPolicy Of(Client client)
+    {
+        return new ClientAccessPolicy(client.MaxDevices, client.DirectKey);
+    }
 
     public ClientAccessPolicy Validated()
     {

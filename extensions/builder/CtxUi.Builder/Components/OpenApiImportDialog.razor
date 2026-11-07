@@ -6,8 +6,10 @@
     {
         <div class="builder-import-source" data-testid="import-source">
             <p class="hint">@BuilderText.ImportSource</p>
-            <MudTextField T="string" Label="@BuilderText.ImportAddress" @bind-Value="_address" Immediate="true" data-testid="import-address" />
-            <MudTextField T="string" Label="@BuilderText.ImportPaste" @bind-Value="_pasted" Lines="8" Immediate="true" data-testid="import-paste" />
+            <MudTextField T="string" Label="@BuilderText.ImportAddress" @bind-Value="_address" Immediate="true"
+                          data-testid="import-address"/>
+            <MudTextField T="string" Label="@BuilderText.ImportPaste" @bind-Value="_pasted" Lines="8" Immediate="true"
+                          data-testid="import-paste"/>
             <Button OnClick="LoadAsync" Refresh="false" data-testid="import-load">@BuilderText.ImportLoad</Button>
         </div>
     }
@@ -15,18 +17,24 @@
     {
         <Form Model="_selection" OnSubmit="ApplyAsync" Submit="@BuilderText.ImportApply" Done="@BuilderText.ImportDone">
             <p class="hint">@BuilderText.ImportOperationsLead</p>
-            <p class="note" data-testid="import-count">@string.Format(BuilderText.ImportOperationCount, _selection.Names.Count, _api.Operations.Count)</p>
+            <p class="note"
+               data-testid="import-count">@string.Format(BuilderText.ImportOperationCount, _selection.Names.Count, _api.Operations.Count)</p>
             <div class="builder-import-operations" data-testid="import-operations">
                 @foreach (var operation in _api.Operations)
                 {
-                    <MudCheckBox T="bool" Value="_selection.Names.Contains(operation.Name)" ValueChanged="chosen => Choose(operation.Name, chosen)" Dense="true" @key="operation.Name" data-operation="@operation.Name">
-                        <strong>@operation.Method</strong> <code>@operation.Path</code> <span class="note">@operation.Summary</span>
+                    <MudCheckBox T="bool" Value="_selection.Names.Contains(operation.Name)"
+                                 ValueChanged="chosen => Choose(operation.Name, chosen)" Dense="true"
+                                 @key="operation.Name" data-operation="@operation.Name">
+                        <strong>@operation.Method</strong> <code>@operation.Path</code> <span
+                            class="note">@operation.Summary</span>
                     </MudCheckBox>
                 }
             </div>
             @if (_api.BaseUrl is not null && !SameAsCurrent(_api.BaseUrl))
             {
-                <MudCheckBox T="bool" @bind-Value="_selection.UseBaseUrl" Label="@string.Format(BuilderText.ImportUseBaseUrl, _api.BaseUrl)" Dense="true" data-testid="import-base-url" />
+                <MudCheckBox T="bool" @bind-Value="_selection.UseBaseUrl"
+                             Label="@string.Format(BuilderText.ImportUseBaseUrl, _api.BaseUrl)" Dense="true"
+                             data-testid="import-base-url"/>
                 <p class="note">@BuilderText.BaseUrlAppliesOnPublish</p>
             }
         </Form>
@@ -39,17 +47,13 @@
     private string? _address;
     private string? _pasted;
 
-    [Parameter, EditorRequired]
-    public Guid ServerId { get; set; }
+    [Parameter][EditorRequired] public Guid ServerId { get; set; }
 
-    [Parameter, EditorRequired]
-    public long Revision { get; set; }
+    [Parameter][EditorRequired] public long Revision { get; set; }
 
-    [Parameter]
-    public string? CurrentBaseUrl { get; set; }
+    [Parameter] public string? CurrentBaseUrl { get; set; }
 
-    [Parameter]
-    public ImportedApi? Api { get; set; }
+    [Parameter] public ImportedApi? Api { get; set; }
 
     protected override void OnInitialized()
     {
@@ -59,8 +63,10 @@
         _selection = ImportSelection.Default(Api, CurrentBaseUrl);
     }
 
-    private bool SameAsCurrent(string address) =>
-        string.Equals(address.TrimEnd('/'), (CurrentBaseUrl ?? string.Empty).Trim().TrimEnd('/'), StringComparison.OrdinalIgnoreCase);
+    private bool SameAsCurrent(string address)
+    {
+        return string.Equals(address.TrimEnd('/'), (CurrentBaseUrl ?? string.Empty).Trim().TrimEnd('/'), StringComparison.OrdinalIgnoreCase);
+    }
 
     private void Choose(string name, bool chosen)
     {
@@ -90,4 +96,5 @@
         if (_selection.UseBaseUrl && _api!.BaseUrl is { } baseUrl)
             await Catalog.ProposeBaseUrlAsync(ServerId, baseUrl, CancellationToken.None);
     }
+
 }

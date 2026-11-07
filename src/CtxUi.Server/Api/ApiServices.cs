@@ -17,18 +17,22 @@ public static class ApiServices
 
     public static IServiceCollection AddCtxUiApi(this IServiceCollection services)
     {
-        services.AddAuthentication().AddScheme<AuthenticationSchemeOptions, ApiKeyAuthentication>(ApiKeyAuthentication.SchemeName, null);
+        services.AddAuthentication()
+            .AddScheme<AuthenticationSchemeOptions, ApiKeyAuthentication>(ApiKeyAuthentication.SchemeName, null);
         services.AddAuthorizationBuilder()
-            .AddPolicy(Policy, policy => policy.AddAuthenticationSchemes(ApiKeyAuthentication.SchemeName).RequireAuthenticatedUser());
+            .AddPolicy(Policy,
+                policy => policy.AddAuthenticationSchemes(ApiKeyAuthentication.SchemeName).RequireAuthenticatedUser());
         services.AddAuthorizationBuilder()
             .AddPolicy(ExtensionsPolicy, policy => policy
                 .AddAuthenticationSchemes(IdentityConstants.ApplicationScheme, ApiKeyAuthentication.SchemeName)
                 .RequireAuthenticatedUser());
         services.AddProblemDetails();
-        services.ConfigureHttpJsonOptions(options => options.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+        services.ConfigureHttpJsonOptions(options =>
+            options.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
         services.AddOpenApi(Document, options =>
         {
-            options.ShouldInclude = description => description.RelativePath?.StartsWith("api/", StringComparison.Ordinal) == true;
+            options.ShouldInclude = description =>
+                description.RelativePath?.StartsWith("api/", StringComparison.Ordinal) == true;
             options.AddDocumentTransformer((document, _, _) =>
             {
                 document.Info = new OpenApiInfo
@@ -36,7 +40,7 @@ public static class ApiServices
                     Title = "ctx-ui",
                     Version = Document,
                     Description = "Inbounds, clients and call accounting. Issue a key with ctx-ui apikey add <name> " +
-                        "or in the panel and send it as Authorization: Bearer <key>.",
+                                  "or in the panel and send it as Authorization: Bearer <key>."
                 };
                 document.Components ??= new OpenApiComponents();
                 document.Components.SecuritySchemes ??= new Dictionary<string, IOpenApiSecurityScheme>();
@@ -44,9 +48,13 @@ public static class ApiServices
                 {
                     Type = SecuritySchemeType.Http,
                     Scheme = "bearer",
-                    Description = "API key of the form ctxk_…",
+                    Description = "API key of the form ctxk_…"
                 };
-                document.Security = [new OpenApiSecurityRequirement { [new OpenApiSecuritySchemeReference(ApiKeyAuthentication.SchemeName, document)] = [] }];
+                document.Security =
+                [
+                    new OpenApiSecurityRequirement
+                        { [new OpenApiSecuritySchemeReference(ApiKeyAuthentication.SchemeName, document)] = [] }
+                ];
                 return Task.CompletedTask;
             });
         });

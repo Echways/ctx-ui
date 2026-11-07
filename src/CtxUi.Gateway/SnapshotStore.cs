@@ -10,7 +10,10 @@ public sealed class SnapshotStore(IServiceScopeFactory scopes) : IRoutingRefresh
 
     public RoutingSnapshot Current => _current;
 
-    public Task RefreshAsync(CancellationToken ct = default) => ReloadAsync(ct);
+    public Task RefreshAsync(CancellationToken ct = default)
+    {
+        return ReloadAsync(ct);
+    }
 
     public async Task ReloadAsync(CancellationToken ct = default)
     {
@@ -30,7 +33,9 @@ public sealed class SnapshotStore(IServiceScopeFactory scopes) : IRoutingRefresh
     {
         long revision;
         await using (var scope = scopes.CreateAsyncScope())
+        {
             revision = await scope.ServiceProvider.GetRequiredService<RoutingSnapshotLoader>().CurrentRevisionAsync(ct);
+        }
 
         if (revision == _current.Revision)
             return false;
@@ -39,5 +44,8 @@ public sealed class SnapshotStore(IServiceScopeFactory scopes) : IRoutingRefresh
         return true;
     }
 
-    public void Dispose() => _reloading.Dispose();
+    public void Dispose()
+    {
+        _reloading.Dispose();
+    }
 }

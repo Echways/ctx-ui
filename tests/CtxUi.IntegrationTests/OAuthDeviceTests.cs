@@ -26,16 +26,22 @@ public class OAuthDeviceTests
         return (flow, access, refresh);
     }
 
-    private static Task<List<Device>> DevicesAsync(GatewayHost gateway, Guid clientId) => gateway.ChangeAsync(services =>
-        services.GetRequiredService<DeviceService>().ListAsync(clientId, DateTimeOffset.MinValue));
+    private static Task<List<Device>> DevicesAsync(GatewayHost gateway, Guid clientId)
+    {
+        return gateway.ChangeAsync(services =>
+            services.GetRequiredService<DeviceService>().ListAsync(clientId, DateTimeOffset.MinValue));
+    }
 
-    private static Task SetLimitAsync(GatewayHost gateway, Guid clientId, int? limit) =>
-        gateway.ArrangeAsync(services => services.GetRequiredService<ClientService>()
+    private static Task SetLimitAsync(GatewayHost gateway, Guid clientId, int? limit)
+    {
+        return gateway.ArrangeAsync(services => services.GetRequiredService<ClientService>()
             .UpdateAsync(clientId, new ClientUpdate { Access = new ClientAccessPolicy(limit, true) }));
+    }
 
     private static async Task<HttpStatusCode> CallAsync(GatewayHost gateway, string access, string slug = "echo")
     {
-        using var response = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/" + slug, access, """{"jsonrpc":"2.0","id":1,"method":"ping"}"""));
+        using var response = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/" + slug, access,
+            """{"jsonrpc":"2.0","id":1,"method":"ping"}"""));
         return response.StatusCode;
     }
 
@@ -84,12 +90,13 @@ public class OAuthDeviceTests
         await phone.SignInWithKeyAsync(issued.Token);
         var token = OAuthFlow.Forms(phone.Page).SelectMany(form => form.Fields)
             .FirstOrDefault(field => field.Key == "__RequestVerificationToken").Value;
-        using var forced = await phone.Browser.PostAsync("/connect/limit/replace", new FormUrlEncodedContent(new Dictionary<string, string>
-        {
-            ["deviceId"] = old.Id.ToString(),
-            ["returnUrl"] = new Uri(phone.AuthorizeUrl).PathAndQuery,
-            ["__RequestVerificationToken"] = token ?? "",
-        }));
+        using var forced = await phone.Browser.PostAsync("/connect/limit/replace", new FormUrlEncodedContent(
+            new Dictionary<string, string>
+            {
+                ["deviceId"] = old.Id.ToString(),
+                ["returnUrl"] = new Uri(phone.AuthorizeUrl).PathAndQuery,
+                ["__RequestVerificationToken"] = token ?? ""
+            }));
 
         Assert.Contains("обратитесь к администратору", phone.Page);
         Assert.DoesNotContain("Отключить и войти здесь", phone.Page);
@@ -101,7 +108,8 @@ public class OAuthDeviceTests
     public async Task Revoked_device_is_refused_at_once_by_the_gateway()
     {
         await using var upstream = await FakeUpstream.StartAsync();
-        await using var gateway = await OAuthHarness.StartAsync(builder => builder.Configuration["CtxUi:RefreshInterval"] = "01:00:00");
+        await using var gateway =
+            await OAuthHarness.StartAsync(builder => builder.Configuration["CtxUi:RefreshInterval"] = "01:00:00");
         await gateway.AddInboundAsync("echo", upstream.McpUrl);
         var issued = await gateway.AddClientAsync("Иванов", ["echo"]);
         var (flow, access, _) = await ConnectAsync(gateway, issued.Token);
@@ -111,7 +119,8 @@ public class OAuthDeviceTests
 
         await gateway.ChangeAsync(async services =>
         {
-            await services.GetRequiredService<DeviceService>().RevokeAsync(issued.Client.Id, device.Id, DeviceRevocation.Admin);
+            await services.GetRequiredService<DeviceService>()
+                .RevokeAsync(issued.Client.Id, device.Id, DeviceRevocation.Admin);
             await services.GetRequiredService<ISnapshotSource>().RefreshAsync();
             return true;
         });
@@ -162,7 +171,8 @@ public class OAuthDeviceTests
     {
         var clock = new FakeTimeProvider(DateTimeOffset.UtcNow);
         await using var upstream = await FakeUpstream.StartAsync();
-        await using var gateway = await OAuthHarness.StartAsync(builder => builder.Services.AddSingleton<TimeProvider>(clock));
+        await using var gateway =
+            await OAuthHarness.StartAsync(builder => builder.Services.AddSingleton<TimeProvider>(clock));
         await gateway.AddInboundAsync("echo", upstream.McpUrl);
         var issued = await gateway.AddClientAsync("Иванов", ["echo"]);
         var (flow, _, first) = await ConnectAsync(gateway, issued.Token);
@@ -213,7 +223,8 @@ public class OAuthDeviceTests
 
         await gateway.ArrangeAsync(async services =>
         {
-            await services.GetRequiredService<ClientService>().UpdateAsync(issued.Client.Id, new ClientUpdate { InboundSlugs = ["docs"] });
+            await services.GetRequiredService<ClientService>()
+                .UpdateAsync(issued.Client.Id, new ClientUpdate { InboundSlugs = ["docs"] });
             await services.GetRequiredService<InboundService>().SetEnabledAsync("docs", false);
         });
 
@@ -231,7 +242,8 @@ public class OAuthDeviceTests
         var (flow, access, refresh) = await ConnectAsync(gateway, issued.Token);
         using var _ = flow;
 
-        await gateway.ArrangeAsync(services => services.GetRequiredService<ClientService>().SetEnabledAsync(issued.Client.Id, false));
+        await gateway.ArrangeAsync(services =>
+            services.GetRequiredService<ClientService>().SetEnabledAsync(issued.Client.Id, false));
 
         Assert.Equal("invalid_grant", (await flow.RefreshAsync(refresh)).Error);
         Assert.Equal(HttpStatusCode.Unauthorized, await CallAsync(gateway, access));
@@ -273,7 +285,8 @@ public class OAuthDeviceTests
         using var _ = flow;
 
         using var request = GatewayHost.Post("/mcp/echo", access);
-        request.Headers.TryAddWithoutValidation("Cookie", "ctx-ui-connect=s; ctx-ui-connectC1=p; ctx-ui-device=d; ctx-ui-external=e; a=1");
+        request.Headers.TryAddWithoutValidation("Cookie",
+            "ctx-ui-connect=s; ctx-ui-connectC1=p; ctx-ui-device=d; ctx-ui-external=e; a=1");
         using var response = await gateway.Http.SendAsync(request);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -324,7 +337,8 @@ public class OAuthDeviceTests
         Assert.Equal(HttpStatusCode.Found, revoked.StatusCode);
         Assert.Equal(HttpStatusCode.Unauthorized, await CallAsync(gateway, laptopAccess));
         Assert.Equal(HttpStatusCode.OK, await CallAsync(gateway, phoneAccess));
-        Assert.Equal(DeviceRevocation.User, (await DevicesAsync(gateway, issued.Client.Id)).Single(device => device.Id == target.Id).RevokedReason);
+        Assert.Equal(DeviceRevocation.User,
+            (await DevicesAsync(gateway, issued.Client.Id)).Single(device => device.Id == target.Id).RevokedReason);
     }
 
     [Fact]
@@ -336,7 +350,8 @@ public class OAuthDeviceTests
         var (flow, _, _) = await ConnectAsync(gateway, issued.Token);
         using var _ = flow;
         using var page = await flow.Browser.GetAsync("/connect/devices");
-        var form = OAuthFlow.Forms(await page.Content.ReadAsStringAsync()).Single(form => form.Action == "/connect/signout");
+        var form = OAuthFlow.Forms(await page.Content.ReadAsStringAsync())
+            .Single(form => form.Action == "/connect/signout");
 
         using var signedOut = await flow.Browser.PostAsync(form.Action, new FormUrlEncodedContent(form.Fields));
         using var after = await flow.Browser.GetAsync("/connect/devices");
@@ -356,7 +371,8 @@ public class OAuthDeviceTests
         using var _ = flow;
         var device = Assert.Single(await DevicesAsync(gateway, issued.Client.Id));
 
-        using var forged = await flow.Browser.PostAsync($"/connect/devices/{device.Id}/revoke", new FormUrlEncodedContent([]));
+        using var forged =
+            await flow.Browser.PostAsync($"/connect/devices/{device.Id}/revoke", new FormUrlEncodedContent([]));
 
         Assert.Equal(HttpStatusCode.BadRequest, forged.StatusCode);
         Assert.Contains("Страница устарела", await forged.Content.ReadAsStringAsync());
@@ -428,7 +444,8 @@ public class OAuthDeviceTests
         var statuses = new List<HttpStatusCode>();
         for (var attempt = 0; attempt < 11; attempt++)
         {
-            using var response = await flow.Browser.PostAsync("/connect/signin", new FormUrlEncodedContent(form.Fields));
+            using var response =
+                await flow.Browser.PostAsync("/connect/signin", new FormUrlEncodedContent(form.Fields));
             statuses.Add(response.StatusCode);
             if (attempt == 10)
                 Assert.Contains("Слишком много попыток", await response.Content.ReadAsStringAsync());
@@ -464,7 +481,8 @@ public class OAuthDeviceTests
         var (flow, access, refresh) = await ConnectAsync(gateway, issued.Token);
         using var _ = flow;
 
-        await gateway.ArrangeAsync(services => services.GetRequiredService<ClientService>().RemoveAsync(issued.Client.Id));
+        await gateway.ArrangeAsync(services =>
+            services.GetRequiredService<ClientService>().RemoveAsync(issued.Client.Id));
 
         Assert.Equal(HttpStatusCode.Unauthorized, await CallAsync(gateway, access));
         Assert.Equal("invalid_grant", (await flow.RefreshAsync(refresh)).Error);
@@ -474,7 +492,8 @@ public class OAuthDeviceTests
     public async Task Janitor_revokes_idle_devices_and_their_authorizations()
     {
         var clock = new FakeTimeProvider(DateTimeOffset.UtcNow);
-        await using var gateway = await OAuthHarness.StartAsync(builder => builder.Services.AddSingleton<TimeProvider>(clock));
+        await using var gateway =
+            await OAuthHarness.StartAsync(builder => builder.Services.AddSingleton<TimeProvider>(clock));
         await gateway.AddInboundAsync("echo", "https://mcp.example.org/mcp");
         var issued = await gateway.AddClientAsync("Иванов", ["echo"]);
         var (flow, _, _) = await ConnectAsync(gateway, issued.Token);

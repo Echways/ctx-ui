@@ -39,8 +39,10 @@ public sealed class AdminAccounts(CtxUiDbContext db, IPasswordHasher<Admin> hash
         return new IssuedAdmin(admin, password);
     }
 
-    public Task<List<Admin>> ListAsync(CancellationToken ct = default) =>
-        db.Admins.AsNoTracking().OrderBy(admin => admin.NameKey).ToListAsync(ct);
+    public Task<List<Admin>> ListAsync(CancellationToken ct = default)
+    {
+        return db.Admins.AsNoTracking().OrderBy(admin => admin.NameKey).ToListAsync(ct);
+    }
 
     public async Task RemoveAsync(string name, CancellationToken ct = default)
     {
@@ -52,7 +54,7 @@ public sealed class AdminAccounts(CtxUiDbContext db, IPasswordHasher<Admin> hash
     {
         var key = AdminName.Key(name.Trim());
         return await db.Admins.SingleOrDefaultAsync(admin => admin.NameKey == key, ct)
-            ?? throw AdminName.NotFound(name.Trim());
+               ?? throw AdminName.NotFound(name.Trim());
     }
 
     private string Renew(Admin admin)

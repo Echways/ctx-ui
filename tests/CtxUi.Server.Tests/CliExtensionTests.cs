@@ -9,7 +9,7 @@ public sealed class CliExtensionTests : IDisposable
     public void Dispose()
     {
         Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
-        Directory.Delete(_dataDir, recursive: true);
+        Directory.Delete(_dataDir, true);
     }
 
     private async Task<(int Code, string Output, string Error)> RunAsync(params string[] args)
@@ -25,7 +25,10 @@ public sealed class CliExtensionTests : IDisposable
     }
 
     [Fact]
-    public void Extension_is_a_cli_command() => Assert.True(Cli.Handles(["extension", "list"]));
+    public void Extension_is_a_cli_command()
+    {
+        Assert.True(Cli.Handles(["extension", "list"]));
+    }
 
     [Fact]
     public async Task Install_list_and_remove_work_and_remind_about_the_restart()

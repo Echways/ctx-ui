@@ -9,15 +9,18 @@ public class UsageTests
 {
     private static readonly DateTimeOffset Start = new(2026, 10, 12, 10, 0, 0, TimeSpan.Zero);
 
-    private static Task<Client> ReadClientAsync(GatewayHost gateway) =>
-        gateway.ChangeAsync(services => services.GetRequiredService<ClientService>().GetAsync("Иванов"));
+    private static Task<Client> ReadClientAsync(GatewayHost gateway)
+    {
+        return gateway.ChangeAsync(services => services.GetRequiredService<ClientService>().GetAsync("Иванов"));
+    }
 
     [Fact]
     public async Task Use_is_recorded_on_the_first_request_and_then_at_most_once_a_minute()
     {
         var clock = new FakeTimeProvider(Start);
         await using var upstream = await FakeUpstream.StartAsync();
-        await using var gateway = await GatewayHost.StartAsync(builder => builder.Services.AddSingleton<TimeProvider>(clock));
+        await using var gateway =
+            await GatewayHost.StartAsync(builder => builder.Services.AddSingleton<TimeProvider>(clock));
         await gateway.AddInboundAsync("echo", upstream.McpUrl);
         var issued = await gateway.AddClientAsync("Иванов", ["echo"]);
         Assert.Null((await ReadClientAsync(gateway)).LastUsedAt);

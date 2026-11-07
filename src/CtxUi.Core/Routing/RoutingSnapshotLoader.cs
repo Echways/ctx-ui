@@ -15,8 +15,10 @@ public sealed partial class RoutingSnapshotLoader(
     TimeProvider clock,
     ILogger<RoutingSnapshotLoader> logger)
 {
-    public Task<long> CurrentRevisionAsync(CancellationToken ct = default) =>
-        db.RoutingStates.AsNoTracking().Select(state => state.Revision).SingleAsync(ct);
+    public Task<long> CurrentRevisionAsync(CancellationToken ct = default)
+    {
+        return db.RoutingStates.AsNoTracking().Select(state => state.Revision).SingleAsync(ct);
+    }
 
     public async Task<RoutingSnapshot> LoadAsync(CancellationToken ct = default)
     {
@@ -43,7 +45,7 @@ public sealed partial class RoutingSnapshotLoader(
                 inbound.ForwardIdentity,
                 TimeSpan.FromSeconds(inbound.RequestTimeoutSeconds))
             {
-                MaxBodyBytes = inbound.MaxBodyBytes,
+                MaxBodyBytes = inbound.MaxBodyBytes
             });
         }
 
@@ -56,20 +58,20 @@ public sealed partial class RoutingSnapshotLoader(
 
         var clients = await db.Clients.AsNoTracking().Include(client => client.Inbounds).ToListAsync(ct);
         return new RoutingSnapshot(revision, routes, clients.Select(client => KeyValuePair.Create(
-            client.TokenHash,
-            new ClientAccess(
-                client.Id,
-                client.Name,
-                client.Enabled,
-                client.ExpiresAt,
-                client.Inbounds.Select(link => link.InboundId).ToFrozenSet(),
-                client.Metadata)
-            {
-                Limits = ClientLimits.Of(client),
-                PeriodStartedAt = client.PeriodStartedAt,
-                DirectKey = client.DirectKey,
-                MaxDevices = client.MaxDevices,
-            })),
+                client.TokenHash,
+                new ClientAccess(
+                    client.Id,
+                    client.Name,
+                    client.Enabled,
+                    client.ExpiresAt,
+                    client.Inbounds.Select(link => link.InboundId).ToFrozenSet(),
+                    client.Metadata)
+                {
+                    Limits = ClientLimits.Of(client),
+                    PeriodStartedAt = client.PeriodStartedAt,
+                    DirectKey = client.DirectKey,
+                    MaxDevices = client.MaxDevices
+                })),
             devices,
             await SignInAsync(settings, ct));
     }
@@ -77,8 +79,9 @@ public sealed partial class RoutingSnapshotLoader(
     private async Task<SignInConfig> SignInAsync(SignInSettings settings, CancellationToken ct)
     {
         var providers = new List<ProviderConfig>();
-        foreach (var provider in (await db.SignInProviders.AsNoTracking().Where(provider => provider.Enabled).ToListAsync(ct))
-                     .OrderBy(provider => ProviderCatalog.Order(provider.Name)))
+        foreach (var provider in (await db.SignInProviders.AsNoTracking().Where(provider => provider.Enabled)
+                     .ToListAsync(ct))
+                 .OrderBy(provider => ProviderCatalog.Order(provider.Name)))
         {
             if (vault.Open(provider.SecretSealed) is not { } secret)
             {
@@ -86,15 +89,18 @@ public sealed partial class RoutingSnapshotLoader(
                 continue;
             }
 
-            providers.Add(new ProviderConfig(provider.Name, provider.ClientId, secret, provider.Issuer, provider.Title));
+            providers.Add(new ProviderConfig(provider.Name, provider.ClientId, secret, provider.Issuer,
+                provider.Title));
         }
 
-        return new SignInConfig(settings.Enabled, settings.KeySignIn, settings.SelfRevoke, settings.IdleDays, providers);
+        return new SignInConfig(settings.Enabled, settings.KeySignIn, settings.SelfRevoke, settings.IdleDays,
+            providers);
     }
 
     [LoggerMessage(
         Level = LogLevel.Warning,
-        Message = "inbound {Slug} skipped: no address or upstream headers cannot be decrypted, check the keys directory")]
+        Message =
+            "inbound {Slug} skipped: no address or upstream headers cannot be decrypted, check the keys directory")]
     private static partial void InboundSkipped(ILogger logger, string slug);
 
     [LoggerMessage(

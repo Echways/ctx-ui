@@ -1,7 +1,7 @@
 @implements IAsyncDisposable
 @inject RunnerClient Runner
 @inject RunnerSettings Settings
-@inject ReleaseReader Reader
+@inject ReleaseCatalog Releases
 
 <div class="builder-logs">
     <Pane Title="@BuilderText.LogsRuntime" Hint="@string.Format(BuilderText.LogsLineLimit, LogBuffer.MaxLines)">
@@ -9,10 +9,12 @@
         {
             <p class="bad-t" role="alert" data-testid="logs-failure">@_failure</p>
         }
-        <pre class="builder-log" data-testid="runtime-log">@(_lines.Count == 0 ? BuilderText.LogsEmpty : string.Join('\n', _lines))</pre>
+        <pre class="builder-log"
+             data-testid="runtime-log">@(_lines.Count == 0 ? BuilderText.LogsEmpty : string.Join('\n', _lines))</pre>
     </Pane>
     <Pane Title="@BuilderText.LogsLastBuild">
-        <pre class="builder-log" data-testid="build-log">@(string.IsNullOrEmpty(_buildLog) ? BuilderText.NoBuildLog : _buildLog)</pre>
+        <pre class="builder-log"
+             data-testid="build-log">@(string.IsNullOrEmpty(_buildLog) ? BuilderText.NoBuildLog : _buildLog)</pre>
     </Pane>
 </div>
 
@@ -27,12 +29,11 @@
     private bool _dirty;
     private Task _follow = Task.CompletedTask;
 
-    [Parameter, EditorRequired]
-    public Guid ServerId { get; set; }
+    [Parameter][EditorRequired] public Guid ServerId { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
-        _buildLog = (await Reader.ListAsync(ServerId, CancellationToken.None)).FirstOrDefault(release => release.BuildLog.Length > 0)?.BuildLog;
+        _buildLog = await Releases.LatestBuildLogAsync(ServerId, CancellationToken.None);
         if (!Settings.IsComplete)
         {
             _failure = string.Format(BuilderText.RunnerNotConfigured, string.Join(", ", Settings.Missing));
@@ -90,4 +91,5 @@
         {
         }
     }
+
 }

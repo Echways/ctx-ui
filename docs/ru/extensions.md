@@ -219,7 +219,7 @@ public void MapEndpoints(IEndpointRouteBuilder endpoints)
 ### Работа при старте
 
 Реализуйте `IExtensionInitializer` и зарегистрируйте его. Он выполняется один раз при
-старте, до приёма запросов, в отдельном scope.
+старте, до приёма запросов. Инициализаторы выполняются по очереди в одном scope.
 
 ```csharp
 context.Services.AddScoped<IExtensionInitializer, ImportDefaults>();
@@ -232,7 +232,9 @@ context.AddDatabase<ReportsDatabase>();
 ```
 
 Контекст регистрируется на SQLite в `<DataDirectory>/data.db`, миграции применяются при
-каждом старте. Чтобы создавать миграции, добавьте пакет и фабрику:
+каждом старте. Доступны и scoped-контекст, и `IDbContextFactory<TContext>`; компонентам
+Blazor лучше брать фабрику и создавать контекст на операцию, потому что scope компонента
+живёт столько же, сколько вкладка браузера. Чтобы создавать миграции, добавьте пакет и фабрику:
 
 ```xml
 <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.*" PrivateAssets="all" />

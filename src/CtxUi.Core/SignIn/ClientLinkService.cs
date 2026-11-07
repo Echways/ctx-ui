@@ -9,7 +9,7 @@ public enum LinkOutcome
     Linked,
     AlreadyLinked,
     InviteInvalid,
-    TakenByOtherClient,
+    TakenByOtherClient
 }
 
 public sealed record LinkResult(LinkOutcome Outcome, Guid? ClientId);
@@ -19,7 +19,7 @@ public sealed class ClientLinkService(CtxUiDbContext db, TimeProvider clock)
     public async Task<string> InviteAsync(Guid clientId, CancellationToken ct = default)
     {
         var client = await db.Clients.SingleOrDefaultAsync(saved => saved.Id == clientId, ct)
-            ?? throw new NotFoundException(CoreText.ClientIdNotFound);
+                     ?? throw new NotFoundException(CoreText.ClientIdNotFound);
         var code = InviteCode.Generate();
         client.InviteHash = InviteCode.Hash(code);
         client.InviteExpiresAt = clock.GetUtcNow() + InviteCode.Lifetime;
@@ -27,8 +27,10 @@ public sealed class ClientLinkService(CtxUiDbContext db, TimeProvider clock)
         return code;
     }
 
-    public async Task<Guid?> InvitedClientAsync(string code, CancellationToken ct = default) =>
-        (await FindInvitedAsync(code, ct))?.Id;
+    public async Task<Guid?> InvitedClientAsync(string code, CancellationToken ct = default)
+    {
+        return (await FindInvitedAsync(code, ct))?.Id;
+    }
 
     public async Task<LinkResult> LinkAsync(string code, ExternalIdentity identity, CancellationToken ct = default)
     {
@@ -41,7 +43,6 @@ public sealed class ClientLinkService(CtxUiDbContext db, TimeProvider clock)
             return new LinkResult(LinkOutcome.TakenByOtherClient, other);
 
         if (owner is null)
-        {
             db.ClientLinks.Add(new ClientLink
             {
                 Id = Guid.NewGuid(),
@@ -49,9 +50,8 @@ public sealed class ClientLinkService(CtxUiDbContext db, TimeProvider clock)
                 Provider = identity.Provider,
                 Subject = identity.Subject,
                 Display = identity.Display,
-                LinkedAt = clock.GetUtcNow(),
+                LinkedAt = clock.GetUtcNow()
             });
-        }
 
         client.InviteHash = null;
         client.InviteExpiresAt = null;
@@ -67,22 +67,27 @@ public sealed class ClientLinkService(CtxUiDbContext db, TimeProvider clock)
         return new LinkResult(owner is null ? LinkOutcome.Linked : LinkOutcome.AlreadyLinked, client.Id);
     }
 
-    public Task<Guid?> ClientOfAsync(ExternalIdentity identity, CancellationToken ct = default) =>
-        db.ClientLinks.AsNoTracking()
+    public Task<Guid?> ClientOfAsync(ExternalIdentity identity, CancellationToken ct = default)
+    {
+        return db.ClientLinks.AsNoTracking()
             .Where(link => link.Provider == identity.Provider && link.Subject == identity.Subject)
             .Select(link => (Guid?)link.ClientId)
             .SingleOrDefaultAsync(ct);
+    }
 
-    public Task<List<ClientLink>> ListAsync(Guid clientId, CancellationToken ct = default) =>
-        db.ClientLinks.AsNoTracking()
+    public Task<List<ClientLink>> ListAsync(Guid clientId, CancellationToken ct = default)
+    {
+        return db.ClientLinks.AsNoTracking()
             .Where(link => link.ClientId == clientId)
             .OrderBy(link => link.LinkedAt).ThenBy(link => link.Provider)
             .ToListAsync(ct);
+    }
 
     public async Task UnlinkAsync(Guid clientId, string provider, CancellationToken ct = default)
     {
         var name = provider.Trim().ToLowerInvariant();
-        var links = await db.ClientLinks.Where(link => link.ClientId == clientId && link.Provider == name).ToListAsync(ct);
+        var links = await db.ClientLinks.Where(link => link.ClientId == clientId && link.Provider == name)
+            .ToListAsync(ct);
         if (links.Count == 0)
             throw new NotFoundException(string.Format(CoreText.LinkNotFound, name));
 
@@ -92,8 +97,9 @@ public sealed class ClientLinkService(CtxUiDbContext db, TimeProvider clock)
 
     public async Task UnlinkAsync(Guid clientId, Guid linkId, CancellationToken ct = default)
     {
-        var link = await db.ClientLinks.SingleOrDefaultAsync(saved => saved.Id == linkId && saved.ClientId == clientId, ct)
-            ?? throw new NotFoundException(CoreText.LinkIdNotFound);
+        var link = await db.ClientLinks.SingleOrDefaultAsync(saved => saved.Id == linkId && saved.ClientId == clientId,
+                       ct)
+                   ?? throw new NotFoundException(CoreText.LinkIdNotFound);
         db.ClientLinks.Remove(link);
         await db.SaveChangesAsync(ct);
     }

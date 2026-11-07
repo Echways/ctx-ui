@@ -10,7 +10,7 @@ public enum ForwardOutcome
 {
     Completed,
     ClientAborted,
-    UpstreamFailed,
+    UpstreamFailed
 }
 
 public readonly record struct Forwarded(ForwardOutcome Outcome, long ResponseBytes);
@@ -24,7 +24,7 @@ public sealed partial class HttpUpstream(IHttpForwarder forwarder, ILogger<HttpU
         AutomaticDecompression = DecompressionMethods.None,
         UseCookies = false,
         EnableMultipleHttp2Connections = true,
-        ConnectTimeout = TimeSpan.FromSeconds(15),
+        ConnectTimeout = TimeSpan.FromSeconds(15)
     });
 
     public async Task<Forwarded> ForwardAsync(HttpContext context, InboundRoute route, ClientAccess client)
@@ -34,7 +34,10 @@ public sealed partial class HttpUpstream(IHttpForwarder forwarder, ILogger<HttpU
         return new Forwarded(await SendAsync(context, route, client), traffic.Bytes);
     }
 
-    public void Dispose() => _client.Dispose();
+    public void Dispose()
+    {
+        _client.Dispose();
+    }
 
     private async Task<ForwardOutcome> SendAsync(HttpContext context, InboundRoute route, ClientAccess client)
     {
@@ -58,7 +61,8 @@ public sealed partial class HttpUpstream(IHttpForwarder forwarder, ILogger<HttpU
                 ClientAborted(logger, route.Slug, error);
                 return ForwardOutcome.ClientAborted;
             default:
-                UpstreamFailed(logger, route.Slug, error, context.Features.Get<IForwarderErrorFeature>()?.Exception?.Message);
+                UpstreamFailed(logger, route.Slug, error,
+                    context.Features.Get<IForwarderErrorFeature>()?.Exception?.Message);
                 return ForwardOutcome.UpstreamFailed;
         }
     }
@@ -66,6 +70,7 @@ public sealed partial class HttpUpstream(IHttpForwarder forwarder, ILogger<HttpU
     [LoggerMessage(Level = LogLevel.Information, Message = "inbound {Slug}: the client aborted the request ({Error})")]
     private static partial void ClientAborted(ILogger logger, string slug, ForwarderError error);
 
-    [LoggerMessage(Level = LogLevel.Warning, Message = "inbound {Slug}: the upstream did not answer ({Error}): {Reason}")]
+    [LoggerMessage(Level = LogLevel.Warning,
+        Message = "inbound {Slug}: the upstream did not answer ({Error}): {Reason}")]
     private static partial void UpstreamFailed(ILogger logger, string slug, ForwarderError error, string? reason);
 }

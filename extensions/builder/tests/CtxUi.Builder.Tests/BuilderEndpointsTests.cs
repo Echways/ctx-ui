@@ -1,11 +1,9 @@
 using System.Formats.Tar;
 using System.IO.Compression;
 using System.Net;
-using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using CtxUi.Builder.Contracts;
-using CtxUi.Builder.Data;
 using CtxUi.Builder.Publishing;
 using CtxUi.Builder.Runner;
 using CtxUi.Builder.Servers;
@@ -14,7 +12,6 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Hosting.Server.Features;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace CtxUi.Builder.Tests;
@@ -37,15 +34,15 @@ public sealed class BuilderEndpointsTests
         {
             var builder = WebApplication.CreateBuilder();
             builder.WebHost.UseUrls("http://127.0.0.1:0");
-            builder.Services.AddDbContext<BuilderDatabase>(options => options.UseSqlite($"Data Source={Path.Combine(harness.DataDirectory, "data.db")}"));
-            builder.Services.AddScoped(provider => new ServerCatalog(provider.GetRequiredService<BuilderDatabase>(), harness.Box, TimeProvider.System));
+            builder.Services.AddSingleton(harness.Services.GetRequiredService<ServerCatalog>());
             builder.Services.AddSingleton(harness.Services.GetRequiredService<PublishQueue>());
-            builder.Services.AddSingleton(harness.Services.GetRequiredService<ReleaseReader>());
+            builder.Services.AddTransient(_ => harness.Services.GetRequiredService<ReleaseCatalog>());
             builder.Services.AddSingleton(harness.Services.GetRequiredService<RunnerSettings>());
             var app = builder.Build();
             BuilderEndpoints.Map(app);
             await app.StartAsync();
-            var address = app.Services.GetRequiredService<IServer>().Features.Get<IServerAddressesFeature>()!.Addresses.Single();
+            var address = app.Services.GetRequiredService<IServer>().Features.Get<IServerAddressesFeature>()!.Addresses
+                .Single();
             return new EndpointHost(app, new HttpClient { BaseAddress = new Uri(address) });
         }
 
@@ -56,7 +53,8 @@ public sealed class BuilderEndpointsTests
         }
     }
 
-    private static async Task<(PublishHarness Harness, EndpointHost Host, Guid Server)> StartedAsync(bool configured = true)
+    private static async Task<(PublishHarness Harness, EndpointHost Host, Guid Server)> StartedAsync(
+        bool configured = true)
     {
         var harness = await PublishHarness.CreateAsync(configured);
         var server = await harness.CreateServerAsync();
@@ -64,8 +62,10 @@ public sealed class BuilderEndpointsTests
         return (harness, await EndpointHost.StartAsync(harness), server);
     }
 
-    private static async Task<JsonElement> JsonOf(HttpResponseMessage response) =>
-        JsonDocument.Parse(await response.Content.ReadAsStringAsync()).RootElement.Clone();
+    private static async Task<JsonElement> JsonOf(HttpResponseMessage response)
+    {
+        return JsonDocument.Parse(await response.Content.ReadAsStringAsync()).RootElement.Clone();
+    }
 
     [Fact]
     public async Task Publish_endpoint_starts_a_publish_and_returns_its_number()
@@ -123,9 +123,12 @@ public sealed class BuilderEndpointsTests
         await using var __ = host;
 
         Assert.Equal(HttpStatusCode.NotFound, (await host.Client.GetAsync($"/servers/{Guid.NewGuid()}")).StatusCode);
-        Assert.Equal(HttpStatusCode.NotFound, (await host.Client.GetAsync($"/servers/{Guid.NewGuid()}/export")).StatusCode);
-        Assert.Equal(HttpStatusCode.NotFound, (await host.Client.PostAsync($"/servers/{Guid.NewGuid()}/publish", null)).StatusCode);
-        Assert.Equal(HttpStatusCode.NotFound, (await host.Client.PostAsync($"/servers/{server}/rollback/9", null)).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound,
+            (await host.Client.GetAsync($"/servers/{Guid.NewGuid()}/export")).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound,
+            (await host.Client.PostAsync($"/servers/{Guid.NewGuid()}/publish", null)).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound,
+            (await host.Client.PostAsync($"/servers/{server}/rollback/9", null)).StatusCode);
     }
 
     [Fact]
@@ -150,7 +153,8 @@ public sealed class BuilderEndpointsTests
         await using var _ = harness;
         await using var __ = host;
         harness.Runner.HoldBuilds = true;
-        Assert.Equal(HttpStatusCode.Accepted, (await host.Client.PostAsync($"/servers/{server}/publish", null)).StatusCode);
+        Assert.Equal(HttpStatusCode.Accepted,
+            (await host.Client.PostAsync($"/servers/{server}/publish", null)).StatusCode);
 
         var response = await host.Client.PostAsync($"/servers/{server}/publish", null);
 
@@ -165,18 +169,35 @@ public sealed class BuilderEndpointsTests
         await using var _ = harness;
         await using var __ = host;
 
-        Assert.Equal(HttpStatusCode.BadRequest, (await host.Client.PostAsync($"/servers/{server}/publish?mode=sideways", null)).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest,
+            (await host.Client.PostAsync($"/servers/{server}/publish?mode=sideways", null)).StatusCode);
+    }
+
+    [Fact]
+    public async Task Unreachable_runner_is_a_bad_gateway()
+    {
+        var (harness, host, server) = await StartedAsync();
+        await using var _ = harness;
+        await using var __ = host;
+        harness.Runner.Unreachable = true;
+
+        var response = await host.Client.PostAsync($"/servers/{server}/publish", null);
+
+        Assert.Equal(HttpStatusCode.BadGateway, response.StatusCode);
+        Assert.False(string.IsNullOrEmpty((await JsonOf(response)).GetProperty("detail").GetString()));
     }
 
     [Fact]
     public async Task Unconfigured_runner_is_service_unavailable()
     {
-        var (harness, host, server) = await StartedAsync(configured: false);
+        var (harness, host, server) = await StartedAsync(false);
         await using var _ = harness;
         await using var __ = host;
 
-        Assert.Equal(HttpStatusCode.ServiceUnavailable, (await host.Client.PostAsync($"/servers/{server}/publish", null)).StatusCode);
-        Assert.Equal(HttpStatusCode.ServiceUnavailable, (await host.Client.PostAsync($"/servers/{server}/rollback/1", null)).StatusCode);
+        Assert.Equal(HttpStatusCode.ServiceUnavailable,
+            (await host.Client.PostAsync($"/servers/{server}/publish", null)).StatusCode);
+        Assert.Equal(HttpStatusCode.ServiceUnavailable,
+            (await host.Client.PostAsync($"/servers/{server}/rollback/1", null)).StatusCode);
     }
 
     [Fact]
@@ -187,7 +208,8 @@ public sealed class BuilderEndpointsTests
         await using var __ = host;
         await harness.WithScopeAsync(async services =>
         {
-            await services.GetRequiredService<ServerCatalog>().SetSecretAsync(server, "API_KEY", "top-secret-value", default);
+            await services.GetRequiredService<ServerCatalog>()
+                .SetSecretAsync(server, "API_KEY", "top-secret-value", default);
             return true;
         });
         var number = await harness.PublishAndWaitAsync(server);
@@ -218,16 +240,20 @@ public sealed class BuilderEndpointsTests
         {
             var catalog = services.GetRequiredService<ServerCatalog>();
             await catalog.SetSecretAsync(server, "API_KEY", "top-secret-value", default);
-            await catalog.SetApiAsync(server, "https://api.example.com", new ApiAuthInput(ApiAuthKind.Bearer, Secret: "bearer-secret-value"), 0, default);
+            await catalog.SetApiAsync(server, "https://api.example.com",
+                new ApiAuthInput(ApiAuthKind.Bearer, Secret: "bearer-secret-value"), 0, default);
             var draft = await catalog.DraftAsync(server, default);
-            await catalog.SaveResourceAsync(server, new BuilderResource("data://cities", "cities", "text/plain", "Berlin"), null, draft.Revision, default);
+            await catalog.SaveResourceAsync(server,
+                new BuilderResource("data://cities", "cities", "text/plain", "Berlin"), null, draft.Revision, default);
             return true;
         });
 
         var response = await host.Client.GetAsync($"/servers/{server}/export");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Equal("weather.tar.gz", response.Content.Headers.ContentDisposition!.FileNameStar ?? response.Content.Headers.ContentDisposition.FileName);
+        Assert.Equal("weather.tar.gz",
+            response.Content.Headers.ContentDisposition!.FileNameStar ??
+            response.Content.Headers.ContentDisposition.FileName);
         var entries = await ReadArchiveAsync(await response.Content.ReadAsByteArrayAsync());
         Assert.Equal(["builder.json", "fastmcp.json", "main.py", "mcp/hello.py"], entries.Keys.Order());
         using var settings = JsonDocument.Parse(entries["fastmcp.json"]);
@@ -235,7 +261,9 @@ public sealed class BuilderEndpointsTests
         Assert.Equal("mcp", settings.RootElement.GetProperty("source").GetProperty("entrypoint").GetString());
         Assert.Contains("mcp = build_server()", entries["main.py"]);
         Assert.Contains("data://cities", entries["builder.json"]);
-        Assert.DoesNotContain(entries.Values, content => content.Contains("top-secret-value") || content.Contains("bearer-secret-value") || content.Contains("API_KEY"));
+        Assert.DoesNotContain(entries.Values,
+            content => content.Contains("top-secret-value") || content.Contains("bearer-secret-value") ||
+                       content.Contains("API_KEY"));
     }
 
     private static async Task<Dictionary<string, string>> ReadArchiveAsync(byte[] archive)

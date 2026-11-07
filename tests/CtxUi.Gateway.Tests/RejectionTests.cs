@@ -54,7 +54,8 @@ public class RejectionTests
         var context = await WriteAsync(AccessStatus.DirectKeyOff, Metadata);
 
         Assert.Equal(StatusCodes.Status401Unauthorized, context.Response.StatusCode);
-        Assert.Equal($"Bearer resource_metadata=\"{Metadata}\", scope=\"mcp\"", context.Response.Headers.WWWAuthenticate.ToString());
+        Assert.Equal($"Bearer resource_metadata=\"{Metadata}\", scope=\"mcp\"",
+            context.Response.Headers.WWWAuthenticate.ToString());
         Assert.Equal("direct_key_off", Error(context));
     }
 
@@ -63,8 +64,10 @@ public class RejectionTests
     [InlineData(AccessStatus.TokenUnknown)]
     [InlineData(AccessStatus.DirectKeyOff)]
     [InlineData(AccessStatus.TokenInvalid)]
-    public async Task Without_oauth_the_challenge_stays_plain_bearer(AccessStatus status) =>
+    public async Task Without_oauth_the_challenge_stays_plain_bearer(AccessStatus status)
+    {
         Assert.Equal("Bearer", (await WriteAsync(status, null)).Response.Headers.WWWAuthenticate.ToString());
+    }
 
     [Fact]
     public async Task Not_found_has_no_challenge()

@@ -11,12 +11,15 @@ public class QuotaLedgerTests
 
     private readonly QuotaLedger _ledger = new();
 
-    private static ClientAccess Client(int? quota = 3, int? resetEveryDays = 30, DateTimeOffset? periodStartedAt = null, Guid? id = null) =>
-        new(id ?? Id, "Иванов", true, null, FrozenSet<Guid>.Empty, new Dictionary<string, string>())
+    private static ClientAccess Client(int? quota = 3, int? resetEveryDays = 30, DateTimeOffset? periodStartedAt = null,
+        Guid? id = null)
+    {
+        return new ClientAccess(id ?? Id, "Иванов", true, null, FrozenSet<Guid>.Empty, new Dictionary<string, string>())
         {
             Limits = new ClientLimits(QuotaCalls: quota, ResetEveryDays: resetEveryDays),
-            PeriodStartedAt = periodStartedAt ?? Start,
+            PeriodStartedAt = periodStartedAt ?? Start
         };
+    }
 
     private async Task<IReadOnlyCollection<StoredUsage>> FlushedAsync()
     {
@@ -32,7 +35,7 @@ public class QuotaLedgerTests
     [Fact]
     public void Calls_within_the_quota_are_accepted_and_the_next_one_is_refused()
     {
-        var client = Client(quota: 3);
+        var client = Client(3);
 
         for (var call = 0; call < 3; call++)
             Assert.True(_ledger.Charge(client, 1, Start).Accepted);
@@ -44,7 +47,7 @@ public class QuotaLedgerTests
     [Fact]
     public async Task Refused_call_is_not_counted()
     {
-        var client = Client(quota: 1);
+        var client = Client(1);
         _ledger.Charge(client, 1, Start);
 
         _ledger.Charge(client, 1, Start);
@@ -56,7 +59,7 @@ public class QuotaLedgerTests
     [Fact]
     public async Task Several_calls_are_charged_all_or_nothing()
     {
-        var client = Client(quota: 5);
+        var client = Client(5);
         _ledger.Charge(client, 3, Start);
 
         Assert.False(_ledger.Charge(client, 3, Start).Accepted);
@@ -67,7 +70,7 @@ public class QuotaLedgerTests
     [Fact]
     public async Task Calls_are_counted_even_when_there_is_no_quota()
     {
-        var client = Client(quota: null, resetEveryDays: null);
+        var client = Client(null, null);
 
         for (var call = 0; call < 50; call++)
             Assert.True(_ledger.Charge(client, 1, Start.AddDays(call)).Accepted);
@@ -78,7 +81,7 @@ public class QuotaLedgerTests
     [Fact]
     public void Refund_gives_the_calls_back()
     {
-        var client = Client(quota: 1);
+        var client = Client(1);
         var charge = _ledger.Charge(client, 1, Start);
         Assert.False(_ledger.Charge(client, 1, Start).Accepted);
 
@@ -90,7 +93,7 @@ public class QuotaLedgerTests
     [Fact]
     public async Task Refund_of_a_refused_charge_or_of_a_past_period_changes_nothing()
     {
-        var client = Client(quota: 2, resetEveryDays: 7);
+        var client = Client(2, 7);
         var old = _ledger.Charge(client, 1, Start);
         _ledger.Charge(client, 2, Start.AddDays(7));
         var refused = _ledger.Charge(client, 1, Start.AddDays(7));
@@ -105,7 +108,7 @@ public class QuotaLedgerTests
     [Fact]
     public void Counter_starts_over_when_the_reset_interval_passes()
     {
-        var client = Client(quota: 1, resetEveryDays: 30);
+        var client = Client(1, 30);
         _ledger.Charge(client, 1, Start);
 
         var stillOldPeriod = _ledger.Charge(client, 1, Start.AddDays(30).AddMilliseconds(-1));
@@ -118,7 +121,7 @@ public class QuotaLedgerTests
     [Fact]
     public void Without_a_reset_interval_the_quota_is_for_good()
     {
-        var client = Client(quota: 1, resetEveryDays: null);
+        var client = Client(1, null);
         _ledger.Charge(client, 1, Start);
 
         var refused = _ledger.Charge(client, 1, Start.AddYears(3));
@@ -130,10 +133,10 @@ public class QuotaLedgerTests
     [Fact]
     public void Period_restarted_by_the_administrator_clears_the_counter()
     {
-        _ledger.Charge(Client(quota: 1), 1, Start);
-        Assert.False(_ledger.Charge(Client(quota: 1), 1, Start.AddDays(2)).Accepted);
+        _ledger.Charge(Client(1), 1, Start);
+        Assert.False(_ledger.Charge(Client(1), 1, Start.AddDays(2)).Accepted);
 
-        var afterReset = _ledger.Charge(Client(quota: 1, periodStartedAt: Start.AddDays(2)), 1, Start.AddDays(2));
+        var afterReset = _ledger.Charge(Client(1, periodStartedAt: Start.AddDays(2)), 1, Start.AddDays(2));
 
         Assert.True(afterReset.Accepted);
     }
@@ -142,11 +145,11 @@ public class QuotaLedgerTests
     public void Bigger_quota_keeps_what_is_already_used()
     {
         for (var call = 0; call < 3; call++)
-            _ledger.Charge(Client(quota: 3), 1, Start);
+            _ledger.Charge(Client(3), 1, Start);
 
-        Assert.True(_ledger.Charge(Client(quota: 5), 1, Start).Accepted);
-        Assert.True(_ledger.Charge(Client(quota: 5), 1, Start).Accepted);
-        Assert.False(_ledger.Charge(Client(quota: 5), 1, Start).Accepted);
+        Assert.True(_ledger.Charge(Client(5), 1, Start).Accepted);
+        Assert.True(_ledger.Charge(Client(5), 1, Start).Accepted);
+        Assert.False(_ledger.Charge(Client(5), 1, Start).Accepted);
     }
 
     [Fact]
@@ -154,8 +157,8 @@ public class QuotaLedgerTests
     {
         _ledger.Restore([new StoredUsage(Id, Start, 2)]);
 
-        Assert.True(_ledger.Charge(Client(quota: 3), 1, Start.AddDays(1)).Accepted);
-        Assert.False(_ledger.Charge(Client(quota: 3), 1, Start.AddDays(1)).Accepted);
+        Assert.True(_ledger.Charge(Client(3), 1, Start.AddDays(1)).Accepted);
+        Assert.False(_ledger.Charge(Client(3), 1, Start.AddDays(1)).Accepted);
     }
 
     [Fact]
@@ -163,7 +166,7 @@ public class QuotaLedgerTests
     {
         _ledger.Restore([new StoredUsage(Id, Start, 3)]);
 
-        Assert.True(_ledger.Charge(Client(quota: 3), 3, Start.AddDays(30)).Accepted);
+        Assert.True(_ledger.Charge(Client(3), 3, Start.AddDays(30)).Accepted);
     }
 
     [Fact]
@@ -199,7 +202,7 @@ public class QuotaLedgerTests
     [Fact]
     public void Parallel_calls_never_exceed_the_quota()
     {
-        var client = Client(quota: 100);
+        var client = Client(100);
         var accepted = 0;
 
         Parallel.For(0, 1_000, _ =>

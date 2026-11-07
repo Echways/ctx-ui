@@ -18,5 +18,8 @@ public sealed class SampleHostedService(SampleStatus status) : BackgroundService
 
 public sealed class FailingInitializer : CtxUi.Extensions.IExtensionInitializer
 {
-    public Task InitializeAsync(CancellationToken ct) => throw new InvalidOperationException("Sample initializer failure");
+    public Task InitializeAsync(CancellationToken ct)
+    {
+        throw new InvalidOperationException("Sample initializer failure");
+    }
 }

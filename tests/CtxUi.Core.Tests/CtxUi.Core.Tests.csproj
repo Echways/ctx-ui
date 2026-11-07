@@ -1,8 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" />
-    <ProjectReference Include="..\..\src\CtxUi.Core\CtxUi.Core.csproj" />
+    <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing"/>
+    <ProjectReference Include="..\..\src\CtxUi.Core\CtxUi.Core.csproj"/>
   </ItemGroup>
 
 </Project>

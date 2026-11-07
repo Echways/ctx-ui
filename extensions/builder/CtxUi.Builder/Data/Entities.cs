@@ -18,7 +18,7 @@ public sealed class BuilderServer
 
     public int PidsLimit { get; set; }
 
-    public string? InboundId { get; set; }
+    public Guid? InboundId { get; set; }
 
     public Guid? ActiveReleaseId { get; set; }
 

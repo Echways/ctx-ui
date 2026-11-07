@@ -4,7 +4,6 @@ using CtxUi.Builder.Runner;
 using CtxUi.Extensions;
 using Enfilade;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
@@ -12,13 +11,13 @@ namespace CtxUi.Builder.Publishing;
 
 public sealed class PublishQueue : BackgroundService, IExtensionInitializer
 {
-    private sealed record Job(Guid ServerId, Func<CancellationToken, Task> Run);
+    private sealed record Job(Guid ServerId, Func<CancellationToken, Task> Run, bool Announced);
 
     private readonly PublishPipeline _pipeline;
     private readonly PublishTimings _timings;
     private readonly RunnerSettings _settings;
     private readonly ReleaseArchives _archives;
-    private readonly IServiceScopeFactory _scopes;
+    private readonly IDbContextFactory<BuilderDatabase> _databases;
     private readonly ILogger<PublishQueue> _log;
     private readonly Channel<Job> _jobs = Channel.CreateUnbounded<Job>();
     private readonly object _gate = new();
@@ -28,13 +27,14 @@ public sealed class PublishQueue : BackgroundService, IExtensionInitializer
     private readonly HashSet<Guid> _deleting = [];
     private readonly HashSet<Guid> _connecting = [];
 
-    public PublishQueue(PublishPipeline pipeline, RunnerSettings settings, PublishTimings timings, ReleaseArchives archives, IServiceScopeFactory scopes, ILogger<PublishQueue> log)
+    public PublishQueue(PublishPipeline pipeline, RunnerSettings settings, PublishTimings timings,
+        ReleaseArchives archives, IDbContextFactory<BuilderDatabase> databases, ILogger<PublishQueue> log)
     {
         _pipeline = pipeline;
         _settings = settings;
         _timings = timings;
         _archives = archives;
-        _scopes = scopes;
+        _databases = databases;
         _log = log;
         _pipeline.Changed += Raise;
     }
@@ -46,7 +46,9 @@ public sealed class PublishQueue : BackgroundService, IExtensionInitializer
     public bool IsBusy(Guid serverId)
     {
         lock (_gate)
+        {
             return _outstanding.ContainsKey(serverId) || _preparing.Contains(serverId);
+        }
     }
 
     public void ReserveForDeletion(Guid serverId)
@@ -54,9 +56,9 @@ public sealed class PublishQueue : BackgroundService, IExtensionInitializer
         lock (_gate)
         {
             if (_connecting.Contains(serverId) || _deleting.Contains(serverId))
-                throw new PanelException(BuilderText.ConnectionBusy);
+                throw Failures.Conflict(BuilderText.ConnectionBusy);
             if (_outstanding.ContainsKey(serverId) || _preparing.Contains(serverId))
-                throw new PanelException(BuilderText.PublishBusy);
+                throw Failures.Conflict(BuilderText.PublishBusy);
             _deleting.Add(serverId);
         }
     }
@@ -64,7 +66,9 @@ public sealed class PublishQueue : BackgroundService, IExtensionInitializer
     public void ReleaseDeletion(Guid serverId)
     {
         lock (_gate)
+        {
             _deleting.Remove(serverId);
+        }
     }
 
     public void ReserveForConnection(Guid serverId)
@@ -72,16 +76,18 @@ public sealed class PublishQueue : BackgroundService, IExtensionInitializer
         lock (_gate)
         {
             if (_deleting.Contains(serverId))
-                throw new PanelException(BuilderText.ServerDeleting);
+                throw Failures.Conflict(BuilderText.ServerDeleting);
             if (!_connecting.Add(serverId))
-                throw new PanelException(BuilderText.ConnectionBusy);
+                throw Failures.Conflict(BuilderText.ConnectionBusy);
         }
     }
 
     public void ReleaseConnection(Guid serverId)
     {
         lock (_gate)
+        {
             _connecting.Remove(serverId);
+        }
     }
 
     public async Task<int> PublishAsync(Guid serverId, PublishMode mode, CancellationToken ct)
@@ -90,9 +96,9 @@ public sealed class PublishQueue : BackgroundService, IExtensionInitializer
         lock (_gate)
         {
             if (_deleting.Contains(serverId))
-                throw new PanelException(BuilderText.ServerDeleting);
+                throw Failures.Conflict(BuilderText.ServerDeleting);
             if (!_preparing.Add(serverId))
-                throw new PanelException(BuilderText.PublishBusy);
+                throw Failures.Conflict(BuilderText.PublishBusy);
         }
 
         try
@@ -104,7 +110,9 @@ public sealed class PublishQueue : BackgroundService, IExtensionInitializer
         finally
         {
             lock (_gate)
+            {
                 _preparing.Remove(serverId);
+            }
         }
     }
 
@@ -115,10 +123,9 @@ public sealed class PublishQueue : BackgroundService, IExtensionInitializer
         Enqueue(serverId, token => _pipeline.RollbackAsync(serverId, release, token));
     }
 
-    public Task ApplySettingsAsync(Guid serverId, CancellationToken ct)
+    public void ApplySettings(Guid serverId)
     {
         Enqueue(serverId, token => _pipeline.ApplySettingsAsync(serverId, token));
-        return Task.CompletedTask;
     }
 
     public async Task InitializeAsync(CancellationToken ct)
@@ -155,8 +162,7 @@ public sealed class PublishQueue : BackgroundService, IExtensionInitializer
             do
             {
                 await ScheduleRepairsAsync(ct);
-            }
-            while (await timer.WaitForNextTickAsync(ct));
+            } while (await timer.WaitForNextTickAsync(ct));
         }
         catch (OperationCanceledException)
         {
@@ -167,11 +173,11 @@ public sealed class PublishQueue : BackgroundService, IExtensionInitializer
     {
         try
         {
-            await using var scope = _scopes.CreateAsyncScope();
-            var database = scope.ServiceProvider.GetRequiredService<BuilderDatabase>();
-            var servers = await database.Servers.AsNoTracking().Where(server => server.ActiveReleaseId != null).Select(server => server.Id).ToListAsync(ct);
+            await using var database = await _databases.CreateDbContextAsync(ct);
+            var servers = await database.Servers.AsNoTracking().Where(server => server.ActiveReleaseId != null)
+                .Select(server => server.Id).ToListAsync(ct);
             foreach (var serverId in servers.Where(serverId => !IsBusy(serverId)))
-                TryEnqueue(serverId, token => _pipeline.RepairActivationAsync(serverId, token));
+                TryEnqueue(serverId, token => _pipeline.RepairActivationAsync(serverId, token), false);
         }
         catch (Exception failure) when (failure is not OperationCanceledException)
         {
@@ -190,8 +196,7 @@ public sealed class PublishQueue : BackgroundService, IExtensionInitializer
 
     private async Task<(bool Active, bool Connected)> ConnectionStateAsync(Guid serverId, CancellationToken ct)
     {
-        await using var scope = _scopes.CreateAsyncScope();
-        var database = scope.ServiceProvider.GetRequiredService<BuilderDatabase>();
+        await using var database = await _databases.CreateDbContextAsync(ct);
         var state = await database.Servers.AsNoTracking().Where(server => server.Id == serverId)
             .Select(server => new { server.ActiveReleaseId, server.InboundId }).SingleOrDefaultAsync(ct);
         return (state?.ActiveReleaseId is not null, state?.InboundId is not null);
@@ -200,16 +205,17 @@ public sealed class PublishQueue : BackgroundService, IExtensionInitializer
     private void RequireConfigured()
     {
         if (!_settings.IsComplete)
-            throw new PanelException(string.Format(BuilderText.RunnerNotConfigured, string.Join(", ", _settings.Missing)));
+            throw new PanelException(string.Format(BuilderText.RunnerNotConfigured,
+                string.Join(", ", _settings.Missing)));
     }
 
     private void Enqueue(Guid serverId, Func<CancellationToken, Task> run)
     {
-        if (!TryEnqueue(serverId, run))
-            throw new PanelException(BuilderText.ServerDeleting);
+        if (!TryEnqueue(serverId, run, true))
+            throw Failures.Conflict(BuilderText.ServerDeleting);
     }
 
-    private bool TryEnqueue(Guid serverId, Func<CancellationToken, Task> run)
+    private bool TryEnqueue(Guid serverId, Func<CancellationToken, Task> run, bool announced)
     {
         lock (_gate)
         {
@@ -218,8 +224,9 @@ public sealed class PublishQueue : BackgroundService, IExtensionInitializer
             _outstanding[serverId] = _outstanding.GetValueOrDefault(serverId) + 1;
         }
 
-        _jobs.Writer.TryWrite(new Job(serverId, run));
-        Raise(serverId);
+        _jobs.Writer.TryWrite(new Job(serverId, run, announced));
+        if (announced)
+            Raise(serverId);
         return true;
     }
 
@@ -282,7 +289,8 @@ public sealed class PublishQueue : BackgroundService, IExtensionInitializer
                     _outstanding[job.ServerId]--;
             }
 
-            Raise(job.ServerId);
+            if (job.Announced)
+                Raise(job.ServerId);
         }
     }
 

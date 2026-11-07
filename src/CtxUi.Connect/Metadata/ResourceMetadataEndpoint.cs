@@ -10,11 +10,16 @@ using CtxUi.Core.SignIn;
 namespace CtxUi.Connect.Metadata;
 
 public sealed record ResourceMetadata(
-    [property: JsonPropertyName("resource")] string Resource,
-    [property: JsonPropertyName("authorization_servers")] IReadOnlyList<string> AuthorizationServers,
-    [property: JsonPropertyName("scopes_supported")] IReadOnlyList<string> ScopesSupported,
-    [property: JsonPropertyName("bearer_methods_supported")] IReadOnlyList<string> BearerMethodsSupported,
-    [property: JsonPropertyName("resource_name")] string ResourceName);
+    [property: JsonPropertyName("resource")]
+    string Resource,
+    [property: JsonPropertyName("authorization_servers")]
+    IReadOnlyList<string> AuthorizationServers,
+    [property: JsonPropertyName("scopes_supported")]
+    IReadOnlyList<string> ScopesSupported,
+    [property: JsonPropertyName("bearer_methods_supported")]
+    IReadOnlyList<string> BearerMethodsSupported,
+    [property: JsonPropertyName("resource_name")]
+    string ResourceName);
 
 public static class ResourceMetadataEndpoint
 {
@@ -26,7 +31,8 @@ public static class ResourceMetadataEndpoint
         return app;
     }
 
-    private static async Task<IResult> ServeAsync(string slug, CtxUiDbContext db, IOptions<ConnectOptions> options, CancellationToken ct)
+    private static async Task<IResult> ServeAsync(string slug, CtxUiDbContext db, IOptions<ConnectOptions> options,
+        CancellationToken ct)
     {
         if (!Slug.IsValid(slug))
             return Results.NotFound();

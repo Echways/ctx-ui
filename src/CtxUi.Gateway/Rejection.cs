@@ -14,7 +14,7 @@ public static class Rejection
 
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web)
     {
-        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
     };
 
     private static readonly JsonWriterOptions Writer = new() { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
@@ -25,18 +25,22 @@ public static class Rejection
         {
             AccessStatus.TokenMissing => (StatusCodes.Status401Unauthorized, "token_missing", GatewayText.TokenMissing),
             AccessStatus.TokenUnknown => (StatusCodes.Status401Unauthorized, "token_unknown", GatewayText.TokenUnknown),
-            AccessStatus.ClientDisabled => (StatusCodes.Status401Unauthorized, "client_disabled", GatewayText.ClientDisabled),
+            AccessStatus.ClientDisabled => (StatusCodes.Status401Unauthorized, "client_disabled",
+                GatewayText.ClientDisabled),
             AccessStatus.ClientExpired => (
                 StatusCodes.Status401Unauthorized,
                 "client_expired",
                 string.Format(
                     GatewayText.ClientExpired,
                     decision.Client!.ExpiresAt!.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture))),
-            AccessStatus.InboundNotFound => (StatusCodes.Status404NotFound, "inbound_not_found", GatewayText.InboundNotFound),
-            AccessStatus.DirectKeyOff => (StatusCodes.Status401Unauthorized, "direct_key_off", GatewayText.DirectKeyOff),
+            AccessStatus.InboundNotFound => (StatusCodes.Status404NotFound, "inbound_not_found",
+                GatewayText.InboundNotFound),
+            AccessStatus.DirectKeyOff => (StatusCodes.Status401Unauthorized, "direct_key_off",
+                GatewayText.DirectKeyOff),
             AccessStatus.TokenInvalid => (StatusCodes.Status401Unauthorized, "token_invalid", GatewayText.TokenInvalid),
-            AccessStatus.DeviceRevoked => (StatusCodes.Status401Unauthorized, "device_revoked", GatewayText.DeviceRevoked),
-            _ => throw new InvalidOperationException($"no rejection is defined for {decision.Status}"),
+            AccessStatus.DeviceRevoked => (StatusCodes.Status401Unauthorized, "device_revoked",
+                GatewayText.DeviceRevoked),
+            _ => throw new InvalidOperationException($"no rejection is defined for {decision.Status}")
         };
 
         context.Response.StatusCode = status;
@@ -57,17 +61,23 @@ public static class Rejection
             : challenge;
     }
 
-    public static Task WriteRateLimitedAsync(HttpContext context, int retryAfterSeconds) => WriteLimitAsync(
-        context,
-        retryAfterSeconds,
-        "rate_limited",
-        string.Format(GatewayText.RateLimited, retryAfterSeconds));
+    public static Task WriteRateLimitedAsync(HttpContext context, int retryAfterSeconds)
+    {
+        return WriteLimitAsync(
+            context,
+            retryAfterSeconds,
+            "rate_limited",
+            string.Format(GatewayText.RateLimited, retryAfterSeconds));
+    }
 
-    public static Task WriteBusyAsync(HttpContext context) => WriteLimitAsync(
-        context,
-        1,
-        "too_many_concurrent",
-        GatewayText.TooManyConcurrent);
+    public static Task WriteBusyAsync(HttpContext context)
+    {
+        return WriteLimitAsync(
+            context,
+            1,
+            "too_many_concurrent",
+            GatewayText.TooManyConcurrent);
+    }
 
     public static Task WriteBodyTooLargeAsync(HttpContext context, int limitBytes)
     {

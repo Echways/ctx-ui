@@ -11,14 +11,19 @@ public class ClientMetadataUpdateTests
     private readonly FakeVault _vault = new();
     private readonly FakeTimeProvider _clock = new(TestData.Now);
 
-    private ClientService Clients(TestDatabase database) => new(database.NewContext(), _vault, _clock);
+    private ClientService Clients(TestDatabase database)
+    {
+        return new ClientService(database.NewContext(), _vault, _clock);
+    }
 
     private async Task<(TestDatabase Database, IssuedClient Issued)> DatabaseWithClientAsync()
     {
         var database = await TestDatabase.CreateAsync();
-        await new InboundService(database.NewContext(), _vault, _clock).AddHttpAsync("echo", null, "https://mcp.example.org/mcp");
+        await new InboundService(database.NewContext(), _vault, _clock).AddHttpAsync("echo", null,
+            "https://mcp.example.org/mcp");
         var issued = await Clients(database).AddAsync(
-            "Иванов", ["echo"], metadata: [KeyValuePair.Create("group", "4419"), KeyValuePair.Create("storage-mb", "50")]);
+            "Иванов", ["echo"],
+            metadata: [KeyValuePair.Create("group", "4419"), KeyValuePair.Create("storage-mb", "50")]);
         return (database, issued);
     }
 
@@ -28,12 +33,17 @@ public class ClientMetadataUpdateTests
         var (database, issued) = await DatabaseWithClientAsync();
         await using var disposing = database;
 
-        await Clients(database).UpdateAsync(issued.Client.Id, new ClientUpdate { Metadata = [KeyValuePair.Create("group", "4420")] });
+        await Clients(database).UpdateAsync(issued.Client.Id,
+            new ClientUpdate { Metadata = [KeyValuePair.Create("group", "4420")] });
 
         var stored = (await Clients(database).GetAsync("Иванов")).Metadata;
         Assert.Equal("4420", Assert.Single(stored).Value);
-        var snapshot = await new RoutingSnapshotLoader(database.NewContext(), _vault, _clock, NullLogger<RoutingSnapshotLoader>.Instance).LoadAsync();
-        Assert.Equal("4420", Assert.Single(snapshot.Authorize(Credential.FromKey(issued.Token), "echo", TestData.Now).Client!.Metadata).Value);
+        var snapshot =
+            await new RoutingSnapshotLoader(database.NewContext(), _vault, _clock,
+                NullLogger<RoutingSnapshotLoader>.Instance).LoadAsync();
+        Assert.Equal("4420",
+            Assert.Single(snapshot.Authorize(Credential.FromKey(issued.Token), "echo", TestData.Now).Client!.Metadata)
+                .Value);
     }
 
     [Fact]
@@ -42,7 +52,8 @@ public class ClientMetadataUpdateTests
         var (database, issued) = await DatabaseWithClientAsync();
         await using var disposing = database;
 
-        await Clients(database).UpdateAsync(issued.Client.Id, new ClientUpdate { Limits = new ClientLimits(QuotaCalls: 5) });
+        await Clients(database)
+            .UpdateAsync(issued.Client.Id, new ClientUpdate { Limits = new ClientLimits(QuotaCalls: 5) });
 
         Assert.Equal(2, (await Clients(database).GetAsync("Иванов")).Metadata.Count);
     }
@@ -66,7 +77,7 @@ public class ClientMetadataUpdateTests
         var update = new ClientUpdate
         {
             Limits = new ClientLimits(QuotaCalls: 5),
-            Metadata = [KeyValuePair.Create("плохой ключ", "1")],
+            Metadata = [KeyValuePair.Create("плохой ключ", "1")]
         };
 
         await Assert.ThrowsAsync<DomainException>(() => Clients(database).UpdateAsync(issued.Client.Id, update));

@@ -31,9 +31,7 @@ public sealed class ServerNetworks(IDockerEngine engine, RunnerOptions options)
         var name = ContainerTemplate.NetworkName(id, access);
         await engine.ConnectAsync(id, name, options.SelfContainer, ct);
         if (access == NetworkAccess.InternetOnly)
-        {
             await engine.ConnectAsync(id, name, options.EgressContainer, ct);
-        }
     }
 
     public async Task RemoveAsync(Guid id, string network, CancellationToken ct)

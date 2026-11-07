@@ -8,11 +8,23 @@ public static class AccessToken
 
     private static readonly PrefixedSecret Secret = new(Prefix, 32);
 
-    public static string Generate() => Secret.Generate();
+    public static string Generate()
+    {
+        return Secret.Generate();
+    }
 
-    public static bool IsWellFormed([NotNullWhen(true)] string? value) => Secret.IsWellFormed(value);
+    public static bool IsWellFormed([NotNullWhen(true)] string? value)
+    {
+        return Secret.IsWellFormed(value);
+    }
 
-    public static string Hash(string token) => PrefixedSecret.Hash(token);
+    public static string Hash(string token)
+    {
+        return PrefixedSecret.Hash(token);
+    }
 
-    public static string DisplayPrefix(string token) => Secret.DisplayPrefix(token);
+    public static string DisplayPrefix(string token)
+    {
+        return Secret.DisplayPrefix(token);
+    }
 }

@@ -1,21 +1,21 @@
 <Project Sdk="Microsoft.NET.Sdk.Razor">
 
   <ItemGroup>
-    <FrameworkReference Include="Microsoft.AspNetCore.App" />
-    <PackageReference Include="MudBlazor" />
-    <PackageReference Include="Enfilade" />
-    <ProjectReference Include="..\CtxUi.Core\CtxUi.Core.csproj" />
-    <ProjectReference Include="..\CtxUi.Extensions\CtxUi.Extensions.csproj" />
+    <FrameworkReference Include="Microsoft.AspNetCore.App"/>
+    <PackageReference Include="MudBlazor"/>
+    <PackageReference Include="Enfilade"/>
+    <ProjectReference Include="..\CtxUi.Core\CtxUi.Core.csproj"/>
+    <ProjectReference Include="..\CtxUi.Extensions\CtxUi.Extensions.csproj"/>
   </ItemGroup>
 
   <ItemGroup>
-    <InternalsVisibleTo Include="CtxUi.Panel.Tests" />
-    <InternalsVisibleTo Include="ctx-ui" />
+    <InternalsVisibleTo Include="CtxUi.Panel.Tests"/>
+    <InternalsVisibleTo Include="ctx-ui"/>
   </ItemGroup>
 
   <ItemGroup>
     <EmbeddedResource Update="PanelText.resx" StronglyTypedLanguage="CSharp" StronglyTypedClassName="PanelText"
-                      StronglyTypedNamespace="CtxUi.Panel" StronglyTypedFileName="$(IntermediateOutputPath)PanelText.Designer.cs" />
+                      StronglyTypedNamespace="CtxUi.Panel" StronglyTypedFileName="$(IntermediateOutputPath)PanelText.Designer.cs"/>
   </ItemGroup>
 
 </Project>

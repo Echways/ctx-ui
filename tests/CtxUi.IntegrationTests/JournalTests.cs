@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Http.Headers;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -13,21 +14,33 @@ public class JournalTests
     private static readonly DateTimeOffset Start = new(2026, 10, 12, 10, 0, 0, TimeSpan.Zero);
     private static readonly DateOnly Today = new(2026, 10, 12);
 
-    private const string ToolCall = """{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"echo","arguments":{}}}""";
+    private const string ToolCall =
+        """{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"echo","arguments":{}}}""";
+
     private const string Ping = """{"jsonrpc":"2.0","id":1,"method":"ping"}""";
 
-    private static Task<List<UsageEvent>> LinesAsync(GatewayHost gateway) =>
-        gateway.ChangeAsync(services => services.GetRequiredService<UsageStore>().RecentAsync(null, 100));
+    private static Task<List<UsageEvent>> LinesAsync(GatewayHost gateway)
+    {
+        return gateway.ChangeAsync(services => services.GetRequiredService<UsageStore>().RecentAsync(null, 100));
+    }
 
-    private static Task<List<DailyTotal>> TotalsAsync(GatewayHost gateway, Guid? clientId = null) =>
-        gateway.ChangeAsync(services => services.GetRequiredService<UsageStore>().DailyAsync(clientId, Today.AddDays(-1)));
+    private static Task<List<DailyTotal>> TotalsAsync(GatewayHost gateway, Guid? clientId = null)
+    {
+        return gateway.ChangeAsync(services =>
+            services.GetRequiredService<UsageStore>().DailyAsync(clientId, Today.AddDays(-1)));
+    }
 
-    private static Task WaitForLinesAsync(GatewayHost gateway, int count) => Eventually.TrueAsync(
-        async () => (await LinesAsync(gateway)).Count >= count,
-        $"в журнале появилось строк: {count}");
+    private static Task WaitForLinesAsync(GatewayHost gateway, int count)
+    {
+        return Eventually.TrueAsync(
+            async () => (await LinesAsync(gateway)).Count >= count,
+            $"в журнале появилось строк: {count}");
+    }
 
-    private static async Task<GatewayHost> StartAtAsync(FakeTimeProvider clock) =>
-        await GatewayHost.StartAsync(builder => builder.Services.AddSingleton<TimeProvider>(clock));
+    private static async Task<GatewayHost> StartAtAsync(FakeTimeProvider clock)
+    {
+        return await GatewayHost.StartAsync(builder => builder.Services.AddSingleton<TimeProvider>(clock));
+    }
 
     [Fact]
     public async Task Forwarded_call_is_written_with_who_where_what_and_how_it_ended()
@@ -59,10 +72,10 @@ public class JournalTests
         var issued = await gateway.AddClientAsync("Иванов", ["echo"]);
 
         using var listen = new HttpRequestMessage(HttpMethod.Get, "/mcp/echo");
-        listen.Headers.Authorization = new("Bearer", issued.Token);
+        listen.Headers.Authorization = new AuthenticationHeaderValue("Bearer", issued.Token);
         using var stream = await gateway.Http.SendAsync(listen);
         using var close = new HttpRequestMessage(HttpMethod.Delete, "/mcp/echo");
-        close.Headers.Authorization = new("Bearer", issued.Token);
+        close.Headers.Authorization = new AuthenticationHeaderValue("Bearer", issued.Token);
         using var closed = await gateway.Http.SendAsync(close);
         using var answer = await gateway.Http.SendAsync(
             GatewayHost.Post("/mcp/echo", issued.Token, """{"jsonrpc":"2.0","id":5,"result":{}}"""));
@@ -75,7 +88,8 @@ public class JournalTests
         var lines = await LinesAsync(gateway);
         Assert.Equal(["ping", "notifications/progress", "tools/call"], lines.Select(line => line.Method));
         Assert.Equal([null, null, "echo"], lines.Select(line => line.Tool));
-        Assert.Equal(new DailyTotal(Today, 3, 1, 0, 0, lines.Sum(line => line.DurationMs)), Assert.Single(await TotalsAsync(gateway)));
+        Assert.Equal(new DailyTotal(Today, 3, 1, 0, 0, lines.Sum(line => line.DurationMs)),
+            Assert.Single(await TotalsAsync(gateway)));
     }
 
     [Fact]
@@ -115,7 +129,7 @@ public class JournalTests
                 UsageOutcome.Ok,
                 UsageOutcome.UpstreamFailed,
                 UsageOutcome.UpstreamRejected,
-                UsageOutcome.UpstreamFailed,
+                UsageOutcome.UpstreamFailed
             ],
             (await LinesAsync(gateway)).Select(line => line.Outcome));
         var total = Assert.Single(await TotalsAsync(gateway));
@@ -128,13 +142,13 @@ public class JournalTests
         await using var upstream = await FakeUpstream.StartAsync();
         await using var gateway = await StartAtAsync(new FakeTimeProvider(Start));
         await gateway.AddInboundAsync("echo", upstream.McpUrl);
-        var hasty = await gateway.AddClientAsync("Иванов", ["echo"], limits: new ClientLimits(RatePerMinute: 1));
+        var hasty = await gateway.AddClientAsync("Иванов", ["echo"], limits: new ClientLimits(1));
         var sloppy = await gateway.AddClientAsync("Петров", ["echo"]);
 
         using var served = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/echo", hasty.Token, Ping));
         using var limited = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/echo", hasty.Token, Ping));
         using var limitedStream = new HttpRequestMessage(HttpMethod.Get, "/mcp/echo");
-        limitedStream.Headers.Authorization = new("Bearer", hasty.Token);
+        limitedStream.Headers.Authorization = new AuthenticationHeaderValue("Bearer", hasty.Token);
         using var limitedToo = await gateway.Http.SendAsync(limitedStream);
         using var unreadable = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/echo", sloppy.Token, "не json"));
 
@@ -176,8 +190,8 @@ public class JournalTests
     public async Task Shutdown_writes_what_was_still_in_memory()
     {
         await using var upstream = await FakeUpstream.StartAsync();
-        await using var gateway = await GatewayHost.StartAsync(
-            builder => builder.Configuration["CtxUi:FlushInterval"] = "01:00:00");
+        await using var gateway =
+            await GatewayHost.StartAsync(builder => builder.Configuration["CtxUi:FlushInterval"] = "01:00:00");
         await gateway.AddInboundAsync("echo", upstream.McpUrl);
         var issued = await gateway.AddClientAsync("Иванов", ["echo"]);
         using var response = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/echo", issued.Token, ToolCall));
@@ -187,7 +201,8 @@ public class JournalTests
 
         Assert.Empty(beforeShutdown);
         Assert.Equal("echo", Assert.Single(await LinesAsync(gateway)).Tool);
-        var client = await gateway.ChangeAsync(services => services.GetRequiredService<ClientService>().GetAsync("Иванов"));
+        var client =
+            await gateway.ChangeAsync(services => services.GetRequiredService<ClientService>().GetAsync("Иванов"));
         Assert.Equal(1, QuotaPeriod.UsedCalls(client, DateTimeOffset.UtcNow));
     }
 }

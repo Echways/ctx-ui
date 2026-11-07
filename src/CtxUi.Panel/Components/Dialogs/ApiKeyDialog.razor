@@ -8,11 +8,12 @@
         }
         @if (_secret is null)
         {
-            <MudTextField @bind-Value="_name" Label="@PanelText.Title" Immediate="true" AutoFocus="true" HelperText="@PanelText.ApiKeyNameHelp" />
+            <MudTextField @bind-Value="_name" Label="@PanelText.Title" Immediate="true" AutoFocus="true"
+                          HelperText="@PanelText.ApiKeyNameHelp"/>
         }
         else
         {
-            <KeyField Label="@PanelText.Key" Value="@_secret" CopyLabel="@PanelText.CopyKey" Born="true" />
+            <KeyField Label="@PanelText.Key" Value="@_secret" CopyLabel="@PanelText.CopyKey" Born="true"/>
             <p class="hint">@PanelText.KeyShownOnce</p>
             <p class="hint">@PanelText.KeyHelp</p>
         }
@@ -31,8 +32,7 @@
     private string _name = "";
     private string? _secret;
 
-    [CascadingParameter]
-    private IMudDialogInstance MudDialog { get; set; } = default!;
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
 
     private async Task IssueAsync()
     {
@@ -47,4 +47,5 @@
             _error = Words.Sentence(exception.Message);
         }
     }
+
 }

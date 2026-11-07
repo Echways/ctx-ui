@@ -25,16 +25,20 @@ public class PublicAddressPolicyTests
     [InlineData("ff02::1")]
     [InlineData("::ffff:10.0.0.1")]
     [InlineData("::ffff:127.0.0.1")]
-    public void Private_and_loopback_addresses_are_refused(string address) =>
+    public void Private_and_loopback_addresses_are_refused(string address)
+    {
         Assert.False(_policy.AllowsAddress(IPAddress.Parse(address)));
+    }
 
     [Theory]
     [InlineData("8.8.8.8")]
     [InlineData("160.79.104.10")]
     [InlineData("2607:6bc0::10")]
     [InlineData("::ffff:8.8.8.8")]
-    public void Public_addresses_are_allowed(string address) =>
+    public void Public_addresses_are_allowed(string address)
+    {
         Assert.True(_policy.AllowsAddress(IPAddress.Parse(address)));
+    }
 
     [Theory]
     [InlineData("https://claude.ai/oauth/metadata", true)]
@@ -45,6 +49,8 @@ public class PublicAddressPolicyTests
     [InlineData("https://10.0.0.1/oauth/metadata", false)]
     [InlineData("https://claude.ai/", false)]
     [InlineData("https://claude.ai", false)]
-    public void Http_and_other_ports_are_refused(string uri, bool allowed) =>
+    public void Http_and_other_ports_are_refused(string uri, bool allowed)
+    {
         Assert.Equal(allowed, _policy.AllowsUri(new Uri(uri)));
+    }
 }

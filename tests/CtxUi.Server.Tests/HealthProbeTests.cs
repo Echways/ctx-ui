@@ -9,6 +9,8 @@ public class HealthProbeTests
     [InlineData("http://[::]:8080", "http://127.0.0.1:8080/healthz")]
     [InlineData("http://localhost:5000/", "http://localhost:5000/healthz")]
     [InlineData(null, "http://127.0.0.1:8080/healthz")]
-    public void Probe_asks_the_first_plain_http_listener_on_this_machine(string? urls, string expected) =>
+    public void Probe_asks_the_first_plain_http_listener_on_this_machine(string? urls, string expected)
+    {
         Assert.Equal(expected, HealthProbe.Target(urls));
+    }
 }

@@ -27,8 +27,11 @@ public static class ExternalEndpoints
         return app;
     }
 
-    public static string ChallengeUrl(HttpContext http, string provider, string? returnUrl = null, string? invite = null) =>
-        http.Request.PathBase + ExternalPath + "/" + provider + QueryString.Create(Query(returnUrl, invite));
+    public static string ChallengeUrl(HttpContext http, string provider, string? returnUrl = null,
+        string? invite = null)
+    {
+        return http.Request.PathBase + ExternalPath + "/" + provider + QueryString.Create(Query(returnUrl, invite));
+    }
 
     private static IResult ChallengeAsync(
         HttpContext http,
@@ -38,14 +41,15 @@ public static class ExternalEndpoints
         ISnapshotSource snapshot,
         ProviderOptionsCache options)
     {
-        if (ProviderCatalog.Find(provider) is not { } info || snapshot.Current.SignIn.Providers.All(configured => configured.Name != info.Name))
+        if (ProviderCatalog.Find(provider) is not { } info ||
+            snapshot.Current.SignIn.Providers.All(configured => configured.Name != info.Name))
             return Results.NotFound();
 
         options.Refresh(info.Name);
         var properties = new AuthenticationProperties
         {
             RedirectUri = http.Request.PathBase + DonePath + QueryString.Create(Query(returnUrl, invite)),
-            Items = { [ProviderSchemes.ProviderItem] = info.Name },
+            Items = { [ProviderSchemes.ProviderItem] = info.Name }
         };
         return Results.Challenge(properties, [info.Name]);
     }
@@ -115,7 +119,7 @@ public static class ExternalEndpoints
         {
             ClientName = client.Name,
             Code = code,
-            Providers = ProviderButton.All(snapshot.Current.SignIn),
+            Providers = ProviderButton.All(snapshot.Current.SignIn)
         });
     }
 

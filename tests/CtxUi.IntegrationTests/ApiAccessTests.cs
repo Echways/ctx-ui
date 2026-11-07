@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Http.Headers;
 using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
 using CtxUi.Core.ApiKeys;
@@ -14,9 +15,10 @@ public class ApiAccessTests
     public async Task Without_the_secret_path_the_api_does_not_exist(string path)
     {
         await using var gateway = await GatewayHost.StartAsync();
-        var key = (await gateway.ChangeAsync(services => services.GetRequiredService<ApiKeyService>().AddAsync("bot"))).Secret;
+        var key = (await gateway.ChangeAsync(services => services.GetRequiredService<ApiKeyService>().AddAsync("bot")))
+            .Secret;
         using var request = new HttpRequestMessage(HttpMethod.Get, path);
-        request.Headers.Authorization = new("Bearer", key);
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", key);
 
         using var response = await gateway.Http.SendAsync(request);
 
@@ -143,14 +145,19 @@ public class ApiAccessTests
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.StartsWith("3.1", document.GetProperty("openapi").GetString());
-        Assert.Equal($"https://mcp.example.org/{gateway.PanelPath}", document.GetProperty("servers")[0].GetProperty("url").GetString());
-        Assert.Equal("bearer", document.GetProperty("components").GetProperty("securitySchemes").GetProperty("ApiKey").GetProperty("scheme").GetString());
+        Assert.Equal($"https://mcp.example.org/{gateway.PanelPath}",
+            document.GetProperty("servers")[0].GetProperty("url").GetString());
+        Assert.Equal("bearer",
+            document.GetProperty("components").GetProperty("securitySchemes").GetProperty("ApiKey")
+                .GetProperty("scheme").GetString());
         var paths = document.GetProperty("paths").EnumerateObject().Select(path => path.Name).ToList();
         Assert.Contains("/api/v1/inbounds/{slug}", paths);
         Assert.Contains("/api/v1/clients/{id}/reissue", paths);
         Assert.Contains("/api/v1/usage/log", paths);
         Assert.All(paths, path => Assert.StartsWith("/api/v1/", path));
         Assert.DoesNotContain(paths, path => path.Contains("rest", StringComparison.Ordinal));
-        Assert.Equal("Issue a client", document.GetProperty("paths").GetProperty("/api/v1/clients").GetProperty("post").GetProperty("summary").GetString());
+        Assert.Equal("Issue a client",
+            document.GetProperty("paths").GetProperty("/api/v1/clients").GetProperty("post").GetProperty("summary")
+                .GetString());
     }
 }

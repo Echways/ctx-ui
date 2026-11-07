@@ -10,18 +10,23 @@ namespace CtxUi.Core.Tests;
 
 public class PanelSchemaTests
 {
-    private static Admin Admin(string name) => new()
+    private static Admin Admin(string name)
     {
-        Id = Guid.NewGuid(),
-        Name = name,
-        NameKey = name.ToUpperInvariant(),
-        PasswordHash = "hash",
-        SecurityStamp = "stamp",
-        CreatedAt = TestData.Now,
-    };
+        return new Admin
+        {
+            Id = Guid.NewGuid(),
+            Name = name,
+            NameKey = name.ToUpperInvariant(),
+            PasswordHash = "hash",
+            SecurityStamp = "stamp",
+            CreatedAt = TestData.Now
+        };
+    }
 
-    private static Task<long> RevisionAsync(CtxUiDbContext db) =>
-        db.RoutingStates.AsNoTracking().Select(state => state.Revision).SingleAsync();
+    private static Task<long> RevisionAsync(CtxUiDbContext db)
+    {
+        return db.RoutingStates.AsNoTracking().Select(state => state.Revision).SingleAsync();
+    }
 
     [Fact]
     public async Task Admin_round_trips_with_lockout_state()
@@ -75,7 +80,9 @@ public class PanelSchemaTests
         }
 
         await using (var db = database.NewContext())
+        {
             Assert.Equal("a1b2c3", (await db.Settings.AsNoTracking().SingleAsync()).Value);
+        }
 
         await using (var db = database.NewContext())
         {
@@ -105,15 +112,17 @@ public class PanelSchemaTests
         await connection.OpenAsync();
         var options = new DbContextOptionsBuilder<CtxUiDbContext>().UseSqlite(connection).Options;
         await using (var db = new CtxUiDbContext(options))
+        {
             await db.GetService<IMigrator>().MigrateAsync("Limits");
+        }
 
         await using (var command = connection.CreateCommand())
         {
             command.CommandText =
                 $"""
-                INSERT INTO Inbounds (Id, Slug, Name, Enabled, Kind, RequestTimeoutSeconds, MaxBodyBytes, Url, ForwardIdentity, CreatedAt)
-                VALUES ('22222222-2222-2222-2222-222222222222', 'echo', 'echo', 1, 0, 300, 4194304, 'http://upstream.test/mcp', 0, {TestData.Now.ToUnixTimeMilliseconds()});
-                """;
+                 INSERT INTO Inbounds (Id, Slug, Name, Enabled, Kind, RequestTimeoutSeconds, MaxBodyBytes, Url, ForwardIdentity, CreatedAt)
+                 VALUES ('22222222-2222-2222-2222-222222222222', 'echo', 'echo', 1, 0, 300, 4194304, 'http://upstream.test/mcp', 0, {TestData.Now.ToUnixTimeMilliseconds()});
+                 """;
             await command.ExecuteNonQueryAsync();
         }
 

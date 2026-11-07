@@ -9,5 +9,8 @@ public interface IUnsavedForm
 
 public static class DraftSnapshot
 {
-    public static string Of<T>(T draft) => JsonSerializer.Serialize(draft);
+    public static string Of<T>(T draft)
+    {
+        return JsonSerializer.Serialize(draft);
+    }
 }

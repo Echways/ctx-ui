@@ -7,17 +7,28 @@ internal static class CliRunner
 {
     public const string DefaultPublicUrl = "https://mcp.example.org/";
 
-    public static Task<(int Code, string Output, string Error)> RunAsync(string dataDir, params string[] args) =>
-        RunInLanguageAsync("ru", dataDir, args);
+    public static Task<(int Code, string Output, string Error)> RunAsync(string dataDir, params string[] args)
+    {
+        return RunInLanguageAsync("ru", dataDir, args);
+    }
 
-    public static Task<(int Code, string Output, string Error)> RunInLanguageAsync(string language, string dataDir, params string[] args) =>
-        RunWithAsync(language, DefaultPublicUrl, null, dataDir, args);
+    public static Task<(int Code, string Output, string Error)> RunInLanguageAsync(string language, string dataDir,
+        params string[] args)
+    {
+        return RunWithAsync(language, DefaultPublicUrl, null, dataDir, args);
+    }
 
-    public static Task<(int Code, string Output, string Error)> RunWithPublicUrlAsync(string publicUrl, string dataDir, params string[] args) =>
-        RunWithAsync("ru", publicUrl, null, dataDir, args);
+    public static Task<(int Code, string Output, string Error)> RunWithPublicUrlAsync(string publicUrl, string dataDir,
+        params string[] args)
+    {
+        return RunWithAsync("ru", publicUrl, null, dataDir, args);
+    }
 
-    public static Task<(int Code, string Output, string Error)> RunWithInputAsync(string input, string dataDir, params string[] args) =>
-        RunWithAsync("ru", DefaultPublicUrl, new StringReader(input), dataDir, args);
+    public static Task<(int Code, string Output, string Error)> RunWithInputAsync(string input, string dataDir,
+        params string[] args)
+    {
+        return RunWithAsync("ru", DefaultPublicUrl, new StringReader(input), dataDir, args);
+    }
 
     private static async Task<(int Code, string Output, string Error)> RunWithAsync(
         string language,

@@ -50,8 +50,7 @@ public sealed partial class UsageJournal(IServiceScopeFactory scopes, ILogger<Us
 
                 full = _batch.Count == BatchSize;
                 await SaveBatchAsync(ct);
-            }
-            while (full);
+            } while (full);
         }
         finally
         {
@@ -59,7 +58,10 @@ public sealed partial class UsageJournal(IServiceScopeFactory scopes, ILogger<Us
         }
     }
 
-    public void Dispose() => _flushing.Dispose();
+    public void Dispose()
+    {
+        _flushing.Dispose();
+    }
 
     private async Task SaveBatchAsync(CancellationToken ct)
     {
@@ -87,6 +89,7 @@ public sealed partial class UsageJournal(IServiceScopeFactory scopes, ILogger<Us
     [LoggerMessage(Level = LogLevel.Warning, Message = "usage journal is falling behind, records dropped: {Dropped}")]
     private static partial void FallingBehind(ILogger logger, long dropped);
 
-    [LoggerMessage(Level = LogLevel.Error, Message = "usage journal batch failed {Attempts} times, records dropped: {Dropped}")]
+    [LoggerMessage(Level = LogLevel.Error,
+        Message = "usage journal batch failed {Attempts} times, records dropped: {Dropped}")]
     private static partial void BatchDropped(ILogger logger, int attempts, int dropped);
 }

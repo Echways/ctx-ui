@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Http.Headers;
 using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -45,8 +46,10 @@ public class AccessTests
             """{"error":"token_missing","message":"нужен токен: заголовок Authorization: Bearer <токен> или адрес /k/<токен>/mcp/<inbound>"}""",
             await missing.Content.ReadAsStringAsync());
         Assert.Equal("Bearer", foreign.Headers.WwwAuthenticate.ToString());
-        Assert.Equal("""{"error":"token_unknown","message":"токен не найден"}""", await foreign.Content.ReadAsStringAsync());
-        Assert.Equal(HttpStatusCode.NotFound, (await gateway.Http.GetAsync("/.well-known/oauth-authorization-server")).StatusCode);
+        Assert.Equal("""{"error":"token_unknown","message":"токен не найден"}""",
+            await foreign.Content.ReadAsStringAsync());
+        Assert.Equal(HttpStatusCode.NotFound,
+            (await gateway.Http.GetAsync("/.well-known/oauth-authorization-server")).StatusCode);
     }
 
     [Fact]
@@ -76,8 +79,8 @@ public class AccessTests
     [Fact]
     public async Task Invalid_trusted_proxies_stop_the_start()
     {
-        var error = await Assert.ThrowsAsync<OptionsValidationException>(
-            () => GatewayHost.StartAsync(builder => builder.Configuration["CtxUi:TrustedProxies"] = "10.0.0.0/33"));
+        var error = await Assert.ThrowsAsync<OptionsValidationException>(() =>
+            GatewayHost.StartAsync(builder => builder.Configuration["CtxUi:TrustedProxies"] = "10.0.0.0/33"));
 
         Assert.Contains("TrustedProxies", error.Message);
     }
@@ -95,7 +98,8 @@ public class AccessTests
     [Fact]
     public async Task Gateway_answers_in_english_by_default()
     {
-        await using var gateway = await GatewayHost.StartAsync(builder => builder.Configuration["CtxUi:Language"] = "en");
+        await using var gateway =
+            await GatewayHost.StartAsync(builder => builder.Configuration["CtxUi:Language"] = "en");
 
         using var response = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/echo", AccessToken.Generate()));
 
@@ -111,7 +115,8 @@ public class AccessTests
         await gateway.AddInboundAsync("echo", upstream.McpUrl);
         var issued = await gateway.AddClientAsync("Иванов 4419", ["echo"]);
 
-        using var response = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/echo", issued.Token, """{"jsonrpc":"2.0","id":1,"method":"ping"}"""));
+        using var response = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/echo", issued.Token,
+            """{"jsonrpc":"2.0","id":1,"method":"ping"}"""));
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Equal("""{"jsonrpc":"2.0","id":1,"result":{}}""", await response.Content.ReadAsStringAsync());
@@ -146,7 +151,7 @@ public class AccessTests
         var issued = await gateway.AddClientAsync("Иванов", ["echo"]);
 
         using var request = new HttpRequestMessage(new HttpMethod(method), "/mcp/echo");
-        request.Headers.Authorization = new("Bearer", issued.Token);
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", issued.Token);
         using var response = await gateway.Http.SendAsync(request);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -177,7 +182,8 @@ public class AccessTests
     {
         var clock = new FakeTimeProvider(Start);
         await using var upstream = await FakeUpstream.StartAsync();
-        await using var gateway = await GatewayHost.StartAsync(builder => builder.Services.AddSingleton<TimeProvider>(clock));
+        await using var gateway =
+            await GatewayHost.StartAsync(builder => builder.Services.AddSingleton<TimeProvider>(clock));
         await gateway.AddInboundAsync("echo", upstream.McpUrl);
         var issued = await gateway.AddClientAsync("Иванов", ["echo"], Start.AddDays(1));
 
@@ -271,7 +277,8 @@ public class AccessTests
         try
         {
             File.SetUnixFileMode(dataDir, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute
-                | UnixFileMode.GroupRead | UnixFileMode.GroupExecute | UnixFileMode.OtherRead | UnixFileMode.OtherExecute);
+                                          | UnixFileMode.GroupRead | UnixFileMode.GroupExecute |
+                                          UnixFileMode.OtherRead | UnixFileMode.OtherExecute);
 
             await CliRunner.RunAsync(dataDir, "client", "list");
 
@@ -281,7 +288,7 @@ public class AccessTests
         }
         finally
         {
-            Directory.Delete(dataDir, recursive: true);
+            Directory.Delete(dataDir, true);
         }
     }
 

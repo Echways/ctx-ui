@@ -22,7 +22,9 @@ public sealed class ClientTouch(IServiceScopeFactory scopes)
             return;
 
         await using (var scope = scopes.CreateAsyncScope())
+        {
             await scope.ServiceProvider.GetRequiredService<ClientService>().MarkUsedAsync(seen, ct);
+        }
 
         foreach (var pair in seen)
             _pending.TryRemove(pair);

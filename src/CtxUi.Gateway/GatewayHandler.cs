@@ -27,7 +27,8 @@ public sealed partial class GatewayHandler(
         var snapshot = store.Current;
         var publicUrl = options.Value.PublicUrl;
         var active = snapshot.SignIn.IsActive(publicUrl);
-        var credential = await reader.ReadAsync(context, OAuthResource.For(publicUrl, slug), active, context.RequestAborted);
+        var credential =
+            await reader.ReadAsync(context, OAuthResource.For(publicUrl, slug), active, context.RequestAborted);
         var decision = snapshot.Authorize(credential, slug, now);
 
         object outcome = decision.Status;
@@ -45,16 +46,22 @@ public sealed partial class GatewayHandler(
             context.Response.StatusCode);
     }
 
-    private static long Share(long total, int parts, int part) => total / parts + (part < total % parts ? 1 : 0);
-
-    private static UsageOutcome Outcome(ForwardOutcome forward, int status) => forward switch
+    private static long Share(long total, int parts, int part)
     {
-        ForwardOutcome.ClientAborted => UsageOutcome.ClientAborted,
-        ForwardOutcome.UpstreamFailed => UsageOutcome.UpstreamFailed,
-        _ when status >= StatusCodes.Status500InternalServerError => UsageOutcome.UpstreamFailed,
-        _ when status >= StatusCodes.Status400BadRequest => UsageOutcome.UpstreamRejected,
-        _ => UsageOutcome.Ok,
-    };
+        return total / parts + (part < total % parts ? 1 : 0);
+    }
+
+    private static UsageOutcome Outcome(ForwardOutcome forward, int status)
+    {
+        return forward switch
+        {
+            ForwardOutcome.ClientAborted => UsageOutcome.ClientAborted,
+            ForwardOutcome.UpstreamFailed => UsageOutcome.UpstreamFailed,
+            _ when status >= StatusCodes.Status500InternalServerError => UsageOutcome.UpstreamFailed,
+            _ when status >= StatusCodes.Status400BadRequest => UsageOutcome.UpstreamRejected,
+            _ => UsageOutcome.Ok
+        };
+    }
 
     private async Task<UsageOutcome> ServeAsync(HttpContext context, AccessDecision decision, DateTimeOffset now)
     {
@@ -111,7 +118,7 @@ public sealed partial class GatewayHandler(
         }
         else
         {
-            context.Request.Body = new MemoryStream(body.Bytes.Array!, body.Bytes.Offset, body.Bytes.Count, writable: false);
+            context.Request.Body = new MemoryStream(body.Bytes.Array!, body.Bytes.Offset, body.Bytes.Count, false);
             var forwarded = await upstream.ForwardAsync(context, route, client);
             outcome = Outcome(forwarded.Outcome, context.Response.StatusCode);
             responseBytes = forwarded.ResponseBytes;
@@ -122,24 +129,26 @@ public sealed partial class GatewayHandler(
         var duration = (int)Math.Min(int.MaxValue, clock.GetElapsedTime(started).TotalMilliseconds);
         var calls = envelope.Calls.Where(call => call.Method is not null).ToList();
         for (var part = 0; part < calls.Count; part++)
-        {
-            journal.Record(new UsageRecord(client.Id, route.Id, now, calls[part].Method, calls[part].Tool, duration, outcome, deviceId)
+            journal.Record(new UsageRecord(client.Id, route.Id, now, calls[part].Method, calls[part].Tool, duration,
+                outcome, deviceId)
             {
                 Status = context.Response.StatusCode,
                 RequestBytes = (int)Share(body.Bytes.Count, calls.Count, part),
-                ResponseBytes = Share(responseBytes, calls.Count, part),
+                ResponseBytes = Share(responseBytes, calls.Count, part)
             });
-        }
 
         return outcome;
 
         UsageOutcome Refused(UsageOutcome reason)
         {
-            journal.Record(new UsageRecord(client.Id, route.Id, now, null, null, 0, reason, deviceId) { Status = context.Response.StatusCode });
+            journal.Record(new UsageRecord(client.Id, route.Id, now, null, null, 0, reason, deviceId)
+            { Status = context.Response.StatusCode });
             return reason;
         }
     }
 
-    [LoggerMessage(Level = LogLevel.Information, Message = "{Method} /mcp/{Slug} client={Client} outcome={Outcome} status={StatusCode}")]
-    private static partial void Served(ILogger logger, string method, string slug, string client, object outcome, int statusCode);
+    [LoggerMessage(Level = LogLevel.Information,
+        Message = "{Method} /mcp/{Slug} client={Client} outcome={Outcome} status={StatusCode}")]
+    private static partial void Served(ILogger logger, string method, string slug, string client, object outcome,
+        int statusCode);
 }

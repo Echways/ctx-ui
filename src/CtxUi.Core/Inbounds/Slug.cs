@@ -8,7 +8,10 @@ public static partial class Slug
     [GeneratedRegex(@"\A[a-z0-9](?:[a-z0-9-]{0,62}[a-z0-9])?\z")]
     private static partial Regex Pattern();
 
-    public static bool IsValid([NotNullWhen(true)] string? value) => value is not null && Pattern().IsMatch(value);
+    public static bool IsValid([NotNullWhen(true)] string? value)
+    {
+        return value is not null && Pattern().IsMatch(value);
+    }
 
     public static string Parse(string? value)
     {

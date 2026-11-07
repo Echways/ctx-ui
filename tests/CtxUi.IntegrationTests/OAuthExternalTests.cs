@@ -17,21 +17,30 @@ public class OAuthExternalTests
             await Provider.DisposeAsync();
         }
 
-        public Task<string> InviteAsync(Guid? clientId = null) =>
-            Gateway.ChangeAsync(services => services.GetRequiredService<ClientLinkService>().InviteAsync(clientId ?? Issued.Client.Id));
-
-        public Task<List<ClientLink>> LinksAsync() =>
-            Gateway.ChangeAsync(services => services.GetRequiredService<ClientLinkService>().ListAsync(Issued.Client.Id));
-
-        public Task LinkAsync(Guid clientId, string subject = "user-1") => Gateway.ChangeAsync(async services =>
+        public Task<string> InviteAsync(Guid? clientId = null)
         {
-            var links = services.GetRequiredService<ClientLinkService>();
-            var result = await links.LinkAsync(
-                await links.InviteAsync(clientId),
-                new ExternalIdentity("oidc", subject, "ivanov@example.org"));
-            Assert.Equal(LinkOutcome.Linked, result.Outcome);
-            return true;
-        });
+            return Gateway.ChangeAsync(services =>
+                services.GetRequiredService<ClientLinkService>().InviteAsync(clientId ?? Issued.Client.Id));
+        }
+
+        public Task<List<ClientLink>> LinksAsync()
+        {
+            return Gateway.ChangeAsync(services =>
+                services.GetRequiredService<ClientLinkService>().ListAsync(Issued.Client.Id));
+        }
+
+        public Task LinkAsync(Guid clientId, string subject = "user-1")
+        {
+            return Gateway.ChangeAsync(async services =>
+            {
+                var links = services.GetRequiredService<ClientLinkService>();
+                var result = await links.LinkAsync(
+                    await links.InviteAsync(clientId),
+                    new ExternalIdentity("oidc", subject, "ivanov@example.org"));
+                Assert.Equal(LinkOutcome.Linked, result.Outcome);
+                return true;
+            });
+        }
     }
 
     private static async Task<Setup> StartAsync(bool keySignIn = true)
@@ -43,7 +52,8 @@ public class OAuthExternalTests
         await gateway.ArrangeAsync(async services =>
         {
             var settings = services.GetRequiredService<SignInSettingsService>();
-            await settings.SetProviderAsync(new ProviderSetup("oidc", ProviderClientId, "secret", provider.Issuer, "Корпоративный вход"));
+            await settings.SetProviderAsync(new ProviderSetup("oidc", ProviderClientId, "secret", provider.Issuer,
+                "Корпоративный вход"));
             await settings.UpdateAsync(new SignInSettingsUpdate { KeySignIn = keySignIn }, gateway.Issuer);
         });
         return new Setup(provider, gateway, issued);
@@ -135,14 +145,16 @@ public class OAuthExternalTests
 
         Assert.Contains("уже привязан к другому", flow.Page);
         Assert.Empty(await setup.LinksAsync());
-        Assert.NotNull(await setup.Gateway.ChangeAsync(services => services.GetRequiredService<ClientLinkService>().InvitedClientAsync(code)));
+        Assert.NotNull(await setup.Gateway.ChangeAsync(services =>
+            services.GetRequiredService<ClientLinkService>().InvitedClientAsync(code)));
     }
 
     [Fact]
     public async Task Disabled_provider_is_404_and_hidden_on_the_sign_in_page()
     {
         await using var setup = await StartAsync();
-        await setup.Gateway.ArrangeAsync(services => services.GetRequiredService<SignInSettingsService>().SetProviderEnabledAsync("oidc", false));
+        await setup.Gateway.ArrangeAsync(services =>
+            services.GetRequiredService<SignInSettingsService>().SetProviderEnabledAsync("oidc", false));
         using var flow = await OAuthFlow.StartAsync(setup.Gateway, "echo");
 
         await flow.OpenAsync();
@@ -164,7 +176,8 @@ public class OAuthExternalTests
         using var first = await flow.Browser.GetAsync(link);
         Assert.Contains($"client_id={ProviderClientId}&", first.Headers.Location!.Query.TrimStart('?') + "&");
         await setup.Gateway.ArrangeAsync(services => services.GetRequiredService<SignInSettingsService>()
-            .SetProviderAsync(new ProviderSetup("oidc", "renamed-client", null, setup.Provider.Issuer, "Корпоративный вход")));
+            .SetProviderAsync(new ProviderSetup("oidc", "renamed-client", null, setup.Provider.Issuer,
+                "Корпоративный вход")));
 
         using var second = await flow.Browser.GetAsync(link);
 
@@ -174,7 +187,7 @@ public class OAuthExternalTests
     [Fact]
     public async Task Only_providers_left_works_with_key_sign_in_off()
     {
-        await using var setup = await StartAsync(keySignIn: false);
+        await using var setup = await StartAsync(false);
         await setup.LinkAsync(setup.Issued.Client.Id);
         using var flow = await OAuthFlow.StartAsync(setup.Gateway, "echo");
 

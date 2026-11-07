@@ -1,6 +1,6 @@
 @using System.Globalization
 
-<Strips Items="Bars" />
+<Strips Items="Bars"/>
 <details class="more-days">
     <summary>@PanelText.DaysInDetail</summary>
     <MudTable Items="Shown.AsEnumerable().Reverse()" Elevation="0" Class="tbl">
@@ -18,17 +18,16 @@
             <MudTd DataLabel="@PanelText.ToolsColumn" Class="num">@Words.OrDash(context.ToolCalls)</MudTd>
             <MudTd DataLabel="@PanelText.UpstreamFailuresColumn" Class="num">@Words.OrDash(context.Errors)</MudTd>
             <MudTd DataLabel="@PanelText.RefusalsColumn" Class="num">@Words.OrDash(context.Refused)</MudTd>
-            <MudTd DataLabel="@PanelText.AverageColumn" Class="num">@Words.OrDash(context.Calls == 0 ? 0 : context.DurationMs / context.Calls)</MudTd>
+            <MudTd DataLabel="@PanelText.AverageColumn"
+                   Class="num">@Words.OrDash(context.Calls == 0 ? 0 : context.DurationMs / context.Calls)</MudTd>
         </RowTemplate>
     </MudTable>
 </details>
 
 @code {
-    [Parameter, EditorRequired]
-    public IReadOnlyList<DailyTotal> Days { get; set; } = [];
+    [Parameter][EditorRequired] public IReadOnlyList<DailyTotal> Days { get; set; } = [];
 
-    [Parameter, EditorRequired]
-    public DateOnly Today { get; set; }
+    [Parameter][EditorRequired] public DateOnly Today { get; set; }
 
     private List<DailyTotal> Shown => Enumerable.Range(1 - OverviewService.DaysShown, OverviewService.DaysShown)
         .Select(offset => Today.AddDays(offset))
@@ -44,8 +43,14 @@
             day.Day == Today))
         .ToList();
 
-    private string Name(DateOnly day) => day.ToString("d MMMM", CultureInfo.CurrentCulture);
+    private string Name(DateOnly day)
+    {
+        return day.ToString("d MMMM", CultureInfo.CurrentCulture);
+    }
 
-    private static string Detail(DailyTotal day) =>
-        $"{PanelText.UpstreamFailuresColumn}: {day.Errors} · {PanelText.RefusalsColumn}: {day.Refused}";
+    private static string Detail(DailyTotal day)
+    {
+        return $"{PanelText.UpstreamFailuresColumn}: {day.Errors} · {PanelText.RefusalsColumn}: {day.Refused}";
+    }
+
 }

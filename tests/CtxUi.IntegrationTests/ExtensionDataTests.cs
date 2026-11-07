@@ -7,9 +7,13 @@ namespace CtxUi.IntegrationTests;
 
 public class ExtensionDataTests
 {
-    private const string ToolCall = """{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"echo","arguments":{}}}""";
+    private const string ToolCall =
+        """{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"echo","arguments":{}}}""";
 
-    private static IPanelData Data(GatewayHost gateway) => gateway.App.Services.GetRequiredService<IPanelData>();
+    private static IPanelData Data(GatewayHost gateway)
+    {
+        return gateway.App.Services.GetRequiredService<IPanelData>();
+    }
 
     [Fact]
     public async Task Data_lists_clients_inbounds_and_usage()
@@ -120,7 +124,8 @@ public class ExtensionDataTests
         await using var gateway = await GatewayHost.StartAsync();
         await gateway.AddInboundAsync("a", upstream.McpUrl);
 
-        var failure = await Assert.ThrowsAsync<PanelException>(() => Data(gateway).SetInboundClientsAsync("a", [Guid.NewGuid()]));
+        var failure =
+            await Assert.ThrowsAsync<PanelException>(() => Data(gateway).SetInboundClientsAsync("a", [Guid.NewGuid()]));
         Assert.False(string.IsNullOrWhiteSpace(failure.Message));
     }
 

@@ -9,7 +9,12 @@ using Microsoft.AspNetCore.WebUtilities;
 
 namespace CtxUi.IntegrationTests;
 
-public sealed record TokenAnswer(HttpStatusCode Status, string? Access, string? Refresh, string? Error, JsonElement Body);
+public sealed record TokenAnswer(
+    HttpStatusCode Status,
+    string? Access,
+    string? Refresh,
+    string? Error,
+    JsonElement Body);
 
 public sealed record PageForm(string Action, Dictionary<string, string> Fields);
 
@@ -27,7 +32,7 @@ public sealed partial class OAuthFlow : IDisposable
         Cookies = cookies;
         Browser = new HttpClient(new HttpClientHandler { AllowAutoRedirect = false, CookieContainer = cookies })
         {
-            BaseAddress = new Uri(gateway.BaseUrl),
+            BaseAddress = new Uri(gateway.BaseUrl)
         };
     }
 
@@ -73,7 +78,8 @@ public sealed partial class OAuthFlow : IDisposable
         var resource = await gateway.Http.GetFromJsonAsync<JsonElement>(metadataUrl);
         flow.Resource = resource.GetProperty("resource").GetString()!;
         flow.Issuer = resource.GetProperty("authorization_servers")[0].GetString()!;
-        var server = await gateway.Http.GetFromJsonAsync<JsonElement>(flow.Issuer + "/.well-known/oauth-authorization-server");
+        var server =
+            await gateway.Http.GetFromJsonAsync<JsonElement>(flow.Issuer + "/.well-known/oauth-authorization-server");
         Assert.Equal(flow.Issuer, server.GetProperty("issuer").GetString());
         flow.TokenEndpoint = server.GetProperty("token_endpoint").GetString()!;
 
@@ -81,23 +87,28 @@ public sealed partial class OAuthFlow : IDisposable
             server.GetProperty("registration_endpoint").GetString(),
             new Dictionary<string, object> { ["client_name"] = clientName, ["redirect_uris"] = new[] { redirectUri } });
         Assert.Equal(HttpStatusCode.Created, registered.StatusCode);
-        flow.ClientId = (await registered.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("client_id").GetString()!;
+        flow.ClientId =
+            (await registered.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("client_id").GetString()!;
 
-        flow.AuthorizeUrl = QueryHelpers.AddQueryString(server.GetProperty("authorization_endpoint").GetString()!, new Dictionary<string, string?>
-        {
-            ["client_id"] = flow.ClientId,
-            ["redirect_uri"] = redirectUri,
-            ["response_type"] = "code",
-            ["scope"] = "mcp offline_access",
-            ["state"] = flow.State,
-            ["code_challenge"] = Base64Url(SHA256.HashData(Encoding.ASCII.GetBytes(flow.Verifier))),
-            ["code_challenge_method"] = "S256",
-            ["resource"] = flow.Resource,
-        });
+        flow.AuthorizeUrl = QueryHelpers.AddQueryString(server.GetProperty("authorization_endpoint").GetString()!,
+            new Dictionary<string, string?>
+            {
+                ["client_id"] = flow.ClientId,
+                ["redirect_uri"] = redirectUri,
+                ["response_type"] = "code",
+                ["scope"] = "mcp offline_access",
+                ["state"] = flow.State,
+                ["code_challenge"] = Base64Url(SHA256.HashData(Encoding.ASCII.GetBytes(flow.Verifier))),
+                ["code_challenge_method"] = "S256",
+                ["resource"] = flow.Resource
+            });
         return flow;
     }
 
-    public Task OpenAsync() => FollowAsync(new HttpRequestMessage(HttpMethod.Get, AuthorizeUrl));
+    public Task OpenAsync()
+    {
+        return FollowAsync(new HttpRequestMessage(HttpMethod.Get, AuthorizeUrl));
+    }
 
     public async Task SignInWithKeyAsync(string key)
     {
@@ -109,11 +120,15 @@ public sealed partial class OAuthFlow : IDisposable
     public async Task SwitchClientAsync(string key)
     {
         var authorize = new Uri(AuthorizeUrl).PathAndQuery;
-        await FollowAsync(new HttpRequestMessage(HttpMethod.Get, QueryHelpers.AddQueryString("/connect/signin", "returnUrl", authorize)));
+        await FollowAsync(new HttpRequestMessage(HttpMethod.Get,
+            QueryHelpers.AddQueryString("/connect/signin", "returnUrl", authorize)));
         await SubmitAsync("/connect/signin", new Dictionary<string, string> { ["key"] = key });
     }
 
-    public Task NavigateAsync(string url) => FollowAsync(new HttpRequestMessage(HttpMethod.Get, url));
+    public Task NavigateAsync(string url)
+    {
+        return FollowAsync(new HttpRequestMessage(HttpMethod.Get, url));
+    }
 
     public string LinkTo(string pathPrefix)
     {
@@ -122,19 +137,27 @@ public sealed partial class OAuthFlow : IDisposable
         return WebUtility.HtmlDecode(match.Groups["href"].Value);
     }
 
-    public Task ApproveAsync() => Code is null ? SubmitAsync("/connect/consent") : Task.CompletedTask;
+    public Task ApproveAsync()
+    {
+        return Code is null ? SubmitAsync("/connect/consent") : Task.CompletedTask;
+    }
 
-    public Task ReplaceAsync(Guid deviceId) =>
-        SubmitAsync("/connect/limit/replace", new Dictionary<string, string> { ["deviceId"] = deviceId.ToString() }, deviceId.ToString());
+    public Task ReplaceAsync(Guid deviceId)
+    {
+        return SubmitAsync("/connect/limit/replace",
+            new Dictionary<string, string> { ["deviceId"] = deviceId.ToString() }, deviceId.ToString());
+    }
 
     public async Task SubmitAsync(string action, IDictionary<string, string>? values = null, string? marker = null)
     {
-        var form = Forms(Page).FirstOrDefault(form => form.Action == action && (marker is null || form.Fields.ContainsValue(marker)))
-            ?? throw new InvalidOperationException($"no form posting to {action} on the page:\n{Page}");
+        var form = Forms(Page).FirstOrDefault(form =>
+                       form.Action == action && (marker is null || form.Fields.ContainsValue(marker)))
+                   ?? throw new InvalidOperationException($"no form posting to {action} on the page:\n{Page}");
         foreach (var (name, value) in values ?? new Dictionary<string, string>())
             form.Fields[name] = value;
 
-        await FollowAsync(new HttpRequestMessage(HttpMethod.Post, form.Action) { Content = new FormUrlEncodedContent(form.Fields) });
+        await FollowAsync(new HttpRequestMessage(HttpMethod.Post, form.Action)
+        { Content = new FormUrlEncodedContent(form.Fields) });
     }
 
     public async Task<(string Access, string Refresh)> ExchangeAsync()
@@ -145,17 +168,20 @@ public sealed partial class OAuthFlow : IDisposable
             ["grant_type"] = "authorization_code",
             ["code"] = Code!,
             ["redirect_uri"] = Callback,
-            ["code_verifier"] = Verifier,
+            ["code_verifier"] = Verifier
         });
         Assert.True(answer.Status == HttpStatusCode.OK, answer.Body.ToString());
         return (answer.Access!, answer.Refresh!);
     }
 
-    public Task<TokenAnswer> RefreshAsync(string refresh) => TokenAsync(new Dictionary<string, string>
+    public Task<TokenAnswer> RefreshAsync(string refresh)
     {
-        ["grant_type"] = "refresh_token",
-        ["refresh_token"] = refresh,
-    });
+        return TokenAsync(new Dictionary<string, string>
+        {
+            ["grant_type"] = "refresh_token",
+            ["refresh_token"] = refresh
+        });
+    }
 
     public async Task<TokenAnswer> TokenAsync(Dictionary<string, string> form)
     {
@@ -171,13 +197,16 @@ public sealed partial class OAuthFlow : IDisposable
             body);
     }
 
-    public static IReadOnlyList<PageForm> Forms(string html) => FormPattern().Matches(html)
-        .Select(form => new PageForm(
-            WebUtility.HtmlDecode(form.Groups["action"].Value),
-            InputPattern().Matches(form.Groups["body"].Value).ToDictionary(
-                input => WebUtility.HtmlDecode(input.Groups["name"].Value),
-                input => WebUtility.HtmlDecode(input.Groups["value"].Value))))
-        .ToList();
+    public static IReadOnlyList<PageForm> Forms(string html)
+    {
+        return FormPattern().Matches(html)
+            .Select(form => new PageForm(
+                WebUtility.HtmlDecode(form.Groups["action"].Value),
+                InputPattern().Matches(form.Groups["body"].Value).ToDictionary(
+                    input => WebUtility.HtmlDecode(input.Groups["name"].Value),
+                    input => WebUtility.HtmlDecode(input.Groups["value"].Value))))
+            .ToList();
+    }
 
     public static HttpRequestMessage Mcp(string slug, string bearer, string body = InitializeBody)
     {
@@ -190,7 +219,10 @@ public sealed partial class OAuthFlow : IDisposable
     public const string InitializeBody =
         """{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"test","version":"1"}}}""";
 
-    public void Dispose() => Browser.Dispose();
+    public void Dispose()
+    {
+        Browser.Dispose();
+    }
 
     private async Task FollowAsync(HttpRequestMessage request)
     {
@@ -203,12 +235,14 @@ public sealed partial class OAuthFlow : IDisposable
                 Status = response.StatusCode;
                 Page = await response.Content.ReadAsStringAsync();
                 Location = response.Headers.Location?.OriginalString;
-                if (Status is not (HttpStatusCode.Found or HttpStatusCode.Redirect or HttpStatusCode.SeeOther) || Location is null)
+                if (Status is not (HttpStatusCode.Found or HttpStatusCode.Redirect or HttpStatusCode.SeeOther) ||
+                    Location is null)
                     return;
 
                 if (Location.StartsWith(Callback, StringComparison.Ordinal))
                 {
-                    Answer = QueryHelpers.ParseQuery(new Uri(Location).Query).ToDictionary(pair => pair.Key, pair => (string?)pair.Value.ToString());
+                    Answer = QueryHelpers.ParseQuery(new Uri(Location).Query)
+                        .ToDictionary(pair => pair.Key, pair => (string?)pair.Value.ToString());
                     Assert.Equal(State, Answer.GetValueOrDefault("state"));
                     Assert.Equal(Issuer, Answer.GetValueOrDefault("iss"));
                     return;
@@ -221,7 +255,10 @@ public sealed partial class OAuthFlow : IDisposable
         throw new InvalidOperationException("too many redirects");
     }
 
-    private static string Base64Url(byte[] bytes) => Convert.ToBase64String(bytes).TrimEnd('=').Replace('+', '-').Replace('/', '_');
+    private static string Base64Url(byte[] bytes)
+    {
+        return Convert.ToBase64String(bytes).TrimEnd('=').Replace('+', '-').Replace('/', '_');
+    }
 
     [GeneratedRegex("resource_metadata=\"([^\"]+)\"")]
     private static partial Regex ResourceMetadata();
@@ -229,6 +266,7 @@ public sealed partial class OAuthFlow : IDisposable
     [GeneratedRegex("<form[^>]*\\baction=\"(?<action>[^\"]*)\"[^>]*>(?<body>.*?)</form>", RegexOptions.Singleline)]
     private static partial Regex FormPattern();
 
-    [GeneratedRegex("<input[^>]*\\bname=\"(?<name>[^\"]*)\"[^>]*\\bvalue=\"(?<value>[^\"]*)\"", RegexOptions.Singleline)]
+    [GeneratedRegex("<input[^>]*\\bname=\"(?<name>[^\"]*)\"[^>]*\\bvalue=\"(?<value>[^\"]*)\"",
+        RegexOptions.Singleline)]
     private static partial Regex InputPattern();
 }

@@ -7,17 +7,17 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <FrameworkReference Include="Microsoft.AspNetCore.App" />
-    <PackageReference Include="Enfilade" />
-    <PackageReference Include="MudBlazor" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
-    <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" PrivateAssets="all" />
-    <AdditionalFiles Include="PublicAPI.Shipped.txt" />
-    <AdditionalFiles Include="PublicAPI.Unshipped.txt" />
-    <InternalsVisibleTo Include="CtxUi.Panel" />
-    <InternalsVisibleTo Include="CtxUi.Panel.Tests" />
-    <InternalsVisibleTo Include="ctx-ui" />
-    <None Include="buildTransitive/*" Pack="true" PackagePath="buildTransitive" />
+    <FrameworkReference Include="Microsoft.AspNetCore.App"/>
+    <PackageReference Include="Enfilade"/>
+    <PackageReference Include="MudBlazor"/>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite"/>
+    <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" PrivateAssets="all"/>
+    <AdditionalFiles Include="PublicAPI.Shipped.txt"/>
+    <AdditionalFiles Include="PublicAPI.Unshipped.txt"/>
+    <InternalsVisibleTo Include="CtxUi.Panel"/>
+    <InternalsVisibleTo Include="CtxUi.Panel.Tests"/>
+    <InternalsVisibleTo Include="ctx-ui"/>
+    <None Include="buildTransitive/*" Pack="true" PackagePath="buildTransitive"/>
   </ItemGroup>
 
 </Project>

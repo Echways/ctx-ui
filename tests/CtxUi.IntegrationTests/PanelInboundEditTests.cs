@@ -18,18 +18,20 @@ public class PanelInboundEditTests
         await using var session = await PanelSession.SignInAsync(gateway);
         var page = await OpenInboundsAsync(session);
 
-        await Row(page, "echo").GetByRole(AriaRole.Button, new() { Name = "Изменить" }).ClickAsync();
+        await Row(page, "echo").GetByRole(AriaRole.Button, new LocatorGetByRoleOptions { Name = "Изменить" })
+            .ClickAsync();
         await Expect(Dialog(page).GetByLabel("Slug")).ToBeDisabledAsync();
         await Expect(Dialog(page).GetByLabel("Адрес MCP-сервера")).ToHaveValueAsync(first.McpUrl);
         await Dialog(page).GetByLabel("Название").FillAsync("Эхо");
         await Dialog(page).GetByLabel("Адрес MCP-сервера").FillAsync(second.McpUrl);
         await Dialog(page).GetByLabel("Таймаут запроса, с").FillAsync("30");
         await Dialog(page).GetByLabel("Предел тела запроса, КБ").FillAsync("1");
-        await Dialog(page).GetByRole(AriaRole.Button, new() { Name = "Сохранить" }).ClickAsync();
+        await Dialog(page).GetByRole(AriaRole.Button, new LocatorGetByRoleOptions { Name = "Сохранить" }).ClickAsync();
         await Expect(Row(page, "echo")).ToContainTextAsync("Эхо");
 
         using var served = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/echo", issued.Token));
-        using var tooLarge = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/echo", issued.Token, new string(' ', 2_000) + "{}"));
+        using var tooLarge =
+            await gateway.Http.SendAsync(GatewayHost.Post("/mcp/echo", issued.Token, new string(' ', 2_000) + "{}"));
 
         Assert.Equal(HttpStatusCode.OK, served.StatusCode);
         Assert.Empty(first.Requests);
@@ -50,25 +52,28 @@ public class PanelInboundEditTests
         await using var session = await PanelSession.SignInAsync(gateway);
         var page = await OpenInboundsAsync(session);
 
-        await Row(page, "echo").GetByRole(AriaRole.Button, new() { Name = "Изменить" }).ClickAsync();
+        await Row(page, "echo").GetByRole(AriaRole.Button, new LocatorGetByRoleOptions { Name = "Изменить" })
+            .ClickAsync();
         await Expect(Dialog(page)).ToContainTextAsync("Заданы заголовки: X-Api-Key");
         Assert.DoesNotContain("s3cret", await page.ContentAsync());
         await Dialog(page).GetByLabel("Название").FillAsync("Эхо");
-        await Dialog(page).GetByRole(AriaRole.Button, new() { Name = "Сохранить" }).ClickAsync();
+        await Dialog(page).GetByRole(AriaRole.Button, new LocatorGetByRoleOptions { Name = "Сохранить" }).ClickAsync();
         await Expect(Row(page, "echo")).ToContainTextAsync("Эхо");
         using var kept = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/echo", issued.Token));
 
-        await Row(page, "echo").GetByRole(AriaRole.Button, new() { Name = "Изменить" }).ClickAsync();
+        await Row(page, "echo").GetByRole(AriaRole.Button, new LocatorGetByRoleOptions { Name = "Изменить" })
+            .ClickAsync();
         await Dialog(page).GetByLabel("Заменить заголовки").CheckAsync();
         await Dialog(page).GetByLabel("Заголовки для upstream").FillAsync("Authorization=Bearer new");
-        await Dialog(page).GetByRole(AriaRole.Button, new() { Name = "Сохранить" }).ClickAsync();
+        await Dialog(page).GetByRole(AriaRole.Button, new LocatorGetByRoleOptions { Name = "Сохранить" }).ClickAsync();
         await Expect(Dialog(page)).ToHaveCountAsync(0);
         using var replaced = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/echo", issued.Token));
 
-        await Row(page, "echo").GetByRole(AriaRole.Button, new() { Name = "Изменить" }).ClickAsync();
+        await Row(page, "echo").GetByRole(AriaRole.Button, new LocatorGetByRoleOptions { Name = "Изменить" })
+            .ClickAsync();
         await Expect(Dialog(page)).ToContainTextAsync("Заданы заголовки: Authorization");
         await Dialog(page).GetByLabel("Заменить заголовки").CheckAsync();
-        await Dialog(page).GetByRole(AriaRole.Button, new() { Name = "Сохранить" }).ClickAsync();
+        await Dialog(page).GetByRole(AriaRole.Button, new LocatorGetByRoleOptions { Name = "Сохранить" }).ClickAsync();
         await Expect(Dialog(page)).ToHaveCountAsync(0);
         using var removed = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/echo", issued.Token));
 

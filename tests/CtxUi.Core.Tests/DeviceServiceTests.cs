@@ -16,18 +16,28 @@ public class DeviceServiceTests
     private readonly FakeTimeProvider _clock = new(TestData.Now);
     private Guid _clientId;
 
-    private DeviceService Devices(TestDatabase database) => new(database.NewContext(), _clock);
+    private DeviceService Devices(TestDatabase database)
+    {
+        return new DeviceService(database.NewContext(), _clock);
+    }
 
-    private ClientService Clients(TestDatabase database) => new(database.NewContext(), _vault, _clock);
+    private ClientService Clients(TestDatabase database)
+    {
+        return new ClientService(database.NewContext(), _vault, _clock);
+    }
 
-    private static Task<long> RevisionAsync(TestDatabase database) =>
-        database.NewContext().RoutingStates.AsNoTracking().Select(state => state.Revision).SingleAsync();
+    private static Task<long> RevisionAsync(TestDatabase database)
+    {
+        return database.NewContext().RoutingStates.AsNoTracking().Select(state => state.Revision).SingleAsync();
+    }
 
     private async Task<TestDatabase> ClientWithLimitAsync(int? limit)
     {
         var database = await TestDatabase.CreateAsync();
-        await new InboundService(database.NewContext(), _vault, _clock).AddHttpAsync("echo", null, "https://mcp.example.org/mcp");
-        _clientId = (await Clients(database).AddAsync("Иванов", ["echo"], access: new ClientAccessPolicy(limit, true))).Client.Id;
+        await new InboundService(database.NewContext(), _vault, _clock).AddHttpAsync("echo", null,
+            "https://mcp.example.org/mcp");
+        _clientId = (await Clients(database).AddAsync("Иванов", ["echo"], access: new ClientAccessPolicy(limit, true)))
+            .Client.Id;
         return database;
     }
 
@@ -71,7 +81,8 @@ public class DeviceServiceTests
         Assert.Equal(1, await Devices(database).ActiveCountAsync(_clientId));
         var saved = await Devices(database).GetAsync(first.Device.Id);
         Assert.Equal(DeviceMarker.Hash(Marker), saved.MarkerHash);
-        Assert.Equal(("Chrome · Windows", "203.0.113.7", Device.ByKey, TestData.Now), (saved.Name, saved.SignInIp, saved.SignedInWith, saved.CreatedAt));
+        Assert.Equal(("Chrome · Windows", "203.0.113.7", Device.ByKey, TestData.Now),
+            (saved.Name, saved.SignInIp, saved.SignedInWith, saved.CreatedAt));
     }
 
     [Fact]
@@ -106,7 +117,8 @@ public class DeviceServiceTests
         var old = (await Devices(database).AdmitAsync(_clientId, DeviceMarker.Generate(), Seen)).Device!;
         var marker = DeviceMarker.Generate();
 
-        var fresh = await Devices(database).ReplaceAsync(_clientId, old.Id, marker, Seen with { SignedInWith = "google" });
+        var fresh = await Devices(database)
+            .ReplaceAsync(_clientId, old.Id, marker, Seen with { SignedInWith = "google" });
 
         var replaced = await Devices(database).GetAsync(old.Id);
         Assert.Equal(DeviceRevocation.User, replaced.RevokedReason);
@@ -254,7 +266,8 @@ public class DeviceServiceTests
         await Devices(database).AddAppAsync(device.Id, "dcr:cursor", "Cursor", "authorization-3");
 
         Assert.Equal("authorization-3", await Devices(database).AppAuthorizationAsync(device.Id, "dcr:cursor"));
-        Assert.Equal("authorization-2", await Devices(database).AppAuthorizationAsync(device.Id, "https://claude.ai/metadata"));
+        Assert.Equal("authorization-2",
+            await Devices(database).AppAuthorizationAsync(device.Id, "https://claude.ai/metadata"));
     }
 
     [Fact]
@@ -264,7 +277,8 @@ public class DeviceServiceTests
         var other = (await Clients(database).AddAsync("Петров", ["echo"])).Client.Id;
         var foreign = (await Devices(database).AdmitAsync(other, Marker, Seen)).Device!;
 
-        await Assert.ThrowsAsync<NotFoundException>(() => Devices(database).RevokeAsync(_clientId, foreign.Id, DeviceRevocation.Admin));
+        await Assert.ThrowsAsync<NotFoundException>(() =>
+            Devices(database).RevokeAsync(_clientId, foreign.Id, DeviceRevocation.Admin));
     }
 
     [Fact]
@@ -309,7 +323,8 @@ public class DeviceServiceTests
 
         Assert.Equal(1, await Devices(database).PruneAsync(_clock.GetUtcNow().AddDays(-30)));
 
-        Assert.Equal([kept.Id], (await database.NewContext().Devices.AsNoTracking().ToListAsync()).Select(device => device.Id));
+        Assert.Equal([kept.Id],
+            (await database.NewContext().Devices.AsNoTracking().ToListAsync()).Select(device => device.Id));
         Assert.Empty(await database.NewContext().DeviceApps.AsNoTracking().ToListAsync());
         await Assert.ThrowsAsync<NotFoundException>(() => Devices(database).GetAsync(old.Id));
     }

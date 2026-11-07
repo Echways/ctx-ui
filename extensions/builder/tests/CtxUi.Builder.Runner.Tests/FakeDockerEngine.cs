@@ -11,10 +11,15 @@ internal sealed class FakeContainer(CreateContainerParameters parameters)
     public IDictionary<string, string> Labels => Parameters.Labels;
     public bool Running { get; set; }
     public string? Role => Labels.TryGetValue(BuilderLabels.Role, out var role) ? role : null;
-    public int? Release => Labels.TryGetValue(BuilderLabels.Release, out var release) ? int.Parse(release, CultureInfo.InvariantCulture) : null;
 
-    public string? MountSource(string target) =>
-        Parameters.HostConfig.Mounts.FirstOrDefault(mount => mount.Target == target)?.Source;
+    public int? Release => Labels.TryGetValue(BuilderLabels.Release, out var release)
+        ? int.Parse(release, CultureInfo.InvariantCulture)
+        : null;
+
+    public string? MountSource(string target)
+    {
+        return Parameters.HostConfig.Mounts.FirstOrDefault(mount => mount.Target == target)?.Source;
+    }
 }
 
 internal sealed class FakeDockerEngine : IDockerEngine
@@ -44,13 +49,82 @@ internal sealed class FakeDockerEngine : IDockerEngine
     public HashSet<string> SystemContainers { get; } = new(StringComparer.Ordinal) { "egress", "runner-self" };
     public IReadOnlyList<string> Subnets { get; set; } = [];
 
-    public IReadOnlyList<string> Created { get { lock (_sync) { return _created.ToList(); } } }
-    public IReadOnlyList<string> RemovedNetworks { get { lock (_sync) { return _removedNetworks.ToList(); } } }
-    public IReadOnlyList<Extraction> Extractions { get { lock (_sync) { return _extractions.ToList(); } } }
-    public IReadOnlyList<FakeContainer> Containers { get { lock (_sync) { return _containers.Values.ToList(); } } }
-    public IReadOnlyList<string> Volumes { get { lock (_sync) { return _volumes.Keys.ToList(); } } }
-    public IReadOnlyList<string> Networks { get { lock (_sync) { return _networks.Keys.ToList(); } } }
-    public IReadOnlySet<(string Network, string Container)> Attachments { get { lock (_sync) { return _attachments.ToHashSet(); } } }
+    public IReadOnlyList<string> Created
+    {
+        get
+        {
+            lock (_sync)
+            {
+                return _created.ToList();
+            }
+        }
+    }
+
+    public IReadOnlyList<string> RemovedNetworks
+    {
+        get
+        {
+            lock (_sync)
+            {
+                return _removedNetworks.ToList();
+            }
+        }
+    }
+
+    public IReadOnlyList<Extraction> Extractions
+    {
+        get
+        {
+            lock (_sync)
+            {
+                return _extractions.ToList();
+            }
+        }
+    }
+
+    public IReadOnlyList<FakeContainer> Containers
+    {
+        get
+        {
+            lock (_sync)
+            {
+                return _containers.Values.ToList();
+            }
+        }
+    }
+
+    public IReadOnlyList<string> Volumes
+    {
+        get
+        {
+            lock (_sync)
+            {
+                return _volumes.Keys.ToList();
+            }
+        }
+    }
+
+    public IReadOnlyList<string> Networks
+    {
+        get
+        {
+            lock (_sync)
+            {
+                return _networks.Keys.ToList();
+            }
+        }
+    }
+
+    public IReadOnlySet<(string Network, string Container)> Attachments
+    {
+        get
+        {
+            lock (_sync)
+            {
+                return _attachments.ToHashSet();
+            }
+        }
+    }
 
     public FakeContainer? Find(string name)
     {
@@ -64,15 +138,14 @@ internal sealed class FakeDockerEngine : IDockerEngine
     {
         lock (_sync)
         {
-            foreach (var marker in _containers.Values.Where(container => container.Role == BuilderLabels.ActivationRole).ToList())
-            {
+            foreach (var marker in _containers.Values.Where(container => container.Role == BuilderLabels.ActivationRole)
+                         .ToList())
                 _containers.Remove(marker.Name);
-            }
 
-            foreach (var marker in _volumes.Where(volume => volume.Value.TryGetValue(BuilderLabels.Role, out var role) && role == BuilderLabels.ActivationRole).ToList())
-            {
+            foreach (var marker in _volumes.Where(volume =>
+                         volume.Value.TryGetValue(BuilderLabels.Role, out var role) &&
+                         role == BuilderLabels.ActivationRole).ToList())
                 _volumes.Remove(marker.Key);
-            }
         }
     }
 
@@ -82,8 +155,12 @@ internal sealed class FakeDockerEngine : IDockerEngine
         {
             lock (_sync)
             {
-                return _containers.Values.Where(container => container.Role == BuilderLabels.ActivationRole).Select(container => container.Name)
-                    .Concat(_volumes.Where(volume => volume.Value.TryGetValue(BuilderLabels.Role, out var role) && role == BuilderLabels.ActivationRole).Select(volume => volume.Key))
+                return _containers.Values.Where(container => container.Role == BuilderLabels.ActivationRole)
+                    .Select(container => container.Name)
+                    .Concat(_volumes
+                        .Where(volume =>
+                            volume.Value.TryGetValue(BuilderLabels.Role, out var role) &&
+                            role == BuilderLabels.ActivationRole).Select(volume => volume.Key))
                     .ToList();
             }
         }
@@ -102,7 +179,10 @@ internal sealed class FakeDockerEngine : IDockerEngine
         }
     }
 
-    public Task<string> VersionAsync(CancellationToken ct) => Task.FromResult(EngineVersion);
+    public Task<string> VersionAsync(CancellationToken ct)
+    {
+        return Task.FromResult(EngineVersion);
+    }
 
     public Task<IReadOnlyList<BuilderContainer>> ListContainersAsync(Guid? server, CancellationToken ct)
     {
@@ -110,7 +190,8 @@ internal sealed class FakeDockerEngine : IDockerEngine
         {
             IReadOnlyList<BuilderContainer> listed = _containers.Values
                 .Where(container => server is null || container.Labels[BuilderLabels.Root] == server.Value.ToString())
-                .Select(container => new BuilderContainer(container.Name, container.Labels.AsReadOnly(), container.Running))
+                .Select(container =>
+                    new BuilderContainer(container.Name, container.Labels.AsReadOnly(), container.Running))
                 .ToList();
             return Task.FromResult(listed);
         }
@@ -122,9 +203,7 @@ internal sealed class FakeDockerEngine : IDockerEngine
         lock (_sync)
         {
             if (_containers.ContainsKey(parameters.Name))
-            {
                 throw new InvalidOperationException($"Name in use: {parameters.Name}");
-            }
 
             _containers[parameters.Name] = new FakeContainer(parameters);
             _created.Add(parameters.Name);
@@ -148,9 +227,7 @@ internal sealed class FakeDockerEngine : IDockerEngine
         lock (_sync)
         {
             if (_containers.TryGetValue(name, out var container))
-            {
                 container.Running = false;
-            }
         }
 
         return Task.CompletedTask;
@@ -170,18 +247,14 @@ internal sealed class FakeDockerEngine : IDockerEngine
     public async Task<long> WaitContainerAsync(Guid server, string name, CancellationToken ct)
     {
         if (BuildGate is { } gate)
-        {
             await gate.Task.WaitAsync(ct);
-        }
 
         lock (_sync)
         {
             var container = _containers[name];
             container.Running = false;
             if (BuildExitCode == 0 && container.MountSource("/env") is { } environment)
-            {
                 _completedEnvironments.Add(environment);
-            }
         }
 
         return BuildExitCode;
@@ -202,17 +275,17 @@ internal sealed class FakeDockerEngine : IDockerEngine
         lock (_sync)
         {
             var environment = _containers[name].MountSource("/env");
-            var complete = path == "/env/requirements.lock" && environment is not null && _completedEnvironments.Contains(environment);
+            var complete = path == "/env/requirements.lock" && environment is not null &&
+                           _completedEnvironments.Contains(environment);
             if (complete && LockFile.Length > maxBytes)
-            {
                 throw new BuilderFileTooLargeException(path, maxBytes);
-            }
 
             return Task.FromResult(complete ? LockFile : null);
         }
     }
 
-    public async IAsyncEnumerable<string> ReadLogsAsync(Guid server, string name, int? tail, bool follow, [EnumeratorCancellation] CancellationToken ct)
+    public async IAsyncEnumerable<string> ReadLogsAsync(Guid server, string name, int? tail, bool follow,
+        [EnumeratorCancellation] CancellationToken ct)
     {
         await Task.Yield();
         string? role;
@@ -306,9 +379,7 @@ internal sealed class FakeDockerEngine : IDockerEngine
         lock (_sync)
         {
             if (_attachments.Any(attachment => attachment.Network == name))
-            {
                 throw new InvalidOperationException($"Network {name} has active endpoints.");
-            }
 
             _networks.Remove(name);
             _removedNetworks.Add(name);
@@ -337,25 +408,23 @@ internal sealed class FakeDockerEngine : IDockerEngine
         return Task.CompletedTask;
     }
 
-    public Task<bool> RequireSystemContainerAsync(string name, CancellationToken ct) =>
-        SystemContainers.Contains(name)
+    public Task<bool> RequireSystemContainerAsync(string name, CancellationToken ct)
+    {
+        return SystemContainers.Contains(name)
             ? Task.FromResult(true)
             : throw new BuilderObjectRefusedException($"Container {name} is not a builder system container.");
+    }
 
     private static void ThrowIfInjected(Func<string, Exception?>? injection, string name)
     {
         if (injection?.Invoke(name) is { } failure)
-        {
             throw failure;
-        }
     }
 
     private async Task CompleteCreateAsync(string name, CancellationToken ct)
     {
         ThrowIfInjected(AfterCreate, name);
         if (AfterCreateGate?.Invoke(name) is { } gate)
-        {
             await gate.Task.WaitAsync(ct);
-        }
     }
 }

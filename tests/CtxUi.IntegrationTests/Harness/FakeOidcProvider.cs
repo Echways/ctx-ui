@@ -18,7 +18,10 @@ public sealed class FakeOidcProvider : IAsyncDisposable
     private readonly RSA _rsa = RSA.Create(2048);
     private readonly ConcurrentDictionary<string, (string ClientId, string? Nonce)> _codes = new();
 
-    private FakeOidcProvider(WebApplication app) => _app = app;
+    private FakeOidcProvider(WebApplication app)
+    {
+        _app = app;
+    }
 
     public string Subject { get; set; } = "user-1";
 
@@ -52,7 +55,7 @@ public sealed class FakeOidcProvider : IAsyncDisposable
             ["jwks_uri"] = Issuer + "/jwks",
             ["response_types_supported"] = new[] { "code" },
             ["subject_types_supported"] = new[] { "public" },
-            ["id_token_signing_alg_values_supported"] = new[] { SecurityAlgorithms.RsaSha256 },
+            ["id_token_signing_alg_values_supported"] = new[] { SecurityAlgorithms.RsaSha256 }
         }));
         _app.MapGet("/jwks", () =>
         {
@@ -68,9 +71,9 @@ public sealed class FakeOidcProvider : IAsyncDisposable
                         alg = SecurityAlgorithms.RsaSha256,
                         kid = KeyId,
                         n = Base64UrlEncoder.Encode(parameters.Modulus),
-                        e = Base64UrlEncoder.Encode(parameters.Exponent),
-                    },
-                },
+                        e = Base64UrlEncoder.Encode(parameters.Exponent)
+                    }
+                }
             });
         });
         _app.MapGet("/authorize", (HttpRequest request) =>
@@ -97,11 +100,13 @@ public sealed class FakeOidcProvider : IAsyncDisposable
                 {
                     ["sub"] = Subject,
                     ["email"] = Email,
-                    ["nonce"] = issued.Nonce ?? "",
+                    ["nonce"] = issued.Nonce ?? ""
                 },
-                SigningCredentials = new SigningCredentials(new RsaSecurityKey(_rsa) { KeyId = KeyId }, SecurityAlgorithms.RsaSha256),
+                SigningCredentials = new SigningCredentials(new RsaSecurityKey(_rsa) { KeyId = KeyId },
+                    SecurityAlgorithms.RsaSha256)
             });
-            return Results.Json(new { access_token = "fake-access", token_type = "Bearer", expires_in = 300, id_token = idToken });
+            return Results.Json(new
+            { access_token = "fake-access", token_type = "Bearer", expires_in = 300, id_token = idToken });
         });
     }
 }

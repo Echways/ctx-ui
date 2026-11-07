@@ -10,5 +10,5 @@ public enum UsageOutcome
     RateLimited = 5,
     ConcurrencyLimited = 6,
     BodyTooLarge = 7,
-    NotJsonRpc = 8,
+    NotJsonRpc = 8
 }

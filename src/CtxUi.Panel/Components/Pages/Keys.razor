@@ -5,12 +5,13 @@
 @inject PanelActions Actions
 @inject TimeProvider Clock
 
-<PageHead Title="@Layout.TitleOf(PanelSections.ApiKeys)" Count="_keys?.Count" UpdatedAt="_loadedAt" OnRefresh="LoadAsync">
+<PageHead Title="@Layout.TitleOf(PanelSections.ApiKeys)" Count="_keys?.Count" UpdatedAt="_loadedAt"
+          OnRefresh="LoadAsync">
     <Summary>
         <span>@PanelText.KeysSummary</span>
     </Summary>
     <Actions>
-        <PageButtons Section="@PanelSections.ApiKeys" OnDone="LoadAsync" />
+        <PageButtons Section="@PanelSections.ApiKeys" OnDone="LoadAsync"/>
         <a class="link" href="swagger/" target="_blank">@PanelText.ApiDocs</a>
         @if (_keys is { Count: > 0 })
         {
@@ -18,11 +19,11 @@
         }
     </Actions>
 </PageHead>
-<PageTopBlocks Section="@PanelSections.ApiKeys" />
+<PageTopBlocks Section="@PanelSections.ApiKeys"/>
 
 @if (_keys is null)
 {
-    <Placeholder />
+    <Placeholder/>
 }
 else if (_keys.Count == 0)
 {
@@ -47,7 +48,8 @@ else
             <MudTd Class="acts">
                 <MudMenu Label="⋯" AriaLabel="@string.Format(PanelText.MoreActions, context.Name)" Class="more"
                          AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
-                    <SlotMenuItems Slot="PanelSlots.ApiKeyActions" Context="() => PanelData.Summary(context)" DividerAfter="true" OnDone="LoadAsync" />
+                    <SlotMenuItems Slot="PanelSlots.ApiKeyActions" Context="() => PanelData.Summary(context)"
+                                   DividerAfter="true" OnDone="LoadAsync"/>
                     <MudMenuItem Class="danger" OnClick="() => RemoveAsync(context)">@PanelText.Revoke</MudMenuItem>
                 </MudMenu>
             </MudTd>
@@ -55,13 +57,16 @@ else
     </MudTable>
 }
 
-<PageBottomBlocks Section="@PanelSections.ApiKeys" />
+<PageBottomBlocks Section="@PanelSections.ApiKeys"/>
 
 @code {
     private List<ApiKey>? _keys;
     private DateTimeOffset? _loadedAt;
 
-    protected override Task OnInitializedAsync() => LoadAsync();
+    protected override Task OnInitializedAsync()
+    {
+        return LoadAsync();
+    }
 
     private async Task LoadAsync()
     {
@@ -78,11 +83,12 @@ else
 
     private async Task RemoveAsync(ApiKey key)
     {
-        if (!await Dialogs.ConfirmAsync(string.Format(PanelText.RevokeQuestion, key.Name), PanelText.RevokeWarning, PanelText.Revoke, danger: true))
+        if (!await Dialogs.ConfirmAsync(string.Format(PanelText.RevokeQuestion, key.Name), PanelText.RevokeWarning, PanelText.Revoke, true))
             return;
 
         await Actions.ApplyAsync(
             services => services.GetRequiredService<ApiKeyService>().RemoveAsync(key.Name), string.Format(PanelText.KeyRevoked, key.Name));
         await LoadAsync();
     }
+
 }

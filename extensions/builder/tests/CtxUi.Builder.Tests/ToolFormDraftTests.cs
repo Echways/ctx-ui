@@ -45,7 +45,10 @@ public sealed class ToolFormDraftTests
     public void A_tool_survives_the_trip_through_the_draft()
     {
         var tool = new FormTool("get_forecast", "GET", "/f/{city}", "Forecast",
-            [new ToolParameter("city", "string", ParameterPlace.Path, true, null, "City"), new ToolParameter("days", "integer", ParameterPlace.Query, false, JsonValue.Create(3), null)],
+            [
+                new ToolParameter("city", "string", ParameterPlace.Path, true, null, "City"),
+                new ToolParameter("days", "integer", ParameterPlace.Query, false, JsonValue.Create(3), null)
+            ],
             JsonNode.Parse("""{"type":"object"}"""));
 
         var back = ToolFormDraft.From(tool).ToTool();

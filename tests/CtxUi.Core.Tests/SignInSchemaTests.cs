@@ -12,29 +12,37 @@ public class SignInSchemaTests
     private readonly FakeVault _vault = new();
     private readonly FakeTimeProvider _clock = new(TestData.Now);
 
-    private static Device Device(Guid clientId) => new()
+    private static Device Device(Guid clientId)
     {
-        Id = Guid.NewGuid(),
-        ClientId = clientId,
-        MarkerHash = "marker",
-        Name = "Chrome · Windows",
-        SignInIp = "203.0.113.7",
-        SignedInWith = SignIn.Device.ByKey,
-        CreatedAt = TestData.Now,
-    };
+        return new Device
+        {
+            Id = Guid.NewGuid(),
+            ClientId = clientId,
+            MarkerHash = "marker",
+            Name = "Chrome · Windows",
+            SignInIp = "203.0.113.7",
+            SignedInWith = SignIn.Device.ByKey,
+            CreatedAt = TestData.Now
+        };
+    }
 
-    private static ClientLink Link(Guid clientId) => new()
+    private static ClientLink Link(Guid clientId)
     {
-        Id = Guid.NewGuid(),
-        ClientId = clientId,
-        Provider = "google",
-        Subject = "user-1",
-        Display = "ivanov@example.org",
-        LinkedAt = TestData.Now,
-    };
+        return new ClientLink
+        {
+            Id = Guid.NewGuid(),
+            ClientId = clientId,
+            Provider = "google",
+            Subject = "user-1",
+            Display = "ivanov@example.org",
+            LinkedAt = TestData.Now
+        };
+    }
 
-    private static Task<long> RevisionAsync(CtxUiDbContext db) =>
-        db.RoutingStates.AsNoTracking().Select(state => state.Revision).SingleAsync();
+    private static Task<long> RevisionAsync(CtxUiDbContext db)
+    {
+        return db.RoutingStates.AsNoTracking().Select(state => state.Revision).SingleAsync();
+    }
 
     private static async Task<Client> SavedClientAsync(TestDatabase database, string name)
     {
@@ -64,11 +72,13 @@ public class SignInSchemaTests
     public async Task Existing_clients_keep_the_direct_key_and_no_device_limit()
     {
         await using var database = await TestDatabase.CreateAsync();
-        await new InboundService(database.NewContext(), _vault, _clock).AddHttpAsync("echo", null, "https://mcp.example.org/mcp");
+        await new InboundService(database.NewContext(), _vault, _clock).AddHttpAsync("echo", null,
+            "https://mcp.example.org/mcp");
 
         var issued = await new ClientService(database.NewContext(), _vault, _clock).AddAsync("Иванов", ["echo"]);
 
-        var client = await database.NewContext().Clients.AsNoTracking().SingleAsync(saved => saved.Id == issued.Client.Id);
+        var client = await database.NewContext().Clients.AsNoTracking()
+            .SingleAsync(saved => saved.Id == issued.Client.Id);
         Assert.True(client.DirectKey);
         Assert.Null(client.MaxDevices);
         Assert.Null(client.InviteHash);
@@ -107,7 +117,7 @@ public class SignInSchemaTests
                 AppKey = "https://claude.ai/oauth/mcp-oauth-client-metadata",
                 AppName = "Claude",
                 AuthorizationId = "authorization",
-                ConnectedAt = TestData.Now,
+                ConnectedAt = TestData.Now
             });
             db.Devices.Add(device);
             db.ClientLinks.Add(Link(client.Id));
@@ -147,7 +157,7 @@ public class SignInSchemaTests
                 AppKey = "dcr:abc",
                 AppName = "Cursor",
                 AuthorizationId = "authorization",
-                ConnectedAt = TestData.Now,
+                ConnectedAt = TestData.Now
             });
             await db.SaveChangesAsync();
             Assert.Equal(2, await RevisionAsync(db));
@@ -170,7 +180,8 @@ public class SignInSchemaTests
         await using var database = await TestDatabase.CreateAsync();
         await using var db = database.NewContext();
 
-        var tables = await db.Database.SqlQueryRaw<string>("SELECT name AS Value FROM sqlite_master WHERE type = 'table'").ToListAsync();
+        var tables = await db.Database
+            .SqlQueryRaw<string>("SELECT name AS Value FROM sqlite_master WHERE type = 'table'").ToListAsync();
 
         Assert.Contains("OpenIddictApplications", tables);
         Assert.Contains("OpenIddictAuthorizations", tables);

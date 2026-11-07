@@ -21,12 +21,19 @@ public sealed record SignInSettingsUpdate
     public bool? SelfRevoke { get; init; }
 }
 
-public sealed record ProviderSetup(string Name, string ClientId, string? Secret, string? Issuer = null, string? Title = null);
+public sealed record ProviderSetup(
+    string Name,
+    string ClientId,
+    string? Secret,
+    string? Issuer = null,
+    string? Title = null);
 
 public sealed class SignInSettingsService(CtxUiDbContext db, ISecretVault vault)
 {
-    public Task<SignInSettings> GetAsync(CancellationToken ct = default) =>
-        db.SignInSettings.AsNoTracking().SingleAsync(ct);
+    public Task<SignInSettings> GetAsync(CancellationToken ct = default)
+    {
+        return db.SignInSettings.AsNoTracking().SingleAsync(ct);
+    }
 
     public async Task UpdateAsync(SignInSettingsUpdate update, string publicUrl, CancellationToken ct = default)
     {
@@ -48,10 +55,12 @@ public sealed class SignInSettingsService(CtxUiDbContext db, ISecretVault vault)
         await db.SaveChangesAsync(ct);
     }
 
-    public async Task<List<SignInProvider>> ProvidersAsync(CancellationToken ct = default) =>
-        (await db.SignInProviders.AsNoTracking().ToListAsync(ct))
-        .OrderBy(provider => ProviderCatalog.Order(provider.Name))
-        .ToList();
+    public async Task<List<SignInProvider>> ProvidersAsync(CancellationToken ct = default)
+    {
+        return (await db.SignInProviders.AsNoTracking().ToListAsync(ct))
+            .OrderBy(provider => ProviderCatalog.Order(provider.Name))
+            .ToList();
+    }
 
     public async Task SetProviderAsync(ProviderSetup setup, CancellationToken ct = default)
     {
@@ -61,7 +70,9 @@ public sealed class SignInSettingsService(CtxUiDbContext db, ISecretVault vault)
             throw new DomainException(CoreText.ProviderClientIdRequired);
 
         var issuer = setup.Issuer?.Trim();
-        if (info.NeedsIssuer && !(Uri.TryCreate(issuer, UriKind.Absolute, out var url) && (url.Scheme == Uri.UriSchemeHttps || url.IsLoopback && url.Scheme == Uri.UriSchemeHttp)))
+        if (info.NeedsIssuer && !(Uri.TryCreate(issuer, UriKind.Absolute, out var url) &&
+                                  (url.Scheme == Uri.UriSchemeHttps ||
+                                   (url.IsLoopback && url.Scheme == Uri.UriSchemeHttp))))
             throw new DomainException(CoreText.OidcIssuerRequired);
 
         var secret = string.IsNullOrWhiteSpace(setup.Secret) ? null : setup.Secret.Trim();
@@ -72,7 +83,7 @@ public sealed class SignInSettingsService(CtxUiDbContext db, ISecretVault vault)
             {
                 Name = info.Name,
                 ClientId = clientId,
-                SecretSealed = vault.Seal(secret ?? throw new DomainException(CoreText.ProviderSecretRequired)),
+                SecretSealed = vault.Seal(secret ?? throw new DomainException(CoreText.ProviderSecretRequired))
             };
             db.SignInProviders.Add(provider);
         }
@@ -105,14 +116,16 @@ public sealed class SignInSettingsService(CtxUiDbContext db, ISecretVault vault)
         await db.SaveChangesAsync(ct);
     }
 
-    public Task<int> ClientsWithoutDirectKeyAsync(CancellationToken ct = default) =>
-        db.Clients.CountAsync(client => !client.DirectKey, ct);
+    public Task<int> ClientsWithoutDirectKeyAsync(CancellationToken ct = default)
+    {
+        return db.Clients.CountAsync(client => !client.DirectKey, ct);
+    }
 
     private async Task<SignInProvider> TrackProviderAsync(string name, CancellationToken ct)
     {
         var info = ProviderCatalog.Get(name);
         return await db.SignInProviders.SingleOrDefaultAsync(provider => provider.Name == info.Name, ct)
-            ?? throw new NotFoundException(string.Format(CoreText.ProviderNotConfigured, info.Name));
+               ?? throw new NotFoundException(string.Format(CoreText.ProviderNotConfigured, info.Name));
     }
 
     private async Task EnsureSignInMethodAsync(SignInSettings settings, CancellationToken ct)

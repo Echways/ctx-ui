@@ -1,12 +1,24 @@
 namespace CtxUi.Builder.Contracts;
 
-public enum NetworkAccess { InternetOnly, FullNetwork }
+public enum NetworkAccess
+{
+    InternetOnly,
+    FullNetwork
+}
 
 public sealed record ServerLimits(int MemoryMb = 512, double Cpus = 1, int Pids = 256);
 
 public sealed record ServerSpec(NetworkAccess Network, ServerLimits Limits, string RouteSecret);
 
-public enum ReleaseState { Building, Built, Failed, Candidate, Active, Retired }
+public enum ReleaseState
+{
+    Building,
+    Built,
+    Failed,
+    Candidate,
+    Active,
+    Retired
+}
 
 public sealed record ReleaseStatus(
     int Number,
@@ -25,4 +37,9 @@ public sealed record ServerState(Guid Id, int? ActiveRelease, IReadOnlyList<Rele
 public static class RouteSecret
 {
     public const string Header = "X-Builder-Route-Secret";
+}
+
+public static class RunnerProblems
+{
+    public const string SpecRequired = "urn:ctx-ui:builder:spec-required";
 }

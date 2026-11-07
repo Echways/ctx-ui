@@ -1,15 +1,15 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <FrameworkReference Include="Microsoft.AspNetCore.App" />
-    <PackageReference Include="Yarp.ReverseProxy" />
-    <PackageReference Include="Yarp.Telemetry.Consumption" />
-    <ProjectReference Include="..\CtxUi.Core\CtxUi.Core.csproj" />
+    <FrameworkReference Include="Microsoft.AspNetCore.App"/>
+    <PackageReference Include="Yarp.ReverseProxy"/>
+    <PackageReference Include="Yarp.Telemetry.Consumption"/>
+    <ProjectReference Include="..\CtxUi.Core\CtxUi.Core.csproj"/>
   </ItemGroup>
 
   <ItemGroup>
     <EmbeddedResource Update="GatewayText.resx" StronglyTypedLanguage="CSharp" StronglyTypedClassName="GatewayText"
-                      StronglyTypedNamespace="CtxUi.Gateway" StronglyTypedFileName="$(IntermediateOutputPath)GatewayText.Designer.cs" />
+                      StronglyTypedNamespace="CtxUi.Gateway" StronglyTypedFileName="$(IntermediateOutputPath)GatewayText.Designer.cs"/>
   </ItemGroup>
 
 </Project>

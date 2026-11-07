@@ -1,3 +1,7 @@
 namespace CtxUi.Builder.Publishing;
 
-public enum PublishMode { Activate, BuildOnly }
+public enum PublishMode
+{
+    Activate,
+    BuildOnly
+}

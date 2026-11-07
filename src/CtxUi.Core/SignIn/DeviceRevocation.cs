@@ -6,5 +6,5 @@ public enum DeviceRevocation
     Admin,
     TokenReused,
     Idle,
-    KeyReissued,
+    KeyReissued
 }

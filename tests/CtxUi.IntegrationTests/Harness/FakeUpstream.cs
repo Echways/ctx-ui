@@ -17,7 +17,10 @@ public sealed class FakeUpstream : IAsyncDisposable
 {
     private readonly WebApplication _app;
 
-    private FakeUpstream(WebApplication app) => _app = app;
+    private FakeUpstream(WebApplication app)
+    {
+        _app = app;
+    }
 
     public ConcurrentQueue<RecordedRequest> Requests { get; } = new();
 
@@ -44,8 +47,10 @@ public sealed class FakeUpstream : IAsyncDisposable
         return upstream;
     }
 
-    public string? LastHeader(string name) =>
-        Requests.LastOrDefault()?.Headers.GetValueOrDefault(name);
+    public string? LastHeader(string name)
+    {
+        return Requests.LastOrDefault()?.Headers.GetValueOrDefault(name);
+    }
 
     public async Task<RecordedRequest> RecordAsync(HttpContext context)
     {
@@ -54,11 +59,15 @@ public sealed class FakeUpstream : IAsyncDisposable
             context.Request.Method,
             context.Request.Path.Value ?? "",
             context.Request.QueryString.Value ?? "",
-            context.Request.Headers.ToDictionary(header => header.Key, header => header.Value.ToString(), StringComparer.OrdinalIgnoreCase),
+            context.Request.Headers.ToDictionary(header => header.Key, header => header.Value.ToString(),
+                StringComparer.OrdinalIgnoreCase),
             await reader.ReadToEndAsync());
         Requests.Enqueue(recorded);
         return recorded;
     }
 
-    public ValueTask DisposeAsync() => _app.DisposeAsync();
+    public ValueTask DisposeAsync()
+    {
+        return _app.DisposeAsync();
+    }
 }

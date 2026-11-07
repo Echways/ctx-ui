@@ -1,4 +1,3 @@
-
 <MudTable T="ErrorGroup" Items="Items" Elevation="0" Class="tbl" RowClassFunc="@((_, _) => "click")"
           OnRowClick="@((TableRowClickEventArgs<ErrorGroup> row) => OnPick.InvokeAsync(row.Item))">
     <HeaderContent>
@@ -10,7 +9,8 @@
     </HeaderContent>
     <RowTemplate>
         <MudTd><code>@(context.Slug ?? PanelText.Removed)</code></MudTd>
-        <MudTd DataLabel="@PanelText.CallColumn"><code>@(context.Tool is null ? context.Method : $"{context.Method} {context.Tool}")</code></MudTd>
+        <MudTd DataLabel="@PanelText.CallColumn">
+            <code>@(context.Tool is null ? context.Method : $"{context.Method} {context.Tool}")</code></MudTd>
         <MudTd DataLabel="@PanelText.OutcomeColumn" Class="@Tone(context.Outcome)">
             @UsageOutcomes.Text(context.Outcome)
             @if (context.Status > 0)
@@ -24,16 +24,18 @@
 </MudTable>
 
 @code {
-    [Parameter, EditorRequired]
-    public IReadOnlyList<ErrorGroup> Items { get; set; } = [];
+    [Parameter][EditorRequired] public IReadOnlyList<ErrorGroup> Items { get; set; } = [];
 
-    [Parameter]
-    public EventCallback<ErrorGroup> OnPick { get; set; }
+    [Parameter] public EventCallback<ErrorGroup> OnPick { get; set; }
 
-    private static string Tone(UsageOutcome outcome) => outcome switch
+    private static string Tone(UsageOutcome outcome)
     {
-        UsageOutcome.UpstreamFailed => "bad-t",
-        UsageOutcome.UpstreamRejected => "warn-t",
-        _ => "",
-    };
+        return outcome switch
+        {
+            UsageOutcome.UpstreamFailed => "bad-t",
+            UsageOutcome.UpstreamRejected => "warn-t",
+            _ => ""
+        };
+    }
+
 }

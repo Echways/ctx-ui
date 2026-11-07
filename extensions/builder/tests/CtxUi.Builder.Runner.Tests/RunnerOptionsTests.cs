@@ -2,14 +2,17 @@ namespace CtxUi.Builder.Runner.Tests;
 
 public sealed class RunnerOptionsTests
 {
-    private static Dictionary<string, string?> Environment() => new()
+    private static Dictionary<string, string?> Environment()
     {
-        ["RUNNER_TOKEN"] = "token",
-        ["RUNNER_BIND"] = "10.212.0.2",
-        ["RUNNER_RUNTIME_IMAGE"] = "runtime:1",
-        ["RUNNER_EGRESS_CONTAINER"] = "egress",
-        ["HOSTNAME"] = "abcdef"
-    };
+        return new Dictionary<string, string?>
+        {
+            ["RUNNER_TOKEN"] = "token",
+            ["RUNNER_BIND"] = "10.212.0.2",
+            ["RUNNER_RUNTIME_IMAGE"] = "runtime:1",
+            ["RUNNER_EGRESS_CONTAINER"] = "egress",
+            ["HOSTNAME"] = "abcdef"
+        };
+    }
 
     [Fact]
     public void Values_come_from_the_environment_with_the_default_pool()
@@ -52,7 +55,8 @@ public sealed class RunnerOptionsTests
         var failure = Assert.Throws<InvalidOperationException>(() => RunnerOptions.FromEnvironment(variables));
 
         Assert.Contains(name, failure.Message, StringComparison.Ordinal);
-        Assert.DoesNotContain("token", failure.Message.Replace("RUNNER_TOKEN", "", StringComparison.Ordinal), StringComparison.Ordinal);
+        Assert.DoesNotContain("token", failure.Message.Replace("RUNNER_TOKEN", "", StringComparison.Ordinal),
+            StringComparison.Ordinal);
     }
 
     [Theory]

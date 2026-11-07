@@ -6,7 +6,10 @@ namespace CtxUi.Core.Tests;
 
 public class PanelSettingsTests
 {
-    private static PanelSettings Settings(TestDatabase database) => new(database.NewContext());
+    private static PanelSettings Settings(TestDatabase database)
+    {
+        return new PanelSettings(database.NewContext());
+    }
 
     [Fact]
     public async Task Path_is_made_on_first_read_and_then_stays()

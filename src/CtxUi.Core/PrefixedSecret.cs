@@ -12,15 +12,26 @@ public sealed class PrefixedSecret(string prefix, int length)
 
     private static readonly SearchValues<char> Symbols = SearchValues.Create(Alphabet);
 
-    public string Generate() => prefix + RandomNumberGenerator.GetString(Alphabet, length);
+    public string Generate()
+    {
+        return prefix + RandomNumberGenerator.GetString(Alphabet, length);
+    }
 
-    public bool IsWellFormed([NotNullWhen(true)] string? value) =>
-        value is not null &&
-        value.Length == prefix.Length + length &&
-        value.StartsWith(prefix, StringComparison.Ordinal) &&
-        !value.AsSpan(prefix.Length).ContainsAnyExcept(Symbols);
+    public bool IsWellFormed([NotNullWhen(true)] string? value)
+    {
+        return value is not null &&
+               value.Length == prefix.Length + length &&
+               value.StartsWith(prefix, StringComparison.Ordinal) &&
+               !value.AsSpan(prefix.Length).ContainsAnyExcept(Symbols);
+    }
 
-    public static string Hash(string secret) => Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(secret)));
+    public static string Hash(string secret)
+    {
+        return Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(secret)));
+    }
 
-    public string DisplayPrefix(string secret) => secret[..(prefix.Length + DisplayedLength)];
+    public string DisplayPrefix(string secret)
+    {
+        return secret[..(prefix.Length + DisplayedLength)];
+    }
 }

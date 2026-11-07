@@ -16,7 +16,7 @@ public class PanelClientOutsideChangeTests
         var page = await OpenClientsAsync(session);
         await CliRunner.RunAsync(gateway.DataDir, "client", "add", "Петров", "--inbound", "echo", "--quota", "7");
 
-        await page.GetByRole(AriaRole.Button, new() { Name = "Обновить" }).ClickAsync();
+        await page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Обновить" }).ClickAsync();
 
         await Expect(Row(page, "Петров")).ToContainTextAsync("0 / 7");
     }

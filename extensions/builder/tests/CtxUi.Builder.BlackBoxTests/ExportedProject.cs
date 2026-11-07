@@ -19,7 +19,10 @@ internal sealed class ExportedProject : IAsyncDisposable
     public async Task RunAsync(byte[] archive, string baseUrl)
     {
         await using (var gzip = new GZipStream(new MemoryStream(archive), CompressionMode.Decompress))
-            await TarFile.ExtractToDirectoryAsync(gzip, _folder, overwriteFiles: true);
+        {
+            await TarFile.ExtractToDirectoryAsync(gzip, _folder, true);
+        }
+
         MakeReadableByEveryone(_folder);
 
         await Shell.RunAsync("docker",
@@ -32,7 +35,7 @@ internal sealed class ExportedProject : IAsyncDisposable
             "--tmpfs", "/tmp:exec,mode=1777",
             "-e", $"BUILDER_BASE_URL={baseUrl}",
             RunnerStack.RuntimeImage,
-            "uvx", "--from", $"fastmcp=={FastMcpVersion}", "fastmcp", "run", "fastmcp.json",
+            "uvx", "--from", $"fastmcp=={FastMcpVersion}", "fastmcp", "run", "fastmcp.json"
         ]);
     }
 
@@ -40,36 +43,43 @@ internal sealed class ExportedProject : IAsyncDisposable
     {
         var waited = System.Diagnostics.Stopwatch.StartNew();
         while (true)
-        {
             try
             {
-                await using var mcp = await McpClient.CreateAsync(new HttpClientTransport(new HttpClientTransportOptions { Endpoint = new Uri($"http://127.0.0.1:{_port}/mcp") }));
+                await using var mcp = await McpClient.CreateAsync(new HttpClientTransport(new HttpClientTransportOptions
+                { Endpoint = new Uri($"http://127.0.0.1:{_port}/mcp") }));
                 var result = await mcp.CallToolAsync(tool, arguments);
                 return string.Concat(result.Content.OfType<TextContentBlock>().Select(block => block.Text));
             }
-            catch (Exception failure) when (waited.Elapsed < StartPatience && failure is HttpRequestException or IOException or InvalidOperationException or ModelContextProtocol.McpException)
+            catch (Exception failure) when (waited.Elapsed < StartPatience && failure is HttpRequestException
+                                                or IOException or InvalidOperationException
+                                                or ModelContextProtocol.McpException)
             {
-                var (_, running) = await Shell.TryRunAsync("docker", ["inspect", "-f", "{{.State.Running}}", _container]);
+                var (_, running) =
+                    await Shell.TryRunAsync("docker", ["inspect", "-f", "{{.State.Running}}", _container]);
                 if (running.Trim() != "true")
                     throw new InvalidOperationException($"The exported project stopped: {await LogAsync()}", failure);
                 await Task.Delay(2000);
             }
-        }
     }
 
-    public async Task<string> LogAsync() => (await Shell.TryRunAsync("docker", ["logs", "--tail", "40", _container])).Output;
+    public async Task<string> LogAsync()
+    {
+        return (await Shell.TryRunAsync("docker", ["logs", "--tail", "40", _container])).Output;
+    }
 
     public async ValueTask DisposeAsync()
     {
         await Shell.TryRunAsync("docker", ["rm", "-f", _container]);
-        Directory.Delete(_folder, recursive: true);
+        Directory.Delete(_folder, true);
     }
 
     public static string FastMcpVersion => "4.1.4";
 
     private static void MakeReadableByEveryone(string folder)
     {
-        const UnixFileMode Open = UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute | UnixFileMode.GroupRead | UnixFileMode.GroupExecute | UnixFileMode.OtherRead | UnixFileMode.OtherExecute;
+        const UnixFileMode Open = UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute |
+                                  UnixFileMode.GroupRead | UnixFileMode.GroupExecute | UnixFileMode.OtherRead |
+                                  UnixFileMode.OtherExecute;
         if (OperatingSystem.IsWindows())
             return;
 

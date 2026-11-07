@@ -5,7 +5,8 @@
 @inject PanelActions Actions
 @inject TimeProvider Clock
 
-<PageHead Title="@Layout.TitleOf(PanelSections.Clients)" Count="_clients?.Count" UpdatedAt="_clients is null ? null : _loadedAt" OnRefresh="LoadAsync">
+<PageHead Title="@Layout.TitleOf(PanelSections.Clients)" Count="_clients?.Count"
+          UpdatedAt="_clients is null ? null : _loadedAt" OnRefresh="LoadAsync">
     <Summary>
         @if (_clients is { Count: > 0 })
         {
@@ -13,20 +14,21 @@
         }
     </Summary>
     <Actions>
-        <PageButtons Section="@PanelSections.Clients" OnDone="LoadAsync" />
+        <PageButtons Section="@PanelSections.Clients" OnDone="LoadAsync"/>
         @if (_clients is { Count: > 0 })
         {
-            <input class="line search" type="search" placeholder="@PanelText.SearchByName" aria-label="@PanelText.SearchByName" autocomplete="off"
-                   @bind="_search" @bind:event="oninput" />
+            <input class="line search" type="search" placeholder="@PanelText.SearchByName"
+                   aria-label="@PanelText.SearchByName" autocomplete="off"
+                   @bind="_search" @bind:event="oninput"/>
             <button type="button" class="btn-k pigment" @onclick="AddAsync">@PanelText.AddClient</button>
         }
     </Actions>
 </PageHead>
-<PageTopBlocks Section="@PanelSections.Clients" />
+<PageTopBlocks Section="@PanelSections.Clients"/>
 
 @if (_clients is null)
 {
-    <Placeholder />
+    <Placeholder/>
 }
 else if (_clients.Count == 0)
 {
@@ -44,7 +46,8 @@ else if (Shown.Count == 0)
 }
 else
 {
-    <MudTable Items="Shown" Elevation="0" Class="tbl" RowClassFunc="RowClass" OnRowClick="@((TableRowClickEventArgs<Client> row) => EditAsync(row.Item!))">
+    <MudTable Items="Shown" Elevation="0" Class="tbl" RowClassFunc="RowClass"
+              OnRowClick="@((TableRowClickEventArgs<Client> row) => EditAsync(row.Item!))">
         <HeaderContent>
             <MudTh>@PanelText.Name</MudTh>
             <MudTh>@PanelText.State</MudTh>
@@ -57,7 +60,9 @@ else
         </HeaderContent>
         <RowTemplate>
             <MudTd Class="name">@context.Name</MudTd>
-            <MudTd DataLabel="@PanelText.State"><Status Value="ClientState.Of(context, _loadedAt)" /></MudTd>
+            <MudTd DataLabel="@PanelText.State">
+                <Status Value="ClientState.Of(context, _loadedAt)"/>
+            </MudTd>
             <MudTd DataLabel="@PanelText.ExpiryColumn">
                 @(context.ExpiresAt is { } expiresAt ? string.Format(PanelText.ExpiresOn, Words.Day(expiresAt)) : PanelText.NoExpiry)
             </MudTd>
@@ -72,27 +77,32 @@ else
                 }
             </MudTd>
             <MudTd DataLabel="@PanelText.CallsColumn" Class="num">
-                <Meter Used="QuotaPeriod.UsedCalls(context, _loadedAt)" Limit="context.QuotaCalls" />
+                <Meter Used="QuotaPeriod.UsedCalls(context, _loadedAt)" Limit="context.QuotaCalls"/>
             </MudTd>
-            <MudTd DataLabel="@PanelText.Inbounds"><code>@string.Join(", ", context.Inbounds.Select(link => link.Inbound!.Slug).Order())</code></MudTd>
+            <MudTd DataLabel="@PanelText.Inbounds">
+                <code>@string.Join(", ", context.Inbounds.Select(link => link.Inbound!.Slug).Order())</code></MudTd>
             <MudTd DataLabel="@PanelText.AccessColumn">
                 <span @onclick:stopPropagation="true">
-                    <MudSwitch T="bool" Value="context.Enabled" aria-label="@string.Format(PanelText.AccessOf, context.Name)"
-                               ValueChanged="@(enabled => SwitchAsync(context, enabled))" />
+                    <MudSwitch T="bool" Value="context.Enabled"
+                               aria-label="@string.Format(PanelText.AccessOf, context.Name)"
+                               ValueChanged="@(enabled => SwitchAsync(context, enabled))"/>
                 </span>
             </MudTd>
             <MudTd Class="acts">
                 <span class="acts-in" @onclick:stopPropagation="true">
-                    <button type="button" class="link" @onclick="() => ConnectAsync(context)">@PanelText.Connection</button>
+                    <button type="button" class="link"
+                            @onclick="() => ConnectAsync(context)">@PanelText.Connection</button>
                     <MudMenu Label="⋯" AriaLabel="@string.Format(PanelText.MoreActions, context.Name)" Class="more"
                              AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
                         <MudMenuItem OnClick="() => EditAsync(context)">@PanelText.Edit</MudMenuItem>
-                        <MudMenuItem Href="@MetricsAddress.Of(new MetricsFilter(ClientId: context.Id))">@PanelText.Metrics</MudMenuItem>
+                        <MudMenuItem
+                            Href="@MetricsAddress.Of(new MetricsFilter(context.Id))">@PanelText.Metrics</MudMenuItem>
                         <MudMenuItem OnClick="() => DevicesAsync(context)">@PanelText.Devices</MudMenuItem>
                         <MudMenuItem OnClick="() => ResetAsync(context)">@PanelText.ResetQuota</MudMenuItem>
                         <MudMenuItem OnClick="() => ReissueAsync(context)">@PanelText.NewToken</MudMenuItem>
-                        <SlotMenuItems Slot="PanelSlots.ClientActions" Context="() => PanelData.Summary(context)" OnDone="LoadAsync" />
-                        <MudDivider />
+                        <SlotMenuItems Slot="PanelSlots.ClientActions" Context="() => PanelData.Summary(context)"
+                                       OnDone="LoadAsync"/>
+                        <MudDivider/>
                         <MudMenuItem Class="danger" OnClick="() => RemoveAsync(context)">@PanelText.Delete</MudMenuItem>
                     </MudMenu>
                 </span>
@@ -101,7 +111,7 @@ else
     </MudTable>
 }
 
-<PageBottomBlocks Section="@PanelSections.Clients" />
+<PageBottomBlocks Section="@PanelSections.Clients"/>
 
 @code {
     private List<Client>? _clients;
@@ -112,10 +122,15 @@ else
         ? _clients!
         : _clients!.Where(client => client.Name.Contains(_search.Trim(), StringComparison.CurrentCultureIgnoreCase)).ToList();
 
-    protected override Task OnInitializedAsync() => LoadAsync();
+    protected override Task OnInitializedAsync()
+    {
+        return LoadAsync();
+    }
 
-    private string RowClass(Client client, int _) =>
-        ClientState.Of(client, _loadedAt) == ClientStatus.Disabled ? "click dim" : "click";
+    private string RowClass(Client client, int _)
+    {
+        return ClientState.Of(client, _loadedAt) == ClientStatus.Disabled ? "click dim" : "click";
+    }
 
     private async Task LoadAsync()
     {
@@ -144,7 +159,7 @@ else
             return;
 
         await LoadAsync();
-        await ConnectAsync(added, fresh: true);
+        await ConnectAsync(added, true);
     }
 
     private async Task EditAsync(Client client)
@@ -155,14 +170,17 @@ else
             await LoadAsync();
     }
 
-    private Task ConnectAsync(Client client) => ConnectAsync(client, fresh: false);
+    private Task ConnectAsync(Client client)
+    {
+        return ConnectAsync(client, false);
+    }
 
     private async Task ConnectAsync(Client client, bool fresh)
     {
         var dialog = await Dialogs.ShowSheetAsync<ConnectionDialog>(
             string.Format(PanelText.ConnectionTitle, client.Name),
             new DialogParameters<ConnectionDialog> { { sheet => sheet.Id, client.Id }, { sheet => sheet.Fresh, fresh } },
-            form: false);
+            false);
         if (await dialog.Result is { Canceled: false, Data: ConnectionDialog.Reissue }
             && _clients!.FirstOrDefault(known => known.Id == client.Id) is { } current)
             await ReissueAsync(current);
@@ -171,7 +189,7 @@ else
     private async Task DevicesAsync(Client client)
     {
         var parameters = new DialogParameters<DevicesDialog> { { dialog => dialog.Id, client.Id } };
-        await Dialogs.ShowSheetAsync<DevicesDialog>(string.Format(PanelText.DevicesTitle, client.Name), parameters, form: false);
+        await Dialogs.ShowSheetAsync<DevicesDialog>(string.Format(PanelText.DevicesTitle, client.Name), parameters, false);
     }
 
     private async Task ReissueAsync(Client client)
@@ -184,27 +202,31 @@ else
         await Actions.ApplyAsync(OnClient(client, clients => clients.ReissueAsync(client.Id)), string.Format(PanelText.TokenReissued, client.Name));
         await LoadAsync();
         if (_clients!.Any(known => known.Id == client.Id))
-            await ConnectAsync(client, fresh: true);
+            await ConnectAsync(client, true);
     }
 
     private async Task RemoveAsync(Client client)
     {
-        if (await Dialogs.ConfirmAsync(string.Format(PanelText.RemoveClientQuestion, client.Name), PanelText.RemoveClientWarning, PanelText.Delete, danger: true))
+        if (await Dialogs.ConfirmAsync(string.Format(PanelText.RemoveClientQuestion, client.Name), PanelText.RemoveClientWarning, PanelText.Delete, true))
         {
             await Actions.ApplyAsync(OnClient(client, clients => clients.RemoveAsync(client.Id)), string.Format(PanelText.ClientRemoved, client.Name));
             await LoadAsync();
         }
     }
 
-    private static Func<IServiceProvider, Task> OnClient(Client client, Func<ClientService, Task> change) => async services =>
+    private static Func<IServiceProvider, Task> OnClient(Client client, Func<ClientService, Task> change)
     {
-        try
+        return async services =>
         {
-            await change(services.GetRequiredService<ClientService>());
-        }
-        catch (NotFoundException)
-        {
-            throw ClientService.NotFound(client.Name);
-        }
-    };
+            try
+            {
+                await change(services.GetRequiredService<ClientService>());
+            }
+            catch (NotFoundException)
+            {
+                throw ClientService.NotFound(client.Name);
+            }
+        };
+    }
+
 }

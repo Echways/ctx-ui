@@ -16,7 +16,9 @@ public sealed class LogBuffer
         get
         {
             lock (_gate)
+            {
                 return _partial.Length == 0 ? [.. _lines] : [.. _lines, _partial.ToString()];
+            }
         }
     }
 

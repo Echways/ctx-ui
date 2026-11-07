@@ -13,8 +13,10 @@ public sealed record ClientLimits(
 
     public static ClientLimits None { get; } = new();
 
-    public static ClientLimits Of(Client client) =>
-        new(client.RatePerMinute, client.MaxConcurrency, client.QuotaCalls, client.ResetEveryDays);
+    public static ClientLimits Of(Client client)
+    {
+        return new ClientLimits(client.RatePerMinute, client.MaxConcurrency, client.QuotaCalls, client.ResetEveryDays);
+    }
 
     public ClientLimits Validated()
     {

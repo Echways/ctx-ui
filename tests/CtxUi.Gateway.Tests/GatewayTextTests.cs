@@ -14,10 +14,12 @@ public class GatewayTextTests
         Assert.Equal(Keys(manager, CultureInfo.InvariantCulture), Keys(manager, CultureInfo.GetCultureInfo("ru")));
     }
 
-    private static List<string> Keys(ResourceManager manager, CultureInfo culture) =>
-        manager.GetResourceSet(culture, createIfNotExists: true, tryParents: false)!
+    private static List<string> Keys(ResourceManager manager, CultureInfo culture)
+    {
+        return manager.GetResourceSet(culture, true, false)!
             .Cast<DictionaryEntry>()
             .Select(entry => (string)entry.Key)
             .Order(StringComparer.Ordinal)
             .ToList();
+    }
 }

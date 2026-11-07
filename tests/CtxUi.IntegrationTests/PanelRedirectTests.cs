@@ -30,7 +30,8 @@ public class PanelRedirectTests
         var admin = await gateway.AddAdminAsync();
         using var panel = new PanelClient(gateway);
 
-        using var signedIn = await panel.SignInAsync("root", admin.Password, "?ReturnUrl=" + Uri.EscapeDataString(returnUrl));
+        using var signedIn =
+            await panel.SignInAsync("root", admin.Password, "?ReturnUrl=" + Uri.EscapeDataString(returnUrl));
 
         Assert.Equal(gateway.PanelUrl, signedIn.Headers.Location!.OriginalString);
     }
@@ -53,7 +54,7 @@ public class PanelRedirectTests
     {
         await using var gateway = await GatewayHost.StartAsync();
         var admin = await gateway.AddAdminAsync();
-        using var panel = new PanelClient(gateway, forwardedProto: "https");
+        using var panel = new PanelClient(gateway, "https");
 
         using var home = await panel.GetAsync("");
         using var signedIn = await panel.SignInAsync("root", admin.Password);

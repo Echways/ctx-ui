@@ -17,6 +17,9 @@ public sealed class SampleDatabase(DbContextOptions<SampleDatabase> options) : D
 
 public sealed class SampleDatabaseFactory : IDesignTimeDbContextFactory<SampleDatabase>
 {
-    public SampleDatabase CreateDbContext(string[] args) =>
-        new(new DbContextOptionsBuilder<SampleDatabase>().UseSqlite("Data Source=design.db").Options);
+    public SampleDatabase CreateDbContext(string[] args)
+    {
+        return new SampleDatabase(new DbContextOptionsBuilder<SampleDatabase>().UseSqlite("Data Source=design.db")
+            .Options);
+    }
 }

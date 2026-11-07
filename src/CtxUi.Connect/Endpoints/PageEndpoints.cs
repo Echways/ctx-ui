@@ -21,14 +21,17 @@ public static class PageEndpoints
             .RequirePageForm()
             .RequireRateLimiting(SignInPolicy);
         app.MapGet(ConnectResults.DevicesPath, DevicesAsync);
-        app.MapPost(ConnectResults.DevicesPath + "/{id:guid}/revoke", RevokeAsync).RequireSetting(signIn => signIn.SelfRevoke).RequirePageForm();
+        app.MapPost(ConnectResults.DevicesPath + "/{id:guid}/revoke", RevokeAsync)
+            .RequireSetting(signIn => signIn.SelfRevoke).RequirePageForm();
         app.MapPost(ConnectServices.Prefix + "/signout", (Delegate)SignOutAsync).RequirePageForm();
-        app.MapGet(ConnectServices.Prefix + "/language/{culture}", (HttpContext http, string culture, string? returnUrl) =>
-            ConnectLanguage.Choose(http, culture, returnUrl));
+        app.MapGet(ConnectServices.Prefix + "/language/{culture}",
+            (HttpContext http, string culture, string? returnUrl) =>
+                ConnectLanguage.Choose(http, culture, returnUrl));
         return app;
     }
 
-    private static async Task<IResult> SignInPageAsync(HttpContext http, ISnapshotSource snapshot, ConnectTargets targets, string? returnUrl)
+    private static async Task<IResult> SignInPageAsync(HttpContext http, ISnapshotSource snapshot,
+        ConnectTargets targets, string? returnUrl)
     {
         var target = ConnectLanguage.LocalPath(returnUrl, ConnectResults.DevicesPath);
         return SignInPage(snapshot, target, await targets.FromReturnUrlAsync(target, http.RequestAborted));
@@ -45,21 +48,25 @@ public static class PageEndpoints
         var target = ConnectLanguage.LocalPath(returnUrl, ConnectResults.DevicesPath);
         var found = KeySignIn.Find(snapshot.Current, key, clock.GetUtcNow());
         if (found.ClientId is not { } clientId)
-            return SignInPage(snapshot, target, await targets.FromReturnUrlAsync(target, http.RequestAborted), found.Refusal);
+            return SignInPage(snapshot, target, await targets.FromReturnUrlAsync(target, http.RequestAborted),
+                found.Refusal);
 
         await ConnectSession.SignInAsync(http, clientId, Device.ByKey);
         return ConnectResults.Back(http, target);
     }
 
-    private static IResult SignInPage(ISnapshotSource snapshot, string returnUrl, ConnectTarget? target, string? error = null) =>
-        ConnectResults.Page<SignInPage>(new
+    private static IResult SignInPage(ISnapshotSource snapshot, string returnUrl, ConnectTarget? target,
+        string? error = null)
+    {
+        return ConnectResults.Page<SignInPage>(new
         {
             ReturnUrl = returnUrl,
             snapshot.Current.SignIn.KeySignIn,
             Providers = ProviderButton.All(snapshot.Current.SignIn),
             Target = target,
-            Error = error,
+            Error = error
         });
+    }
 
     private static async Task<IResult> DevicesAsync(
         HttpContext http,
@@ -78,7 +85,7 @@ public static class PageEndpoints
             Devices = current is null ? listed : listed.Where(device => device != current).Prepend(current).ToList(),
             ClientName = signedIn.Client.Name,
             CurrentDeviceId = current?.Id,
-            snapshot.Current.SignIn.SelfRevoke,
+            snapshot.Current.SignIn.SelfRevoke
         });
     }
 

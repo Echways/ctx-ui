@@ -14,11 +14,11 @@ public class PanelClientSheetTests
         await using var session = await PanelSession.SignInAsync(gateway);
         var page = await OpenClientsAsync(session);
 
-        await page.GetByRole(AriaRole.Button, new() { Name = "Добавить клиента" }).ClickAsync();
-        await Dialog(page).GetByRole(AriaRole.Button, new() { Name = "Закрыть" }).ClickAsync();
+        await page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Добавить клиента" }).ClickAsync();
+        await Dialog(page).GetByRole(AriaRole.Button, new LocatorGetByRoleOptions { Name = "Закрыть" }).ClickAsync();
         await Expect(Dialog(page)).ToHaveCountAsync(0);
 
-        await page.GetByRole(AriaRole.Button, new() { Name = "Добавить клиента" }).ClickAsync();
+        await page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Добавить клиента" }).ClickAsync();
         await Field(page, "Имя").FocusAsync();
         await page.Keyboard.PressAsync("Escape");
         await Expect(Dialog(page)).ToHaveCountAsync(0);
@@ -31,11 +31,11 @@ public class PanelClientSheetTests
         await gateway.AddInboundAsync("echo", "https://echo.example.org/mcp");
         await using var session = await PanelSession.SignInAsync(gateway);
         var page = await OpenClientsAsync(session);
-        await page.GetByRole(AriaRole.Button, new() { Name = "Добавить клиента" }).ClickAsync();
+        await page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Добавить клиента" }).ClickAsync();
         await Field(page, "Имя").FillAsync("Иванов");
         await Dialog(page).GetByLabel("echo").CheckAsync();
 
-        await Dialog(page).GetByRole(AriaRole.Button, new() { Name = "Отмена" }).ClickAsync();
+        await Dialog(page).GetByRole(AriaRole.Button, new LocatorGetByRoleOptions { Name = "Отмена" }).ClickAsync();
 
         await Expect(Dialog(page)).ToHaveCountAsync(0);
         await Expect(page.GetByText("Клиентов пока нет")).ToBeVisibleAsync();
@@ -48,9 +48,10 @@ public class PanelClientSheetTests
         await using var session = await PanelSession.SignInAsync(gateway);
         var page = await OpenClientsAsync(session);
 
-        await page.GetByRole(AriaRole.Button, new() { Name = "Добавить клиента" }).ClickAsync();
+        await page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Добавить клиента" }).ClickAsync();
 
         await Expect(Dialog(page)).ToContainTextAsync("Сначала добавьте inbound");
-        await Expect(Dialog(page).GetByRole(AriaRole.Button, new() { Name = "Добавить клиента" })).ToBeDisabledAsync();
+        await Expect(Dialog(page).GetByRole(AriaRole.Button, new LocatorGetByRoleOptions { Name = "Добавить клиента" }))
+            .ToBeDisabledAsync();
     }
 }

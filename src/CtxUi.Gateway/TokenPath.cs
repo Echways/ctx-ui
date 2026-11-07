@@ -22,20 +22,25 @@ public static class TokenPath
         return true;
     }
 
-    public static IApplicationBuilder UseTokenPath(this IApplicationBuilder app) => app.Use(async (context, next) =>
+    public static IApplicationBuilder UseTokenPath(this IApplicationBuilder app)
     {
-        if (TrySplit(context.Request.Path.Value, out var token, out var rest))
+        return app.Use(async (context, next) =>
         {
-            var path = new PathString(rest);
-            context.Items[ItemKey] = token;
-            context.Request.Path = path;
-            context.Features.GetRequiredFeature<IHttpRequestFeature>().RawTarget =
-                path.ToUriComponent() + context.Request.QueryString.ToUriComponent();
-        }
+            if (TrySplit(context.Request.Path.Value, out var token, out var rest))
+            {
+                var path = new PathString(rest);
+                context.Items[ItemKey] = token;
+                context.Request.Path = path;
+                context.Features.GetRequiredFeature<IHttpRequestFeature>().RawTarget =
+                    path.ToUriComponent() + context.Request.QueryString.ToUriComponent();
+            }
 
-        await next(context);
-    });
+            await next(context);
+        });
+    }
 
-    public static string? Get(HttpContext context) =>
-        context.Items.TryGetValue(ItemKey, out var token) ? (string?)token : null;
+    public static string? Get(HttpContext context)
+    {
+        return context.Items.TryGetValue(ItemKey, out var token) ? (string?)token : null;
+    }
 }

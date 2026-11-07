@@ -12,8 +12,11 @@ public sealed class DatabaseSetupTests : IDisposable
 
     private string File => Path.Combine(_directory.FullName, "ctx-ui.db");
 
-    private CtxUiDbContext NewContext() =>
-        new(new DbContextOptionsBuilder<CtxUiDbContext>().UseSqlite($"Data Source={File}").Options);
+    private CtxUiDbContext NewContext()
+    {
+        return new CtxUiDbContext(
+            new DbContextOptionsBuilder<CtxUiDbContext>().UseSqlite($"Data Source={File}").Options);
+    }
 
     private string JournalMode(string pragma = "PRAGMA journal_mode")
     {
@@ -27,14 +30,16 @@ public sealed class DatabaseSetupTests : IDisposable
     public void Dispose()
     {
         SqliteConnection.ClearAllPools();
-        _directory.Delete(recursive: true);
+        _directory.Delete(true);
     }
 
     [Fact]
     public async Task Prepared_database_runs_in_wal_mode()
     {
         await using (var db = NewContext())
+        {
             await db.PrepareAsync();
+        }
 
         Assert.Equal("wal", JournalMode());
     }
@@ -51,7 +56,9 @@ public sealed class DatabaseSetupTests : IDisposable
 
         var before = JournalMode("PRAGMA journal_mode=DELETE");
         await using (var db = NewContext())
+        {
             await db.PrepareAsync();
+        }
 
         await using var check = NewContext();
         Assert.Equal("delete", before);
@@ -63,9 +70,14 @@ public sealed class DatabaseSetupTests : IDisposable
     public async Task Preparing_twice_changes_nothing()
     {
         await using (var db = NewContext())
+        {
             await db.PrepareAsync();
+        }
+
         await using (var db = NewContext())
+        {
             await db.PrepareAsync();
+        }
 
         await using var check = NewContext();
         Assert.Equal("wal", JournalMode());

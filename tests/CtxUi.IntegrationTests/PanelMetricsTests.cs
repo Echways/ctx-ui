@@ -10,16 +10,31 @@ namespace CtxUi.IntegrationTests;
 
 public class PanelMetricsTests
 {
-    private static ILocator Figure(IPage page, string name) => page.GetByRole(AriaRole.Figure, new() { Name = name });
+    private static ILocator Figure(IPage page, string name)
+    {
+        return page.GetByRole(AriaRole.Figure, new PageGetByRoleOptions { Name = name });
+    }
 
-    private static ILocator Row(IPage page, string text) => page.GetByRole(AriaRole.Row).Filter(new() { HasText = text });
+    private static ILocator Row(IPage page, string text)
+    {
+        return page.GetByRole(AriaRole.Row).Filter(new LocatorFilterOptions { HasText = text });
+    }
 
-    private static ILocator Row(ILocator scope, string text) => scope.GetByRole(AriaRole.Row).Filter(new() { HasText = text });
+    private static ILocator Row(ILocator scope, string text)
+    {
+        return scope.GetByRole(AriaRole.Row).Filter(new LocatorFilterOptions { HasText = text });
+    }
 
-    private static ILocator Section(IPage page, string heading) =>
-        page.Locator("section").Filter(new() { Has = page.GetByRole(AriaRole.Heading, new() { Name = heading, Exact = true }) });
+    private static ILocator Section(IPage page, string heading)
+    {
+        return page.Locator("section").Filter(new LocatorFilterOptions
+        { Has = page.GetByRole(AriaRole.Heading, new PageGetByRoleOptions { Name = heading, Exact = true }) });
+    }
 
-    private static ILocator Filter(IPage page) => page.GetByRole(AriaRole.Navigation, new() { Name = "Фильтр" });
+    private static ILocator Filter(IPage page)
+    {
+        return page.GetByRole(AriaRole.Navigation, new PageGetByRoleOptions { Name = "Фильтр" });
+    }
 
     private static async Task<(GatewayHost Gateway, FakeUpstream Upstream)> StartWithCallsAsync()
     {
@@ -40,7 +55,7 @@ public class PanelMetricsTests
                      (ivanov.Token, "echo", ToolCall("search")),
                      (ivanov.Token, "echo", ToolsList),
                      (ivanov.Token, "broken", ToolCall("fetch")),
-                     (petrov.Token, "echo", ToolCall("search")),
+                     (petrov.Token, "echo", ToolCall("search"))
                  })
         {
             using var response = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/" + slug, token, body));
@@ -58,18 +73,20 @@ public class PanelMetricsTests
         await using var __ = gateway;
         await using var session = await PanelSession.SignInAsync(gateway);
         var page = session.Page;
-        var periods = page.GetByRole(AriaRole.Navigation, new() { Name = "Период" });
+        var periods = page.GetByRole(AriaRole.Navigation, new PageGetByRoleOptions { Name = "Период" });
 
         await page.GotoAsync("metrics?days=999");
 
         await Expect(periods.GetByRole(AriaRole.Link)).ToHaveTextAsync(["Сутки", "7 дней", "30 дней"]);
         await Expect(periods.Locator("[aria-current=page]")).ToHaveTextAsync("7 дней");
-        await Expect(page.GetByRole(AriaRole.Img, new() { Name = "Вызовы за последние 7 дней по 2 часа" })).ToBeVisibleAsync();
+        await Expect(page.GetByRole(AriaRole.Img,
+            new PageGetByRoleOptions { Name = "Вызовы за последние 7 дней по 2 часа" })).ToBeVisibleAsync();
         await Expect(Figure(page, "5 вызовов")).ToContainTextAsync("4 из них к инструментам");
         await Expect(Figure(page, "1 ошибка")).ToContainTextAsync("20 % вызовов");
         await Expect(Figure(page, "2 клиента заходили")).ToContainTextAsync("из 2 с доступом");
         await Expect(Section(page, "Путь клиентов")).ToContainTextAsync("Получили список инструментов 1 · 50 %");
-        await Expect(Row(Section(page, "Частые ошибки"), "tools/call fetch")).ToContainTextAsync("сбой upstream HTTP 502");
+        await Expect(Row(Section(page, "Частые ошибки"), "tools/call fetch"))
+            .ToContainTextAsync("сбой upstream HTTP 502");
         await Expect(Filter(page)).ToHaveCountAsync(0);
 
         await Row(page, "Иванов").ClickAsync();
@@ -86,21 +103,24 @@ public class PanelMetricsTests
         await Expect(Filter(page)).ToContainTextAsync("Инструмент search");
         await Expect(Figure(page, "2 вызова")).ToContainTextAsync("2 из них к инструментам");
 
-        await periods.GetByRole(AriaRole.Link, new() { Name = "Сутки" }).ClickAsync();
+        await periods.GetByRole(AriaRole.Link, new LocatorGetByRoleOptions { Name = "Сутки" }).ClickAsync();
 
         await Expect(page).ToHaveURLAsync(new Regex("days=1&client=.+&inbound=.+&tool=search"));
         await Expect(periods.Locator("[aria-current=page]")).ToHaveTextAsync("Сутки");
-        await Expect(page.GetByRole(AriaRole.Img, new() { Name = "Вызовы за последние сутки по 15 минут" })).ToBeVisibleAsync();
+        await Expect(page.GetByRole(AriaRole.Img,
+            new PageGetByRoleOptions { Name = "Вызовы за последние сутки по 15 минут" })).ToBeVisibleAsync();
         await Expect(Filter(page)).ToContainTextAsync("Клиент Иванов");
         await Expect(Figure(page, "2 вызова")).ToBeVisibleAsync();
 
-        await Filter(page).GetByRole(AriaRole.Link, new() { Name = "Убрать фильтр Клиент: Иванов" }).ClickAsync();
+        await Filter(page)
+            .GetByRole(AriaRole.Link, new LocatorGetByRoleOptions { Name = "Убрать фильтр Клиент: Иванов" })
+            .ClickAsync();
 
         await Expect(Figure(page, "3 вызова")).ToBeVisibleAsync();
         await Expect(Row(Section(page, "Клиенты"), "Петров")).ToBeVisibleAsync();
         await Expect(periods.Locator("[aria-current=page]")).ToHaveTextAsync("Сутки");
 
-        await Filter(page).GetByRole(AriaRole.Link, new() { Name = "Все вызовы" }).ClickAsync();
+        await Filter(page).GetByRole(AriaRole.Link, new LocatorGetByRoleOptions { Name = "Все вызовы" }).ClickAsync();
 
         await Expect(Figure(page, "5 вызовов")).ToBeVisibleAsync();
         await Expect(page).ToHaveURLAsync(new Regex(@"metrics\?days=1$"));
@@ -141,7 +161,7 @@ public class PanelMetricsTests
         await JournalHasAsync(gateway, 2);
         await using var session = await PanelSession.SignInAsync(gateway);
         var page = session.Page;
-        var periods = page.GetByRole(AriaRole.Navigation, new() { Name = "Период" });
+        var periods = page.GetByRole(AriaRole.Navigation, new PageGetByRoleOptions { Name = "Период" });
         await page.GotoAsync("metrics");
 
         await Row(Section(page, "Инструменты"), hostile).ClickAsync();
@@ -150,7 +170,7 @@ public class PanelMetricsTests
         await Expect(Figure(page, "1 вызов")).ToBeVisibleAsync();
         await Expect(periods.Locator("[aria-current=page]")).ToHaveTextAsync("7 дней");
 
-        await periods.GetByRole(AriaRole.Link, new() { Name = "Сутки" }).ClickAsync();
+        await periods.GetByRole(AriaRole.Link, new LocatorGetByRoleOptions { Name = "Сутки" }).ClickAsync();
 
         await Expect(periods.Locator("[aria-current=page]")).ToHaveTextAsync("Сутки");
         await Expect(Filter(page)).ToContainTextAsync("Инструмент " + hostile);
@@ -199,10 +219,11 @@ public class PanelMetricsTests
         await RowMenu.ChooseAsync(Row(page, "Петров"), "Метрики");
 
         await Expect(Filter(page)).ToContainTextAsync("Клиент Петров");
-        await Filter(page).GetByRole(AriaRole.Link, new() { Name = "Журнал клиента" }).ClickAsync();
+        await Filter(page).GetByRole(AriaRole.Link, new LocatorGetByRoleOptions { Name = "Журнал клиента" })
+            .ClickAsync();
 
         await Expect(Rows(page)).ToHaveCountAsync(3);
-        await Expect(Rows(page).Filter(new() { HasText = "Иванов" })).ToHaveCountAsync(0);
+        await Expect(Rows(page).Filter(new LocatorFilterOptions { HasText = "Иванов" })).ToHaveCountAsync(0);
     }
 
     [Fact]
@@ -218,7 +239,8 @@ public class PanelMetricsTests
 
         await Expect(Figure(page, "5 вызовов")).ToBeVisibleAsync();
         await Expect(Filter(page)).ToHaveCountAsync(0);
-        await Expect(page.GetByRole(AriaRole.Navigation, new() { Name = "Период" }).Locator("[aria-current=page]")).ToHaveTextAsync("Сутки");
+        await Expect(page.GetByRole(AriaRole.Navigation, new PageGetByRoleOptions { Name = "Период" })
+            .Locator("[aria-current=page]")).ToHaveTextAsync("Сутки");
     }
 
     [Fact]

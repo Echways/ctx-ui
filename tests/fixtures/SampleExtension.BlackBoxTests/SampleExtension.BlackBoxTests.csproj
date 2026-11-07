@@ -6,12 +6,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="xunit.v3" />
-    <Using Include="Xunit" />
-    <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
-    <ProjectReference Include="..\..\..\src\CtxUi.Extensions.Testing\CtxUi.Extensions.Testing.csproj" />
+    <PackageReference Include="xunit.v3"/>
+    <Using Include="Xunit"/>
+    <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest"/>
+    <ProjectReference Include="..\..\..\src\CtxUi.Extensions.Testing\CtxUi.Extensions.Testing.csproj"/>
   </ItemGroup>
 
-  <Import Project="..\PublishTestExtensions.targets" />
+  <Import Project="..\PublishTestExtensions.targets"/>
 
 </Project>

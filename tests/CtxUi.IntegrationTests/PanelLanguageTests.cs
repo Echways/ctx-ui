@@ -16,27 +16,30 @@ public class PanelLanguageTests
     [Fact]
     public async Task Panel_speaks_english_until_russian_is_chosen()
     {
-        await using var gateway = await GatewayHost.StartAsync(builder => builder.Configuration["CtxUi:Language"] = "en");
+        await using var gateway =
+            await GatewayHost.StartAsync(builder => builder.Configuration["CtxUi:Language"] = "en");
         await using var session = await PanelSession.OpenAsync(gateway, language: null);
         var page = session.Page;
         await Expect(page.Locator("html")).ToHaveAttributeAsync("lang", "en");
-        await Expect(page.GetByRole(AriaRole.Button, new() { Name = "Sign in" })).ToBeVisibleAsync();
+        await Expect(page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Sign in" })).ToBeVisibleAsync();
 
-        await page.GetByRole(AriaRole.Link, new() { Name = "Русский" }).ClickAsync();
+        await page.GetByRole(AriaRole.Link, new PageGetByRoleOptions { Name = "Русский" }).ClickAsync();
 
         await Expect(page.Locator("html")).ToHaveAttributeAsync("lang", "ru");
         await session.FillLoginAsync("root", session.Password);
-        await Expect(page.GetByRole(AriaRole.Heading, new() { Name = "Обзор" })).ToBeVisibleAsync();
+        await Expect(page.GetByRole(AriaRole.Heading, new PageGetByRoleOptions { Name = "Обзор" })).ToBeVisibleAsync();
     }
 
     [Fact]
     public async Task Configured_language_is_what_the_panel_speaks_before_a_choice()
     {
-        await using var gateway = await GatewayHost.StartAsync(builder => builder.Configuration["CtxUi:Language"] = "ru");
+        await using var gateway =
+            await GatewayHost.StartAsync(builder => builder.Configuration["CtxUi:Language"] = "ru");
         await using var session = await PanelSession.OpenAsync(gateway, language: null);
 
         await Expect(session.Page.Locator("html")).ToHaveAttributeAsync("lang", "ru");
-        await Expect(session.Page.GetByRole(AriaRole.Button, new() { Name = "Войти" })).ToBeVisibleAsync();
+        await Expect(session.Page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Войти" }))
+            .ToBeVisibleAsync();
     }
 
     [Theory]
@@ -44,8 +47,8 @@ public class PanelLanguageTests
     [InlineData("de")]
     public async Task Unsupported_language_stops_the_start(string language)
     {
-        var error = await Assert.ThrowsAsync<OptionsValidationException>(
-            () => GatewayHost.StartAsync(builder => builder.Configuration["CtxUi:Language"] = language));
+        var error = await Assert.ThrowsAsync<OptionsValidationException>(() =>
+            GatewayHost.StartAsync(builder => builder.Configuration["CtxUi:Language"] = language));
 
         Assert.Contains("en, ru", error.Message);
     }
@@ -56,18 +59,24 @@ public class PanelLanguageTests
         await using var gateway = await GatewayHost.StartAsync();
         await using var session = await PanelSession.SignInAsync(gateway);
         var page = session.Page;
-        await page.GetByRole(AriaRole.Navigation).GetByRole(AriaRole.Link, new() { Name = "Клиенты" }).ClickAsync();
-        await Expect(page.GetByRole(AriaRole.Heading, new() { Name = "Клиенты", Level = 1 })).ToBeVisibleAsync();
+        await page.GetByRole(AriaRole.Navigation)
+            .GetByRole(AriaRole.Link, new LocatorGetByRoleOptions { Name = "Клиенты" }).ClickAsync();
+        await Expect(page.GetByRole(AriaRole.Heading, new PageGetByRoleOptions { Name = "Клиенты", Level = 1 }))
+            .ToBeVisibleAsync();
 
-        await page.GetByRole(AriaRole.Banner).GetByRole(AriaRole.Button, new() { Name = "English" }).ClickAsync();
+        await page.GetByRole(AriaRole.Banner)
+            .GetByRole(AriaRole.Button, new LocatorGetByRoleOptions { Name = "English" }).ClickAsync();
 
         await Expect(page).ToHaveURLAsync(gateway.PanelUrl + "clients");
-        await Expect(page.GetByRole(AriaRole.Heading, new() { Name = "Clients", Level = 1 })).ToBeVisibleAsync();
+        await Expect(page.GetByRole(AriaRole.Heading, new PageGetByRoleOptions { Name = "Clients", Level = 1 }))
+            .ToBeVisibleAsync();
         await Expect(page.Locator("html")).ToHaveAttributeAsync("lang", "en");
 
-        await page.GetByRole(AriaRole.Banner).GetByRole(AriaRole.Button, new() { Name = "Русский" }).ClickAsync();
+        await page.GetByRole(AriaRole.Banner)
+            .GetByRole(AriaRole.Button, new LocatorGetByRoleOptions { Name = "Русский" }).ClickAsync();
 
-        await Expect(page.GetByRole(AriaRole.Heading, new() { Name = "Клиенты" })).ToBeVisibleAsync();
+        await Expect(page.GetByRole(AriaRole.Heading, new PageGetByRoleOptions { Name = "Клиенты" }))
+            .ToBeVisibleAsync();
     }
 
     [Fact]
@@ -76,12 +85,15 @@ public class PanelLanguageTests
         await using var gateway = await GatewayHost.StartAsync();
         await using var session = await PanelSession.SignInAsync(gateway);
         var page = session.Page;
-        await page.GetByRole(AriaRole.Banner).GetByRole(AriaRole.Button, new() { Name = "English" }).ClickAsync();
+        await page.GetByRole(AriaRole.Banner)
+            .GetByRole(AriaRole.Button, new LocatorGetByRoleOptions { Name = "English" }).ClickAsync();
         await Expect(page.Locator("html")).ToHaveAttributeAsync("lang", "en");
-        await page.GetByRole(AriaRole.Navigation).GetByRole(AriaRole.Link, new() { Name = "Inbounds" }).ClickAsync();
+        await page.GetByRole(AriaRole.Navigation)
+            .GetByRole(AriaRole.Link, new LocatorGetByRoleOptions { Name = "Inbounds" }).ClickAsync();
 
-        await page.GetByRole(AriaRole.Button, new() { Name = "Add inbound" }).ClickAsync();
-        await page.GetByRole(AriaRole.Dialog).GetByRole(AriaRole.Button, new() { Name = "Add inbound" }).ClickAsync();
+        await page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Add inbound" }).ClickAsync();
+        await page.GetByRole(AriaRole.Dialog)
+            .GetByRole(AriaRole.Button, new LocatorGetByRoleOptions { Name = "Add inbound" }).ClickAsync();
 
         await Expect(page.GetByRole(AriaRole.Dialog).GetByRole(AriaRole.Alert)).ToContainTextAsync("is not allowed");
     }
@@ -123,10 +135,12 @@ public class PanelLanguageTests
         Assert.Equal(Keys(manager, CultureInfo.InvariantCulture), Keys(manager, CultureInfo.GetCultureInfo("ru")));
     }
 
-    private static List<string> Keys(ResourceManager manager, CultureInfo culture) =>
-        manager.GetResourceSet(culture, createIfNotExists: true, tryParents: false)!
+    private static List<string> Keys(ResourceManager manager, CultureInfo culture)
+    {
+        return manager.GetResourceSet(culture, true, false)!
             .Cast<DictionaryEntry>()
             .Select(entry => (string)entry.Key)
             .Order(StringComparer.Ordinal)
             .ToList();
+    }
 }

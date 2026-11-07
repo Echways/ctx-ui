@@ -18,28 +18,24 @@ namespace CtxUi.Builder.Runner.Tests;
 internal static class Project
 {
     public const string DefaultConfig = """
-        {"source":{"path":"main.py","entrypoint":"mcp"},"environment":{"type":"uv","python":"3.13","dependencies":["fastmcp==4.1.4","httpx"]}}
-        """;
+                                        {"source":{"path":"main.py","entrypoint":"mcp"},"environment":{"type":"uv","python":"3.13","dependencies":["fastmcp==4.1.4","httpx"]}}
+                                        """;
 
     public static byte[] Archive(string? config = DefaultConfig, params (string Path, string Content)[] files)
     {
         using var compressed = new MemoryStream();
-        using (var gzip = new GZipStream(compressed, CompressionLevel.Fastest, leaveOpen: true))
+        using (var gzip = new GZipStream(compressed, CompressionLevel.Fastest, true))
         using (var tar = new TarWriter(gzip))
         {
             var all = files.ToList();
             if (config is not null)
-            {
                 all.Insert(0, ("fastmcp.json", config));
-            }
 
             foreach (var (path, content) in all)
-            {
                 tar.WriteEntry(new PaxTarEntry(TarEntryType.RegularFile, path)
                 {
                     DataStream = new MemoryStream(Encoding.UTF8.GetBytes(content))
                 });
-            }
         }
 
         return compressed.ToArray();
@@ -55,20 +51,26 @@ internal sealed class FakeServerProbe : IServerProbe
 
     public TaskCompletionSource? Gate { get; set; }
 
-    public void Route(string container, string address) => _addresses[container] = address;
+    public void Route(string container, string address)
+    {
+        _addresses[container] = address;
+    }
 
-    public void SetHealthy(string container, bool healthy) => _healthy[container] = healthy;
+    public void SetHealthy(string container, bool healthy)
+    {
+        _healthy[container] = healthy;
+    }
 
-    public string Address(string container) =>
-        _addresses.TryGetValue(container, out var address) ? address : "http://127.0.0.1:9";
+    public string Address(string container)
+    {
+        return _addresses.TryGetValue(container, out var address) ? address : "http://127.0.0.1:9";
+    }
 
     public async Task<bool> IsHealthyAsync(string container, CancellationToken ct)
     {
         Interlocked.Increment(ref Probes);
         if (Gate is { } gate)
-        {
             await gate.Task;
-        }
 
         return _healthy.GetValueOrDefault(container, true);
     }
@@ -81,7 +83,10 @@ internal sealed class FakeUpstream : IAsyncDisposable
 
     public sealed record HttpRequestRecord(string Path, IReadOnlyDictionary<string, string> Headers);
 
-    private FakeUpstream(WebApplication app) => _app = app;
+    private FakeUpstream(WebApplication app)
+    {
+        _app = app;
+    }
 
     public string Name { get; private init; } = "";
     public string Address => $"http://127.0.0.1:{new Uri(_app.Urls.First()).Port}";
@@ -99,7 +104,8 @@ internal sealed class FakeUpstream : IAsyncDisposable
         {
             upstream._requests.Enqueue(new HttpRequestRecord(
                 context.Request.Path,
-                context.Request.Headers.ToDictionary(header => header.Key, header => header.Value.ToString(), StringComparer.OrdinalIgnoreCase)));
+                context.Request.Headers.ToDictionary(header => header.Key, header => header.Value.ToString(),
+                    StringComparer.OrdinalIgnoreCase)));
             if (context.Request.Query.ContainsKey("stream"))
             {
                 context.Response.ContentType = "text/event-stream";
@@ -133,7 +139,8 @@ internal sealed class RunnerHarness : IAsyncDisposable
 
     private readonly WebApplication _app;
 
-    private RunnerHarness(WebApplication app, FakeDockerEngine docker, FakeServerProbe probe, FakeTimeProvider time, RunnerPorts ports)
+    private RunnerHarness(WebApplication app, FakeDockerEngine docker, FakeServerProbe probe, FakeTimeProvider time,
+        RunnerPorts ports)
     {
         _app = app;
         Docker = docker;
@@ -153,10 +160,13 @@ internal sealed class RunnerHarness : IAsyncDisposable
     public HttpClient Ingress { get; }
     public IServiceProvider Services => _app.Services;
 
-    public static ServerSpec Spec(NetworkAccess access = NetworkAccess.InternetOnly, string secret = Secret) =>
-        new(access, new ServerLimits(), secret);
+    public static ServerSpec Spec(NetworkAccess access = NetworkAccess.InternetOnly, string secret = Secret)
+    {
+        return new ServerSpec(access, new ServerLimits(), secret);
+    }
 
-    public static (WebApplication App, RunnerPorts Ports) Build(FakeDockerEngine docker, FakeServerProbe probe, TimeProvider time)
+    public static (WebApplication App, RunnerPorts Ports) Build(FakeDockerEngine docker, FakeServerProbe probe,
+        TimeProvider time)
     {
         using var ingress = new TcpListener(IPAddress.Loopback, 0);
         using var control = new TcpListener(IPAddress.Loopback, 0);
@@ -165,14 +175,16 @@ internal sealed class RunnerHarness : IAsyncDisposable
         var ports = new RunnerPorts(((IPEndPoint)ingress.LocalEndpoint).Port, ((IPEndPoint)control.LocalEndpoint).Port);
         ingress.Stop();
         control.Stop();
-        var options = new RunnerOptions(Token, "127.0.0.1", "runtime:1", "egress", "10.213.0.0/16", null, "runner-self");
+        var options = new RunnerOptions(Token, "127.0.0.1", "runtime:1", "egress", "10.213.0.0/16", null,
+            "runner-self");
         var app = RunnerEndpoints.BuildApp(
             ["--Logging:LogLevel:Default=None"],
             new RunnerDependencies(options, ports, docker, probe, time));
         return (app, ports);
     }
 
-    public static async Task<RunnerHarness> StartAsync(FakeDockerEngine? docker = null, FakeServerProbe? probe = null, FakeTimeProvider? time = null)
+    public static async Task<RunnerHarness> StartAsync(FakeDockerEngine? docker = null, FakeServerProbe? probe = null,
+        FakeTimeProvider? time = null)
     {
         docker ??= new FakeDockerEngine();
         probe ??= new FakeServerProbe();
@@ -206,8 +218,11 @@ internal sealed class RunnerHarness : IAsyncDisposable
         response.EnsureSuccessStatusCode();
     }
 
-    public Task<HttpResponseMessage> PostArchiveAsync(int release, byte[]? archive = null) =>
-        Control.PostAsync($"/v1/servers/{Id}/releases/{release}", new ByteArrayContent(archive ?? Project.Archive()));
+    public Task<HttpResponseMessage> PostArchiveAsync(int release, byte[]? archive = null)
+    {
+        return Control.PostAsync($"/v1/servers/{Id}/releases/{release}",
+            new ByteArrayContent(archive ?? Project.Archive()));
+    }
 
     public async Task<ReleaseStatus> StatusAsync(int release)
     {
@@ -248,11 +263,17 @@ internal sealed class RunnerHarness : IAsyncDisposable
         await WaitForStateAsync(release, ReleaseState.Candidate);
     }
 
-    public Task<HttpResponseMessage> PostStartAsync(int release, IReadOnlyDictionary<string, string>? environment = null) =>
-        Control.PostAsJsonAsync($"/v1/servers/{Id}/releases/{release}/start", new StartRelease(environment ?? new Dictionary<string, string>()));
+    public Task<HttpResponseMessage> PostStartAsync(int release,
+        IReadOnlyDictionary<string, string>? environment = null)
+    {
+        return Control.PostAsJsonAsync($"/v1/servers/{Id}/releases/{release}/start",
+            new StartRelease(environment ?? new Dictionary<string, string>()));
+    }
 
-    public Task<HttpResponseMessage> ActivateAsync(int release) =>
-        Control.PostAsync($"/v1/servers/{Id}/releases/{release}/activate", null);
+    public Task<HttpResponseMessage> ActivateAsync(int release)
+    {
+        return Control.PostAsync($"/v1/servers/{Id}/releases/{release}/activate", null);
+    }
 
     public async Task PublishAsync(int release, byte[]? archive = null)
     {
@@ -266,9 +287,7 @@ internal sealed class RunnerHarness : IAsyncDisposable
     {
         using var request = new HttpRequestMessage(HttpMethod.Post, path) { Content = new StringContent("{}") };
         if (secret is not null)
-        {
             request.Headers.Add(RouteSecret.Header, secret);
-        }
 
         return await Ingress.SendAsync(request);
     }
@@ -289,9 +308,7 @@ internal static class Eventually
         while (DateTime.UtcNow < deadline)
         {
             if (await condition())
-            {
                 return;
-            }
 
             await Task.Delay(10);
         }
@@ -299,6 +316,8 @@ internal static class Eventually
         Assert.Fail(describe?.Invoke() ?? "The condition did not become true in time.");
     }
 
-    public static Task TrueAsync(Func<bool> condition, Func<string>? describe = null) =>
-        TrueAsync(() => Task.FromResult(condition()), describe);
+    public static Task TrueAsync(Func<bool> condition, Func<string>? describe = null)
+    {
+        return TrueAsync(() => Task.FromResult(condition()), describe);
+    }
 }

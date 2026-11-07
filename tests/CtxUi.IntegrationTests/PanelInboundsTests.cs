@@ -55,12 +55,12 @@ public class PanelInboundsTests
 
         await RowMenu.ChooseAsync(Row(page, "echo"), "Удалить");
         await Expect(Dialog(page)).ToContainTextAsync("Клиентов с доступом к нему: 1");
-        await Dialog(page).GetByRole(AriaRole.Button, new() { Name = "Отмена" }).ClickAsync();
+        await Dialog(page).GetByRole(AriaRole.Button, new LocatorGetByRoleOptions { Name = "Отмена" }).ClickAsync();
         await Expect(Row(page, "echo")).ToBeVisibleAsync();
         using var kept = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/echo", issued.Token));
 
         await RowMenu.ChooseAsync(Row(page, "echo"), "Удалить");
-        await Dialog(page).GetByRole(AriaRole.Button, new() { Name = "Удалить" }).ClickAsync();
+        await Dialog(page).GetByRole(AriaRole.Button, new LocatorGetByRoleOptions { Name = "Удалить" }).ClickAsync();
         await Expect(Row(page, "echo")).ToHaveCountAsync(0);
         using var gone = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/echo", issued.Token));
         using var other = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/docs", issued.Token));

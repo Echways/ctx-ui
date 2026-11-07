@@ -17,7 +17,10 @@ internal sealed class PanelLayout
 
         public Func<string> Title { get; set; } = title;
 
-        public void AddTo(EnfiladeBuilder shell) => add(shell, Title);
+        public void AddTo(EnfiladeBuilder shell)
+        {
+            add(shell, Title);
+        }
     }
 
     private readonly List<Entry> _entries = [];
@@ -30,7 +33,10 @@ internal sealed class PanelLayout
 
     public IReadOnlyList<string> VisibleEntries => [.. Visible().Select(entry => entry.Id)];
 
-    public PanelEditor EditorFor(string assemblyName) => new(this, assemblyName);
+    public PanelEditor EditorFor(string assemblyName)
+    {
+        return new PanelEditor(this, assemblyName);
+    }
 
     public void Apply(EnfiladeBuilder shell)
     {
@@ -65,7 +71,8 @@ internal sealed class PanelLayout
         return this;
     }
 
-    public string InsertSection<TPage>(string id, Func<string> title, Action<SectionSetup>? setup, PanelPosition? at, string? previous)
+    public string InsertSection<TPage>(string id, Func<string> title, Action<SectionSetup>? setup, PanelPosition? at,
+        string? previous)
         where TPage : IComponent
     {
         Insert(SectionEntry<TPage>(id, title, setup), at, previous);
@@ -78,11 +85,20 @@ internal sealed class PanelLayout
         return id;
     }
 
-    public string TitleOf(string id) => Find(id).Title();
+    public string TitleOf(string id)
+    {
+        return Find(id).Title();
+    }
 
-    public void Hide(string id) => Find(id).Hidden = true;
+    public void Hide(string id)
+    {
+        Find(id).Hidden = true;
+    }
 
-    public void Rename(string id, Func<string> title) => Find(id).Title = title;
+    public void Rename(string id, Func<string> title)
+    {
+        Find(id).Title = title;
+    }
 
     public void Move(string id, PanelPosition at)
     {
@@ -93,22 +109,37 @@ internal sealed class PanelLayout
         _entries.Insert(current < index ? index - 1 : index, entry);
     }
 
-    public void AddAccountLink(Func<string> title, string href) => _accountLinks.Add((title, href));
+    public void AddAccountLink(Func<string> title, string href)
+    {
+        _accountLinks.Add((title, href));
+    }
 
-    public void AddPages(Assembly assembly) => _pages.Add(assembly);
+    public void AddPages(Assembly assembly)
+    {
+        _pages.Add(assembly);
+    }
 
-    public void AddStylesheet(string path) => _stylesheets.Add(path);
+    public void AddStylesheet(string path)
+    {
+        _stylesheets.Add(path);
+    }
 
-    public void Customize(Action<PanelLook> look) => look(_look);
+    public void Customize(Action<PanelLook> look)
+    {
+        look(_look);
+    }
 
-    private Entry SectionEntry<TPage>(string id, Func<string> title, Action<SectionSetup>? setup) where TPage : IComponent
+    private Entry SectionEntry<TPage>(string id, Func<string> title, Action<SectionSetup>? setup)
+        where TPage : IComponent
     {
         _pages.Add(typeof(TPage).Assembly);
         return new Entry(id, title, false, (shell, current) => shell.AddSection<TPage>(current, setup ?? (_ => { })));
     }
 
-    private static Entry CaptionEntry(string id, Func<string> title) =>
-        new(id, title, true, (shell, current) => shell.AddCaption(current));
+    private static Entry CaptionEntry(string id, Func<string> title)
+    {
+        return new Entry(id, title, true, (shell, current) => shell.AddCaption(current));
+    }
 
     private void Insert(Entry entry, PanelPosition? at, string? previous)
     {
@@ -127,13 +158,20 @@ internal sealed class PanelLayout
         return at.IsAfter ? index + 1 : index;
     }
 
-    private Entry Find(string id) =>
-        _entries.Find(entry => entry.Id == id) ?? throw new InvalidOperationException($"The panel has no entry '{id}'");
+    private Entry Find(string id)
+    {
+        return _entries.Find(entry => entry.Id == id) ??
+               throw new InvalidOperationException($"The panel has no entry '{id}'");
+    }
 
     private List<Entry> Visible()
     {
         var shown = _entries.Where(entry => !entry.Hidden).ToList();
-        return [.. shown.Where((entry, index) => !entry.IsCaption || (index + 1 < shown.Count && !shown[index + 1].IsCaption))];
+        return
+        [
+            .. shown.Where((entry, index) =>
+                !entry.IsCaption || (index + 1 < shown.Count && !shown[index + 1].IsCaption))
+        ];
     }
 
     private void ApplyLook(EnfiladeOptions options)

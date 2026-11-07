@@ -4,5 +4,8 @@ public sealed class RunnerFixture : IAsyncDisposable
 {
     internal RunnerStack Stack { get; } = new();
 
-    public ValueTask DisposeAsync() => Stack.DisposeAsync();
+    public ValueTask DisposeAsync()
+    {
+        return Stack.DisposeAsync();
+    }
 }

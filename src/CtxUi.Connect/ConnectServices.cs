@@ -38,9 +38,11 @@ public static partial class ConnectServices
 
     public const string Favicon = "/_content/CtxUi.Panel/favicon.svg";
 
-    public static readonly PathString[] OpenPaths = [Prefix, WellKnown, "/_content/CtxUi.Connect", "/_content/Enfilade/fonts", Favicon];
+    public static readonly PathString[] OpenPaths =
+        [Prefix, WellKnown, "/_content/CtxUi.Connect", "/_content/Enfilade/fonts", Favicon];
 
-    public static IServiceCollection AddCtxUiConnect(this IServiceCollection services, IConfiguration section, string keysDir)
+    public static IServiceCollection AddCtxUiConnect(this IServiceCollection services, IConfiguration section,
+        string keysDir)
     {
         services.Configure<ConnectOptions>(section);
         var issuer = OAuthResource.Issuer((section.Get<ConnectOptions>() ?? new ConnectOptions()).PublicUrl);
@@ -50,24 +52,30 @@ public static partial class ConnectServices
         services.AddSingleton<ClientMetadataFetcher>();
         services.AddScoped<RegisteredApps>();
         services.AddScoped<ConnectTargets>();
-        services.Configure<WebEncoderOptions>(options => options.TextEncoderSettings = new TextEncoderSettings(UnicodeRanges.All));
+        services.Configure<WebEncoderOptions>(options =>
+            options.TextEncoderSettings = new TextEncoderSettings(UnicodeRanges.All));
         services.AddScoped<TokenReuseHandler>();
         services.AddSingleton<DeviceJanitor>();
         services.AddHostedService(provider => provider.GetRequiredService<DeviceJanitor>());
-        services.PostConfigure<RequestLocalizationOptions>(options => options.RequestCultureProviders.Add(new BrowserLanguage()));
+        services.PostConfigure<RequestLocalizationOptions>(options =>
+            options.RequestCultureProviders.Add(new BrowserLanguage()));
         services.AddAuthentication().AddConnectSession();
         services.AddExternalProviders();
         services.AddRateLimiter(limiter =>
         {
             limiter.OnRejected = (context, _) => new ValueTask(
-                ConnectResults.Notice(ConnectText.TooManyAttempts, StatusCodes.Status429TooManyRequests).ExecuteAsync(context.HttpContext));
+                ConnectResults.Notice(ConnectText.TooManyAttempts, StatusCodes.Status429TooManyRequests)
+                    .ExecuteAsync(context.HttpContext));
             limiter.AddPolicy(PageEndpoints.SignInPolicy, http => RateLimitPartition.GetFixedWindowLimiter(
                 http.Connection.RemoteIpAddress?.ToString() ?? "",
-                _ => new FixedWindowRateLimiterOptions { PermitLimit = SignInAttempts, Window = TimeSpan.FromMinutes(1) }));
+                _ => new FixedWindowRateLimiterOptions
+                { PermitLimit = SignInAttempts, Window = TimeSpan.FromMinutes(1) }));
         });
         services.AddSingleton<ResourceHandlers>();
-        services.AddHttpClient(ClientMetadataFetcher.HttpClientName, client => client.Timeout = ClientMetadataFetcher.Timeout)
-            .ConfigurePrimaryHttpMessageHandler(provider => ClientMetadataFetcher.Handler(provider.GetRequiredService<IMetadataAddressPolicy>()));
+        services.AddHttpClient(ClientMetadataFetcher.HttpClientName,
+                client => client.Timeout = ClientMetadataFetcher.Timeout)
+            .ConfigurePrimaryHttpMessageHandler(provider =>
+                ClientMetadataFetcher.Handler(provider.GetRequiredService<IMetadataAddressPolicy>()));
         services.AddOpenIddict()
             .AddCore(core =>
             {
@@ -83,7 +91,8 @@ public static partial class ConnectServices
                 server.SetAuthorizationEndpointUris("connect/authorize")
                     .SetTokenEndpointUris("connect/token")
                     .SetRevocationEndpointUris("connect/revoke")
-                    .SetConfigurationEndpointUris(".well-known/oauth-authorization-server", ".well-known/openid-configuration")
+                    .SetConfigurationEndpointUris(".well-known/oauth-authorization-server",
+                        ".well-known/openid-configuration")
                     .AllowAuthorizationCodeFlow()
                     .AllowRefreshTokenFlow()
                     .RequireProofKeyForCodeExchange()
@@ -96,7 +105,8 @@ public static partial class ConnectServices
                     .AddEventHandler(IssuerResponseHandler.Descriptor(issuer))
                     .Configure(options => options.CodeChallengeMethods.Remove(CodeChallengeMethods.Plain));
 
-                foreach (var descriptor in ClientMetadataHandler.Descriptors.Append(ResourceHandlers.Descriptor).Append(TokenReuseHandler.Descriptor))
+                foreach (var descriptor in ClientMetadataHandler.Descriptors.Append(ResourceHandlers.Descriptor)
+                             .Append(TokenReuseHandler.Descriptor))
                     server.AddEventHandler(descriptor);
 
                 var aspNetCore = server.UseAspNetCore()
@@ -112,7 +122,8 @@ public static partial class ConnectServices
             var (signing, encryption) = TokenKeys.LoadOrCreate(keysDir, protection);
             server.SigningCredentials.Add(new SigningCredentials(signing, SecurityAlgorithms.RsaSha256));
             server.EncryptionCredentials.Add(
-                new EncryptingCredentials(encryption, SecurityAlgorithms.RsaOAEP, SecurityAlgorithms.Aes256CbcHmacSha512));
+                new EncryptingCredentials(encryption, SecurityAlgorithms.RsaOAEP,
+                    SecurityAlgorithms.Aes256CbcHmacSha512));
         });
         return services;
     }
@@ -124,7 +135,6 @@ public static partial class ConnectServices
         {
             var path = context.Request.Path;
             if (path.StartsWithSegments(Prefix))
-            {
                 context.Response.OnStarting(() =>
                 {
                     context.Response.Headers.ContentSecurityPolicy = FramingPolicy;
@@ -132,7 +142,6 @@ public static partial class ConnectServices
                     context.Response.Headers.CacheControl = "no-store";
                     return Task.CompletedTask;
                 });
-            }
 
             if (gate.IsActive || !(path.StartsWithSegments(Prefix) || path.StartsWithSegments(WellKnown)))
                 return next(context);
@@ -157,12 +166,14 @@ public static partial class ConnectServices
     {
         _ = services.GetRequiredService<IOptionsMonitor<OpenIddictServerOptions>>().CurrentValue;
         var publicUrl = services.GetRequiredService<IOptions<ConnectOptions>>().Value.PublicUrl;
-        if (services.GetRequiredService<ISnapshotSource>().Current.SignIn.Enabled && !OAuthAvailability.IsAllowed(publicUrl))
+        if (services.GetRequiredService<ISnapshotSource>().Current.SignIn.Enabled &&
+            !OAuthAvailability.IsAllowed(publicUrl))
             OAuthUnavailable(services.GetRequiredService<ILoggerFactory>().CreateLogger("CtxUi.Connect"), publicUrl);
     }
 
     [LoggerMessage(
         Level = LogLevel.Warning,
-        Message = "browser sign-in (OAuth) is on but does not work: the public address {PublicUrl} must start with https://, set CtxUi__PublicUrl")]
+        Message =
+            "browser sign-in (OAuth) is on but does not work: the public address {PublicUrl} must start with https://, set CtxUi__PublicUrl")]
     private static partial void OAuthUnavailable(ILogger logger, string publicUrl);
 }

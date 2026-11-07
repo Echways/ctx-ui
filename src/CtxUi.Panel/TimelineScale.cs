@@ -12,7 +12,7 @@ public sealed record TimelineScale(TimeSpan Length)
         _ when Length <= Quarter => TimeSpan.FromHours(6),
         _ when Length <= TimeSpan.FromHours(2) => TimeSpan.FromDays(1),
         _ when Length <= TimeSpan.FromHours(8) => TimeSpan.FromDays(7),
-        _ => TimeSpan.FromDays(15),
+        _ => TimeSpan.FromDays(15)
     };
 
     public string Span => Length switch
@@ -20,7 +20,7 @@ public sealed record TimelineScale(TimeSpan Length)
         _ when Length <= Quarter => PanelText.HorizonSpanDay,
         _ when Length <= TimeSpan.FromHours(2) => PanelText.HorizonSpanWeek,
         _ when Length <= TimeSpan.FromHours(8) => PanelText.HorizonSpanMonth,
-        _ => PanelText.HorizonSpanSeason,
+        _ => PanelText.HorizonSpanSeason
     };
 
     public string Hint => Length switch
@@ -28,19 +28,33 @@ public sealed record TimelineScale(TimeSpan Length)
         _ when Length <= Quarter => PanelText.HorizonHint,
         _ when Length <= TimeSpan.FromHours(2) => PanelText.HorizonHintWeek,
         _ when Length <= TimeSpan.FromHours(8) => PanelText.HorizonHintMonth,
-        _ => PanelText.HorizonHintSeason,
+        _ => PanelText.HorizonHintSeason
     };
 
-    public bool IsTick(DateTimeOffset start) => start.UtcTicks % TickEvery.Ticks == 0;
-
-    public string Tick(DateTimeOffset start) => TickEvery < TimeSpan.FromDays(1) ? Words.Clock(start) : Date(start, "d MMM");
-
-    public string Slot(DateTimeOffset start) => Length switch
+    public bool IsTick(DateTimeOffset start)
     {
-        _ when Length <= Quarter => string.Format(PanelText.HorizonQuarter, Words.Clock(start), Words.Clock(start + Length)),
-        _ when Length < TimeSpan.FromDays(1) => string.Format(PanelText.HorizonSlot, Date(start, "d MMMM"), Words.Clock(start), Words.Clock(start + Length)),
-        _ => Date(start, "d MMMM"),
-    };
+        return start.UtcTicks % TickEvery.Ticks == 0;
+    }
 
-    private static string Date(DateTimeOffset moment, string format) => moment.UtcDateTime.ToString(format, CultureInfo.CurrentCulture);
+    public string Tick(DateTimeOffset start)
+    {
+        return TickEvery < TimeSpan.FromDays(1) ? Words.Clock(start) : Date(start, "d MMM");
+    }
+
+    public string Slot(DateTimeOffset start)
+    {
+        return Length switch
+        {
+            _ when Length <= Quarter => string.Format(PanelText.HorizonQuarter, Words.Clock(start),
+                Words.Clock(start + Length)),
+            _ when Length < TimeSpan.FromDays(1) => string.Format(PanelText.HorizonSlot, Date(start, "d MMMM"),
+                Words.Clock(start), Words.Clock(start + Length)),
+            _ => Date(start, "d MMMM")
+        };
+    }
+
+    private static string Date(DateTimeOffset moment, string format)
+    {
+        return moment.UtcDateTime.ToString(format, CultureInfo.CurrentCulture);
+    }
 }

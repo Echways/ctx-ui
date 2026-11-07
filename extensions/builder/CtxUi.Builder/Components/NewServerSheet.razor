@@ -5,13 +5,14 @@
 
 <Sheet>
     <Form Model="_draft" OnSubmit="SaveAsync" Submit="@BuilderText.Create" Done="@BuilderText.ServerCreated">
-        <Field For="() => _draft.Name" Label="@BuilderText.Name" />
-        <Field For="() => _draft.Slug" Label="@BuilderText.Slug" Hint="@BuilderText.SlugHint" />
-        <Field For="() => _draft.ImportAddress" Label="@BuilderText.ImportAddress" Hint="@BuilderText.NewServerOpenApi" />
-        <Field For="() => _draft.ImportPaste" Label="@BuilderText.ImportPaste" Lines="4" />
+        <Field For="() => _draft.Name" Label="@BuilderText.Name"/>
+        <Field For="() => _draft.Slug" Label="@BuilderText.Slug" Hint="@BuilderText.SlugHint"/>
+        <Field For="() => _draft.ImportAddress" Label="@BuilderText.ImportAddress"
+               Hint="@BuilderText.NewServerOpenApi"/>
+        <Field For="() => _draft.ImportPaste" Label="@BuilderText.ImportPaste" Lines="4"/>
         <div class="builder-archive">
             <label for="builder-archive">@BuilderText.ImportArchive</label>
-            <InputFile id="builder-archive" OnChange="Choose" accept=".gz,.tgz,.zip" data-testid="archive" />
+            <InputFile id="builder-archive" OnChange="Choose" accept=".gz,.tgz,.zip" data-testid="archive"/>
             <p class="hint">@BuilderText.ImportArchiveHint</p>
         </div>
     </Form>
@@ -23,7 +24,10 @@
     private readonly NewServerDraft _draft = new();
     private IBrowserFile? _archive;
 
-    private void Choose(InputFileChangeEventArgs args) => _archive = args.FileCount == 0 ? null : args.File;
+    private void Choose(InputFileChangeEventArgs args)
+    {
+        _archive = args.FileCount == 0 ? null : args.File;
+    }
 
     private async Task SaveAsync()
     {
@@ -45,4 +49,5 @@
         Pending.Put(server.Id, api);
         Navigation.NavigateTo($"builder/{server.Id}");
     }
+
 }

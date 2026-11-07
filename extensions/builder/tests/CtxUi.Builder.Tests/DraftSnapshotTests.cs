@@ -11,7 +11,8 @@ public sealed class DraftSnapshotTests
         var resource = new BuilderResource("data://cities", "cities", "text/plain", "Paris");
         var prompt = new BuilderPrompt("report", null, "Report on {city}");
 
-        Assert.Equal(DraftSnapshot.Of(ResourceFormDraft.From(resource)), DraftSnapshot.Of(ResourceFormDraft.From(resource)));
+        Assert.Equal(DraftSnapshot.Of(ResourceFormDraft.From(resource)),
+            DraftSnapshot.Of(ResourceFormDraft.From(resource)));
         Assert.Equal(DraftSnapshot.Of(PromptFormDraft.From(prompt)), DraftSnapshot.Of(PromptFormDraft.From(prompt)));
         Assert.Equal(DraftSnapshot.Of(new ToolFormDraft()), DraftSnapshot.Of(new ToolFormDraft()));
     }

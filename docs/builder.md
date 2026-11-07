@@ -284,8 +284,8 @@ in `Authorization: Bearer ctxk_…`, as in the [REST API](../README.md#rest-api)
 `releases[].status`. Errors are `application/problem+json`: 400 input that is
 refused (a name, a project file, a document), 404 no such server or version,
 409 a build is running, the server is being deleted or the version cannot be
-restored, 502 the Runner answered with an error, 503 the Runner settings are
-incomplete.
+restored, 502 the Runner is unreachable or answered with an error, 503 the Runner
+settings are incomplete.
 
 ```bash
 curl -X POST -H "Authorization: Bearer ctxk_..." \

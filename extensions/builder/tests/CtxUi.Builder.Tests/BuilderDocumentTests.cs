@@ -7,14 +7,21 @@ namespace CtxUi.Builder.Tests;
 
 public sealed class BuilderDocumentTests
 {
-    private static BuilderResource Cities() => new("data://cities", "cities", "application/json", "[\"Berlin\"]");
+    private static BuilderResource Cities()
+    {
+        return new BuilderResource("data://cities", "cities", "application/json", "[\"Berlin\"]");
+    }
 
-    private static BuilderPrompt Report() => new("daily_report", "Daily report", "Отчёт за {day}");
+    private static BuilderPrompt Report()
+    {
+        return new BuilderPrompt("daily_report", "Daily report", "Отчёт за {day}");
+    }
 
     [Fact]
     public void Prompt_arguments_are_taken_from_the_template()
     {
-        var arguments = BuilderDocument.Arguments("Report for {day} in {city}, again {day}, not {1x} or {} or {a b} or {{}");
+        var arguments =
+            BuilderDocument.Arguments("Report for {day} in {city}, again {day}, not {1x} or {} or {a b} or {{}");
 
         Assert.Equal(["day", "city"], arguments);
     }
@@ -25,8 +32,12 @@ public sealed class BuilderDocumentTests
         var model = new BuilderDocumentModel([Cities(), Cities() with { Name = "other" }], []);
 
         Assert.Throws<PanelException>(() => BuilderDocument.Write(model));
-        Assert.Throws<PanelException>(() => BuilderDocument.WithResource(new BuilderDocumentModel([Cities()], []), Cities(), null));
-        Assert.Throws<PanelException>(() => BuilderDocument.WithResource(new BuilderDocumentModel([Cities(), Cities() with { Uri = "data://towns" }], []), Cities() with { Uri = "data://towns" }, "data://cities"));
+        Assert.Throws<PanelException>(() =>
+            BuilderDocument.WithResource(new BuilderDocumentModel([Cities()], []), Cities(), null));
+        Assert.Throws<PanelException>(() =>
+            BuilderDocument.WithResource(
+                new BuilderDocumentModel([Cities(), Cities() with { Uri = "data://towns" }], []),
+                Cities() with { Uri = "data://towns" }, "data://cities"));
     }
 
     [Theory]
@@ -127,7 +138,8 @@ public sealed class BuilderDocumentTests
     {
         var model = new BuilderDocumentModel([Cities()], [Report()]);
 
-        var emptied = BuilderDocument.WithoutPrompt(BuilderDocument.WithoutResource(model, "data://cities"), "daily_report");
+        var emptied =
+            BuilderDocument.WithoutPrompt(BuilderDocument.WithoutResource(model, "data://cities"), "daily_report");
 
         Assert.Empty(emptied.Resources);
         Assert.Empty(emptied.Prompts);
@@ -138,19 +150,27 @@ public sealed class BuilderDraftTests : IClassFixture<CatalogHarness>
 {
     private readonly CatalogHarness _harness;
 
-    public BuilderDraftTests(CatalogHarness harness) => _harness = harness;
+    public BuilderDraftTests(CatalogHarness harness)
+    {
+        _harness = harness;
+    }
 
     private ServerCatalog Catalog => _harness.Catalog;
 
-    private static string Slug() => "s" + Guid.NewGuid().ToString("N")[..12];
+    private static string Slug()
+    {
+        return "s" + Guid.NewGuid().ToString("N")[..12];
+    }
 
     [Fact]
     public async Task Saved_resource_and_prompt_are_stored_in_the_builder_document()
     {
         var server = await Catalog.CreateAsync(Slug(), "Docs", default);
 
-        var revision = await Catalog.SaveResourceAsync(server.Id, new BuilderResource("data://cities", "cities", "text/plain", "Berlin"), null, 0, default);
-        revision = await Catalog.SavePromptAsync(server.Id, new BuilderPrompt("daily_report", null, "Report {day}"), null, revision, default);
+        var revision = await Catalog.SaveResourceAsync(server.Id,
+            new BuilderResource("data://cities", "cities", "text/plain", "Berlin"), null, 0, default);
+        revision = await Catalog.SavePromptAsync(server.Id, new BuilderPrompt("daily_report", null, "Report {day}"),
+            null, revision, default);
 
         var draft = await Catalog.DraftAsync(server.Id, default);
         var document = BuilderDocument.Read(draft.BuilderJson!);
@@ -163,11 +183,16 @@ public sealed class BuilderDraftTests : IClassFixture<CatalogHarness>
     public async Task Stale_revision_raises_a_conflict_and_keeps_the_other_admins_entry()
     {
         var server = await Catalog.CreateAsync(Slug(), "Race", default);
-        await Catalog.SaveResourceAsync(server.Id, new BuilderResource("data://a", "a", "text/plain", "theirs"), null, 0, default);
+        await Catalog.SaveResourceAsync(server.Id, new BuilderResource("data://a", "a", "text/plain", "theirs"), null,
+            0, default);
 
-        await Assert.ThrowsAsync<DraftConflictException>(() => Catalog.SaveResourceAsync(server.Id, new BuilderResource("data://a", "a", "text/plain", "mine"), null, 0, default));
-        await Assert.ThrowsAsync<DraftConflictException>(() => Catalog.SavePromptAsync(server.Id, new BuilderPrompt("p", null, "t"), null, 0, default));
-        await Assert.ThrowsAsync<DraftConflictException>(() => Catalog.DeleteResourceAsync(server.Id, "data://a", 0, default));
+        await Assert.ThrowsAsync<DraftConflictException>(() =>
+            Catalog.SaveResourceAsync(server.Id, new BuilderResource("data://a", "a", "text/plain", "mine"), null, 0,
+                default));
+        await Assert.ThrowsAsync<DraftConflictException>(() =>
+            Catalog.SavePromptAsync(server.Id, new BuilderPrompt("p", null, "t"), null, 0, default));
+        await Assert.ThrowsAsync<DraftConflictException>(() =>
+            Catalog.DeleteResourceAsync(server.Id, "data://a", 0, default));
 
         var document = BuilderDocument.Read((await Catalog.DraftAsync(server.Id, default)).BuilderJson!);
         Assert.Equal("theirs", Assert.Single(document.Resources).Text);
@@ -187,7 +212,8 @@ public sealed class BuilderDraftTests : IClassFixture<CatalogHarness>
     [Fact]
     public async Task Saving_for_an_unknown_server_is_refused()
     {
-        await Assert.ThrowsAsync<PanelException>(() => Catalog.SaveResourceAsync(Guid.NewGuid(), new BuilderResource("data://a", "a", "text/plain", ""), null, 0, default));
+        await Assert.ThrowsAsync<PanelException>(() => Catalog.SaveResourceAsync(Guid.NewGuid(),
+            new BuilderResource("data://a", "a", "text/plain", ""), null, 0, default));
     }
 
     [Fact]

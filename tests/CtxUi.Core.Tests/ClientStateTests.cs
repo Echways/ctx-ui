@@ -18,8 +18,10 @@ public class ClientStateTests
     }
 
     [Fact]
-    public void Client_without_restrictions_is_active() =>
+    public void Client_without_restrictions_is_active()
+    {
         Assert.Equal(ClientStatus.Active, ClientState.Of(Client(), TestData.Now));
+    }
 
     [Fact]
     public void Switched_off_client_is_disabled_whatever_else_is_true()
@@ -82,5 +84,8 @@ public class ClientStateTests
     [InlineData(ClientStatus.Disabled, "отключён")]
     [InlineData(ClientStatus.Expired, "истёк")]
     [InlineData(ClientStatus.Exhausted, "исчерпан")]
-    public void Every_state_has_a_word(ClientStatus status, string word) => Assert.Equal(word, ClientState.Text(status));
+    public void Every_state_has_a_word(ClientStatus status, string word)
+    {
+        Assert.Equal(word, ClientState.Text(status));
+    }
 }

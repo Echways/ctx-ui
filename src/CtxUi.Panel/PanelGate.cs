@@ -7,7 +7,10 @@ public sealed class PanelGate
 {
     private volatile string? _prefix;
 
-    public void Open(string path) => _prefix = "/" + path;
+    public void Open(string path)
+    {
+        _prefix = "/" + path;
+    }
 
     public async Task PassAsync(HttpContext context, RequestDelegate next, IReadOnlyCollection<PathString> openPaths)
     {

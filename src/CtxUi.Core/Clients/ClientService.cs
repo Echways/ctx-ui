@@ -68,18 +68,20 @@ public sealed class ClientService(CtxUiDbContext db, ISecretVault vault, TimePro
             DirectKey = parsedAccess.DirectKey,
             PeriodStartedAt = now,
             Metadata = parsedMetadata,
-            Inbounds = inbounds.Select(inbound => new ClientInbound { InboundId = inbound.Id }).ToList(),
+            Inbounds = inbounds.Select(inbound => new ClientInbound { InboundId = inbound.Id }).ToList()
         };
         db.Clients.Add(client);
         await db.SaveChangesAsync(ct);
         return new IssuedClient(client, token);
     }
 
-    public Task<List<Client>> ListAsync(CancellationToken ct = default) =>
-        db.Clients.AsNoTracking()
+    public Task<List<Client>> ListAsync(CancellationToken ct = default)
+    {
+        return db.Clients.AsNoTracking()
             .Include(client => client.Inbounds).ThenInclude(link => link.Inbound)
             .OrderBy(client => client.CreatedAt).ThenBy(client => client.NameKey)
             .ToListAsync(ct);
+    }
 
     public Task<Client?> FindAsync(string name, CancellationToken ct = default)
     {
@@ -89,21 +91,30 @@ public sealed class ClientService(CtxUiDbContext db, ISecretVault vault, TimePro
             .SingleOrDefaultAsync(client => client.NameKey == key, ct);
     }
 
-    public static NotFoundException NotFound(string name) => new(string.Format(CoreText.ClientNotFound, name.Trim()));
+    public static NotFoundException NotFound(string name)
+    {
+        return new NotFoundException(string.Format(CoreText.ClientNotFound, name.Trim()));
+    }
 
-    public async Task<Client> GetAsync(string name, CancellationToken ct = default) =>
-        await FindAsync(name, ct) ?? throw NotFound(name);
+    public async Task<Client> GetAsync(string name, CancellationToken ct = default)
+    {
+        return await FindAsync(name, ct) ?? throw NotFound(name);
+    }
 
-    public async Task<Client> GetAsync(Guid id, CancellationToken ct = default) =>
-        await db.Clients.AsNoTracking()
-            .Include(client => client.Inbounds).ThenInclude(link => link.Inbound)
-            .SingleOrDefaultAsync(client => client.Id == id, ct)
-        ?? throw new NotFoundException(CoreText.ClientIdNotFound);
+    public async Task<Client> GetAsync(Guid id, CancellationToken ct = default)
+    {
+        return await db.Clients.AsNoTracking()
+                   .Include(client => client.Inbounds).ThenInclude(link => link.Inbound)
+                   .SingleOrDefaultAsync(client => client.Id == id, ct)
+               ?? throw new NotFoundException(CoreText.ClientIdNotFound);
+    }
 
-    public Task<Dictionary<Guid, string>> NamesAsync(CancellationToken ct = default) =>
-        db.Clients.AsNoTracking()
+    public Task<Dictionary<Guid, string>> NamesAsync(CancellationToken ct = default)
+    {
+        return db.Clients.AsNoTracking()
             .Select(client => new { client.Id, client.Name })
             .ToDictionaryAsync(row => row.Id, row => row.Name, ct);
+    }
 
     public async Task UpdateAsync(Guid id, ClientUpdate update, CancellationToken ct = default)
     {
@@ -116,7 +127,8 @@ public sealed class ClientService(CtxUiDbContext db, ISecretVault vault, TimePro
 
         if (update.InboundSlugs is not null)
         {
-            var wanted = (await ResolveInboundsAsync(update.InboundSlugs, ct)).Select(inbound => inbound.Id).ToHashSet();
+            var wanted = (await ResolveInboundsAsync(update.InboundSlugs, ct)).Select(inbound => inbound.Id)
+                .ToHashSet();
             client.Inbounds.RemoveAll(link => !wanted.Contains(link.InboundId));
             foreach (var inboundId in wanted.Except(client.Inbounds.Select(link => link.InboundId)).ToList())
                 client.Inbounds.Add(new ClientInbound { ClientId = client.Id, InboundId = inboundId });
@@ -128,7 +140,8 @@ public sealed class ClientService(CtxUiDbContext db, ISecretVault vault, TimePro
         if (update.Limits is { } limits)
         {
             limits.Validated();
-            if (limits.ResetEveryDays != client.ResetEveryDays || (client.QuotaCalls is null && limits.QuotaCalls is not null))
+            if (limits.ResetEveryDays != client.ResetEveryDays ||
+                (client.QuotaCalls is null && limits.QuotaCalls is not null))
                 client.PeriodStartedAt = clock.GetUtcNow();
 
             client.RatePerMinute = limits.RatePerMinute;
@@ -156,11 +169,13 @@ public sealed class ClientService(CtxUiDbContext db, ISecretVault vault, TimePro
             .ToListAsync(ct);
     }
 
-    public async Task SetInboundClientsAsync(string slug, IReadOnlyCollection<Guid> clientIds, CancellationToken ct = default)
+    public async Task SetInboundClientsAsync(string slug, IReadOnlyCollection<Guid> clientIds,
+        CancellationToken ct = default)
     {
         var inbound = await FindInboundAsync(slug, ct);
         var wanted = clientIds.ToHashSet();
-        var known = await db.Clients.Where(client => wanted.Contains(client.Id)).Select(client => client.Id).ToListAsync(ct);
+        var known = await db.Clients.Where(client => wanted.Contains(client.Id)).Select(client => client.Id)
+            .ToListAsync(ct);
         if (known.Count != wanted.Count)
             throw new NotFoundException(CoreText.ClientIdNotFound);
 
@@ -211,15 +226,21 @@ public sealed class ClientService(CtxUiDbContext db, ISecretVault vault, TimePro
         return new ReissuedToken(token, keyDevices.Count);
     }
 
-    public Task<int> CountKeyDevicesAsync(Guid id, CancellationToken ct = default) => KeyDevices(id).CountAsync(ct);
+    public Task<int> CountKeyDevicesAsync(Guid id, CancellationToken ct = default)
+    {
+        return KeyDevices(id).CountAsync(ct);
+    }
 
-    public string? Reveal(Client client) => vault.Open(client.TokenSealed);
+    public string? Reveal(Client client)
+    {
+        return vault.Open(client.TokenSealed);
+    }
 
-    public async Task MarkUsedAsync(IReadOnlyCollection<KeyValuePair<Guid, DateTimeOffset>> seen, CancellationToken ct = default)
+    public async Task MarkUsedAsync(IReadOnlyCollection<KeyValuePair<Guid, DateTimeOffset>> seen,
+        CancellationToken ct = default)
     {
         await using var transaction = await db.Database.BeginTransactionAsync(ct);
         foreach (var (clientId, at) in seen)
-        {
             await db.Clients
                 .Where(client => client.Id == clientId)
                 .ExecuteUpdateAsync(
@@ -227,7 +248,6 @@ public sealed class ClientService(CtxUiDbContext db, ISecretVault vault, TimePro
                         .SetProperty(client => client.LastUsedAt, at)
                         .SetProperty(client => client.FirstUsedAt, client => client.FirstUsedAt ?? at),
                     ct);
-        }
 
         await transaction.CommitAsync(ct);
     }
@@ -259,8 +279,11 @@ public sealed class ClientService(CtxUiDbContext db, ISecretVault vault, TimePro
         await transaction.CommitAsync(ct);
     }
 
-    private IQueryable<Device> KeyDevices(Guid clientId) =>
-        db.Devices.Where(device => device.ClientId == clientId && device.RevokedAt == null && device.SignedInWith == Device.ByKey);
+    private IQueryable<Device> KeyDevices(Guid clientId)
+    {
+        return db.Devices.Where(device =>
+            device.ClientId == clientId && device.RevokedAt == null && device.SignedInWith == Device.ByKey);
+    }
 
     private async Task<ClientAccessPolicy> DefaultAccessAsync(CancellationToken ct)
     {
@@ -274,17 +297,19 @@ public sealed class ClientService(CtxUiDbContext db, ISecretVault vault, TimePro
             throw new DomainException(string.Format(CoreText.ExpiryPassed, value));
     }
 
-    private async Task<Client> TrackAsync(Guid id, CancellationToken ct) =>
-        await db.Clients
-            .Include(client => client.Inbounds)
-            .SingleOrDefaultAsync(client => client.Id == id, ct)
-        ?? throw new NotFoundException(CoreText.ClientIdNotFound);
+    private async Task<Client> TrackAsync(Guid id, CancellationToken ct)
+    {
+        return await db.Clients
+                   .Include(client => client.Inbounds)
+                   .SingleOrDefaultAsync(client => client.Id == id, ct)
+               ?? throw new NotFoundException(CoreText.ClientIdNotFound);
+    }
 
     private async Task<Inbound> FindInboundAsync(string slug, CancellationToken ct)
     {
         var trimmed = slug.Trim();
         return await db.Inbounds.AsNoTracking().SingleOrDefaultAsync(inbound => inbound.Slug == trimmed, ct)
-            ?? throw new NotFoundException(string.Format(CoreText.InboundNotFound, trimmed));
+               ?? throw new NotFoundException(string.Format(CoreText.InboundNotFound, trimmed));
     }
 
     private async Task<List<Inbound>> ResolveInboundsAsync(IReadOnlyCollection<string> slugs, CancellationToken ct)

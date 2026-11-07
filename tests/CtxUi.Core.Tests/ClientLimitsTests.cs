@@ -32,7 +32,7 @@ public class ClientLimitsTests
     [InlineData(int.MaxValue)]
     public void Value_outside_the_range_is_rejected_for_every_limit(int value)
     {
-        var rate = Assert.Throws<DomainException>(() => new ClientLimits(RatePerMinute: value).Validated());
+        var rate = Assert.Throws<DomainException>(() => new ClientLimits(value).Validated());
         var concurrency = Assert.Throws<DomainException>(() => new ClientLimits(MaxConcurrency: value).Validated());
         var quota = Assert.Throws<DomainException>(() => new ClientLimits(QuotaCalls: value).Validated());
         var reset = Assert.Throws<DomainException>(() => new ClientLimits(ResetEveryDays: value).Validated());

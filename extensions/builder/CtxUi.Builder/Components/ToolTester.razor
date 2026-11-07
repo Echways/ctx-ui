@@ -2,18 +2,20 @@
 
 @if (_loading)
 {
-    <Placeholder />
+    <Placeholder/>
 }
 else if (_target is null)
 {
-    <EmptyState Title="@BuilderText.ToolTestNoTargetTitle" Hint="@BuilderText.ToolTestNoTargetHint" />
+    <EmptyState Title="@BuilderText.ToolTestNoTargetTitle" Hint="@BuilderText.ToolTestNoTargetHint"/>
 }
 else
 {
     <div class="builder-tester" data-testid="tool-tester">
         <div class="builder-actions">
-            <span class="note" data-testid="test-target">@(_target.IsCandidate ? string.Format(BuilderText.ToolTestTargetCandidate, _target.Number) : string.Format(BuilderText.ToolTestTargetActive, _target.Number))</span>
-            <Button Kind="ButtonKind.Quiet" OnClick="ReloadAsync" Refresh="false" data-testid="test-reload">@BuilderText.ToolTestReload</Button>
+            <span class="note"
+                  data-testid="test-target">@(_target.IsCandidate ? string.Format(BuilderText.ToolTestTargetCandidate, _target.Number) : string.Format(BuilderText.ToolTestTargetActive, _target.Number))</span>
+            <Button Kind="ButtonKind.Quiet" OnClick="ReloadAsync" Refresh="false"
+                    data-testid="test-reload">@BuilderText.ToolTestReload</Button>
         </div>
         @if (_error is not null)
         {
@@ -25,7 +27,8 @@ else
         }
         else
         {
-            <MudSelect T="string" Label="@BuilderText.ToolTestTool" Value="_tool" ValueChanged="Choose" data-testid="test-tool">
+            <MudSelect T="string" Label="@BuilderText.ToolTestTool" Value="_tool" ValueChanged="Choose"
+                       data-testid="test-tool">
                 @foreach (var tool in _tools)
                 {
                     <MudSelectItem Value="tool.Name">@tool.Name</MudSelectItem>
@@ -35,21 +38,23 @@ else
             {
                 <p class="note">@description</p>
             }
+
             <Form @key="_tool" Model="_arguments" OnSubmit="CallAsync" Submit="@BuilderText.ToolTestCall">
                 @foreach (var field in _arguments.Fields)
                 {
                     <div class="builder-argument" data-testid="test-argument">
                         @if (field.IsBoolean)
                         {
-                            <Field For="() => field.Text" Label="@Label(field)" Hint="@field.Description" Options="BooleanOptions" />
+                            <Field For="() => field.Text" Label="@Label(field)" Hint="@field.Description"
+                                   Options="BooleanOptions"/>
                         }
                         else if (field.IsJson)
                         {
-                            <Field For="() => field.Text" Label="@Label(field)" Hint="@field.Description" Lines="4" />
+                            <Field For="() => field.Text" Label="@Label(field)" Hint="@field.Description" Lines="4"/>
                         }
                         else
                         {
-                            <Field For="() => field.Text" Label="@Label(field)" Hint="@field.Description" />
+                            <Field For="() => field.Text" Label="@Label(field)" Hint="@field.Description"/>
                         }
                     </div>
                 }
@@ -59,24 +64,29 @@ else
         {
             <div class="builder-test-result" data-testid="test-result">
                 <div class="builder-actions">
-                    <Tag Tone="@(_outcome.IsError ? Tone.Bad : Tone.Good)">@(_outcome.IsError ? BuilderText.ToolTestError : BuilderText.ToolTestOk)</Tag>
-                    <span class="note" data-testid="test-elapsed">@string.Format(BuilderText.ToolTestElapsed, _outcome.Elapsed.TotalMilliseconds)</span>
+                    <Tag
+                        Tone="@(_outcome.IsError ? Tone.Bad : Tone.Good)">@(_outcome.IsError ? BuilderText.ToolTestError : BuilderText.ToolTestOk)</Tag>
+                    <span class="note"
+                          data-testid="test-elapsed">@string.Format(BuilderText.ToolTestElapsed, _outcome.Elapsed.TotalMilliseconds)</span>
                 </div>
                 @if (_outcome.ProxyRefused)
                 {
                     <p class="warn-t" role="alert" data-testid="proxy-refused">@BuilderText.ToolTestProxyRefused</p>
                     @if (OnOpenSettings.HasDelegate)
                     {
-                        <button type="button" class="link" data-testid="open-settings-hint" @onclick="() => OnOpenSettings.InvokeAsync()">@BuilderText.ToolTestOpenSettings</button>
+                        <button type="button" class="link" data-testid="open-settings-hint"
+                                @onclick="() => OnOpenSettings.InvokeAsync()">@BuilderText.ToolTestOpenSettings</button>
                     }
                 }
-                <pre class="builder-log" data-testid="test-output">@(_outcome.Text.Length == 0 ? BuilderText.ToolTestNoOutput : _outcome.Text)</pre>
+                <pre class="builder-log"
+                     data-testid="test-output">@(_outcome.Text.Length == 0 ? BuilderText.ToolTestNoOutput : _outcome.Text)</pre>
             </div>
         }
     </div>
 }
 
 @code {
+
     private static readonly IReadOnlyList<Option<string?>> BooleanOptions =
         [new(string.Empty, string.Empty), new("true", "true"), new("false", "false")];
 
@@ -88,11 +98,9 @@ else
     private string? _error;
     private bool _loading = true;
 
-    [Parameter, EditorRequired]
-    public Guid ServerId { get; set; }
+    [Parameter][EditorRequired] public Guid ServerId { get; set; }
 
-    [Parameter]
-    public EventCallback OnOpenSettings { get; set; }
+    [Parameter] public EventCallback OnOpenSettings { get; set; }
 
     private ToolInfo? Selected => _tools.FirstOrDefault(tool => tool.Name == _tool);
 
@@ -102,8 +110,10 @@ else
         _loading = false;
     }
 
-    private static string Label(ArgumentField field) =>
-        field.IsJson ? $"{field.Name} ({BuilderText.ToolArgumentJsonHint}){(field.Required ? " *" : string.Empty)}" : field.Required ? $"{field.Name} *" : field.Name;
+    private static string Label(ArgumentField field)
+    {
+        return field.IsJson ? $"{field.Name} ({BuilderText.ToolArgumentJsonHint}){(field.Required ? " *" : string.Empty)}" : field.Required ? $"{field.Name} *" : field.Name;
+    }
 
     private async Task LoadAsync()
     {
@@ -148,4 +158,5 @@ else
         var arguments = _arguments.ToArguments();
         _outcome = await Runner.CallAsync(ServerId, _target!, _tool!, arguments, CancellationToken.None);
     }
+
 }

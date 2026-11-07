@@ -9,9 +9,10 @@
     <p class="device-apps">@(Device.Apps.Count == 0 ? ConnectText.DeviceNoApps : string.Join(", ", Device.Apps.Select(app => app.AppName)))</p>
     <p class="device-meta">
         @string.Format(ConnectText.DeviceSince, ConnectWords.Moment(Device.CreatedAt), SignedInWith(Device.SignedInWith))
-        <br />
+        <br/>
         @(Device.LastUsedAt is { } used ? string.Format(ConnectText.DeviceUsed, ConnectWords.Moment(used)) : ConnectText.DeviceUnused)
-        · <Phrase Pattern="@ConnectText.DeviceIp" Arguments="[Device.SignInIp]" ArgumentClass="mono" />
+        ·
+        <Phrase Pattern="@ConnectText.DeviceIp" Arguments="[Device.SignInIp]" ArgumentClass="mono"/>
     </p>
     @if (ChildContent is not null)
     {
@@ -20,17 +21,17 @@
 </li>
 
 @code {
-    [Parameter, EditorRequired]
-    public Device Device { get; set; } = default!;
+    [Parameter][EditorRequired] public Device Device { get; set; } = default!;
 
-    [Parameter]
-    public bool Current { get; set; }
+    [Parameter] public bool Current { get; set; }
 
-    [Parameter]
-    public RenderFragment? ChildContent { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
 
-    private static string SignedInWith(string method) =>
-        method == Device.ByKey
+    private static string SignedInWith(string method)
+    {
+        return method == Device.ByKey
             ? ConnectText.SignedInWithKey
             : string.Format(ConnectText.SignedInWithProvider, ProviderCatalog.Find(method)?.Title ?? method);
+    }
+
 }

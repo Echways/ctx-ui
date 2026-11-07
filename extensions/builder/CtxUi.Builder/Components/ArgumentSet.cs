@@ -34,11 +34,13 @@ public sealed class ArgumentSet
 
     public static ArgumentSet From(JsonElement schema)
     {
-        if (schema.ValueKind != JsonValueKind.Object || !schema.TryGetProperty("properties", out var properties) || properties.ValueKind != JsonValueKind.Object)
+        if (schema.ValueKind != JsonValueKind.Object || !schema.TryGetProperty("properties", out var properties) ||
+            properties.ValueKind != JsonValueKind.Object)
             return new ArgumentSet();
 
         var required = schema.TryGetProperty("required", out var list) && list.ValueKind == JsonValueKind.Array
-            ? list.EnumerateArray().Where(item => item.ValueKind == JsonValueKind.String).Select(item => item.GetString()).ToHashSet()
+            ? list.EnumerateArray().Where(item => item.ValueKind == JsonValueKind.String)
+                .Select(item => item.GetString()).ToHashSet()
             : [];
         return new ArgumentSet
         {
@@ -49,10 +51,14 @@ public sealed class ArgumentSet
                     Name = property.Name,
                     Type = SimpleTypeOf(property.Value) ?? ArgumentField.JsonType,
                     Required = required.Contains(property.Name),
-                    Description = property.Value.TryGetProperty("description", out var description) && description.ValueKind == JsonValueKind.String ? description.GetString() : null,
-                    Text = DefaultText(property.Value),
-                }),
-            ],
+                    Description =
+                        property.Value.TryGetProperty("description", out var description) &&
+                        description.ValueKind == JsonValueKind.String
+                            ? description.GetString()
+                            : null,
+                    Text = DefaultText(property.Value)
+                })
+            ]
         };
     }
 
@@ -72,20 +78,30 @@ public sealed class ArgumentSet
                 continue;
             }
 
-            arguments[field.Name] = ValueOf(field, text.Trim()) ?? throw new PanelException(string.Format(BuilderText.ToolArgumentInvalid, field.Name));
+            arguments[field.Name] = ValueOf(field, text.Trim()) ??
+                                    throw new PanelException(string.Format(BuilderText.ToolArgumentInvalid,
+                                        field.Name));
         }
 
         return arguments;
     }
 
-    private static JsonNode? ValueOf(ArgumentField field, string text) => field.Type switch
+    private static JsonNode? ValueOf(ArgumentField field, string text)
     {
-        "string" => JsonValue.Create(field.Text),
-        "integer" => long.TryParse(text, NumberStyles.Integer, CultureInfo.InvariantCulture, out var whole) ? JsonValue.Create(whole) : null,
-        "number" => double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out var fraction) && double.IsFinite(fraction) ? JsonValue.Create(fraction) : null,
-        "boolean" => bool.TryParse(text, out var flag) ? JsonValue.Create(flag) : null,
-        _ => ParseJson(text),
-    };
+        return field.Type switch
+        {
+            "string" => JsonValue.Create(field.Text),
+            "integer" => long.TryParse(text, NumberStyles.Integer, CultureInfo.InvariantCulture, out var whole)
+                ? JsonValue.Create(whole)
+                : null,
+            "number" => double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out var fraction) &&
+                        double.IsFinite(fraction)
+                ? JsonValue.Create(fraction)
+                : null,
+            "boolean" => bool.TryParse(text, out var flag) ? JsonValue.Create(flag) : null,
+            _ => ParseJson(text)
+        };
+    }
 
     private static JsonNode? ParseJson(string text)
     {
@@ -101,7 +117,8 @@ public sealed class ArgumentSet
 
     private static string? DefaultText(JsonElement property)
     {
-        if (!property.TryGetProperty("default", out var value) || value.ValueKind is JsonValueKind.Null or JsonValueKind.Undefined)
+        if (!property.TryGetProperty("default", out var value) ||
+            value.ValueKind is JsonValueKind.Null or JsonValueKind.Undefined)
             return null;
         return value.ValueKind == JsonValueKind.String ? value.GetString() : value.GetRawText();
     }
@@ -113,11 +130,16 @@ public sealed class ArgumentSet
             if (type.ValueKind == JsonValueKind.String)
                 return Simple(type.GetString());
             if (type.ValueKind == JsonValueKind.Array)
-                return Single(type.EnumerateArray().Where(item => item.ValueKind == JsonValueKind.String).Select(item => item.GetString()));
+                return Single(type.EnumerateArray().Where(item => item.ValueKind == JsonValueKind.String)
+                    .Select(item => item.GetString()));
         }
 
         if (property.TryGetProperty("anyOf", out var options) && options.ValueKind == JsonValueKind.Array)
-            return Single(options.EnumerateArray().Select(option => option.ValueKind == JsonValueKind.Object && option.TryGetProperty("type", out var optionType) && optionType.ValueKind == JsonValueKind.String ? optionType.GetString() : "complex"));
+            return Single(options.EnumerateArray().Select(option =>
+                option.ValueKind == JsonValueKind.Object && option.TryGetProperty("type", out var optionType) &&
+                optionType.ValueKind == JsonValueKind.String
+                    ? optionType.GetString()
+                    : "complex"));
         return null;
     }
 
@@ -127,5 +149,8 @@ public sealed class ArgumentSet
         return present.Count == 1 ? Simple(present[0]) : null;
     }
 
-    private static string? Simple(string? type) => type is not null && SimpleTypes.Contains(type) ? type : null;
+    private static string? Simple(string? type)
+    {
+        return type is not null && SimpleTypes.Contains(type) ? type : null;
+    }
 }

@@ -12,30 +12,29 @@
 }
 @if (DividerAfter && _visible.Count > 0)
 {
-    <MudDivider />
+    <MudDivider/>
 }
 
 @code {
-    [Parameter, EditorRequired]
-    public PanelActionSlot<TContext> Slot { get; set; } = default!;
+    [Parameter][EditorRequired] public PanelActionSlot<TContext> Slot { get; set; } = default!;
 
-    [Parameter, EditorRequired]
-    public Func<TContext> Context { get; set; } = default!;
+    [Parameter][EditorRequired] public Func<TContext> Context { get; set; } = default!;
 
-    [Parameter]
-    public bool DividerAfter { get; set; }
+    [Parameter] public bool DividerAfter { get; set; }
 
-    [Parameter]
-    public EventCallback OnDone { get; set; }
+    [Parameter] public EventCallback OnDone { get; set; }
 
     private IReadOnlyList<SlotAction<TContext>> _visible = [];
 
-    protected override void OnParametersSet() =>
+    protected override void OnParametersSet()
+    {
         _visible = Slots.VisibleActions(Slot.Name, Context, failure => Loggers.CreateLogger("CtxUi.Panel.Slots").LogError(failure, "An action of slot {Slot} could not decide if it is visible.", Slot.Name));
+    }
 
     private async Task RunAsync(SlotAction<TContext> action)
     {
         if (await Act.RunAsync(() => action.Run(new PanelActionArgs<TContext>(Context(), Dialogs, Services))))
             await OnDone.InvokeAsync();
     }
+
 }

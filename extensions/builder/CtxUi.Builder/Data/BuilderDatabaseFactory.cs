@@ -5,6 +5,9 @@ namespace CtxUi.Builder.Data;
 
 public sealed class BuilderDatabaseFactory : IDesignTimeDbContextFactory<BuilderDatabase>
 {
-    public BuilderDatabase CreateDbContext(string[] args) =>
-        new(new DbContextOptionsBuilder<BuilderDatabase>().UseSqlite("Data Source=design.db").Options);
+    public BuilderDatabase CreateDbContext(string[] args)
+    {
+        return new BuilderDatabase(new DbContextOptionsBuilder<BuilderDatabase>().UseSqlite("Data Source=design.db")
+            .Options);
+    }
 }

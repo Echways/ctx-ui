@@ -11,5 +11,6 @@ public interface IToolInspector
 {
     Task<IReadOnlyList<ToolInfo>> ListAsync(Guid serverId, int? release, CancellationToken ct);
 
-    Task<ToolCallOutcome> CallAsync(Guid serverId, int? release, string tool, JsonObject arguments, CancellationToken ct);
+    Task<ToolCallOutcome> CallAsync(Guid serverId, int? release, string tool, JsonObject arguments,
+        CancellationToken ct);
 }

@@ -11,20 +11,35 @@ public sealed class ClientMetadataHandler(RegisteredApps apps) :
 {
     public static IEnumerable<OpenIddictServerHandlerDescriptor> Descriptors =>
     [
-        Order(OpenIddictServerHandlerDescriptor.CreateBuilder<ExtractAuthorizationRequestContext>().UseScopedHandler<ClientMetadataHandler>()),
-        Order(OpenIddictServerHandlerDescriptor.CreateBuilder<ExtractTokenRequestContext>().UseScopedHandler<ClientMetadataHandler>()),
-        Order(OpenIddictServerHandlerDescriptor.CreateBuilder<ExtractRevocationRequestContext>().UseScopedHandler<ClientMetadataHandler>()),
+        Order(OpenIddictServerHandlerDescriptor.CreateBuilder<ExtractAuthorizationRequestContext>()
+            .UseScopedHandler<ClientMetadataHandler>()),
+        Order(OpenIddictServerHandlerDescriptor.CreateBuilder<ExtractTokenRequestContext>()
+            .UseScopedHandler<ClientMetadataHandler>()),
+        Order(OpenIddictServerHandlerDescriptor.CreateBuilder<ExtractRevocationRequestContext>()
+            .UseScopedHandler<ClientMetadataHandler>())
     ];
 
-    public ValueTask HandleAsync(ExtractAuthorizationRequestContext context) => EnsureAsync(context, context.Request?.ClientId);
+    public ValueTask HandleAsync(ExtractAuthorizationRequestContext context)
+    {
+        return EnsureAsync(context, context.Request?.ClientId);
+    }
 
-    public ValueTask HandleAsync(ExtractTokenRequestContext context) => EnsureAsync(context, context.Request?.ClientId);
+    public ValueTask HandleAsync(ExtractTokenRequestContext context)
+    {
+        return EnsureAsync(context, context.Request?.ClientId);
+    }
 
-    public ValueTask HandleAsync(ExtractRevocationRequestContext context) => EnsureAsync(context, context.Request?.ClientId);
+    public ValueTask HandleAsync(ExtractRevocationRequestContext context)
+    {
+        return EnsureAsync(context, context.Request?.ClientId);
+    }
 
-    private static OpenIddictServerHandlerDescriptor Order<TContext>(OpenIddictServerHandlerDescriptor.Builder<TContext> builder)
-        where TContext : BaseContext =>
-        builder.SetOrder(int.MaxValue - 100_000).SetType(OpenIddictServerHandlerType.Custom).Build();
+    private static OpenIddictServerHandlerDescriptor Order<TContext>(
+        OpenIddictServerHandlerDescriptor.Builder<TContext> builder)
+        where TContext : BaseContext
+    {
+        return builder.SetOrder(int.MaxValue - 100_000).SetType(OpenIddictServerHandlerType.Custom).Build();
+    }
 
     private async ValueTask EnsureAsync(BaseValidatingContext context, string? clientId)
     {

@@ -23,7 +23,7 @@ public static class BuilderEndpoints
         group.MapGet("/servers/{id:guid}/export", ExportAsync);
     }
 
-    private static async Task<IResult> ListAsync(ServerCatalog catalog, ReleaseReader releases, CancellationToken ct)
+    private static async Task<IResult> ListAsync(ServerCatalog catalog, ReleaseCatalog releases, CancellationToken ct)
     {
         var servers = await catalog.ListAsync(ct);
         var statuses = await Task.WhenAll(servers.Select(server => releases.StatusAsync(server.Id, ct)));
@@ -38,7 +38,8 @@ public static class BuilderEndpoints
             server.InboundId)));
     }
 
-    private static async Task<IResult> DetailsAsync(Guid id, ServerCatalog catalog, ReleaseReader releases, CancellationToken ct)
+    private static async Task<IResult> DetailsAsync(Guid id, ServerCatalog catalog, ReleaseCatalog releases,
+        CancellationToken ct)
     {
         var settings = await catalog.SettingsAsync(id, ct);
         var status = await releases.StatusAsync(id, ct);
@@ -54,17 +55,22 @@ public static class BuilderEndpoints
             status.ActiveNumber,
             status.BuildingNumber,
             settings.SecretNames,
-            [.. views.Select(view => new ReleaseModel(view.Number, view.Status.ToString(), view.CreatedAt, view.FinishedAt, view.IsActive, view.CanRollback, view.Error, view.Tools, view.RemovedTools))]));
+            [
+                .. views.Select(view => new ReleaseModel(view.Number, view.Status.ToString(), view.CreatedAt,
+                    view.FinishedAt, view.IsActive, view.CanRollback, view.Error, view.Tools, view.RemovedTools))
+            ]));
     }
 
-    private static async Task<IResult> PublishAsync(Guid id, PublishQueue queue, RunnerSettings settings, CancellationToken ct, PublishMode mode = PublishMode.Activate)
+    private static async Task<IResult> PublishAsync(Guid id, PublishQueue queue, RunnerSettings settings,
+        CancellationToken ct, PublishMode mode = PublishMode.Activate)
     {
         if (!settings.IsComplete)
             return RunnerNotConfigured(settings);
         return Results.Accepted(null, new ReleaseStartedModel(await queue.PublishAsync(id, mode, ct)));
     }
 
-    private static async Task<IResult> RollbackAsync(Guid id, int number, PublishQueue queue, RunnerSettings settings, CancellationToken ct)
+    private static async Task<IResult> RollbackAsync(Guid id, int number, PublishQueue queue, RunnerSettings settings,
+        CancellationToken ct)
     {
         if (!settings.IsComplete)
             return RunnerNotConfigured(settings);
@@ -78,10 +84,14 @@ public static class BuilderEndpoints
         return Results.File(export.Content, ArchiveContentType, export.FileName);
     }
 
-    private static IResult RunnerNotConfigured(RunnerSettings settings) =>
-        Results.Problem(string.Format(BuilderText.RunnerNotConfigured, string.Join(", ", settings.Missing)), statusCode: StatusCodes.Status503ServiceUnavailable);
+    private static IResult RunnerNotConfigured(RunnerSettings settings)
+    {
+        return Results.Problem(string.Format(BuilderText.RunnerNotConfigured, string.Join(", ", settings.Missing)),
+            statusCode: StatusCodes.Status503ServiceUnavailable);
+    }
 
-    private static async ValueTask<object?> TranslateDomainErrorsAsync(EndpointFilterInvocationContext context, EndpointFilterDelegate next)
+    private static async ValueTask<object?> TranslateDomainErrorsAsync(EndpointFilterInvocationContext context,
+        EndpointFilterDelegate next)
     {
         try
         {
@@ -89,15 +99,11 @@ public static class BuilderEndpoints
         }
         catch (PanelException failure)
         {
-            return Results.Problem(failure.Message, statusCode: StatusOf(failure.Message));
+            return Results.Problem(failure.Message, statusCode: StatusOf(Failures.KindOf(failure)));
         }
         catch (DraftConflictException failure)
         {
             return Results.Problem(failure.Message, statusCode: StatusCodes.Status409Conflict);
-        }
-        catch (ProjectFileException failure)
-        {
-            return Results.Problem(failure.Message, statusCode: StatusCodes.Status400BadRequest);
         }
         catch (RunnerException failure)
         {
@@ -105,12 +111,14 @@ public static class BuilderEndpoints
         }
     }
 
-    private static int StatusOf(string message)
+    private static int StatusOf(FailureKind kind)
     {
-        if (message == BuilderText.ServerNotFound || message == BuilderText.ReleaseNotFound)
-            return StatusCodes.Status404NotFound;
-        if (message == BuilderText.PublishBusy || message == BuilderText.ServerDeleting || message == BuilderText.RollbackUnavailable)
-            return StatusCodes.Status409Conflict;
-        return StatusCodes.Status400BadRequest;
+        return kind switch
+        {
+            FailureKind.NotFound => StatusCodes.Status404NotFound,
+            FailureKind.Conflict => StatusCodes.Status409Conflict,
+            FailureKind.Upstream => StatusCodes.Status502BadGateway,
+            _ => StatusCodes.Status400BadRequest
+        };
     }
 }

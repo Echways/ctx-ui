@@ -1,14 +1,14 @@
 @implements IDisposable
 @inject PublishQueue Queue
-@inject ReleaseReader Reader
+@inject ReleaseCatalog Releases
 
 @if (_releases is null)
 {
-    <Placeholder />
+    <Placeholder/>
 }
 else if (_releases.Count == 0)
 {
-    <EmptyState Title="@BuilderText.NoReleases" Hint="@BuilderText.NoReleasesHint" />
+    <EmptyState Title="@BuilderText.NoReleases" Hint="@BuilderText.NoReleasesHint"/>
 }
 else
 {
@@ -18,11 +18,15 @@ else
             <li class="builder-release" data-release="@release.Number">
                 <div class="builder-release-head">
                     <strong>@string.Format(BuilderText.ReleaseTitle, release.Number)</strong>
-                    <Tag Tone="ToneOf(release)">@(release.IsActive ? BuilderText.ReleaseActive : StatusName(release.Status))</Tag>
-                    <time datetime="@release.CreatedAt.ToString("O")">@release.CreatedAt.ToLocalTime().ToString("g")</time>
+                    <Tag
+                        Tone="ToneOf(release)">@(release.IsActive ? BuilderText.ReleaseActive : StatusName(release.Status))</Tag>
+                    <time
+                        datetime="@release.CreatedAt.ToString("O")">@release.CreatedAt.ToLocalTime().ToString("g")</time>
                     @if (release.CanRollback)
                     {
-                        <Button Kind="ButtonKind.Quiet" OnClick="() => RollbackAsync(release.Number)" Refresh="false" Done="@string.Format(BuilderText.RollbackStarted, release.Number)" data-testid="rollback">@BuilderText.Rollback</Button>
+                        <Button Kind="ButtonKind.Quiet" OnClick="() => RollbackAsync(release.Number)" Refresh="false"
+                                Done="@string.Format(BuilderText.RollbackStarted, release.Number)"
+                                data-testid="rollback">@BuilderText.Rollback</Button>
                     }
                 </div>
                 @if (release.Error is not null)
@@ -31,7 +35,8 @@ else
                 }
                 @if (release.RemovedTools.Count > 0)
                 {
-                    <p class="warn-t" data-testid="removed-tools">@string.Format(BuilderText.RemovedToolsWarning, string.Join(", ", release.RemovedTools))</p>
+                    <p class="warn-t"
+                       data-testid="removed-tools">@string.Format(BuilderText.RemovedToolsWarning, string.Join(", ", release.RemovedTools))</p>
                 }
                 @if (release.Tools.Count > 0)
                 {
@@ -39,7 +44,8 @@ else
                 }
                 <details>
                     <summary>@BuilderText.BuildLog</summary>
-                    <pre class="builder-log">@(release.BuildLog.Length == 0 ? BuilderText.NoBuildLog : release.BuildLog)</pre>
+                    <pre
+                        class="builder-log">@(release.BuildLog.Length == 0 ? BuilderText.NoBuildLog : release.BuildLog)</pre>
                 </details>
             </li>
         }
@@ -49,8 +55,7 @@ else
 @code {
     private IReadOnlyList<ReleaseView>? _releases;
 
-    [Parameter, EditorRequired]
-    public Guid ServerId { get; set; }
+    [Parameter][EditorRequired] public Guid ServerId { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
@@ -58,9 +63,15 @@ else
         await LoadAsync();
     }
 
-    public void Dispose() => Queue.Changed -= OnChanged;
+    public void Dispose()
+    {
+        Queue.Changed -= OnChanged;
+    }
 
-    private async Task LoadAsync() => _releases = await Reader.ListAsync(ServerId, CancellationToken.None);
+    private async Task LoadAsync()
+    {
+        _releases = await Releases.ListAsync(ServerId, CancellationToken.None);
+    }
 
     private void OnChanged(Guid serverId)
     {
@@ -89,20 +100,29 @@ else
         await LoadAsync();
     }
 
-    private static Tone ToneOf(ReleaseView release) => release.IsActive ? Tone.Good : release.Status switch
+    private static Tone ToneOf(ReleaseView release)
     {
-        ReleaseState.Failed => Tone.Bad,
-        ReleaseState.Building or ReleaseState.Candidate or ReleaseState.Built => Tone.Warn,
-        _ => Tone.Neutral,
-    };
+        return release.IsActive
+            ? Tone.Good
+            : release.Status switch
+            {
+                ReleaseState.Failed => Tone.Bad,
+                ReleaseState.Building or ReleaseState.Candidate or ReleaseState.Built => Tone.Warn,
+                _ => Tone.Neutral
+            };
+    }
 
-    private static string StatusName(ReleaseState state) => state switch
+    private static string StatusName(ReleaseState state)
     {
-        ReleaseState.Building => BuilderText.ReleaseBuilding,
-        ReleaseState.Built => BuilderText.ReleaseBuilt,
-        ReleaseState.Failed => BuilderText.ReleaseFailed,
-        ReleaseState.Candidate => BuilderText.ReleaseCandidate,
-        ReleaseState.Active => BuilderText.ReleaseActive,
-        _ => BuilderText.ReleaseRetired,
-    };
+        return state switch
+        {
+            ReleaseState.Building => BuilderText.ReleaseBuilding,
+            ReleaseState.Built => BuilderText.ReleaseBuilt,
+            ReleaseState.Failed => BuilderText.ReleaseFailed,
+            ReleaseState.Candidate => BuilderText.ReleaseCandidate,
+            ReleaseState.Active => BuilderText.ReleaseActive,
+            _ => BuilderText.ReleaseRetired
+        };
+    }
+
 }

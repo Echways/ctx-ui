@@ -10,7 +10,10 @@ public sealed class MetadataHost : IAsyncDisposable
 {
     private readonly WebApplication _app;
 
-    private MetadataHost(WebApplication app) => _app = app;
+    private MetadataHost(WebApplication app)
+    {
+        _app = app;
+    }
 
     public string Document { get; set; } = "";
 
@@ -34,21 +37,32 @@ public sealed class MetadataHost : IAsyncDisposable
         return host;
     }
 
-    public string For(params string[] redirectUris) =>
-        Document = System.Text.Json.JsonSerializer.Serialize(new Dictionary<string, object>
+    public string For(params string[] redirectUris)
+    {
+        return Document = System.Text.Json.JsonSerializer.Serialize(new Dictionary<string, object>
         {
             ["client_id"] = Url,
             ["client_name"] = "Claude Code",
             ["redirect_uris"] = redirectUris,
-            ["token_endpoint_auth_method"] = "none",
+            ["token_endpoint_auth_method"] = "none"
         });
+    }
 
-    public ValueTask DisposeAsync() => _app.DisposeAsync();
+    public ValueTask DisposeAsync()
+    {
+        return _app.DisposeAsync();
+    }
 }
 
 public sealed class LoopbackMetadataPolicy : IMetadataAddressPolicy
 {
-    public bool AllowsUri(Uri uri) => uri.Scheme == Uri.UriSchemeHttp && uri.IsLoopback && uri.AbsolutePath != "/";
+    public bool AllowsUri(Uri uri)
+    {
+        return uri.Scheme == Uri.UriSchemeHttp && uri.IsLoopback && uri.AbsolutePath != "/";
+    }
 
-    public bool AllowsAddress(IPAddress address) => IPAddress.IsLoopback(address);
+    public bool AllowsAddress(IPAddress address)
+    {
+        return IPAddress.IsLoopback(address);
+    }
 }

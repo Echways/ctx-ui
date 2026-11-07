@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Security.Cryptography;
 using System.Text.Json;
 using CtxUi.Builder.Contracts;
@@ -38,11 +39,16 @@ public sealed class PublishPipelineTests
         Assert.Equal(ProjectFiles.FastMcpVersion, release.FastMcpVersion);
         Assert.NotNull(release.FinishedAt);
         Assert.Null(release.Error);
-        var names = JsonDocument.Parse(release.ToolsSnapshotJson!).RootElement.EnumerateArray().Select(tool => tool.GetProperty("name").GetString());
+        var names = JsonDocument.Parse(release.ToolsSnapshotJson!).RootElement.EnumerateArray()
+            .Select(tool => tool.GetProperty("name").GetString());
         Assert.Equal(["alpha", "beta"], names);
         Assert.Equal(release.Id, (await harness.ServerAsync(server)).ActiveReleaseId);
         Assert.Equal(1, harness.Runner.Active);
-        Assert.Equal(["PUT server", "GET server", "PUT server", "POST release 1", "GET release 1", "PUT server", "POST release 1 start", "GET release 1", "POST release 1 activate"], harness.Runner.CallsSnapshot().Take(9));
+        Assert.Equal(
+        [
+            "PUT server", "GET server", "PUT server", "POST release 1", "GET release 1", "PUT server",
+            "POST release 1 start", "GET release 1", "POST release 1 activate"
+        ], harness.Runner.CallsSnapshot().Take(9));
         var stored = await File.ReadAllBytesAsync(harness.Archives.PathOf(release.Id));
         Assert.Equal(Convert.ToHexString(SHA256.HashData(stored)), release.ArchiveHash);
         Assert.Equal(stored, harness.Runner.Archives[1]);
@@ -99,7 +105,8 @@ public sealed class PublishPipelineTests
         var second = await harness.PublishAndWaitAsync(server);
 
         Assert.Equal(ReleaseState.Active, (await harness.ReleaseAsync(server, second)).Status);
-        var views = await harness.WithScopeAsync(services => services.GetRequiredService<ReleaseCatalog>().ListAsync(server, default));
+        var views = await harness.WithScopeAsync(services =>
+            services.GetRequiredService<ReleaseCatalog>().ListAsync(server, default));
         Assert.Equal(["beta"], views.Single(view => view.Number == 2).RemovedTools);
         Assert.Empty(views.Single(view => view.Number == 1).RemovedTools);
         Assert.Equal([2, 1], views.Select(view => view.Number));
@@ -113,7 +120,9 @@ public sealed class PublishPipelineTests
         harness.Runner.HoldBuilds = true;
         await harness.Queue.PublishAsync(server, PublishMode.Activate, default);
 
-        var refused = await Assert.ThrowsAsync<PanelException>(() => harness.Queue.PublishAsync(server, PublishMode.Activate, default));
+        var refused =
+            await Assert.ThrowsAsync<PanelException>(() =>
+                harness.Queue.PublishAsync(server, PublishMode.Activate, default));
 
         Assert.Equal(BuilderText.PublishBusy, refused.Message);
         Assert.Single(await harness.ReleasesAsync(server));
@@ -133,7 +142,9 @@ public sealed class PublishPipelineTests
         harness.Runner.Releases[1] = new FakeRunner.Entry(1, ReleaseState.Building);
         await harness.StartAsync();
 
-        var refused = await Assert.ThrowsAsync<PanelException>(() => harness.Queue.PublishAsync(server, PublishMode.Activate, default));
+        var refused =
+            await Assert.ThrowsAsync<PanelException>(() =>
+                harness.Queue.PublishAsync(server, PublishMode.Activate, default));
 
         Assert.Equal(BuilderText.PublishBusy, refused.Message);
         Assert.Empty(await harness.ReleasesAsync(server));
@@ -148,7 +159,14 @@ public sealed class PublishPipelineTests
         await harness.WithScopeAsync(async services =>
         {
             var database = services.GetRequiredService<BuilderDatabase>();
-            database.Releases.Add(new Release { Id = Guid.NewGuid(), ServerId = server, Number = 3, Status = ReleaseState.Building, CreatedAt = DateTimeOffset.UtcNow });
+            database.Releases.Add(new Release
+            {
+                Id = Guid.NewGuid(),
+                ServerId = server,
+                Number = 3,
+                Status = ReleaseState.Building,
+                CreatedAt = DateTimeOffset.UtcNow
+            });
             await database.SaveChangesAsync();
             return 0;
         });
@@ -175,7 +193,14 @@ public sealed class PublishPipelineTests
         {
             var database = services.GetRequiredService<BuilderDatabase>();
             foreach (var id in ordered)
-                database.Releases.Add(new Release { Id = Guid.NewGuid(), ServerId = id, Number = 1, Status = ReleaseState.Building, CreatedAt = DateTimeOffset.UtcNow });
+                database.Releases.Add(new Release
+                {
+                    Id = Guid.NewGuid(),
+                    ServerId = id,
+                    Number = 1,
+                    Status = ReleaseState.Building,
+                    CreatedAt = DateTimeOffset.UtcNow
+                });
             await database.SaveChangesAsync();
             return 0;
         });
@@ -224,7 +249,8 @@ public sealed class PublishPipelineTests
         Assert.Equal(ReleaseState.Failed, release.Status);
         Assert.Contains("restart of the runner", release.Error);
         harness.Runner.HoldBuilds = false;
-        Assert.Equal(ReleaseState.Active, (await harness.ReleaseAsync(server, await harness.PublishAndWaitAsync(server))).Status);
+        Assert.Equal(ReleaseState.Active,
+            (await harness.ReleaseAsync(server, await harness.PublishAndWaitAsync(server))).Status);
     }
 
     [Fact]
@@ -356,7 +382,7 @@ public sealed class PublishPipelineTests
         });
         var startsBefore = harness.Runner.Starts.Count;
 
-        await harness.Queue.ApplySettingsAsync(server, default);
+        harness.Queue.ApplySettings(server);
         await harness.WaitIdleAsync(server);
 
         Assert.Equal(builds, harness.Runner.CallsSnapshot().Count(call => call == "POST release 1"));
@@ -381,7 +407,7 @@ public sealed class PublishPipelineTests
         await harness.PublishAndWaitAsync(server);
         harness.Runner.FailStarts.Add(1);
 
-        await harness.Queue.ApplySettingsAsync(server, default);
+        harness.Queue.ApplySettings(server);
         await harness.WaitIdleAsync(server);
 
         var release = await harness.ReleaseAsync(server, 1);
@@ -397,7 +423,7 @@ public sealed class PublishPipelineTests
         var (harness, server) = await StartedAsync();
         await using var _ = harness;
 
-        await harness.Queue.ApplySettingsAsync(server, default);
+        harness.Queue.ApplySettings(server);
         await harness.WaitIdleAsync(server);
 
         Assert.Empty(harness.Runner.CallsSnapshot());
@@ -412,8 +438,9 @@ public sealed class PublishPipelineTests
         harness.Runner.HoldBuilds = true;
         await harness.Queue.PublishAsync(server, PublishMode.Activate, default);
 
-        await harness.Queue.ApplySettingsAsync(server, default);
-        await harness.WaitForAsync(() => Task.FromResult(harness.Runner.CallsSnapshot().Count(call => call == "POST release 2") == 1));
+        harness.Queue.ApplySettings(server);
+        await harness.WaitForAsync(() =>
+            Task.FromResult(harness.Runner.CallsSnapshot().Count(call => call == "POST release 2") == 1));
         var startsBefore = harness.Runner.Starts.Count;
         harness.Runner.HoldBuilds = false;
         harness.Runner.FinishBuild(2);
@@ -526,7 +553,7 @@ public sealed class PublishPipelineTests
         var (harness, server) = await StartedAsync();
         await using var _ = harness;
         await harness.PublishAndWaitAsync(server);
-        harness.Runner.Restart(loseMarker: true);
+        harness.Runner.Restart(true);
         Assert.Null(harness.Runner.Active);
         var builds = harness.Runner.CallsSnapshot().Count(call => call == "POST release 1");
 
@@ -544,7 +571,7 @@ public sealed class PublishPipelineTests
         var (harness, server) = await StartedAsync();
         await using var _ = harness;
         await harness.PublishAndWaitAsync(server);
-        harness.Runner.Restart(loseMarker: true);
+        harness.Runner.Restart(true);
         harness.Runner.Releases[1].State = ReleaseState.Retired;
         var calls = harness.Runner.CallsSnapshot().Length;
 
@@ -554,7 +581,8 @@ public sealed class PublishPipelineTests
         Assert.Null(harness.Runner.Active);
         Assert.DoesNotContain("POST release 1 activate", harness.Runner.CallsSnapshot().Skip(calls));
         Assert.DoesNotContain("POST release 1", harness.Runner.CallsSnapshot().Skip(calls));
-        var status = await harness.WithScopeAsync(services => services.GetRequiredService<ReleaseCatalog>().StatusAsync(server, default));
+        var status = await harness.WithScopeAsync(services =>
+            services.GetRequiredService<ReleaseCatalog>().StatusAsync(server, default));
         Assert.Equal(ServerRunState.NeedsReactivation, status.State);
         Assert.Equal(1, status.ActiveNumber);
     }
@@ -562,13 +590,16 @@ public sealed class PublishPipelineTests
     [Fact]
     public async Task Publish_without_runner_settings_says_what_is_missing()
     {
-        await using var harness = await PublishHarness.CreateAsync(configured: false);
+        await using var harness = await PublishHarness.CreateAsync(false);
         var server = await harness.CreateServerAsync();
         await harness.StartAsync();
 
-        var refused = await Assert.ThrowsAsync<PanelException>(() => harness.Queue.PublishAsync(server, PublishMode.Activate, default));
+        var refused =
+            await Assert.ThrowsAsync<PanelException>(() =>
+                harness.Queue.PublishAsync(server, PublishMode.Activate, default));
 
-        Assert.Equal(string.Format(BuilderText.RunnerNotConfigured, "RunnerUrl, RunnerIngressUrl, RunnerToken"), refused.Message);
+        Assert.Equal(string.Format(BuilderText.RunnerNotConfigured, "RunnerUrl, RunnerIngressUrl, RunnerToken"),
+            refused.Message);
         Assert.Empty(await harness.ReleasesAsync(server));
     }
 
@@ -580,11 +611,14 @@ public sealed class PublishPipelineTests
         await harness.WithScopeAsync(async services =>
         {
             var database = services.GetRequiredService<BuilderDatabase>();
-            await database.Drafts.Where(draft => draft.ServerId == server).ExecuteUpdateAsync(setters => setters.SetProperty(draft => draft.OpenApiJson, "{}"));
+            await database.Drafts.Where(draft => draft.ServerId == server)
+                .ExecuteUpdateAsync(setters => setters.SetProperty(draft => draft.OpenApiJson, "{}"));
             return 0;
         });
 
-        var refused = await Assert.ThrowsAsync<PanelException>(() => harness.Queue.PublishAsync(server, PublishMode.Activate, default));
+        var refused =
+            await Assert.ThrowsAsync<PanelException>(() =>
+                harness.Queue.PublishAsync(server, PublishMode.Activate, default));
 
         Assert.Equal(BuilderText.PublishBaseUrlRequired, refused.Message);
         Assert.Empty(await harness.ReleasesAsync(server));
@@ -597,7 +631,7 @@ public sealed class PublishPipelineTests
         var (harness, server) = await StartedAsync();
         await using var _ = harness;
         await harness.PublishAndWaitAsync(server);
-        harness.Runner.Restart(loseMarker: true);
+        harness.Runner.Restart(true);
         harness.Runner.Unreachable = true;
         harness.RepairInterval = TimeSpan.FromMilliseconds(40);
 
@@ -620,10 +654,30 @@ public sealed class PublishPipelineTests
         await harness.PublishAndWaitAsync(server);
         Assert.Equal(1, harness.Runner.Active);
 
-        harness.Runner.Restart(loseMarker: true);
+        harness.Runner.Restart(true);
 
         await harness.WaitForAsync(() => Task.FromResult(harness.Runner.Active == 1));
         Assert.Single(await harness.ReleasesAsync(server));
+    }
+
+    [Fact]
+    public async Task Repair_announces_a_reactivation_and_nothing_else()
+    {
+        await using var harness = await PublishHarness.CreateAsync();
+        var server = await harness.CreateServerAsync();
+        harness.RepairInterval = TimeSpan.FromMilliseconds(40);
+        await harness.StartAsync();
+        await harness.PublishAndWaitAsync(server);
+        await harness.WaitIdleAsync(server);
+        var raised = new ConcurrentQueue<Guid>();
+        harness.Queue.Changed += raised.Enqueue;
+
+        await Task.Delay(200);
+        Assert.Empty(raised);
+
+        harness.Runner.Restart(true);
+        await harness.WaitForAsync(() => Task.FromResult(!raised.IsEmpty));
+        Assert.Equal(1, harness.Runner.Active);
     }
 
     [Fact]
@@ -636,7 +690,7 @@ public sealed class PublishPipelineTests
         var startsBefore = harness.Runner.Starts.Count;
         await SetApiAsync(harness, server, "https://api.example.com", "rotated");
 
-        await harness.Queue.ApplySettingsAsync(server, default);
+        harness.Queue.ApplySettings(server);
         await harness.WaitIdleAsync(server);
 
         Assert.Equal(startsBefore + 1, harness.Runner.Starts.Count);
@@ -653,7 +707,7 @@ public sealed class PublishPipelineTests
         await harness.PublishAndWaitAsync(server);
         await SetApiAsync(harness, server, "https://draft.example.com", "token");
 
-        await harness.Queue.ApplySettingsAsync(server, default);
+        harness.Queue.ApplySettings(server);
         await harness.WaitIdleAsync(server);
 
         Assert.Equal("https://live.example.com", harness.Runner.Starts[^1].Start.Environment["BUILDER_BASE_URL"]);
@@ -679,14 +733,17 @@ public sealed class PublishPipelineTests
         Assert.Equal("https://second.example.com", (await harness.ReleaseAsync(server, 2)).BaseUrl);
     }
 
-    private static Task SetApiAsync(PublishHarness harness, Guid server, string baseUrl, string token) =>
-        harness.WithScopeAsync(async services =>
+    private static Task SetApiAsync(PublishHarness harness, Guid server, string baseUrl, string token)
+    {
+        return harness.WithScopeAsync(async services =>
         {
             var catalog = services.GetRequiredService<ServerCatalog>();
             var revision = (await catalog.SettingsAsync(server, default)).SettingsRevision;
-            await catalog.SetApiAsync(server, baseUrl, new ApiAuthInput(ApiAuthKind.Bearer, Secret: token), revision, default);
+            await catalog.SetApiAsync(server, baseUrl, new ApiAuthInput(ApiAuthKind.Bearer, Secret: token), revision,
+                default);
             return 0;
         });
+    }
 
     [Fact]
     public async Task Changed_is_raised_while_a_publish_progresses()

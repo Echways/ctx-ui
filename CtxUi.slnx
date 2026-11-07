@@ -1,36 +1,36 @@
 <Solution>
   <Folder Name="/extensions/">
-    <Project Path="extensions/builder/CtxUi.Builder/CtxUi.Builder.csproj" />
-    <Project Path="extensions/builder/CtxUi.Builder.Contracts/CtxUi.Builder.Contracts.csproj" />
-    <Project Path="extensions/builder/CtxUi.Builder.Runner/CtxUi.Builder.Runner.csproj" />
+    <Project Path="extensions/builder/CtxUi.Builder/CtxUi.Builder.csproj"/>
+    <Project Path="extensions/builder/CtxUi.Builder.Contracts/CtxUi.Builder.Contracts.csproj"/>
+    <Project Path="extensions/builder/CtxUi.Builder.Runner/CtxUi.Builder.Runner.csproj"/>
   </Folder>
   <Folder Name="/extensions/tests/">
-    <Project Path="extensions/builder/tests/CtxUi.Builder.BlackBoxTests/CtxUi.Builder.BlackBoxTests.csproj" />
-    <Project Path="extensions/builder/tests/CtxUi.Builder.Runner.Tests/CtxUi.Builder.Runner.Tests.csproj" />
-    <Project Path="extensions/builder/tests/CtxUi.Builder.Tests/CtxUi.Builder.Tests.csproj" />
+    <Project Path="extensions/builder/tests/CtxUi.Builder.BlackBoxTests/CtxUi.Builder.BlackBoxTests.csproj"/>
+    <Project Path="extensions/builder/tests/CtxUi.Builder.Runner.Tests/CtxUi.Builder.Runner.Tests.csproj"/>
+    <Project Path="extensions/builder/tests/CtxUi.Builder.Tests/CtxUi.Builder.Tests.csproj"/>
   </Folder>
   <Folder Name="/src/">
-    <Project Path="src/CtxUi.Connect/CtxUi.Connect.csproj" />
-    <Project Path="src/CtxUi.Core/CtxUi.Core.csproj" />
-    <Project Path="src/CtxUi.Extensions/CtxUi.Extensions.csproj" />
-    <Project Path="src/CtxUi.Extensions.Testing/CtxUi.Extensions.Testing.csproj" />
-    <Project Path="src/CtxUi.Gateway/CtxUi.Gateway.csproj" />
-    <Project Path="src/CtxUi.Panel/CtxUi.Panel.csproj" />
-    <Project Path="src/CtxUi.Server/CtxUi.Server.csproj" />
+    <Project Path="src/CtxUi.Connect/CtxUi.Connect.csproj"/>
+    <Project Path="src/CtxUi.Core/CtxUi.Core.csproj"/>
+    <Project Path="src/CtxUi.Extensions/CtxUi.Extensions.csproj"/>
+    <Project Path="src/CtxUi.Extensions.Testing/CtxUi.Extensions.Testing.csproj"/>
+    <Project Path="src/CtxUi.Gateway/CtxUi.Gateway.csproj"/>
+    <Project Path="src/CtxUi.Panel/CtxUi.Panel.csproj"/>
+    <Project Path="src/CtxUi.Server/CtxUi.Server.csproj"/>
   </Folder>
   <Folder Name="/templates/">
-    <Project Path="templates/CtxUi.Extensions.Templates/CtxUi.Extensions.Templates.csproj" />
+    <Project Path="templates/CtxUi.Extensions.Templates/CtxUi.Extensions.Templates.csproj"/>
   </Folder>
   <Folder Name="/tests/">
-    <Project Path="tests/CtxUi.Connect.Tests/CtxUi.Connect.Tests.csproj" />
-    <Project Path="tests/CtxUi.Core.Tests/CtxUi.Core.Tests.csproj" />
-    <Project Path="tests/CtxUi.Gateway.Tests/CtxUi.Gateway.Tests.csproj" />
-    <Project Path="tests/CtxUi.IntegrationTests/CtxUi.IntegrationTests.csproj" />
-    <Project Path="tests/CtxUi.Panel.Tests/CtxUi.Panel.Tests.csproj" />
-    <Project Path="tests/CtxUi.Server.Tests/CtxUi.Server.Tests.csproj" />
+    <Project Path="tests/CtxUi.Connect.Tests/CtxUi.Connect.Tests.csproj"/>
+    <Project Path="tests/CtxUi.Core.Tests/CtxUi.Core.Tests.csproj"/>
+    <Project Path="tests/CtxUi.Gateway.Tests/CtxUi.Gateway.Tests.csproj"/>
+    <Project Path="tests/CtxUi.IntegrationTests/CtxUi.IntegrationTests.csproj"/>
+    <Project Path="tests/CtxUi.Panel.Tests/CtxUi.Panel.Tests.csproj"/>
+    <Project Path="tests/CtxUi.Server.Tests/CtxUi.Server.Tests.csproj"/>
   </Folder>
   <Folder Name="/tests/fixtures/">
-    <Project Path="tests/fixtures/SampleExtension/SampleExtension.csproj" />
-    <Project Path="tests/fixtures/SampleExtension.BlackBoxTests/SampleExtension.BlackBoxTests.csproj" />
+    <Project Path="tests/fixtures/SampleExtension/SampleExtension.csproj"/>
+    <Project Path="tests/fixtures/SampleExtension.BlackBoxTests/SampleExtension.BlackBoxTests.csproj"/>
   </Folder>
 </Solution>

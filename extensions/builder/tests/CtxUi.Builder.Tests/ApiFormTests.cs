@@ -6,8 +6,13 @@ namespace CtxUi.Builder.Tests;
 
 public sealed class ApiFormTests
 {
-    private static ServerSettingsView Saved(ApiAuthKind kind = ApiAuthKind.Bearer, string? baseUrl = "https://api.example.com") =>
-        new(Guid.NewGuid(), "weather", "weather", NetworkAccess.InternetOnly, new ServerLimits(), baseUrl, kind, null, null, kind != ApiAuthKind.None, string.Empty, 0, []);
+    private static ServerSettingsView Saved(ApiAuthKind kind = ApiAuthKind.Bearer,
+        string? baseUrl = "https://api.example.com")
+    {
+        return new ServerSettingsView(Guid.NewGuid(), "weather", "weather", NetworkAccess.InternetOnly,
+            new ServerLimits(), baseUrl, kind,
+            null, null, kind != ApiAuthKind.None, string.Empty, 0, []);
+    }
 
     [Fact]
     public void A_base_url_change_alone_does_not_change_the_auth()
@@ -21,15 +26,19 @@ public sealed class ApiFormTests
     [Fact]
     public void A_trailing_slash_is_not_a_base_url_change()
     {
-        Assert.False(new ApiForm { BaseUrl = "https://api.example.com/", Kind = ApiAuthKind.Bearer }.ChangesBaseUrl(Saved()));
+        Assert.False(
+            new ApiForm { BaseUrl = "https://api.example.com/", Kind = ApiAuthKind.Bearer }.ChangesBaseUrl(Saved()));
     }
 
     [Fact]
     public void A_new_secret_or_a_new_kind_changes_the_auth()
     {
-        Assert.True(new ApiForm { BaseUrl = "https://api.example.com", Kind = ApiAuthKind.Bearer, Secret = "rotated" }.ChangesAuth(Saved()));
+        Assert.True(new ApiForm { BaseUrl = "https://api.example.com", Kind = ApiAuthKind.Bearer, Secret = "rotated" }
+            .ChangesAuth(Saved()));
         Assert.True(new ApiForm { BaseUrl = "https://api.example.com", Kind = ApiAuthKind.None }.ChangesAuth(Saved()));
-        Assert.True(new ApiForm { BaseUrl = "https://api.example.com", Kind = ApiAuthKind.Bearer }.ChangesAuth(Saved(ApiAuthKind.None)));
+        Assert.True(
+            new ApiForm { BaseUrl = "https://api.example.com", Kind = ApiAuthKind.Bearer }.ChangesAuth(
+                Saved(ApiAuthKind.None)));
     }
 
     [Theory]
@@ -40,7 +49,8 @@ public sealed class ApiFormTests
     {
         var saved = Saved(ApiAuthKind.Header) with { AuthHeaderName = null };
 
-        Assert.False(new ApiForm { BaseUrl = "https://api.example.com", Kind = ApiAuthKind.Header, HeaderName = name }.ChangesAuth(saved));
+        Assert.False(new ApiForm { BaseUrl = "https://api.example.com", Kind = ApiAuthKind.Header, HeaderName = name }
+            .ChangesAuth(saved));
     }
 
     [Fact]
@@ -48,6 +58,8 @@ public sealed class ApiFormTests
     {
         var saved = Saved(ApiAuthKind.Header) with { AuthHeaderName = "X-Api-Key" };
 
-        Assert.False(new ApiForm { BaseUrl = "https://api.example.com", Kind = ApiAuthKind.Header, HeaderName = " X-Api-Key " }.ChangesAuth(saved));
+        Assert.False(new ApiForm
+        { BaseUrl = "https://api.example.com", Kind = ApiAuthKind.Header, HeaderName = " X-Api-Key " }
+            .ChangesAuth(saved));
     }
 }

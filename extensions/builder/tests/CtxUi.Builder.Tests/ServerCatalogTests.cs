@@ -9,11 +9,17 @@ public sealed class ServerCatalogTests : IClassFixture<CatalogHarness>
 {
     private readonly CatalogHarness _harness;
 
-    public ServerCatalogTests(CatalogHarness harness) => _harness = harness;
+    public ServerCatalogTests(CatalogHarness harness)
+    {
+        _harness = harness;
+    }
 
     private ServerCatalog Catalog => _harness.Catalog;
 
-    private static string Slug() => "s" + Guid.NewGuid().ToString("N")[..12];
+    private static string Slug()
+    {
+        return "s" + Guid.NewGuid().ToString("N")[..12];
+    }
 
     [Fact]
     public async Task New_server_has_internet_only_access_and_default_limits()
@@ -75,6 +81,8 @@ public sealed class ServerCatalogTests : IClassFixture<CatalogHarness>
         var file = Assert.Single(draft.Files);
         Assert.Equal(("mcp/tools/hello.py", "b", 2L), (file.Path, file.Content, file.Revision));
         Assert.Equal(2, draft.Revision);
+        var single = await Catalog.FileAsync(server.Id, "mcp/tools/hello.py", default);
+        Assert.Equal(("b", 2L), (single.Content, single.Revision));
     }
 
     [Fact]
@@ -84,7 +92,8 @@ public sealed class ServerCatalogTests : IClassFixture<CatalogHarness>
         var first = await Catalog.SaveFileAsync(server.Id, "mcp/a.py", "one", 0, default);
         await Catalog.SaveFileAsync(server.Id, "mcp/a.py", "newer", first, default);
 
-        await Assert.ThrowsAsync<DraftConflictException>(() => Catalog.SaveFileAsync(server.Id, "mcp/a.py", "stale", first, default));
+        await Assert.ThrowsAsync<DraftConflictException>(() =>
+            Catalog.SaveFileAsync(server.Id, "mcp/a.py", "stale", first, default));
 
         var draft = await Catalog.DraftAsync(server.Id, default);
         Assert.Equal("newer", Assert.Single(draft.Files).Content);
@@ -96,7 +105,8 @@ public sealed class ServerCatalogTests : IClassFixture<CatalogHarness>
         var server = await Catalog.CreateAsync(Slug(), "Exists", default);
         await Catalog.SaveFileAsync(server.Id, "mcp/a.py", "one", 0, default);
 
-        await Assert.ThrowsAsync<DraftConflictException>(() => Catalog.SaveFileAsync(server.Id, "mcp/a.py", "two", 0, default));
+        await Assert.ThrowsAsync<DraftConflictException>(() =>
+            Catalog.SaveFileAsync(server.Id, "mcp/a.py", "two", 0, default));
     }
 
     [Fact]
@@ -107,7 +117,8 @@ public sealed class ServerCatalogTests : IClassFixture<CatalogHarness>
         var other = _harness.AnotherCatalog();
 
         await Catalog.SaveFileAsync(server.Id, "mcp/a.py", "left", first, default);
-        await Assert.ThrowsAsync<DraftConflictException>(() => other.SaveFileAsync(server.Id, "mcp/a.py", "right", first, default));
+        await Assert.ThrowsAsync<DraftConflictException>(() =>
+            other.SaveFileAsync(server.Id, "mcp/a.py", "right", first, default));
     }
 
     [Theory]
@@ -121,7 +132,8 @@ public sealed class ServerCatalogTests : IClassFixture<CatalogHarness>
     public async Task Unsafe_file_paths_are_refused(string path)
     {
         var server = await Catalog.CreateAsync(Slug(), "Paths", default);
-        await Assert.ThrowsAsync<Enfilade.PanelException>(() => Catalog.SaveFileAsync(server.Id, path, "x", 0, default));
+        await Assert.ThrowsAsync<Enfilade.PanelException>(() =>
+            Catalog.SaveFileAsync(server.Id, path, "x", 0, default));
     }
 
     [Fact]
@@ -131,13 +143,15 @@ public sealed class ServerCatalogTests : IClassFixture<CatalogHarness>
         var half = new string('x', 9 * 1024 * 1024);
         await Catalog.SaveFileAsync(server.Id, "mcp/a.py", half, 0, default);
 
-        await Assert.ThrowsAsync<Enfilade.PanelException>(() => Catalog.SaveFileAsync(server.Id, "mcp/b.py", half, 0, default));
+        await Assert.ThrowsAsync<Enfilade.PanelException>(() =>
+            Catalog.SaveFileAsync(server.Id, "mcp/b.py", half, 0, default));
     }
 
     [Fact]
     public async Task Saving_to_an_unknown_server_is_refused()
     {
-        await Assert.ThrowsAsync<Enfilade.PanelException>(() => Catalog.SaveFileAsync(Guid.NewGuid(), "mcp/a.py", "x", 0, default));
+        await Assert.ThrowsAsync<Enfilade.PanelException>(() =>
+            Catalog.SaveFileAsync(Guid.NewGuid(), "mcp/a.py", "x", 0, default));
     }
 
     [Fact]
@@ -221,7 +235,8 @@ public sealed class ServerCatalogTests : IClassFixture<CatalogHarness>
     {
         var server = await Catalog.CreateAsync(Slug(), "Limits", default);
         await Assert.ThrowsAsync<Enfilade.PanelException>(() =>
-            Catalog.SetAccessAsync(server.Id, NetworkAccess.InternetOnly, new ServerLimits(memory, cpus, pids), default));
+            Catalog.SetAccessAsync(server.Id, NetworkAccess.InternetOnly, new ServerLimits(memory, cpus, pids),
+                default));
     }
 
     [Fact]
@@ -231,7 +246,8 @@ public sealed class ServerCatalogTests : IClassFixture<CatalogHarness>
         var first = await Catalog.SetDependenciesAsync(server.Id, "httpx", 0, default);
         await Catalog.SetDependenciesAsync(server.Id, "pydantic", first, default);
 
-        await Assert.ThrowsAsync<DraftConflictException>(() => Catalog.SetDependenciesAsync(server.Id, "overwrite", first, default));
+        await Assert.ThrowsAsync<DraftConflictException>(() =>
+            Catalog.SetDependenciesAsync(server.Id, "overwrite", first, default));
 
         Assert.Equal("pydantic", (await Catalog.SettingsAsync(server.Id, default)).Dependencies);
     }
@@ -240,10 +256,13 @@ public sealed class ServerCatalogTests : IClassFixture<CatalogHarness>
     public async Task Api_settings_saved_from_a_stale_view_conflict_and_keep_the_newer_value()
     {
         var server = await Catalog.CreateAsync(Slug(), "StaleApi", default);
-        var first = await Catalog.SetApiAsync(server.Id, "https://one.example.com", new ApiAuthInput(ApiAuthKind.None), 0, default);
-        await Catalog.SetApiAsync(server.Id, "https://two.example.com", new ApiAuthInput(ApiAuthKind.None), first, default);
+        var first = await Catalog.SetApiAsync(server.Id, "https://one.example.com", new ApiAuthInput(ApiAuthKind.None),
+            0, default);
+        await Catalog.SetApiAsync(server.Id, "https://two.example.com", new ApiAuthInput(ApiAuthKind.None), first,
+            default);
 
-        await Assert.ThrowsAsync<DraftConflictException>(() => Catalog.SetApiAsync(server.Id, "https://three.example.com", new ApiAuthInput(ApiAuthKind.None), first, default));
+        await Assert.ThrowsAsync<DraftConflictException>(() => Catalog.SetApiAsync(server.Id,
+            "https://three.example.com", new ApiAuthInput(ApiAuthKind.None), first, default));
 
         Assert.Equal("https://two.example.com", (await Catalog.SettingsAsync(server.Id, default)).BaseUrl);
     }
@@ -269,7 +288,9 @@ public sealed class ServerCatalogTests : IClassFixture<CatalogHarness>
         var path = await Catalog.CreateToolAsync(server.Id, "get-data", default);
 
         Assert.Equal("mcp/get_data.py", path);
-        var failure = await Assert.ThrowsAsync<Enfilade.PanelException>(() => Catalog.CreateToolAsync(server.Id, "Get Data", default));
+        var failure =
+            await Assert.ThrowsAsync<Enfilade.PanelException>(() =>
+                Catalog.CreateToolAsync(server.Id, "Get Data", default));
         Assert.NotEmpty(failure.Message);
         Assert.Contains("def get_data(", (await Catalog.DraftAsync(server.Id, default)).Files.Single().Content);
     }

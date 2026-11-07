@@ -22,8 +22,12 @@ public sealed record UsageRecord(
 
     public DateOnly Day => DateOnly.FromDateTime(At.UtcDateTime);
 
-    public static bool IsForwarded(UsageOutcome outcome) => outcome is
-        UsageOutcome.Ok or UsageOutcome.UpstreamRejected or UsageOutcome.UpstreamFailed or UsageOutcome.ClientAborted;
+    public static bool IsForwarded(UsageOutcome outcome)
+    {
+        return outcome is
+            UsageOutcome.Ok or UsageOutcome.UpstreamRejected or UsageOutcome.UpstreamFailed
+            or UsageOutcome.ClientAborted;
+    }
 }
 
 public sealed record DailyTotal(DateOnly Day, int Calls, int ToolCalls, int Errors, int Refused, long DurationMs);

@@ -23,7 +23,8 @@ internal sealed class UpstreamTransformer(InboundRoute route, ClientAccess clien
 
         proxyRequest.Headers.Authorization = null;
         DropOwnCookies(proxyRequest.Headers);
-        foreach (var name in proxyRequest.Headers.Select(header => header.Key).Where(UpstreamHeaders.IsIdentity).ToList())
+        foreach (var name in proxyRequest.Headers.Select(header => header.Key).Where(UpstreamHeaders.IsIdentity)
+                     .ToList())
             proxyRequest.Headers.Remove(name);
 
         foreach (var (name, value) in route.UpstreamHeaders)
@@ -36,7 +37,8 @@ internal sealed class UpstreamTransformer(InboundRoute route, ClientAccess clien
             return;
 
         proxyRequest.Headers.TryAddWithoutValidation(UpstreamHeaders.ClientPrefix + "Id", client.Id.ToString());
-        proxyRequest.Headers.TryAddWithoutValidation(UpstreamHeaders.ClientPrefix + "Name", Uri.EscapeDataString(client.Name));
+        proxyRequest.Headers.TryAddWithoutValidation(UpstreamHeaders.ClientPrefix + "Name",
+            Uri.EscapeDataString(client.Name));
         foreach (var (key, value) in client.Metadata)
             proxyRequest.Headers.TryAddWithoutValidation(UpstreamHeaders.MetaPrefix + key, Uri.EscapeDataString(value));
     }
@@ -48,7 +50,8 @@ internal sealed class UpstreamTransformer(InboundRoute route, ClientAccess clien
 
         headers.Remove(HeaderNames.Cookie);
         var kept = values
-            .SelectMany(value => value.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            .SelectMany(value =>
+                value.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
             .Where(pair => !OwnCookies.Contains(pair.Split('=', 2)[0].Trim()))
             .ToList();
         if (kept.Count > 0)

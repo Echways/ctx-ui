@@ -37,8 +37,11 @@ public static class ResponseSchema
             throw new InvalidOperationException();
         switch (node)
         {
-            case JsonObject members when members["$ref"] is JsonValue reference && reference.GetValue<string>().StartsWith(DefinitionsPrefix, StringComparison.Ordinal):
-                var target = definitions[reference.GetValue<string>()[DefinitionsPrefix.Length..]] ?? throw new InvalidOperationException();
+            case JsonObject members when members["$ref"] is JsonValue reference &&
+                                         reference.GetValue<string>()
+                                             .StartsWith(DefinitionsPrefix, StringComparison.Ordinal):
+                var target = definitions[reference.GetValue<string>()[DefinitionsPrefix.Length..]] ??
+                             throw new InvalidOperationException();
                 return Inlined(target.DeepClone(), definitions, depth + 1);
             case JsonObject members:
                 foreach (var (key, value) in members.ToList())

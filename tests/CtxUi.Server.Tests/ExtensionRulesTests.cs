@@ -8,7 +8,10 @@ public class ExtensionRulesTests
     [InlineData("sample")]
     [InlineData("my-ext2")]
     [InlineData("a23456789012345678901234567890ab")]
-    public void A_lowercase_id_up_to_32_characters_is_valid(string id) => Assert.True(ExtensionRules.IsValidId(id));
+    public void A_lowercase_id_up_to_32_characters_is_valid(string id)
+    {
+        Assert.True(ExtensionRules.IsValidId(id));
+    }
 
     [Theory]
     [InlineData("")]
@@ -17,7 +20,10 @@ public class ExtensionRulesTests
     [InlineData("-a")]
     [InlineData("sample\n")]
     [InlineData("a234567890123456789012345678901ab")]
-    public void Any_other_id_is_not(string id) => Assert.False(ExtensionRules.IsValidId(id));
+    public void Any_other_id_is_not(string id)
+    {
+        Assert.False(ExtensionRules.IsValidId(id));
+    }
 
     [Fact]
     public void A_contract_is_compatible_only_at_the_host_major_and_up_to_its_minor()
@@ -41,7 +47,7 @@ public class ExtensionRulesTests
         var manifest = ExtensionManifest.Read(folder);
 
         Assert.Equal(new ExtensionManifest("sample", "Sample", "1.2.3", "1.0", "SampleExtension"), manifest);
-        Directory.Delete(folder, recursive: true);
+        Directory.Delete(folder, true);
     }
 
     [Theory]
@@ -54,7 +60,7 @@ public class ExtensionRulesTests
         File.WriteAllText(Path.Combine(folder, ExtensionManifest.FileName), text);
 
         Assert.ThrowsAny<Exception>(() => ExtensionManifest.Read(folder));
-        Directory.Delete(folder, recursive: true);
+        Directory.Delete(folder, true);
     }
 
     [Theory]
@@ -68,10 +74,16 @@ public class ExtensionRulesTests
     [InlineData("mcp")]
     [InlineData("healthz")]
     [InlineData("connect")]
-    public void Paths_the_server_uses_are_reserved(string id) => Assert.True(ExtensionRules.IsReservedId(id));
+    public void Paths_the_server_uses_are_reserved(string id)
+    {
+        Assert.True(ExtensionRules.IsReservedId(id));
+    }
 
     [Fact]
-    public void Other_ids_are_free() => Assert.False(ExtensionRules.IsReservedId("sample"));
+    public void Other_ids_are_free()
+    {
+        Assert.False(ExtensionRules.IsReservedId("sample"));
+    }
 
     [Fact]
     public void Routes_under_the_id_are_fine()

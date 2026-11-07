@@ -19,7 +19,8 @@ public sealed class MetricsService(CtxUiDbContext db, IOptions<UsageOptions> opt
             return periods.LastOrDefault(period => period.Days <= MetricsPeriod.DefaultDays) ?? periods[0];
 
         return periods.FirstOrDefault(period => period.Days == days)
-            ?? throw new DomainException(string.Format(CoreText.MetricsDaysInvalid, string.Join(", ", periods.Select(period => period.Days))));
+               ?? throw new DomainException(string.Format(CoreText.MetricsDaysInvalid,
+                   string.Join(", ", periods.Select(period => period.Days))));
     }
 
     public async Task<MetricsReport> LoadAsync(MetricsFilter filter, int? days = null, CancellationToken ct = default)
@@ -29,11 +30,17 @@ public sealed class MetricsService(CtxUiDbContext db, IOptions<UsageOptions> opt
         var timeline = period.TimelineAt(now);
         var scope = new EventScope(db, filter, timeline);
 
-        var clients = await db.Clients.AsNoTracking().Include(client => client.Inbounds).ToDictionaryAsync(client => client.Id, ct);
+        var clients = await db.Clients.AsNoTracking().Include(client => client.Inbounds)
+            .ToDictionaryAsync(client => client.Id, ct);
         var inbounds = await db.Inbounds.AsNoTracking().ToDictionaryAsync(inbound => inbound.Id, ct);
         var refusals = await scope.RefusalsAsync(ct);
-        var refusedByClient = refusals.GroupBy(row => row.ClientId).ToDictionary(group => group.Key, group => group.Sum(row => row.Count));
-        string? Slug(Guid id) => inbounds.GetValueOrDefault(id)?.Slug;
+        var refusedByClient = refusals.GroupBy(row => row.ClientId)
+            .ToDictionary(group => group.Key, group => group.Sum(row => row.Count));
+
+        string? Slug(Guid id)
+        {
+            return inbounds.GetValueOrDefault(id)?.Slug;
+        }
 
         return new MetricsReport(
             period,
@@ -50,22 +57,28 @@ public sealed class MetricsService(CtxUiDbContext db, IOptions<UsageOptions> opt
             await scope.SlotsAsync(ct),
             await scope.LatencyAsync(ct),
             filter.InboundId is null
-                ? Busiest(await scope.CallsAsync(CallGrouping.Inbound, ct), group => Guid.Parse(group.Key!), (id, stats) =>
-                    new InboundStats(id, Slug(id), inbounds.GetValueOrDefault(id)?.Name, stats))
+                ? Busiest(await scope.CallsAsync(CallGrouping.Inbound, ct), group => Guid.Parse(group.Key!),
+                    (id, stats) =>
+                        new InboundStats(id, Slug(id), inbounds.GetValueOrDefault(id)?.Name, stats))
                 : [],
             filter.Tool is null
-                ? Busiest(await scope.CallsAsync(CallGrouping.Tool, ct), group => (Inbound: Guid.Parse(group.Key!), Tool: group.Sub!), (key, stats) =>
-                    new ToolStats(key.Inbound, Slug(key.Inbound), key.Tool, stats))
+                ? Busiest(await scope.CallsAsync(CallGrouping.Tool, ct),
+                    group => (Inbound: Guid.Parse(group.Key!), Tool: group.Sub!), (key, stats) =>
+                        new ToolStats(key.Inbound, Slug(key.Inbound), key.Tool, stats))
                 : [],
             filter.Tool is null
-                ? Busiest(await scope.CallsAsync(CallGrouping.Method, ct), group => group.Key!, (method, stats) => new MethodStats(method, stats))
+                ? Busiest(await scope.CallsAsync(CallGrouping.Method, ct), group => group.Key!,
+                    (method, stats) => new MethodStats(method, stats))
                 : [],
             filter.ClientId is null
-                ? Busiest(await scope.CallsAsync(CallGrouping.Client, ct), group => Guid.Parse(group.Key!), (id, stats) =>
-                    new ClientStats(id, clients.GetValueOrDefault(id)?.Name, refusedByClient.GetValueOrDefault(id), stats))
+                ? Busiest(await scope.CallsAsync(CallGrouping.Client, ct), group => Guid.Parse(group.Key!),
+                    (id, stats) =>
+                        new ClientStats(id, clients.GetValueOrDefault(id)?.Name, refusedByClient.GetValueOrDefault(id),
+                            stats))
                 : [],
             filter.ClientId is not null ? await DevicesAsync(scope, ct) : [],
-            (await scope.ErrorsAsync(ErrorsShown, ct)).Select(error => error with { Slug = Slug(error.InboundId) }).ToList(),
+            (await scope.ErrorsAsync(ErrorsShown, ct)).Select(error => error with { Slug = Slug(error.InboundId) })
+            .ToList(),
             refusals
                 .GroupBy(row => row.Outcome)
                 .Select(group => new RefusalCount(group.Key, group.Sum(row => row.Count)))
@@ -73,17 +86,23 @@ public sealed class MetricsService(CtxUiDbContext db, IOptions<UsageOptions> opt
                 .ToList());
     }
 
-    private static int ClientsWithAccess(IEnumerable<Client> clients, Guid? inboundId, DateTimeOffset now) => clients
-        .Where(client => inboundId is not { } id || client.Inbounds.Any(link => link.InboundId == id))
-        .Count(client => ClientState.Of(client, now) == ClientStatus.Active);
+    private static int ClientsWithAccess(IEnumerable<Client> clients, Guid? inboundId, DateTimeOffset now)
+    {
+        return clients
+            .Where(client => inboundId is not { } id || client.Inbounds.Any(link => link.InboundId == id))
+            .Count(client => ClientState.Of(client, now) == ClientStatus.Active);
+    }
 
     private static List<TRow> Busiest<TKey, TRow>(
-        IEnumerable<CallGroup> groups, Func<CallGroup, TKey> key, Func<TKey, CallStats, TRow> row) => groups
-        .OrderByDescending(group => group.Stats.Calls)
-        .ThenBy(group => group.Key, StringComparer.Ordinal)
-        .ThenBy(group => group.Sub, StringComparer.Ordinal)
-        .Select(group => row(key(group), group.Stats))
-        .ToList();
+        IEnumerable<CallGroup> groups, Func<CallGroup, TKey> key, Func<TKey, CallStats, TRow> row)
+    {
+        return groups
+            .OrderByDescending(group => group.Stats.Calls)
+            .ThenBy(group => group.Key, StringComparer.Ordinal)
+            .ThenBy(group => group.Sub, StringComparer.Ordinal)
+            .Select(group => row(key(group), group.Stats))
+            .ToList();
+    }
 
     private async Task<List<DeviceStats>> DevicesAsync(EventScope scope, CancellationToken ct)
     {
@@ -97,7 +116,8 @@ public sealed class MetricsService(CtxUiDbContext db, IOptions<UsageOptions> opt
         return Busiest(groups, group => Guid.Parse(group.Key!), (id, stats) => new DeviceStats(
             id,
             devices.GetValueOrDefault(id)?.Name,
-            devices.GetValueOrDefault(id)?.Apps.Select(app => app.AppName).Distinct().Order(StringComparer.CurrentCulture).ToList() ?? [],
+            devices.GetValueOrDefault(id)?.Apps.Select(app => app.AppName).Distinct()
+                .Order(StringComparer.CurrentCulture).ToList() ?? [],
             stats));
     }
 }

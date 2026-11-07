@@ -14,25 +14,28 @@ public static class ConnectSession
 
     public static readonly TimeSpan Lifetime = TimeSpan.FromHours(12);
 
-    public static AuthenticationBuilder AddConnectSession(this AuthenticationBuilder auth) => auth.AddCookie(Scheme, options =>
+    public static AuthenticationBuilder AddConnectSession(this AuthenticationBuilder auth)
     {
-        options.Cookie.Name = OwnCookies.ConnectSession;
-        options.Cookie.Path = ConnectServices.Prefix;
-        options.Cookie.HttpOnly = true;
-        options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
-        options.Cookie.SameSite = SameSiteMode.Lax;
-        options.Cookie.IsEssential = true;
-        options.ExpireTimeSpan = Lifetime;
-        options.SlidingExpiration = false;
-        options.Events = new CookieAuthenticationEvents
+        return auth.AddCookie(Scheme, options =>
         {
-            OnRedirectToLogin = context =>
+            options.Cookie.Name = OwnCookies.ConnectSession;
+            options.Cookie.Path = ConnectServices.Prefix;
+            options.Cookie.HttpOnly = true;
+            options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+            options.Cookie.SameSite = SameSiteMode.Lax;
+            options.Cookie.IsEssential = true;
+            options.ExpireTimeSpan = Lifetime;
+            options.SlidingExpiration = false;
+            options.Events = new CookieAuthenticationEvents
             {
-                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-                return Task.CompletedTask;
-            },
-        };
-    });
+                OnRedirectToLogin = context =>
+                {
+                    context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                    return Task.CompletedTask;
+                }
+            };
+        });
+    }
 
     public static Task SignInAsync(HttpContext http, Guid clientId, string signedInWith)
     {
@@ -52,5 +55,8 @@ public static class ConnectSession
             : null;
     }
 
-    public static Task SignOutAsync(HttpContext http) => http.SignOutAsync(Scheme);
+    public static Task SignOutAsync(HttpContext http)
+    {
+        return http.SignOutAsync(Scheme);
+    }
 }

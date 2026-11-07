@@ -31,7 +31,9 @@ public sealed class ClientTouchTests : IAsyncDisposable
             .AddScoped<ClientService>()
             .BuildServiceProvider();
         using (var scope = _services.CreateScope())
+        {
             scope.ServiceProvider.GetRequiredService<CtxUiDbContext>().Database.Migrate();
+        }
 
         _touch = new ClientTouch(_services.GetRequiredService<IServiceScopeFactory>());
     }
@@ -44,13 +46,17 @@ public sealed class ClientTouchTests : IAsyncDisposable
 
     private async Task<Guid> AddClientAsync()
     {
-        await UseAsync(services => services.GetRequiredService<InboundService>().AddHttpAsync("echo", null, "https://mcp.example.org/mcp"));
-        var issued = await UseAsync(services => services.GetRequiredService<ClientService>().AddAsync("Иванов", ["echo"]));
+        await UseAsync(services => services.GetRequiredService<InboundService>()
+            .AddHttpAsync("echo", null, "https://mcp.example.org/mcp"));
+        var issued = await UseAsync(services =>
+            services.GetRequiredService<ClientService>().AddAsync("Иванов", ["echo"]));
         return issued.Client.Id;
     }
 
-    private Task<Client> ReadClientAsync() =>
-        UseAsync(services => services.GetRequiredService<ClientService>().GetAsync("Иванов"));
+    private Task<Client> ReadClientAsync()
+    {
+        return UseAsync(services => services.GetRequiredService<ClientService>().GetAsync("Иванов"));
+    }
 
     public async ValueTask DisposeAsync()
     {

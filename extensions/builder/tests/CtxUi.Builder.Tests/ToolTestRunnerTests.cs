@@ -1,7 +1,5 @@
-using System.Net.Http;
 using System.Text.Json.Nodes;
 using CtxUi.Builder.Publishing;
-using CtxUi.Builder.Servers;
 using Enfilade;
 using Microsoft.Extensions.DependencyInjection;
 using ModelContextProtocol;
@@ -10,7 +8,10 @@ namespace CtxUi.Builder.Tests;
 
 public sealed class ToolTestRunnerTests
 {
-    private static ToolTestRunner RunnerOf(PublishHarness harness) => harness.Services.GetRequiredService<ToolTestRunner>();
+    private static ToolTestRunner RunnerOf(PublishHarness harness)
+    {
+        return harness.Services.GetRequiredService<ToolTestRunner>();
+    }
 
     [Fact]
     public async Task Server_without_any_release_has_nothing_to_test()
@@ -76,19 +77,24 @@ public sealed class ToolTestRunnerTests
         harness.Inspector.Failure = failure;
         var target = new ToolTarget(1, null, false);
 
-        var listed = await Assert.ThrowsAsync<PanelException>(() => RunnerOf(harness).ListAsync(server, target, default));
-        var called = await Assert.ThrowsAsync<PanelException>(() => RunnerOf(harness).CallAsync(server, target, "hello", new JsonObject(), default));
+        var listed =
+            await Assert.ThrowsAsync<PanelException>(() => RunnerOf(harness).ListAsync(server, target, default));
+        var called = await Assert.ThrowsAsync<PanelException>(() =>
+            RunnerOf(harness).CallAsync(server, target, "hello", new JsonObject(), default));
 
         Assert.Contains(failure.Message, listed.Message);
         Assert.Contains(failure.Message, called.Message);
     }
 
-    public static TheoryData<Exception> Failures() =>
-    [
-        new HttpRequestException("connection refused"),
-        new IOException("stream closed"),
-        new McpException("session lost"),
-    ];
+    public static TheoryData<Exception> Failures()
+    {
+        return
+        [
+            new HttpRequestException("connection refused"),
+            new IOException("stream closed"),
+            new McpException("session lost")
+        ];
+    }
 
     [Fact]
     public async Task Caller_cancellation_is_not_reported_as_a_failure()
@@ -99,6 +105,8 @@ public sealed class ToolTestRunnerTests
         using var cancelled = new CancellationTokenSource();
         await cancelled.CancelAsync();
 
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => RunnerOf(harness).CallAsync(server, new ToolTarget(1, null, false), "hello", new JsonObject(), cancelled.Token));
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            RunnerOf(harness).CallAsync(server, new ToolTarget(1, null, false), "hello", new JsonObject(),
+                cancelled.Token));
     }
 }

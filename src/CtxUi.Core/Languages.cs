@@ -6,5 +6,8 @@ public static class Languages
 
     public static IReadOnlyList<string> Supported { get; } = [Default, "ru"];
 
-    public static bool IsSupported(string? name) => Supported.Contains(name, StringComparer.Ordinal);
+    public static bool IsSupported(string? name)
+    {
+        return Supported.Contains(name, StringComparer.Ordinal);
+    }
 }

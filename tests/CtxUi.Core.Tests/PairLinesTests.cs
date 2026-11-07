@@ -8,7 +8,10 @@ public class PairLinesTests
         var pairs = PairLines.Parse(["group=4419", "Authorization=Bearer a=b", "empty="]);
 
         Assert.Equal(
-            [KeyValuePair.Create("group", "4419"), KeyValuePair.Create("Authorization", "Bearer a=b"), KeyValuePair.Create("empty", "")],
+            [
+                KeyValuePair.Create("group", "4419"), KeyValuePair.Create("Authorization", "Bearer a=b"),
+                KeyValuePair.Create("empty", "")
+            ],
             pairs);
     }
 
@@ -42,6 +45,8 @@ public class PairLinesTests
     }
 
     [Fact]
-    public void Broken_line_in_a_form_is_refused_too() =>
+    public void Broken_line_in_a_form_is_refused_too()
+    {
         Assert.Throws<DomainException>(() => PairLines.ParseText("group=4419\nпросто слово"));
+    }
 }

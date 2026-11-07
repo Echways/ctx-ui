@@ -9,12 +9,14 @@ public sealed class ServerMetadataHandler(string issuer) : IOpenIddictServerHand
 {
     public const string RegistrationPath = "/connect/register";
 
-    public static OpenIddictServerHandlerDescriptor Descriptor(string issuer) =>
-        OpenIddictServerHandlerDescriptor.CreateBuilder<HandleConfigurationRequestContext>()
+    public static OpenIddictServerHandlerDescriptor Descriptor(string issuer)
+    {
+        return OpenIddictServerHandlerDescriptor.CreateBuilder<HandleConfigurationRequestContext>()
             .UseSingletonHandler(new ServerMetadataHandler(issuer))
             .SetOrder(int.MaxValue - 100_000)
             .SetType(OpenIddictServerHandlerType.Custom)
             .Build();
+    }
 
     public ValueTask HandleAsync(HandleConfigurationRequestContext context)
     {

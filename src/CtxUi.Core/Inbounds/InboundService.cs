@@ -29,11 +29,14 @@ public sealed class InboundService(CtxUiDbContext db, ISecretVault vault, TimePr
         string url,
         IEnumerable<KeyValuePair<string, string>>? upstreamHeaders = null,
         bool forwardIdentity = false,
-        CancellationToken ct = default) =>
-        AddHttpAsync(
+        CancellationToken ct = default)
+    {
+        return AddHttpAsync(
             slug,
-            new InboundSettings { Name = name, Url = url, UpstreamHeaders = upstreamHeaders, ForwardIdentity = forwardIdentity },
+            new InboundSettings
+            { Name = name, Url = url, UpstreamHeaders = upstreamHeaders, ForwardIdentity = forwardIdentity },
             ct);
+    }
 
     public async Task<Inbound> AddHttpAsync(string slug, InboundSettings settings, CancellationToken ct = default)
     {
@@ -44,7 +47,7 @@ public sealed class InboundService(CtxUiDbContext db, ISecretVault vault, TimePr
             Slug = parsedSlug,
             Name = parsedSlug,
             Kind = InboundKind.Http,
-            CreatedAt = clock.GetUtcNow(),
+            CreatedAt = clock.GetUtcNow()
         };
         Apply(inbound, settings);
         if (await db.Inbounds.AnyAsync(known => known.Slug == parsedSlug, ct))
@@ -55,8 +58,10 @@ public sealed class InboundService(CtxUiDbContext db, ISecretVault vault, TimePr
         return inbound;
     }
 
-    public Task<List<Inbound>> ListAsync(CancellationToken ct = default) =>
-        db.Inbounds.AsNoTracking().OrderBy(inbound => inbound.Slug).ToListAsync(ct);
+    public Task<List<Inbound>> ListAsync(CancellationToken ct = default)
+    {
+        return db.Inbounds.AsNoTracking().OrderBy(inbound => inbound.Slug).ToListAsync(ct);
+    }
 
     public Task<Inbound?> FindAsync(string slug, CancellationToken ct = default)
     {
@@ -64,8 +69,10 @@ public sealed class InboundService(CtxUiDbContext db, ISecretVault vault, TimePr
         return db.Inbounds.SingleOrDefaultAsync(inbound => inbound.Slug == wanted, ct);
     }
 
-    public async Task<Inbound> GetAsync(string slug, CancellationToken ct = default) =>
-        await FindAsync(slug, ct) ?? throw new NotFoundException(string.Format(CoreText.InboundNotFound, slug));
+    public async Task<Inbound> GetAsync(string slug, CancellationToken ct = default)
+    {
+        return await FindAsync(slug, ct) ?? throw new NotFoundException(string.Format(CoreText.InboundNotFound, slug));
+    }
 
     public async Task UpdateAsync(string slug, InboundSettings settings, CancellationToken ct = default)
     {
@@ -73,19 +80,26 @@ public sealed class InboundService(CtxUiDbContext db, ISecretVault vault, TimePr
         await db.SaveChangesAsync(ct);
     }
 
-    public IReadOnlyList<string>? HeaderNames(Inbound inbound) =>
-        UpstreamHeaders.Open(vault, inbound.UpstreamHeadersSealed)?.Keys.Order(StringComparer.OrdinalIgnoreCase).ToList();
+    public IReadOnlyList<string>? HeaderNames(Inbound inbound)
+    {
+        return UpstreamHeaders.Open(vault, inbound.UpstreamHeadersSealed)?.Keys.Order(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
 
-    public Task<Dictionary<Guid, string>> SlugsAsync(CancellationToken ct = default) =>
-        db.Inbounds.AsNoTracking()
+    public Task<Dictionary<Guid, string>> SlugsAsync(CancellationToken ct = default)
+    {
+        return db.Inbounds.AsNoTracking()
             .Select(inbound => new { inbound.Id, inbound.Slug })
             .ToDictionaryAsync(row => row.Id, row => row.Slug, ct);
+    }
 
-    public Task<Dictionary<Guid, int>> ClientCountsAsync(CancellationToken ct = default) =>
-        db.ClientInbounds.AsNoTracking()
+    public Task<Dictionary<Guid, int>> ClientCountsAsync(CancellationToken ct = default)
+    {
+        return db.ClientInbounds.AsNoTracking()
             .GroupBy(link => link.InboundId)
             .Select(group => new { InboundId = group.Key, Clients = group.Count() })
             .ToDictionaryAsync(row => row.InboundId, row => row.Clients, ct);
+    }
 
     public async Task SetEnabledAsync(string slug, bool enabled, CancellationToken ct = default)
     {
@@ -107,7 +121,8 @@ public sealed class InboundService(CtxUiDbContext db, ISecretVault vault, TimePr
         if (settings.RequestTimeoutSeconds is < 1 or > Inbound.RequestTimeoutCeiling)
             throw new DomainException(string.Format(CoreText.TimeoutOutOfRange, Inbound.RequestTimeoutCeiling));
         if (settings.MaxBodyBytes is < Inbound.MaxBodyBytesFloor or > Inbound.MaxBodyBytesCeiling)
-            throw new DomainException(string.Format(CoreText.BodyLimitOutOfRange, Inbound.MaxBodyBytesFloor, Inbound.MaxBodyBytesCeiling));
+            throw new DomainException(string.Format(CoreText.BodyLimitOutOfRange, Inbound.MaxBodyBytesFloor,
+                Inbound.MaxBodyBytesCeiling));
         var headers = settings.UpstreamHeaders is null ? null : UpstreamHeaders.Parse(settings.UpstreamHeaders);
 
         inbound.Name = name;

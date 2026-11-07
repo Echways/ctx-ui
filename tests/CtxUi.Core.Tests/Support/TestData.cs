@@ -7,25 +7,31 @@ internal static class TestData
 {
     public static readonly DateTimeOffset Now = new(2026, 10, 12, 10, 0, 0, TimeSpan.Zero);
 
-    public static Inbound Inbound(string slug) => new()
+    public static Inbound Inbound(string slug)
     {
-        Id = Guid.NewGuid(),
-        Slug = slug,
-        Name = slug,
-        Kind = InboundKind.Http,
-        Url = "http://upstream.test/mcp",
-        CreatedAt = Now,
-    };
+        return new Inbound
+        {
+            Id = Guid.NewGuid(),
+            Slug = slug,
+            Name = slug,
+            Kind = InboundKind.Http,
+            Url = "http://upstream.test/mcp",
+            CreatedAt = Now
+        };
+    }
 
-    public static Client Client(string name) => new()
+    public static Client Client(string name)
     {
-        Id = Guid.NewGuid(),
-        Name = name,
-        NameKey = ClientName.Key(name),
-        TokenHash = AccessToken.Hash(name),
-        TokenSealed = "sealed",
-        TokenPrefix = "tnk_test00",
-        CreatedAt = Now,
-        PeriodStartedAt = Now,
-    };
+        return new Client
+        {
+            Id = Guid.NewGuid(),
+            Name = name,
+            NameKey = ClientName.Key(name),
+            TokenHash = AccessToken.Hash(name),
+            TokenSealed = "sealed",
+            TokenPrefix = "tnk_test00",
+            CreatedAt = Now,
+            PeriodStartedAt = Now
+        };
+    }
 }

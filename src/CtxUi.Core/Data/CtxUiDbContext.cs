@@ -29,8 +29,10 @@ public sealed class CtxUiDbContext(DbContextOptions<CtxUiDbContext> options) : D
     public DbSet<DeviceApp> DeviceApps => Set<DeviceApp>();
     public DbSet<ClientLink> ClientLinks => Set<ClientLink>();
 
-    protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder) =>
+    protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+    {
         configurationBuilder.Properties<DateTimeOffset>().HaveConversion<UnixMillisConverter>();
+    }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -46,7 +48,8 @@ public sealed class CtxUiDbContext(DbContextOptions<CtxUiDbContext> options) : D
             entity.HasIndex(client => client.TokenHash).IsUnique();
             entity.Property(client => client.Metadata).HasConversion(
                 value => JsonSerializer.Serialize(value, (JsonSerializerOptions?)null),
-                value => JsonSerializer.Deserialize<Dictionary<string, string>>(value, (JsonSerializerOptions?)null) ?? new(),
+                value => JsonSerializer.Deserialize<Dictionary<string, string>>(value, (JsonSerializerOptions?)null) ??
+                         new Dictionary<string, string>(),
                 new ValueComparer<Dictionary<string, string>>(
                     (left, right) => left!.Count == right!.Count && !left.Except(right).Any(),
                     value => value.Aggregate(0, (hash, pair) => HashCode.Combine(hash, pair.Key, pair.Value)),
@@ -132,7 +135,11 @@ public sealed class CtxUiDbContext(DbContextOptions<CtxUiDbContext> options) : D
         return written;
     }
 
-    private bool RoutingChanged() => ChangeTracker.Entries().Any(entry =>
-        entry.State is EntityState.Added or EntityState.Modified or EntityState.Deleted &&
-        entry.Entity is Inbound or Client or ClientInbound or SignIn.SignInSettings or SignInProvider or Device or ClientLink);
+    private bool RoutingChanged()
+    {
+        return ChangeTracker.Entries().Any(entry =>
+            entry.State is EntityState.Added or EntityState.Modified or EntityState.Deleted &&
+            entry.Entity is Inbound or Client or ClientInbound or SignIn.SignInSettings or SignInProvider or Device
+                or ClientLink);
+    }
 }

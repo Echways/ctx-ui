@@ -9,13 +9,15 @@ internal static class SampleExtensionHost
     public static Task<GatewayHost> StartAsync(
         IReadOnlyDictionary<string, string>? settings = null,
         Action<string>? prepare = null,
-        Action<WebApplicationBuilder>? configure = null) =>
-        GatewayHost.StartAsync(builder =>
+        Action<WebApplicationBuilder>? configure = null)
+    {
+        return GatewayHost.StartAsync(builder =>
         {
             var folder = Path.Combine(builder.Configuration["CtxUi:DataDir"]!, Installed);
             if (!Directory.Exists(folder))
             {
-                CopyDirectory(Path.Combine(AppContext.BaseDirectory, "extensions", "sample"), Path.Combine(folder, "sample"));
+                CopyDirectory(Path.Combine(AppContext.BaseDirectory, "extensions", "sample"),
+                    Path.Combine(folder, "sample"));
                 prepare?.Invoke(folder);
             }
 
@@ -24,6 +26,7 @@ internal static class SampleExtensionHost
                 builder.Configuration[key] = value;
             configure?.Invoke(builder);
         });
+    }
 
     public static void RewriteManifest(string extension, string from, string to)
     {

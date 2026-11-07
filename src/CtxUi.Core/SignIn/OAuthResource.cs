@@ -7,11 +7,20 @@ public static class OAuthResource
     private const string McpPath = "/mcp/";
     private const string MetadataPath = "/.well-known/oauth-protected-resource";
 
-    public static string Issuer(string publicUrl) => publicUrl.TrimEnd('/');
+    public static string Issuer(string publicUrl)
+    {
+        return publicUrl.TrimEnd('/');
+    }
 
-    public static string For(string publicUrl, string slug) => Issuer(publicUrl) + McpPath + slug;
+    public static string For(string publicUrl, string slug)
+    {
+        return Issuer(publicUrl) + McpPath + slug;
+    }
 
-    public static string MetadataUrl(string publicUrl, string slug) => Issuer(publicUrl) + MetadataPath + McpPath + slug;
+    public static string MetadataUrl(string publicUrl, string slug)
+    {
+        return Issuer(publicUrl) + MetadataPath + McpPath + slug;
+    }
 
     public static bool TrySlug(string publicUrl, string? requested, out string slug)
     {
@@ -20,7 +29,8 @@ public static class OAuthResource
             || !Uri.TryCreate(Issuer(publicUrl), UriKind.Absolute, out var issuer)
             || resource.Query.Length > 0
             || resource.Fragment.Length > 0
-            || !string.Equals(resource.GetLeftPart(UriPartial.Authority), issuer.GetLeftPart(UriPartial.Authority), StringComparison.OrdinalIgnoreCase))
+            || !string.Equals(resource.GetLeftPart(UriPartial.Authority), issuer.GetLeftPart(UriPartial.Authority),
+                StringComparison.OrdinalIgnoreCase))
             return false;
 
         var prefix = issuer.AbsolutePath.TrimEnd('/') + McpPath;

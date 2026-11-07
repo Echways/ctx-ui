@@ -14,22 +14,30 @@ public class OAuthAddressTests
     [InlineData("http://127.0.0.2", false)]
     [InlineData("mcp.example.org", false)]
     [InlineData("", false)]
-    public void Oauth_needs_https_or_a_loopback_address(string publicUrl, bool allowed) =>
+    public void Oauth_needs_https_or_a_loopback_address(string publicUrl, bool allowed)
+    {
         Assert.Equal(allowed, OAuthAvailability.IsAllowed(publicUrl));
+    }
 
     [Fact]
-    public void Resource_is_the_inbound_address_without_trailing_slash() =>
+    public void Resource_is_the_inbound_address_without_trailing_slash()
+    {
         Assert.Equal("https://mcp.example.org/mcp/learn", OAuthResource.For("https://mcp.example.org/", "learn"));
+    }
 
     [Fact]
-    public void Issuer_is_the_public_url_without_trailing_slash() =>
+    public void Issuer_is_the_public_url_without_trailing_slash()
+    {
         Assert.Equal("https://mcp.example.org", OAuthResource.Issuer("https://mcp.example.org/"));
+    }
 
     [Fact]
-    public void Metadata_url_is_the_well_known_path_of_the_inbound() =>
+    public void Metadata_url_is_the_well_known_path_of_the_inbound()
+    {
         Assert.Equal(
             "https://mcp.example.org/.well-known/oauth-protected-resource/mcp/learn",
             OAuthResource.MetadataUrl("https://mcp.example.org/", "learn"));
+    }
 
     [Theory]
     [InlineData("https://mcp.example.org/mcp/learn", true)]

@@ -23,8 +23,9 @@ public class PanelSignInFormTests
 
         await Expect(page).ToHaveURLAsync(gateway.PanelUrl);
         await Expect(page).ToHaveTitleAsync("Обзор · ctx-ui");
-        await Expect(page.GetByRole(AriaRole.Heading, new() { Name = "Обзор" })).ToBeVisibleAsync();
-        await Expect(page.GetByRole(AriaRole.Navigation).GetByRole(AriaRole.Link, new() { Name = "Обзор" }))
+        await Expect(page.GetByRole(AriaRole.Heading, new PageGetByRoleOptions { Name = "Обзор" })).ToBeVisibleAsync();
+        await Expect(page.GetByRole(AriaRole.Navigation)
+                .GetByRole(AriaRole.Link, new LocatorGetByRoleOptions { Name = "Обзор" }))
             .ToHaveAttributeAsync("aria-current", "page");
         await Expect(page.GetByRole(AriaRole.Banner)).ToContainTextAsync("root");
     }

@@ -7,19 +7,23 @@ namespace CtxUi.IntegrationTests;
 
 public class ApiOAuthTests
 {
-    private static Task<GatewayHost> StartAsync(string? publicUrl = null) => GatewayHost.StartAsync(builder =>
+    private static Task<GatewayHost> StartAsync(string? publicUrl = null)
     {
-        builder.Configuration["CtxUi:RefreshInterval"] = "01:00:00";
-        if (publicUrl is not null)
-            builder.Configuration["CtxUi:PublicUrl"] = publicUrl;
-    });
+        return GatewayHost.StartAsync(builder =>
+        {
+            builder.Configuration["CtxUi:RefreshInterval"] = "01:00:00";
+            if (publicUrl is not null)
+                builder.Configuration["CtxUi:PublicUrl"] = publicUrl;
+        });
+    }
 
     [Fact]
     public async Task Oauth_view_never_contains_secrets()
     {
         await using var gateway = await StartAsync("https://mcp.example.org/");
         using var api = await ApiClient.IssueAsync(gateway);
-        (await api.PutAsync("api/v1/oauth/providers/github", new { clientId = "gh-id", clientSecret = "gh-secret-value" })).Dispose();
+        (await api.PutAsync("api/v1/oauth/providers/github",
+            new { clientId = "gh-id", clientSecret = "gh-secret-value" })).Dispose();
 
         using var response = await api.GetAsync("api/v1/oauth");
         var text = await response.Content.ReadAsStringAsync();
@@ -36,7 +40,8 @@ public class ApiOAuthTests
         Assert.Equal("GitHub", provider.GetProperty("title").GetString());
         Assert.Equal("gh-id", provider.GetProperty("clientId").GetString());
         Assert.True(provider.GetProperty("secretSet").GetBoolean());
-        Assert.Equal("https://mcp.example.org/connect/callback/github", provider.GetProperty("callbackUrl").GetString());
+        Assert.Equal("https://mcp.example.org/connect/callback/github",
+            provider.GetProperty("callbackUrl").GetString());
     }
 
     [Fact]
@@ -47,7 +52,8 @@ public class ApiOAuthTests
         using var api = await ApiClient.IssueAsync(gateway);
         using var before = await gateway.Http.GetAsync("/.well-known/oauth-protected-resource/mcp/echo");
 
-        using var patched = await api.PatchAsync("api/v1/oauth", new { enabled = true, idleDays = 10, defaultMaxDevices = "3", defaultDirectKey = false });
+        using var patched = await api.PatchAsync("api/v1/oauth",
+            new { enabled = true, idleDays = 10, defaultMaxDevices = "3", defaultDirectKey = false });
         var view = await ApiClient.ReadAsync(patched);
         using var after = await gateway.Http.GetAsync("/.well-known/oauth-protected-resource/mcp/echo");
 
@@ -69,7 +75,8 @@ public class ApiOAuthTests
 
         using var patched = await api.PatchAsync("api/v1/oauth", new { defaultMaxDevices = "none" });
 
-        Assert.Equal(JsonValueKind.Null, (await ApiClient.ReadAsync(patched)).GetProperty("defaultMaxDevices").ValueKind);
+        Assert.Equal(JsonValueKind.Null,
+            (await ApiClient.ReadAsync(patched)).GetProperty("defaultMaxDevices").ValueKind);
     }
 
     [Fact]
@@ -90,9 +97,12 @@ public class ApiOAuthTests
         await using var gateway = await StartAsync();
         using var api = await ApiClient.IssueAsync(gateway);
 
-        using var put = await api.PutAsync("api/v1/oauth/providers/github", new { clientId = "gh-id", clientSecret = "gh-secret" });
+        using var put = await api.PutAsync("api/v1/oauth/providers/github",
+            new { clientId = "gh-id", clientSecret = "gh-secret" });
         using var disabled = await api.PostAsync("api/v1/oauth/providers/github/disable");
-        var afterDisable = (await gateway.ChangeAsync(services => services.GetRequiredService<SignInSettingsService>().ProvidersAsync())).Single();
+        var afterDisable =
+            (await gateway.ChangeAsync(services =>
+                services.GetRequiredService<SignInSettingsService>().ProvidersAsync())).Single();
         using var enabled = await api.PostAsync("api/v1/oauth/providers/github/enable");
         using var changed = await api.PutAsync("api/v1/oauth/providers/github", new { clientId = "gh-id-2" });
         using var removed = await api.DeleteAsync("api/v1/oauth/providers/github");
@@ -105,7 +115,8 @@ public class ApiOAuthTests
         Assert.Equal("gh-id-2", (await ApiClient.ReadAsync(changed)).GetProperty("clientId").GetString());
         Assert.Equal(HttpStatusCode.NoContent, removed.StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, again.StatusCode);
-        Assert.Empty(await gateway.ChangeAsync(services => services.GetRequiredService<SignInSettingsService>().ProvidersAsync()));
+        Assert.Empty(await gateway.ChangeAsync(services =>
+            services.GetRequiredService<SignInSettingsService>().ProvidersAsync()));
     }
 
     [Fact]
@@ -125,7 +136,8 @@ public class ApiOAuthTests
         await using var gateway = await StartAsync();
         using var api = await ApiClient.IssueAsync(gateway);
 
-        using var refused = await api.PutAsync("api/v1/oauth/providers/myspace", new { clientId = "id", clientSecret = "secret" });
+        using var refused = await api.PutAsync("api/v1/oauth/providers/myspace",
+            new { clientId = "id", clientSecret = "secret" });
 
         Assert.Equal(HttpStatusCode.BadRequest, refused.StatusCode);
     }

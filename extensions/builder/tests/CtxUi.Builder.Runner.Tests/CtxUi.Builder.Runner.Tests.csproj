@@ -1,9 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <FrameworkReference Include="Microsoft.AspNetCore.App" />
-    <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" />
-    <ProjectReference Include="..\..\CtxUi.Builder.Runner\CtxUi.Builder.Runner.csproj" />
+    <FrameworkReference Include="Microsoft.AspNetCore.App"/>
+    <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing"/>
+    <ProjectReference Include="..\..\CtxUi.Builder.Runner\CtxUi.Builder.Runner.csproj"/>
   </ItemGroup>
 
 </Project>

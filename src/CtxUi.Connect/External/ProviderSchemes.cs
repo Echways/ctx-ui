@@ -26,7 +26,10 @@ public static class ProviderSchemes
 
     public static readonly TimeSpan ExternalLifetime = TimeSpan.FromMinutes(10);
 
-    public static string CallbackPath(string name) => ConnectServices.Prefix + "/callback/" + name;
+    public static string CallbackPath(string name)
+    {
+        return ConnectServices.Prefix + "/callback/" + name;
+    }
 
     public static IServiceCollection AddExternalProviders(this IServiceCollection services)
     {
@@ -44,26 +47,33 @@ public static class ProviderSchemes
         });
 
         Add<GoogleOptions>(services, auth, "google", (name, configure) => auth.AddGoogle(name, configure));
-        Add<MicrosoftAccountOptions>(services, auth, "microsoft", (name, configure) => auth.AddMicrosoftAccount(name, configure));
-        Add<GitHubAuthenticationOptions>(services, auth, "github", (name, configure) => auth.AddGitHub(name, configure));
-        Add<GitLabAuthenticationOptions>(services, auth, "gitlab", (name, configure) => auth.AddGitLab(name, configure));
-        Add<YandexAuthenticationOptions>(services, auth, "yandex", (name, configure) => auth.AddYandex(name, configure));
+        Add<MicrosoftAccountOptions>(services, auth, "microsoft",
+            (name, configure) => auth.AddMicrosoftAccount(name, configure));
+        Add<GitHubAuthenticationOptions>(services, auth, "github",
+            (name, configure) => auth.AddGitHub(name, configure));
+        Add<GitLabAuthenticationOptions>(services, auth, "gitlab",
+            (name, configure) => auth.AddGitLab(name, configure));
+        Add<YandexAuthenticationOptions>(services, auth, "yandex",
+            (name, configure) => auth.AddYandex(name, configure));
         Add<VkIdAuthenticationOptions>(services, auth, "vkid", (name, configure) => auth.AddVkId(name, configure));
-        Add<DiscordAuthenticationOptions>(services, auth, "discord", (name, configure) => auth.AddDiscord(name, configure));
-        Add<OpenIdConnectOptions>(services, auth, "telegram", (name, configure) => auth.AddOpenIdConnect(name, configure), options =>
-        {
-            options.Authority = TelegramAuthority;
-            options.Scope.Clear();
-            options.Scope.Add("openid");
-            options.Scope.Add("profile");
-        });
-        Add<OpenIdConnectOptions>(services, auth, ProviderCatalog.Oidc, (name, configure) => auth.AddOpenIdConnect(name, configure), options =>
-        {
-            options.Scope.Clear();
-            options.Scope.Add("openid");
-            options.Scope.Add("profile");
-            options.Scope.Add("email");
-        });
+        Add<DiscordAuthenticationOptions>(services, auth, "discord",
+            (name, configure) => auth.AddDiscord(name, configure));
+        Add<OpenIdConnectOptions>(services, auth, "telegram",
+            (name, configure) => auth.AddOpenIdConnect(name, configure), options =>
+            {
+                options.Authority = TelegramAuthority;
+                options.Scope.Clear();
+                options.Scope.Add("openid");
+                options.Scope.Add("profile");
+            });
+        Add<OpenIdConnectOptions>(services, auth, ProviderCatalog.Oidc,
+            (name, configure) => auth.AddOpenIdConnect(name, configure), options =>
+            {
+                options.Scope.Clear();
+                options.Scope.Add("openid");
+                options.Scope.Add("profile");
+                options.Scope.Add("email");
+            });
         services.AddSingleton<ProviderOptionsCache>();
         return services;
     }
@@ -96,6 +106,7 @@ public static class ProviderSchemes
             }
         });
         services.AddSingleton<IConfigureOptions<TOptions>, ProviderOptionsSync<TOptions>>();
-        services.AddSingleton(new ProviderInvalidator(name, provider => provider.GetRequiredService<IOptionsMonitorCache<TOptions>>().TryRemove(name)));
+        services.AddSingleton(new ProviderInvalidator(name,
+            provider => provider.GetRequiredService<IOptionsMonitorCache<TOptions>>().TryRemove(name)));
     }
 }

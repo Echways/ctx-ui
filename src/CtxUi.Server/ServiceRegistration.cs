@@ -39,15 +39,22 @@ public static class ServiceRegistration
         return services;
     }
 
-    public static string KeysPath(IConfiguration configuration) => Path.Combine(
-        Path.GetFullPath((configuration.GetSection(CtxUiOptions.Section).Get<CtxUiOptions>() ?? new CtxUiOptions()).DataDir),
-        KeysDirectory);
+    public static string KeysPath(IConfiguration configuration)
+    {
+        return Path.Combine(
+            Path.GetFullPath((configuration.GetSection(CtxUiOptions.Section).Get<CtxUiOptions>() ?? new CtxUiOptions())
+                .DataDir),
+            KeysDirectory);
+    }
 
-    public static ILoggingBuilder AddCtxUiFilters(this ILoggingBuilder logging) => logging
-        .AddFilter("Microsoft.AspNetCore.Hosting.Diagnostics", LogLevel.Warning)
-        .AddFilter("Microsoft.AspNetCore.DataProtection", LogLevel.Error)
-        .AddFilter("Microsoft.EntityFrameworkCore", LogLevel.Warning)
-        .AddFilter("Yarp", LogLevel.Warning);
+    public static ILoggingBuilder AddCtxUiFilters(this ILoggingBuilder logging)
+    {
+        return logging
+            .AddFilter("Microsoft.AspNetCore.Hosting.Diagnostics", LogLevel.Warning)
+            .AddFilter("Microsoft.AspNetCore.DataProtection", LogLevel.Error)
+            .AddFilter("Microsoft.EntityFrameworkCore", LogLevel.Warning)
+            .AddFilter("Yarp", LogLevel.Warning);
+    }
 
     internal static void CreatePrivateDirectory(string path)
     {

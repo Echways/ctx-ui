@@ -4,7 +4,10 @@ namespace CtxUi.Builder.Publishing;
 
 public static class ToolSnapshot
 {
-    public static string Serialize(IReadOnlyList<ToolInfo> tools) => JsonSerializer.Serialize(tools, JsonSerializerOptions.Web);
+    public static string Serialize(IReadOnlyList<ToolInfo> tools)
+    {
+        return JsonSerializer.Serialize(tools, JsonSerializerOptions.Web);
+    }
 
     public static IReadOnlyList<string> Names(string? snapshot)
     {

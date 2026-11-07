@@ -38,17 +38,15 @@ public static class ProjectArchive
                 RequireSafe(entry);
                 total += entry.Length;
                 if (total > MaxUnpackedBytes)
-                {
-                    throw new ProjectArchiveException($"The project archive unpacks beyond the limit of {MaxUnpackedBytes / (1024 * 1024)} MB.");
-                }
+                    throw new ProjectArchiveException(
+                        $"The project archive unpacks beyond the limit of {MaxUnpackedBytes / (1024 * 1024)} MB.");
 
                 if (Normalize(entry.Name) == ConfigFile)
-                {
                     config = ReadConfigEntry(entry);
-                }
             }
         }
-        catch (Exception failure) when (failure is InvalidDataException or FormatException or EndOfStreamException or ArgumentException)
+        catch (Exception failure) when (failure is InvalidDataException or FormatException or EndOfStreamException
+                                            or ArgumentException)
         {
             throw new ProjectArchiveException($"The project archive is not a valid tar.gz: {failure.Message}");
         }
@@ -59,9 +57,7 @@ public static class ProjectArchive
     private static byte[] ReadConfigEntry(TarEntry entry)
     {
         if (entry.Length > MaxConfigBytes || entry.DataStream is not { } data)
-        {
             throw new ProjectArchiveException($"{ConfigFile} is empty or larger than {MaxConfigBytes / 1024} KB.");
-        }
 
         using var buffer = new MemoryStream();
         data.CopyTo(buffer);
@@ -71,17 +67,18 @@ public static class ProjectArchive
     private static void RequireSafe(TarEntry entry)
     {
         if (entry.EntryType is not (TarEntryType.RegularFile or TarEntryType.V7RegularFile or TarEntryType.Directory))
-        {
-            throw new ProjectArchiveException($"The project archive contains '{entry.Name}', which is neither a file nor a directory.");
-        }
+            throw new ProjectArchiveException(
+                $"The project archive contains '{entry.Name}', which is neither a file nor a directory.");
 
         if (entry.Name.StartsWith('/') || entry.Name.Split('/', '\\').Contains(".."))
-        {
-            throw new ProjectArchiveException($"The project archive contains the path '{entry.Name}' outside the project.");
-        }
+            throw new ProjectArchiveException(
+                $"The project archive contains the path '{entry.Name}' outside the project.");
     }
 
-    private static string Normalize(string name) => name.StartsWith("./", StringComparison.Ordinal) ? name[2..] : name;
+    private static string Normalize(string name)
+    {
+        return name.StartsWith("./", StringComparison.Ordinal) ? name[2..] : name;
+    }
 
     private static JsonObject ParseEnvironment(byte[] config)
     {
@@ -113,9 +110,8 @@ public static class ProjectArchive
         if (environment[DependenciesKey] is { } declared)
         {
             if (declared is not JsonArray list || list.Any(item => item?.GetValueKind() != JsonValueKind.String))
-            {
-                throw new ProjectArchiveException($"{ConfigFile}: {EnvironmentKey}.{DependenciesKey} must be a list of strings.");
-            }
+                throw new ProjectArchiveException(
+                    $"{ConfigFile}: {EnvironmentKey}.{DependenciesKey} must be a list of strings.");
 
             dependencies = new JsonArray(list
                 .Select(item => item!.GetValue<string>())
@@ -127,19 +123,20 @@ public static class ProjectArchive
 
         var canonical = (JsonObject)Sorted(environment)!;
         if (dependencies is not null)
-        {
             canonical[DependenciesKey] = dependencies;
-        }
 
         return canonical;
     }
 
-    private static JsonNode? Sorted(JsonNode? node) => node switch
+    private static JsonNode? Sorted(JsonNode? node)
     {
-        JsonObject value => new JsonObject(value
-            .OrderBy(property => property.Key, StringComparer.Ordinal)
-            .Select(property => KeyValuePair.Create(property.Key, Sorted(property.Value)))),
-        JsonArray value => new JsonArray(value.Select(Sorted).ToArray()),
-        _ => node?.DeepClone()
-    };
+        return node switch
+        {
+            JsonObject value => new JsonObject(value
+                .OrderBy(property => property.Key, StringComparer.Ordinal)
+                .Select(property => KeyValuePair.Create(property.Key, Sorted(property.Value)))),
+            JsonArray value => new JsonArray(value.Select(Sorted).ToArray()),
+            _ => node?.DeepClone()
+        };
+    }
 }

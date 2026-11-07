@@ -4,7 +4,10 @@ namespace CtxUi.Core.Tests;
 
 public class UpstreamHeadersTests
 {
-    private static KeyValuePair<string, string>[] Pair(string name, string value) => [KeyValuePair.Create(name, value)];
+    private static KeyValuePair<string, string>[] Pair(string name, string value)
+    {
+        return [KeyValuePair.Create(name, value)];
+    }
 
     [Fact]
     public void Valid_headers_are_copied()
@@ -24,20 +27,26 @@ public class UpstreamHeadersTests
     [InlineData("x-mcp-meta-admin")]
     [InlineData("Bad Header")]
     [InlineData("")]
-    public void Forbidden_or_malformed_name_is_rejected(string name) =>
+    public void Forbidden_or_malformed_name_is_rejected(string name)
+    {
         Assert.Throws<DomainException>(() => UpstreamHeaders.Parse(Pair(name, "x")));
+    }
 
     [Theory]
     [InlineData("a\r\nX-Evil: 1")]
     [InlineData("ключ")]
     [InlineData("")]
-    public void Value_must_be_printable_ascii(string value) =>
+    public void Value_must_be_printable_ascii(string value)
+    {
         Assert.Throws<DomainException>(() => UpstreamHeaders.Parse(Pair("X-Api-Key", value)));
+    }
 
     [Fact]
-    public void Repeated_name_is_rejected() =>
+    public void Repeated_name_is_rejected()
+    {
         Assert.Throws<DomainException>(() => UpstreamHeaders.Parse(
             [KeyValuePair.Create("X-Api-Key", "1"), KeyValuePair.Create("x-api-key", "2")]));
+    }
 
     [Fact]
     public void Sealed_headers_open_back()

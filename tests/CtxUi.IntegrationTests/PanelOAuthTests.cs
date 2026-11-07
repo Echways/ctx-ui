@@ -50,12 +50,13 @@ public class PanelOAuthTests
 
         var card = await OpenCardAsync(page, "GitHub");
         await Expect(card.Locator("output")).ToHaveTextAsync($"{PublicUrl}/connect/callback/github");
-        await card.GetByRole(AriaRole.Textbox, new() { Name = "Client ID", Exact = true }).FillAsync("gh-client");
-        await card.GetByLabel("Client secret", new() { Exact = true }).FillAsync("gh-secret");
-        await card.GetByRole(AriaRole.Button, new() { Name = "Сохранить" }).ClickAsync();
+        await card.GetByRole(AriaRole.Textbox, new LocatorGetByRoleOptions { Name = "Client ID", Exact = true })
+            .FillAsync("gh-client");
+        await card.GetByLabel("Client secret", new LocatorGetByLabelOptions { Exact = true }).FillAsync("gh-secret");
+        await card.GetByRole(AriaRole.Button, new LocatorGetByRoleOptions { Name = "Сохранить" }).ClickAsync();
 
         await Expect(page.GetByText("Провайдер GitHub сохранён")).ToBeVisibleAsync();
-        var applied = gateway.App.Services.GetRequiredService<CtxUi.Core.Routing.ISnapshotSource>().Current.SignIn.Providers;
+        var applied = gateway.App.Services.GetRequiredService<Core.Routing.ISnapshotSource>().Current.SignIn.Providers;
         var provider = Assert.Single(applied);
         Assert.Equal(("github", "gh-client", "gh-secret"), (provider.Name, provider.ClientId, provider.Secret));
     }
@@ -74,9 +75,12 @@ public class PanelOAuthTests
         await Switch(page, MainSwitch).UncheckAsync();
 
         await Expect(page.GetByRole(AriaRole.Dialog)).ToContainTextAsync("Клиентов без постоянного ключа: 1");
-        await page.GetByRole(AriaRole.Dialog).GetByRole(AriaRole.Button, new() { Name = "Выключить" }).ClickAsync();
-        await Expect(page.GetByText("Вход через браузер выключен", new() { Exact = true })).ToBeVisibleAsync();
-        Assert.False((await gateway.ChangeAsync(services => services.GetRequiredService<SignInSettingsService>().GetAsync())).Enabled);
+        await page.GetByRole(AriaRole.Dialog)
+            .GetByRole(AriaRole.Button, new LocatorGetByRoleOptions { Name = "Выключить" }).ClickAsync();
+        await Expect(page.GetByText("Вход через браузер выключен", new PageGetByTextOptions { Exact = true }))
+            .ToBeVisibleAsync();
+        Assert.False((await gateway.ChangeAsync(services =>
+            services.GetRequiredService<SignInSettingsService>().GetAsync())).Enabled);
     }
 
     [Fact]
@@ -91,6 +95,8 @@ public class PanelOAuthTests
 
         await Expect(page.GetByText("должен оставаться хотя бы один способ входа")).ToBeVisibleAsync();
         await Expect(Switch(page, "Вход по ключу")).ToBeCheckedAsync();
-        Assert.True((await gateway.ChangeAsync(services => services.GetRequiredService<SignInSettingsService>().GetAsync())).KeySignIn);
+        Assert.True(
+            (await gateway.ChangeAsync(services => services.GetRequiredService<SignInSettingsService>().GetAsync()))
+            .KeySignIn);
     }
 }

@@ -10,7 +10,9 @@ public sealed record BuilderResource(string Uri, string Name, string MimeType, s
 
 public sealed record BuilderPrompt(string Name, string? Description, string Template);
 
-public sealed record BuilderDocumentModel(IReadOnlyList<BuilderResource> Resources, IReadOnlyList<BuilderPrompt> Prompts)
+public sealed record BuilderDocumentModel(
+    IReadOnlyList<BuilderResource> Resources,
+    IReadOnlyList<BuilderPrompt> Prompts)
 {
     public static BuilderDocumentModel Empty { get; } = new([], []);
 
@@ -22,7 +24,8 @@ public static partial class BuilderDocument
     public const string DefaultMimeType = "text/plain";
     public const int MaxNameLength = 64;
 
-    private static readonly JsonSerializerOptions Output = new() { WriteIndented = true, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
+    private static readonly JsonSerializerOptions Output = new()
+    { WriteIndented = true, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
 
     [GeneratedRegex(@"\{([A-Za-z_]\w*)\}")]
     private static partial Regex Placeholder();
@@ -36,8 +39,13 @@ public static partial class BuilderDocument
     [GeneratedRegex(@"^[A-Za-z][A-Za-z0-9+.-]*:")]
     private static partial Regex UriSchemePattern();
 
-    public static IReadOnlyList<string> Arguments(string template) =>
-        [.. Placeholder().Matches(template).Select(match => match.Groups[1].Value).Distinct(StringComparer.Ordinal)];
+    public static IReadOnlyList<string> Arguments(string template)
+    {
+        return
+        [
+            .. Placeholder().Matches(template).Select(match => match.Groups[1].Value).Distinct(StringComparer.Ordinal)
+        ];
+    }
 
     public static BuilderDocumentModel Read(string? json)
     {
@@ -58,15 +66,19 @@ public static partial class BuilderDocument
             throw Invalid();
 
         var model = new BuilderDocumentModel(
-            [.. Entries(root, "resources").Select(entry => new BuilderResource(
-                Required(entry, "uri"),
-                Required(entry, "name"),
-                Optional(entry, "mimeType") ?? DefaultMimeType,
-                Optional(entry, "text") ?? string.Empty))],
-            [.. Entries(root, "prompts").Select(entry => new BuilderPrompt(
-                Required(entry, "name"),
-                Optional(entry, "description"),
-                Required(entry, "template")))]);
+            [
+                .. Entries(root, "resources").Select(entry => new BuilderResource(
+                    Required(entry, "uri"),
+                    Required(entry, "name"),
+                    Optional(entry, "mimeType") ?? DefaultMimeType,
+                    Optional(entry, "text") ?? string.Empty))
+            ],
+            [
+                .. Entries(root, "prompts").Select(entry => new BuilderPrompt(
+                    Required(entry, "name"),
+                    Optional(entry, "description"),
+                    Required(entry, "template")))
+            ]);
         Validate(model);
         return model;
     }
@@ -76,24 +88,29 @@ public static partial class BuilderDocument
         Validate(model);
         var root = new JsonObject
         {
-            ["resources"] = new JsonArray([.. model.Resources.Select(resource => (JsonNode)new JsonObject
-            {
-                ["uri"] = resource.Uri,
-                ["name"] = resource.Name,
-                ["mimeType"] = resource.MimeType,
-                ["text"] = resource.Text,
-            })]),
-            ["prompts"] = new JsonArray([.. model.Prompts.Select(prompt => (JsonNode)new JsonObject
-            {
-                ["name"] = prompt.Name,
-                ["description"] = prompt.Description,
-                ["template"] = prompt.Template,
-            })]),
+            ["resources"] = new JsonArray([
+                .. model.Resources.Select(resource => (JsonNode)new JsonObject
+                {
+                    ["uri"] = resource.Uri,
+                    ["name"] = resource.Name,
+                    ["mimeType"] = resource.MimeType,
+                    ["text"] = resource.Text
+                })
+            ]),
+            ["prompts"] = new JsonArray([
+                .. model.Prompts.Select(prompt => (JsonNode)new JsonObject
+                {
+                    ["name"] = prompt.Name,
+                    ["description"] = prompt.Description,
+                    ["template"] = prompt.Template
+                })
+            ])
         };
         return root.ToJsonString(Output);
     }
 
-    public static BuilderDocumentModel WithResource(BuilderDocumentModel model, BuilderResource resource, string? replacing)
+    public static BuilderDocumentModel WithResource(BuilderDocumentModel model, BuilderResource resource,
+        string? replacing)
     {
         var resources = model.Resources.ToList();
         var index = replacing is null ? -1 : resources.FindIndex(existing => existing.Uri == replacing);
@@ -147,7 +164,8 @@ public static partial class BuilderDocument
     {
         foreach (var resource in model.Resources)
         {
-            if (!UriSchemePattern().IsMatch(resource.Uri) || !System.Uri.TryCreate(resource.Uri, UriKind.Absolute, out _) || resource.Uri.Any(char.IsWhiteSpace))
+            if (!UriSchemePattern().IsMatch(resource.Uri) || !Uri.TryCreate(resource.Uri, UriKind.Absolute, out _) ||
+                resource.Uri.Any(char.IsWhiteSpace))
                 throw new PanelException(string.Format(BuilderText.ResourceUriInvalid, resource.Uri));
             if (string.IsNullOrWhiteSpace(resource.Name) || resource.Name.Length > MaxNameLength)
                 throw new PanelException(string.Format(BuilderText.BuilderNameInvalid, resource.Name));
@@ -163,7 +181,8 @@ public static partial class BuilderDocument
                 throw new PanelException(string.Format(BuilderText.PromptTemplateRequired, prompt.Name));
         }
 
-        if (model.Resources.GroupBy(resource => resource.Uri).FirstOrDefault(group => group.Count() > 1) is { } uriClash)
+        if (model.Resources.GroupBy(resource => resource.Uri).FirstOrDefault(group => group.Count() > 1) is
+            { } uriClash)
             throw new PanelException(string.Format(BuilderText.ResourceUriTaken, uriClash.Key));
         if (model.Prompts.GroupBy(prompt => prompt.Name).FirstOrDefault(group => group.Count() > 1) is { } nameClash)
             throw new PanelException(string.Format(BuilderText.PromptNameTaken, nameClash.Key));
@@ -178,7 +197,10 @@ public static partial class BuilderDocument
         return array.Select(item => item as JsonObject ?? throw Invalid());
     }
 
-    private static string Required(JsonObject entry, string key) => Optional(entry, key) ?? throw Invalid();
+    private static string Required(JsonObject entry, string key)
+    {
+        return Optional(entry, key) ?? throw Invalid();
+    }
 
     private static string? Optional(JsonObject entry, string key)
     {
@@ -187,5 +209,8 @@ public static partial class BuilderDocument
         return entry[key] is JsonValue value && value.TryGetValue<string>(out var text) ? text : throw Invalid();
     }
 
-    private static PanelException Invalid() => new(BuilderText.BuilderDocumentInvalid);
+    private static PanelException Invalid()
+    {
+        return new PanelException(BuilderText.BuilderDocumentInvalid);
+    }
 }

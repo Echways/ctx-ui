@@ -15,11 +15,17 @@ public class BrowserLanguageTests
     }
 
     [Fact]
-    public async Task Sign_in_pages_follow_the_browser() => Assert.Equal("ru-RU", await CultureAsync("/connect/signin"));
+    public async Task Sign_in_pages_follow_the_browser()
+    {
+        Assert.Equal("ru-RU", await CultureAsync("/connect/signin"));
+    }
 
     [Theory]
     [InlineData("/mcp/learn")]
     [InlineData("/connector")]
     [InlineData("/")]
-    public async Task Other_paths_ignore_the_browser(string path) => Assert.Null(await CultureAsync(path));
+    public async Task Other_paths_ignore_the_browser(string path)
+    {
+        Assert.Null(await CultureAsync(path));
+    }
 }

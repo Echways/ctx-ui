@@ -28,8 +28,10 @@ public sealed class RouteTableTests
         Assert.Equal($"/s/{Id}/mcp", route.Match.Path);
         Assert.Equal("abc", route.Metadata![RouteTable.SecretHashKey]);
         Assert.Equal("http://one:8000", cluster.Destinations!.Values.Single().Address);
-        Assert.Contains(route.Transforms!, transform => transform.TryGetValue("PathSet", out var path) && path == "/mcp");
-        Assert.Contains(route.Transforms!, transform => transform.TryGetValue("RequestHeaderRemove", out var header) && header == RouteSecret.Header);
+        Assert.Contains(route.Transforms!,
+            transform => transform.TryGetValue("PathSet", out var path) && path == "/mcp");
+        Assert.Contains(route.Transforms!,
+            transform => transform.TryGetValue("RequestHeaderRemove", out var header) && header == RouteSecret.Header);
     }
 
     [Fact]
@@ -64,14 +66,15 @@ public sealed class RouteTableTests
         var table = Table();
         table.SetActive(Id, "one", "abc");
         var before = table.GetConfig();
-        IChangeToken token = before.ChangeToken;
+        var token = before.ChangeToken;
         Assert.False(token.HasChanged);
 
         table.SetActive(Id, "two", "def");
 
         Assert.True(token.HasChanged);
         Assert.Equal("http://one:8000", Assert.Single(before.Clusters).Destinations!.Values.Single().Address);
-        Assert.Equal("http://two:8000", Assert.Single(table.GetConfig().Clusters).Destinations!.Values.Single().Address);
+        Assert.Equal("http://two:8000",
+            Assert.Single(table.GetConfig().Clusters).Destinations!.Values.Single().Address);
     }
 
     [Fact]

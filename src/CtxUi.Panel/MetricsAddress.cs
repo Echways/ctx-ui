@@ -15,7 +15,7 @@ public static class MetricsAddress
             ["days"] = days?.ToString(CultureInfo.InvariantCulture),
             ["client"] = filter.ClientId?.ToString(),
             ["inbound"] = filter.InboundId?.ToString(),
-            ["tool"] = filter.Tool,
+            ["tool"] = filter.Tool
         };
         return QueryHelpers.AddQueryString(Path, query.Where(pair => pair.Value is not null));
     }

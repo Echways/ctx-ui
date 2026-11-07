@@ -1,11 +1,9 @@
 <Sheet>
-    <BlockFrame Block="Block" Context="Context" />
+    <BlockFrame Block="Block" Context="Context"/>
 </Sheet>
 
 @code {
-    [Parameter, EditorRequired]
-    public Type Block { get; set; } = default!;
+    [Parameter][EditorRequired] public Type Block { get; set; } = default!;
 
-    [Parameter]
-    public object? Context { get; set; }
+    [Parameter] public object? Context { get; set; }
 }

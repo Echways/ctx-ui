@@ -13,31 +13,39 @@ public class UsageSchemaTests
     private static readonly Guid ClientId = Guid.Parse("11111111-1111-1111-1111-111111111111");
     private static readonly Guid InboundId = Guid.Parse("22222222-2222-2222-2222-222222222222");
 
-    private static UsageEvent Event() => new()
+    private static UsageEvent Event()
     {
-        ClientId = ClientId,
-        InboundId = InboundId,
-        At = TestData.Now,
-        Method = "tools/call",
-        Tool = "echo",
-        DurationMs = 120,
-        Outcome = UsageOutcome.UpstreamFailed,
-    };
+        return new UsageEvent
+        {
+            ClientId = ClientId,
+            InboundId = InboundId,
+            At = TestData.Now,
+            Method = "tools/call",
+            Tool = "echo",
+            DurationMs = 120,
+            Outcome = UsageOutcome.UpstreamFailed
+        };
+    }
 
-    private static UsageDaily Daily() => new()
+    private static UsageDaily Daily()
     {
-        Day = DateOnly.FromDateTime(TestData.Now.UtcDateTime),
-        ClientId = ClientId,
-        InboundId = InboundId,
-        Calls = 3,
-        ToolCalls = 2,
-        Errors = 1,
-        Refused = 4,
-        DurationMs = 5_000_000_000,
-    };
+        return new UsageDaily
+        {
+            Day = DateOnly.FromDateTime(TestData.Now.UtcDateTime),
+            ClientId = ClientId,
+            InboundId = InboundId,
+            Calls = 3,
+            ToolCalls = 2,
+            Errors = 1,
+            Refused = 4,
+            DurationMs = 5_000_000_000
+        };
+    }
 
-    private static Task<long> RevisionAsync(CtxUiDbContext db) =>
-        db.RoutingStates.AsNoTracking().Select(state => state.Revision).SingleAsync();
+    private static Task<long> RevisionAsync(CtxUiDbContext db)
+    {
+        return db.RoutingStates.AsNoTracking().Select(state => state.Revision).SingleAsync();
+    }
 
     [Fact]
     public async Task Rows_written_before_this_stage_get_working_defaults()
@@ -47,17 +55,19 @@ public class UsageSchemaTests
         var options = new DbContextOptionsBuilder<CtxUiDbContext>().UseSqlite(connection).Options;
         var created = TestData.Now.ToUnixTimeMilliseconds();
         await using (var db = new CtxUiDbContext(options))
+        {
             await db.GetService<IMigrator>().MigrateAsync("Initial");
+        }
 
         await using (var command = connection.CreateCommand())
         {
             command.CommandText =
                 $"""
-                INSERT INTO Inbounds (Id, Slug, Name, Enabled, Kind, RequestTimeoutSeconds, Url, ForwardIdentity, CreatedAt)
-                VALUES ('{InboundId.ToString().ToUpperInvariant()}', 'echo', 'echo', 1, 0, 300, 'http://upstream.test/mcp', 0, {created});
-                INSERT INTO Clients (Id, Name, NameKey, Enabled, TokenHash, TokenSealed, TokenPrefix, CreatedAt, Metadata)
-                VALUES ('{ClientId.ToString().ToUpperInvariant()}', 'Иванов', 'ИВАНОВ', 1, 'hash', 'sealed', 'tnk_test00', {created}, '{"{}"}');
-                """;
+                 INSERT INTO Inbounds (Id, Slug, Name, Enabled, Kind, RequestTimeoutSeconds, Url, ForwardIdentity, CreatedAt)
+                 VALUES ('{InboundId.ToString().ToUpperInvariant()}', 'echo', 'echo', 1, 0, 300, 'http://upstream.test/mcp', 0, {created});
+                 INSERT INTO Clients (Id, Name, NameKey, Enabled, TokenHash, TokenSealed, TokenPrefix, CreatedAt, Metadata)
+                 VALUES ('{ClientId.ToString().ToUpperInvariant()}', 'Иванов', 'ИВАНОВ', 1, 'hash', 'sealed', 'tnk_test00', {created}, '{"{}"}');
+                 """;
             await command.ExecuteNonQueryAsync();
         }
 

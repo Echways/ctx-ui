@@ -8,7 +8,10 @@ public sealed class DataProtectionVault(IDataProtectionProvider provider) : ISec
 {
     private readonly IDataProtector _protector = provider.CreateProtector("CtxUi.Secrets.v1");
 
-    public string Seal(string plaintext) => _protector.Protect(plaintext);
+    public string Seal(string plaintext)
+    {
+        return _protector.Protect(plaintext);
+    }
 
     public string? Open(string sealedText)
     {

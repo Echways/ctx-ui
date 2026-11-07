@@ -25,7 +25,7 @@ public sealed class ExtensionInstaller(string extensionsDir, string dataDir)
         finally
         {
             if (Directory.Exists(unpacked))
-                Directory.Delete(unpacked, recursive: true);
+                Directory.Delete(unpacked, true);
         }
     }
 
@@ -35,10 +35,10 @@ public sealed class ExtensionInstaller(string extensionsDir, string dataDir)
         if (!ExtensionRules.IsValidId(id) || !Directory.Exists(folder))
             throw new DomainException(string.Format(ServerText.ExtensionUnknown, id));
 
-        Directory.Delete(folder, recursive: true);
+        Directory.Delete(folder, true);
         var data = Path.Combine(dataDir, ExtensionCatalog.DataFolder, id);
         if (purge && Directory.Exists(data))
-            Directory.Delete(data, recursive: true);
+            Directory.Delete(data, true);
     }
 
     private static void Unpack(string archive, string unpacked)
@@ -74,6 +74,6 @@ public sealed class ExtensionInstaller(string extensionsDir, string dataDir)
             throw;
         }
 
-        Directory.Delete(previous, recursive: true);
+        Directory.Delete(previous, true);
     }
 }

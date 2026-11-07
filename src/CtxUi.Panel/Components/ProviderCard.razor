@@ -4,7 +4,8 @@
 <details class="provider" open="@(Stored is not null)">
     <summary>
         <span class="provider-name">@Name</span>
-        <span class="provider-state">@(Stored is null ? PanelText.ProviderNotConfigured : PanelText.ProviderConfigured)</span>
+        <span
+            class="provider-state">@(Stored is null ? PanelText.ProviderNotConfigured : PanelText.ProviderConfigured)</span>
     </summary>
     <div class="provider-body" role="group" aria-label="@Name">
         <ol class="steps">
@@ -13,24 +14,28 @@
                 <li>@step</li>
             }
         </ol>
-        <CopyLine Label="@PanelText.ReturnAddress" Value="@CallbackUrl" CopyLabel="@string.Format(PanelText.CopyReturnAddress, Name)" />
+        <CopyLine Label="@PanelText.ReturnAddress" Value="@CallbackUrl"
+                  CopyLabel="@string.Format(PanelText.CopyReturnAddress, Name)"/>
         @if (Info.ConsoleUrl.Length > 0)
         {
-            <a class="link" href="@Info.ConsoleUrl" target="_blank" rel="noopener noreferrer">@string.Format(PanelText.OpenConsole, Info.Title)</a>
+            <a class="link" href="@Info.ConsoleUrl" target="_blank"
+               rel="noopener noreferrer">@string.Format(PanelText.OpenConsole, Info.Title)</a>
         }
-        <MudTextField @bind-Value="_clientId" Label="@PanelText.ProviderClientId" Immediate="true" />
-        <MudTextField @bind-Value="_secret" Label="@PanelText.ProviderSecret" Immediate="true" InputType="InputType.Password"
-                      HelperText="@(Stored is null ? null : PanelText.SecretKept)" autocomplete="off" />
+        <MudTextField @bind-Value="_clientId" Label="@PanelText.ProviderClientId" Immediate="true"/>
+        <MudTextField @bind-Value="_secret" Label="@PanelText.ProviderSecret" Immediate="true"
+                      InputType="InputType.Password"
+                      HelperText="@(Stored is null ? null : PanelText.SecretKept)" autocomplete="off"/>
         @if (Info.NeedsIssuer)
         {
-            <MudTextField @bind-Value="_issuer" Label="@PanelText.ProviderIssuer" Immediate="true" />
-            <MudTextField @bind-Value="_title" Label="@PanelText.ProviderTitle" Immediate="true" />
+            <MudTextField @bind-Value="_issuer" Label="@PanelText.ProviderIssuer" Immediate="true"/>
+            <MudTextField @bind-Value="_title" Label="@PanelText.ProviderTitle" Immediate="true"/>
         }
         <div class="provider-acts">
             <button type="button" class="btn-k pigment" @onclick="SaveAsync">@PanelText.Save</button>
             @if (Stored is not null)
             {
-                <MudSwitch T="bool" Value="Stored.Enabled" Label="@PanelText.ProviderEnabled" ValueChanged="SwitchAsync" />
+                <MudSwitch T="bool" Value="Stored.Enabled" Label="@PanelText.ProviderEnabled"
+                           ValueChanged="SwitchAsync"/>
                 <button type="button" class="link danger" @onclick="RemoveAsync">@PanelText.Delete</button>
             }
         </div>
@@ -43,17 +48,13 @@
     private string _issuer = "";
     private string _title = "";
 
-    [Parameter, EditorRequired]
-    public ProviderInfo Info { get; set; } = default!;
+    [Parameter][EditorRequired] public ProviderInfo Info { get; set; } = default!;
 
-    [Parameter]
-    public SignInProvider? Stored { get; set; }
+    [Parameter] public SignInProvider? Stored { get; set; }
 
-    [Parameter, EditorRequired]
-    public string PublicUrl { get; set; } = "";
+    [Parameter][EditorRequired] public string PublicUrl { get; set; } = "";
 
-    [Parameter]
-    public EventCallback OnChanged { get; set; }
+    [Parameter] public EventCallback OnChanged { get; set; }
 
     private string Name => Stored?.Title ?? Info.Title;
 
@@ -87,7 +88,7 @@
 
     private async Task RemoveAsync()
     {
-        if (!await Dialogs.ConfirmAsync(string.Format(PanelText.ProviderRemoveQuestion, Name), PanelText.ProviderRemoveWarning, PanelText.Delete, danger: true))
+        if (!await Dialogs.ConfirmAsync(string.Format(PanelText.ProviderRemoveQuestion, Name), PanelText.ProviderRemoveWarning, PanelText.Delete, true))
             return;
 
         await Actions.ApplyAsync(
@@ -95,4 +96,5 @@
             string.Format(PanelText.ProviderRemoved, Name));
         await OnChanged.InvokeAsync();
     }
+
 }

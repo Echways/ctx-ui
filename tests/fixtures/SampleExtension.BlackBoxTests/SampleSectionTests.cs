@@ -6,8 +6,10 @@ namespace SampleExtension.BlackBoxTests;
 
 public class SampleSectionTests
 {
-    private static TestPanelOptions Options(IReadOnlyDictionary<string, string>? settings = null) =>
-        new(Path.Combine(AppContext.BaseDirectory, "extensions"), settings);
+    private static TestPanelOptions Options(IReadOnlyDictionary<string, string>? settings = null)
+    {
+        return new TestPanelOptions(Path.Combine(AppContext.BaseDirectory, "extensions"), settings);
+    }
 
     [Fact]
     public async Task A_section_opens_in_a_real_server_and_works()
@@ -18,11 +20,12 @@ public class SampleSectionTests
         var page = await browser.NewPageAsync();
 
         await panel.SignInAsync(page);
-        await page.GetByRole(AriaRole.Navigation).GetByRole(AriaRole.Link, new() { Name = "Образец" }).ClickAsync();
+        await page.GetByRole(AriaRole.Navigation)
+            .GetByRole(AriaRole.Link, new LocatorGetByRoleOptions { Name = "Образец" }).ClickAsync();
 
         await Expect(page.GetByTestId("sample-note")).ToHaveTextAsync("Раздел-образец");
         await Expect(page.GetByTestId("sample-context")).ToHaveTextAsync("sample");
-        await page.GetByRole(AriaRole.Button, new() { Name = "Нажать" }).ClickAsync();
+        await page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Нажать" }).ClickAsync();
         await Expect(page.GetByTestId("sample-clicks")).ToHaveTextAsync("1");
         Assert.DoesNotContain("fail:", panel.Log, StringComparison.Ordinal);
     }
@@ -38,7 +41,8 @@ public class SampleSectionTests
     [Fact]
     public async Task Settings_reach_the_extension()
     {
-        await using var panel = await TestPanel.StartAsync(Options(new Dictionary<string, string> { ["CtxUi:Extensions:sample:Reshape"] = "true" }));
+        await using var panel = await TestPanel.StartAsync(Options(new Dictionary<string, string>
+        { ["CtxUi:Extensions:sample:Reshape"] = "true" }));
         using var playwright = await Playwright.CreateAsync();
         await using var browser = await playwright.Chromium.LaunchAsync();
         var page = await browser.NewPageAsync();

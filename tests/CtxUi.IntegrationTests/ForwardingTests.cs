@@ -6,15 +6,18 @@ namespace CtxUi.IntegrationTests;
 
 public class ForwardingTests
 {
-    private static KeyValuePair<string, string>[] Pairs(params (string Key, string Value)[] items) =>
-        items.Select(item => KeyValuePair.Create(item.Key, item.Value)).ToArray();
+    private static KeyValuePair<string, string>[] Pairs(params (string Key, string Value)[] items)
+    {
+        return items.Select(item => KeyValuePair.Create(item.Key, item.Value)).ToArray();
+    }
 
     [Fact]
     public async Task Client_token_is_replaced_by_the_inbound_headers()
     {
         await using var upstream = await FakeUpstream.StartAsync();
         await using var gateway = await GatewayHost.StartAsync();
-        await gateway.AddInboundAsync("echo", upstream.McpUrl, Pairs(("Authorization", "Bearer upstream-key"), ("X-Api-Key", "k1")));
+        await gateway.AddInboundAsync("echo", upstream.McpUrl,
+            Pairs(("Authorization", "Bearer upstream-key"), ("X-Api-Key", "k1")));
         var issued = await gateway.AddClientAsync("Иванов", ["echo"]);
 
         using var response = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/echo", issued.Token));
@@ -66,7 +69,8 @@ public class ForwardingTests
 
         using var response = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/echo", issued.Token));
 
-        Assert.DoesNotContain(Assert.Single(upstream.Requests).Headers.Keys, name => name.StartsWith("X-Mcp-", StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(Assert.Single(upstream.Requests).Headers.Keys,
+            name => name.StartsWith("X-Mcp-", StringComparison.OrdinalIgnoreCase));
     }
 
     [Theory]
@@ -101,7 +105,8 @@ public class ForwardingTests
 
         using var request = GatewayHost.Post("/mcp/echo", issued.Token);
         request.Headers.TryAddWithoutValidation(
-            "Cookie", "ctx-ui=s; ctx-uiC1=p; .AspNetCore.Culture=c=ru|uic=ru; lb=7; .AspNetCore.Antiforgery.a=x; theme=dark");
+            "Cookie",
+            "ctx-ui=s; ctx-uiC1=p; .AspNetCore.Culture=c=ru|uic=ru; lb=7; .AspNetCore.Antiforgery.a=x; theme=dark");
         using var response = await gateway.Http.SendAsync(request);
 
         Assert.Equal("lb=7; theme=dark", Assert.Single(upstream.Requests).Headers["Cookie"]);

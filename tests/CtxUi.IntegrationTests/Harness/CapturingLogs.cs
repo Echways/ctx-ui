@@ -7,7 +7,10 @@ public sealed class CapturingLogs : ILoggerProvider
 {
     public ConcurrentQueue<string> Lines { get; } = new();
 
-    public ILogger CreateLogger(string categoryName) => new Sink(categoryName, Lines);
+    public ILogger CreateLogger(string categoryName)
+    {
+        return new Sink(categoryName, Lines);
+    }
 
     public void Dispose()
     {
@@ -16,16 +19,24 @@ public sealed class CapturingLogs : ILoggerProvider
     private sealed class Sink(string category, ConcurrentQueue<string> lines) : ILogger
     {
         public IDisposable? BeginScope<TState>(TState state)
-            where TState : notnull => null;
+            where TState : notnull
+        {
+            return null;
+        }
 
-        public bool IsEnabled(LogLevel logLevel) => true;
+        public bool IsEnabled(LogLevel logLevel)
+        {
+            return true;
+        }
 
         public void Log<TState>(
             LogLevel logLevel,
             EventId eventId,
             TState state,
             Exception? exception,
-            Func<TState, Exception?, string> formatter) =>
+            Func<TState, Exception?, string> formatter)
+        {
             lines.Enqueue($"{logLevel} {category}: {formatter(state, exception)} {exception}");
+        }
     }
 }

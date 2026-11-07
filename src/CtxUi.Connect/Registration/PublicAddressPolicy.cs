@@ -23,17 +23,19 @@ public sealed class PublicAddressPolicy : IMetadataAddressPolicy
         IPNetwork.Parse("64:ff9b:1::/48"),
         IPNetwork.Parse("fc00::/7"),
         IPNetwork.Parse("fe80::/10"),
-        IPNetwork.Parse("ff00::/8"),
+        IPNetwork.Parse("ff00::/8")
     ];
 
-    public bool AllowsUri(Uri uri) =>
-        uri.IsAbsoluteUri
-        && uri.Scheme == Uri.UriSchemeHttps
-        && uri.Port == HttpsPort
-        && uri.UserInfo.Length == 0
-        && uri.AbsolutePath != "/"
-        && (uri.HostNameType != UriHostNameType.IPv4 && uri.HostNameType != UriHostNameType.IPv6
-            || AllowsAddress(IPAddress.Parse(uri.IdnHost)));
+    public bool AllowsUri(Uri uri)
+    {
+        return uri.IsAbsoluteUri
+               && uri.Scheme == Uri.UriSchemeHttps
+               && uri.Port == HttpsPort
+               && uri.UserInfo.Length == 0
+               && uri.AbsolutePath != "/"
+               && ((uri.HostNameType != UriHostNameType.IPv4 && uri.HostNameType != UriHostNameType.IPv6)
+                   || AllowsAddress(IPAddress.Parse(uri.IdnHost)));
+    }
 
     public bool AllowsAddress(IPAddress address)
     {
@@ -41,6 +43,6 @@ public sealed class PublicAddressPolicy : IMetadataAddressPolicy
             address = address.MapToIPv4();
 
         return address.AddressFamily is AddressFamily.InterNetwork or AddressFamily.InterNetworkV6
-            && !Blocked.Any(network => network.Contains(address));
+               && !Blocked.Any(network => network.Contains(address));
     }
 }

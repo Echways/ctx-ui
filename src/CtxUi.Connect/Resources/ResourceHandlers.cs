@@ -28,15 +28,33 @@ public sealed class ResourceHandlers(ISnapshotSource snapshot, IOptions<ConnectO
         return ValueTask.CompletedTask;
     }
 
-    public string? SlugOf(OpenIddictRequest request) => request.GetResources() is [var resource] ? SlugOf(resource) : null;
+    public string? SlugOf(OpenIddictRequest request)
+    {
+        return request.GetResources() is [var resource] ? SlugOf(resource) : null;
+    }
 
-    public string? ServedSlugOf(OpenIddictRequest request) => Served(SlugOf(request));
+    public string? ServedSlugOf(OpenIddictRequest request)
+    {
+        return Served(SlugOf(request));
+    }
 
-    public string? ServedSlugOf(string? resource) => Served(SlugOf(resource));
+    public string? ServedSlugOf(string? resource)
+    {
+        return Served(SlugOf(resource));
+    }
 
-    private string? SlugOf(string? resource) => OAuthResource.TrySlug(options.Value.PublicUrl, resource, out var slug) ? slug : null;
+    private string? SlugOf(string? resource)
+    {
+        return OAuthResource.TrySlug(options.Value.PublicUrl, resource, out var slug) ? slug : null;
+    }
 
-    private string? Served(string? slug) => slug is not null && snapshot.Current.Route(slug) is not null ? slug : null;
+    private string? Served(string? slug)
+    {
+        return slug is not null && snapshot.Current.Route(slug) is not null ? slug : null;
+    }
 
-    public string Resource(string slug) => OAuthResource.For(options.Value.PublicUrl, slug);
+    public string Resource(string slug)
+    {
+        return OAuthResource.For(options.Value.PublicUrl, slug);
+    }
 }

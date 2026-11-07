@@ -10,8 +10,8 @@ public class PanelJournalRefreshTests
     public async Task Open_journal_rereads_itself()
     {
         await using var upstream = await FakeUpstream.StartAsync();
-        await using var gateway = await GatewayHost.StartAsync(
-            builder => builder.Configuration["CtxUi:AutoRefreshInterval"] = "00:00:00.300");
+        await using var gateway = await GatewayHost.StartAsync(builder =>
+            builder.Configuration["CtxUi:AutoRefreshInterval"] = "00:00:00.300");
         await gateway.AddInboundAsync("echo", upstream.McpUrl);
         var issued = await gateway.AddClientAsync("Иванов", ["echo"]);
         await using var session = await PanelSession.SignInAsync(gateway);
@@ -37,7 +37,7 @@ public class PanelJournalRefreshTests
         await CallAsync(gateway, "echo", issued.Token, ToolsList);
         await JournalHasAsync(gateway, 1);
 
-        await page.GetByRole(AriaRole.Button, new() { Name = "Обновить" }).ClickAsync();
+        await page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Обновить" }).ClickAsync();
 
         await Expect(Rows(page)).ToHaveCountAsync(3);
     }

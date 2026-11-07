@@ -6,8 +6,10 @@
     {
         <div class="builder-conflict" role="alert" data-testid="prompt-conflict">
             <p class="warn-t">@BuilderText.DraftChangedElsewhere</p>
-            <button type="button" class="link" data-testid="prompt-load-new-version" @onclick="() => OnReload.InvokeAsync()">@BuilderText.LoadNewVersion</button>
-            <button type="button" class="link" data-testid="prompt-keep-mine" @onclick="RetryAsync">@(_pending == PendingAction.Save ? BuilderText.KeepMine : BuilderText.RetryOnNewVersion)</button>
+            <button type="button" class="link" data-testid="prompt-load-new-version"
+                    @onclick="() => OnReload.InvokeAsync()">@BuilderText.LoadNewVersion</button>
+            <button type="button" class="link" data-testid="prompt-keep-mine"
+                    @onclick="RetryAsync">@(_pending == PendingAction.Save ? BuilderText.KeepMine : BuilderText.RetryOnNewVersion)</button>
         </div>
     }
     @if (_error is not null)
@@ -15,45 +17,47 @@
         <p class="bad-t" role="alert" data-testid="prompt-error">@_error</p>
     }
     <Form Model="_draft" OnSubmit="SaveAsync" Submit="@BuilderText.SavePrompt" Done="@BuilderText.PromptSaved">
-        <Field For="() => _draft.Name" Label="@BuilderText.PromptName" />
-        <Field For="() => _draft.Description" Label="@BuilderText.PromptDescription" Lines="2" />
-        <Field For="() => _draft.Template" Label="@BuilderText.PromptTemplate" Hint="@BuilderText.PromptTemplateHint" Lines="10" />
-        <p class="note" data-testid="prompt-arguments">@(_draft.Arguments.Count == 0 ? BuilderText.PromptArgumentsNone : string.Format(BuilderText.PromptArguments, string.Join(", ", _draft.Arguments)))</p>
+        <Field For="() => _draft.Name" Label="@BuilderText.PromptName"/>
+        <Field For="() => _draft.Description" Label="@BuilderText.PromptDescription" Lines="2"/>
+        <Field For="() => _draft.Template" Label="@BuilderText.PromptTemplate" Hint="@BuilderText.PromptTemplateHint"
+               Lines="10"/>
+        <p class="note"
+           data-testid="prompt-arguments">@(_draft.Arguments.Count == 0 ? BuilderText.PromptArgumentsNone : string.Format(BuilderText.PromptArguments, string.Join(", ", _draft.Arguments)))</p>
     </Form>
     @if (Prompt is not null)
     {
         <div class="builder-actions">
-            <Button Kind="ButtonKind.Danger" OnClick="DeleteAsync" Refresh="false" Done="@BuilderText.PromptDeleted" data-testid="delete-prompt"
-                    Confirm="@(new Confirm(string.Format(BuilderText.DeletePromptQuestion, Prompt.Name), BuilderText.DeletePromptWarning, BuilderText.DeletePrompt, Danger: true))">@BuilderText.DeletePrompt</Button>
+            <Button Kind="ButtonKind.Danger" OnClick="DeleteAsync" Refresh="false" Done="@BuilderText.PromptDeleted"
+                    data-testid="delete-prompt"
+                    Confirm="@(new Confirm(string.Format(BuilderText.DeletePromptQuestion, Prompt.Name), BuilderText.DeletePromptWarning, BuilderText.DeletePrompt, true))">@BuilderText.DeletePrompt</Button>
         </div>
     }
 </div>
 
 @code {
-    private enum PendingAction { Save, Delete }
+
+    private enum PendingAction
+    {
+        Save,
+        Delete
+    }
 
     private PromptFormDraft _draft = new();
     private PendingAction _pending;
     private string? _error;
     private bool _conflict;
 
-    [Parameter, EditorRequired]
-    public Guid ServerId { get; set; }
+    [Parameter][EditorRequired] public Guid ServerId { get; set; }
 
-    [Parameter]
-    public BuilderPrompt? Prompt { get; set; }
+    [Parameter] public BuilderPrompt? Prompt { get; set; }
 
-    [Parameter, EditorRequired]
-    public long Revision { get; set; }
+    [Parameter][EditorRequired] public long Revision { get; set; }
 
-    [Parameter]
-    public EventCallback<string> OnSaved { get; set; }
+    [Parameter] public EventCallback<string> OnSaved { get; set; }
 
-    [Parameter]
-    public EventCallback OnDeleted { get; set; }
+    [Parameter] public EventCallback OnDeleted { get; set; }
 
-    [Parameter]
-    public EventCallback OnReload { get; set; }
+    [Parameter] public EventCallback OnReload { get; set; }
 
     private string _baseline = string.Empty;
 
@@ -123,4 +127,5 @@
             _error = failure.Message;
         }
     }
+
 }

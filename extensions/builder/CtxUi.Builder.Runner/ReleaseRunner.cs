@@ -28,17 +28,13 @@ public sealed class ReleaseRunner(
         string hash;
         lock (server.Sync)
         {
-            spec = server.Spec ?? throw RunnerRequestException.Conflict($"The specification of server {id} is not known. Send it with PUT before a start.");
+            spec = server.Spec ?? throw RunnerRequestException.SpecMissing(id);
             release = server.RequireRelease(number);
             if (!release.Runnable || release.EnvironmentHash is null)
-            {
                 throw RunnerRequestException.Conflict($"Release {number} has not been built.");
-            }
 
             if (server.StartingRelease is { } starting)
-            {
                 throw RunnerRequestException.Conflict($"Release {starting} of this server is still starting.");
-            }
 
             hash = release.EnvironmentHash;
             server.StartingRelease = number;
@@ -68,7 +64,8 @@ public sealed class ReleaseRunner(
         }
     }
 
-    private async Task<ReleaseStatus> ActivateHoldingOperationsAsync(ServerRecord server, ReleaseRecord release, int number, CancellationToken ct)
+    private async Task<ReleaseStatus> ActivateHoldingOperationsAsync(ServerRecord server, ReleaseRecord release,
+        int number, CancellationToken ct)
     {
         var id = server.Id;
         string candidate;
@@ -79,9 +76,7 @@ public sealed class ReleaseRunner(
             if (!server.Candidates.TryGetValue(number, out var known))
             {
                 if (server.ActiveRelease == number)
-                {
                     return release.ToStatus();
-                }
 
                 throw RunnerRequestException.Conflict($"Release {number} is not a healthy candidate.");
             }
@@ -92,13 +87,14 @@ public sealed class ReleaseRunner(
         }
 
         if (!await probe.IsHealthyAsync(candidate, ct))
-        {
-            throw RunnerRequestException.Conflict($"Release {number} did not answer its health check. The route stays where it is.");
-        }
+            throw RunnerRequestException.Conflict(
+                $"Release {number} did not answer its health check. The route stays where it is.");
 
         var containers = await engine.ListContainersAsync(id, ct);
-        var secretHash = containers.FirstOrDefault(container => container.Name == candidate)?.Labels[BuilderLabels.RouteSecretHash]
-            ?? throw RunnerRequestException.Conflict($"The container of release {number} no longer exists.");
+        var secretHash = containers.FirstOrDefault(container => container.Name == candidate)
+                             ?.Labels[BuilderLabels.RouteSecretHash]
+                         ?? throw RunnerRequestException.Conflict(
+                             $"The container of release {number} no longer exists.");
 
         List<string> retiring;
         lock (server.Sync)
@@ -107,9 +103,7 @@ public sealed class ReleaseRunner(
         }
 
         if (previous is not null)
-        {
             retiring.Add(previous);
-        }
 
         await RecordActivationAsync(id, number, candidate, retiring, ct);
 
@@ -122,9 +116,7 @@ public sealed class ReleaseRunner(
             server.ActiveContainer = candidate;
             release.MarkState(ReleaseState.Active);
             if (previousRelease is { } old && old != number && server.Releases.TryGetValue(old, out var retired))
-            {
                 retired.MarkState(ReleaseState.Retired);
-            }
 
             newlyRetiring = retiring.Where(name => !server.Retiring.Contains(name)).ToList();
             RetireUnmarked(server, containers, number);
@@ -132,9 +124,7 @@ public sealed class ReleaseRunner(
         }
 
         foreach (var container in newlyRetiring)
-        {
             ScheduleRetirement(server, container);
-        }
 
         return release.ToStatus();
     }
@@ -150,10 +140,9 @@ public sealed class ReleaseRunner(
                 routes.RemoveCandidate(server.Id, number);
             }
 
-            if (number != activated && !server.Candidates.ContainsKey(number) && server.Releases.TryGetValue(number, out var release))
-            {
+            if (number != activated && !server.Candidates.ContainsKey(number) &&
+                server.Releases.TryGetValue(number, out var release))
                 release.MarkState(ReleaseState.Retired);
-            }
         }
 
         server.Unmarked.Clear();
@@ -178,11 +167,15 @@ public sealed class ReleaseRunner(
         }
     }
 
-    private static RunnerRequestException GoneFrom(ServerRecord server) =>
-        RunnerRequestException.NotFound($"Server {server.Id} was deleted or Runner is stopping.");
+    private static RunnerRequestException GoneFrom(ServerRecord server)
+    {
+        return RunnerRequestException.NotFound($"Server {server.Id} was deleted or Runner is stopping.");
+    }
 
-    public void ScheduleRetirement(ServerRecord server, string container) =>
+    public void ScheduleRetirement(ServerRecord server, string container)
+    {
         server.Track(RetireAfterDrainAsync(server, container));
+    }
 
     public async Task StopAsync(Guid id, CancellationToken ct)
     {
@@ -239,62 +232,53 @@ public sealed class ReleaseRunner(
     {
         routes.RemoveServer(id);
         foreach (var container in await engine.ListContainersAsync(id, ct))
-        {
             await engine.RemoveContainerAsync(id, container.Name, ct);
-        }
 
         foreach (var network in await engine.ListNetworksAsync(id, ct))
-        {
             await networks.RemoveAsync(id, network, ct);
-        }
 
         foreach (var volume in await engine.ListVolumesAsync(id, ct))
-        {
             await engine.RemoveVolumeAsync(id, volume.Name, ct);
-        }
     }
 
     public async Task<string> RequireLogContainerAsync(Guid id, CancellationToken ct)
     {
         if (registry.Find(id) is { } server)
-        {
             lock (server.Sync)
             {
                 if (server.ActiveContainer is { } active)
-                {
                     return active;
-                }
 
                 if (server.Candidates.Count > 0)
-                {
                     return server.Candidates[server.Candidates.Keys.Max()];
-                }
             }
-        }
 
         var containers = await engine.ListContainersAsync(id, ct);
         return containers
-            .Where(container => !container.Labels.ContainsKey(BuilderLabels.Role))
-            .OrderByDescending(container => container.Running)
-            .Select(container => container.Name)
-            .FirstOrDefault()
-            ?? throw RunnerRequestException.NotFound($"Server {id} has no container to read logs from.");
+                   .Where(container => !container.Labels.ContainsKey(BuilderLabels.Role))
+                   .OrderByDescending(container => container.Running)
+                   .Select(container => container.Name)
+                   .FirstOrDefault()
+               ?? throw RunnerRequestException.NotFound($"Server {id} has no container to read logs from.");
     }
 
     private static string RequireActive(ServerRecord server)
     {
         lock (server.Sync)
         {
-            return server.ActiveContainer ?? throw RunnerRequestException.Conflict($"Server {server.Id} has no active release.");
+            return server.ActiveContainer ??
+                   throw RunnerRequestException.Conflict($"Server {server.Id} has no active release.");
         }
     }
 
-    private async Task RecordActivationAsync(Guid id, int number, string candidate, IReadOnlyCollection<string> retiring, CancellationToken ct)
+    private async Task RecordActivationAsync(Guid id, int number, string candidate,
+        IReadOnlyCollection<string> retiring, CancellationToken ct)
     {
         var markers = (await engine.ListVolumesAsync(id, ct)).Where(volume => volume.IsActivationMarker).ToList();
         var sequence = markers.Count == 0
             ? 1
-            : markers.Max(marker => int.Parse(marker.Labels[BuilderLabels.Activation], CultureInfo.InvariantCulture)) + 1;
+            : markers.Max(marker => int.Parse(marker.Labels[BuilderLabels.Activation], CultureInfo.InvariantCulture)) +
+              1;
         var marker = ContainerTemplate.ActivationMarker(id, sequence, number, candidate, retiring);
 
         ct.ThrowIfCancellationRequested();
@@ -309,9 +293,7 @@ public sealed class ReleaseRunner(
         }
 
         foreach (var old in markers)
-        {
             await RemoveMarkerBestEffortAsync(id, old.Name);
-        }
     }
 
     private async Task RemoveMarkerBestEffortAsync(Guid id, string marker)
@@ -322,11 +304,14 @@ public sealed class ReleaseRunner(
         }
         catch (Exception failure)
         {
-            logger.LogError("Removing the activation marker {Marker} failed, the newest marker decides after a restart: {Reason}", marker, failure.Message);
+            logger.LogError(
+                "Removing the activation marker {Marker} failed, the newest marker decides after a restart: {Reason}",
+                marker, failure.Message);
         }
     }
 
-    private async Task RunCandidateAsync(ServerRecord server, ReleaseRecord release, string hash, ServerSpec spec, IReadOnlyDictionary<string, string> environment)
+    private async Task RunCandidateAsync(ServerRecord server, ReleaseRecord release, string hash, ServerSpec spec,
+        IReadOnlyDictionary<string, string> environment)
     {
         await Task.Yield();
         var id = server.Id;
@@ -360,19 +345,20 @@ public sealed class ReleaseRunner(
         {
             logger.LogWarning(failure, "Start of release {Release} of server {Server} failed", release.Number, id);
             if (!ct.IsCancellationRequested && created is not null)
-            {
                 await RemoveFailedCandidateAsync(id, release, created);
-            }
 
             lock (server.Sync)
             {
                 server.StartingRelease = null;
-                release.MarkFailed(failure is OperationCanceledException ? "The start was cancelled." : failure.Message);
+                release.MarkFailed(failure is OperationCanceledException
+                    ? "The start was cancelled."
+                    : failure.Message);
             }
         }
     }
 
-    private async Task<string> CreateCandidateAsync(ServerRecord server, int number, string hash, ServerSpec spec, IReadOnlyDictionary<string, string> environment, CancellationToken ct)
+    private async Task<string> CreateCandidateAsync(ServerRecord server, int number, string hash, ServerSpec spec,
+        IReadOnlyDictionary<string, string> environment, CancellationToken ct)
     {
         var id = server.Id;
         await server.Operations.WaitAsync(ct);
@@ -385,23 +371,18 @@ public sealed class ReleaseRunner(
             lock (server.Sync)
             {
                 if (server.ActiveContainer is { } active)
-                {
                     kept.Add(active);
-                }
 
                 kept.UnionWith(server.Retiring);
                 kept.UnionWith(server.Unmarked);
             }
 
-            foreach (var container in containers.Where(container => IsServerContainerOf(container, number) && !kept.Contains(container.Name)))
-            {
+            foreach (var container in containers.Where(container =>
+                         IsServerContainerOf(container, number) && !kept.Contains(container.Name)))
                 await engine.RemoveContainerAsync(id, container.Name, ct);
-            }
 
             if (kept.Contains(parameters.Name))
-            {
                 parameters.Name = $"{parameters.Name}-{Guid.NewGuid():N}"[..(parameters.Name.Length + 9)];
-            }
 
             await engine.CreateContainerAsync(id, parameters, ct);
             await engine.StartContainerAsync(id, parameters.Name, ct);
@@ -420,9 +401,7 @@ public sealed class ReleaseRunner(
         {
             candidates = server.Candidates.Where(candidate => !server.Unmarked.Contains(candidate.Value)).ToList();
             foreach (var (number, _) in candidates)
-            {
                 server.Candidates.Remove(number);
-            }
         }
 
         foreach (var (number, container) in candidates)
@@ -432,16 +411,17 @@ public sealed class ReleaseRunner(
             lock (server.Sync)
             {
                 if (server.ActiveRelease != number && server.Releases.TryGetValue(number, out var release))
-                {
                     release.MarkRunnable(ReleaseState.Built);
-                }
             }
         }
     }
 
-    private static bool IsServerContainerOf(BuilderContainer container, int number) =>
-        !container.Labels.ContainsKey(BuilderLabels.Role)
-        && container.Labels.GetValueOrDefault(BuilderLabels.Release) == number.ToString(CultureInfo.InvariantCulture);
+    private static bool IsServerContainerOf(BuilderContainer container, int number)
+    {
+        return !container.Labels.ContainsKey(BuilderLabels.Role)
+               && container.Labels.GetValueOrDefault(BuilderLabels.Release) ==
+               number.ToString(CultureInfo.InvariantCulture);
+    }
 
     private async Task WaitUntilHealthyAsync(string container, CancellationToken ct)
     {
@@ -450,13 +430,12 @@ public sealed class ReleaseRunner(
         try
         {
             while (!await probe.IsHealthyAsync(container, linked.Token))
-            {
                 await Task.Delay(HealthInterval, time, linked.Token);
-            }
         }
         catch (OperationCanceledException) when (timeout.IsCancellationRequested && !ct.IsCancellationRequested)
         {
-            throw new TimeoutException($"The server did not answer /healthz within {HealthTimeout.TotalSeconds:0} seconds.");
+            throw new TimeoutException(
+                $"The server did not answer /healthz within {HealthTimeout.TotalSeconds:0} seconds.");
         }
     }
 
@@ -464,10 +443,8 @@ public sealed class ReleaseRunner(
     {
         try
         {
-            await foreach (var chunk in engine.ReadLogsAsync(id, container, FailureLogLines, false, CancellationToken.None))
-            {
-                release.AppendLog(chunk);
-            }
+            await foreach (var chunk in engine.ReadLogsAsync(id, container, FailureLogLines, false,
+                               CancellationToken.None)) release.AppendLog(chunk);
         }
         catch (Exception failure)
         {
@@ -521,9 +498,7 @@ public sealed class ReleaseRunner(
         }
 
         if (retiring is null)
-        {
             return;
-        }
 
         var release = retiring.Labels[BuilderLabels.Release];
         var replaced = containers.Any(other =>
@@ -531,13 +506,9 @@ public sealed class ReleaseRunner(
             && !other.Labels.ContainsKey(BuilderLabels.Role)
             && other.Labels.GetValueOrDefault(BuilderLabels.Release) == release);
         if (replaced)
-        {
             await engine.RemoveContainerAsync(server.Id, container, ct);
-        }
         else
-        {
             await engine.StopContainerAsync(server.Id, container, ct);
-        }
     }
 
     private async Task RemoveUnusedNetworksAsync(ServerRecord server, CancellationToken ct)
@@ -548,33 +519,25 @@ public sealed class ReleaseRunner(
         lock (server.Sync)
         {
             if (server.BuildingRelease is not null || server.StartingRelease is not null)
-            {
                 return;
-            }
 
             active = server.ActiveContainer;
             if (server.Spec is { } spec)
-            {
                 used.Add(spec.Network.ToString());
-            }
         }
 
-        foreach (var container in containers.Where(container => !container.Labels.ContainsKey(BuilderLabels.Role) && (container.Running || container.Name == active)))
-        {
+        foreach (var container in containers.Where(container =>
+                     !container.Labels.ContainsKey(BuilderLabels.Role) &&
+                     (container.Running || container.Name == active)))
             if (container.Labels.TryGetValue(BuilderLabels.Network, out var network))
-            {
                 used.Add(network);
-            }
-        }
 
         var existing = await engine.ListNetworksAsync(server.Id, ct);
         foreach (var access in Enum.GetValues<NetworkAccess>().Where(access => !used.Contains(access.ToString())))
         {
             var name = ContainerTemplate.NetworkName(server.Id, access);
             if (existing.Contains(name))
-            {
                 await networks.RemoveAsync(server.Id, name, ct);
-            }
         }
     }
 
@@ -590,7 +553,11 @@ public sealed class ReleaseRunner(
 
         var numbers = volumes
             .Where(volume => volume.StartsWith(codePrefix, StringComparison.Ordinal))
-            .Select(volume => int.TryParse(volume[codePrefix.Length..], NumberStyles.None, CultureInfo.InvariantCulture, out var number) ? number : (int?)null)
+            .Select(volume =>
+                int.TryParse(volume[codePrefix.Length..], NumberStyles.None, CultureInfo.InvariantCulture,
+                    out var number)
+                    ? number
+                    : (int?)null)
             .OfType<int>()
             .ToList();
 
@@ -599,32 +566,22 @@ public sealed class ReleaseRunner(
         {
             kept.UnionWith(server.Candidates.Keys);
             if (server.ActiveRelease is { } active)
-            {
                 kept.Add(active);
-            }
 
             if (server.BuildingRelease is { } building)
-            {
                 kept.Add(building);
-            }
 
             if (server.StartingRelease is { } starting)
-            {
                 kept.Add(starting);
-            }
         }
 
         foreach (var container in containers.Where(container => container.Running))
-        {
             kept.Add(int.Parse(container.Labels[BuilderLabels.Release], CultureInfo.InvariantCulture));
-        }
 
         foreach (var number in numbers.Where(number => !kept.Contains(number)))
         {
             foreach (var container in containers.Where(container => IsServerContainerOf(container, number)))
-            {
                 await engine.RemoveContainerAsync(id, container.Name, ct);
-            }
 
             await engine.RemoveVolumeAsync(id, ContainerTemplate.CodeVolume(id, number), ct);
             lock (server.Sync)
@@ -636,15 +593,14 @@ public sealed class ReleaseRunner(
         var keptEnvironments = new HashSet<string>(StringComparer.Ordinal);
         lock (server.Sync)
         {
-            foreach (var release in server.Releases.Values.Where(release => kept.Contains(release.Number) && release.EnvironmentHash is not null))
-            {
+            foreach (var release in server.Releases.Values.Where(release =>
+                         kept.Contains(release.Number) && release.EnvironmentHash is not null))
                 keptEnvironments.Add(ContainerTemplate.EnvironmentVolume(id, release.EnvironmentHash!));
-            }
         }
 
-        foreach (var volume in volumes.Where(volume => volume.StartsWith(environmentPrefix, StringComparison.Ordinal) && !keptEnvironments.Contains(volume)))
-        {
+        foreach (var volume in volumes.Where(volume =>
+                     volume.StartsWith(environmentPrefix, StringComparison.Ordinal) &&
+                     !keptEnvironments.Contains(volume)))
             await engine.RemoveVolumeAsync(id, volume, ct);
-        }
     }
 }

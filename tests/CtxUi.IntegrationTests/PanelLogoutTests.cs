@@ -13,14 +13,16 @@ public class PanelLogoutTests
         await using var session = await PanelSession.SignInAsync(gateway);
         var page = session.Page;
 
-        await page.GetByRole(AriaRole.Banner).GetByRole(AriaRole.Button, new() { Name = "Выйти" }).ClickAsync();
-        await page.GetByRole(AriaRole.Link, new() { Name = "Остаться" }).ClickAsync();
+        await page.GetByRole(AriaRole.Banner).GetByRole(AriaRole.Button, new LocatorGetByRoleOptions { Name = "Выйти" })
+            .ClickAsync();
+        await page.GetByRole(AriaRole.Link, new PageGetByRoleOptions { Name = "Остаться" }).ClickAsync();
 
-        await Expect(page.GetByRole(AriaRole.Heading, new() { Name = "Обзор" })).ToBeVisibleAsync();
+        await Expect(page.GetByRole(AriaRole.Heading, new PageGetByRoleOptions { Name = "Обзор" })).ToBeVisibleAsync();
 
-        await page.GetByRole(AriaRole.Banner).GetByRole(AriaRole.Button, new() { Name = "Выйти" }).ClickAsync();
+        await page.GetByRole(AriaRole.Banner).GetByRole(AriaRole.Button, new LocatorGetByRoleOptions { Name = "Выйти" })
+            .ClickAsync();
         await Expect(page.GetByText("Выйти из панели?")).ToBeVisibleAsync();
-        await page.GetByRole(AriaRole.Button, new() { Name = "Выйти" }).ClickAsync();
+        await page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Выйти" }).ClickAsync();
 
         await Expect(page.GetByLabel("Пароль")).ToBeVisibleAsync();
         await page.GotoAsync("");

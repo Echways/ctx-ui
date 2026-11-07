@@ -29,7 +29,6 @@ public sealed record RpcEnvelope(IReadOnlyList<RpcCall> Calls, bool IsBatch)
             var calls = new List<RpcCall>();
             var batch = reader.TokenType == JsonTokenType.StartArray;
             if (batch)
-            {
                 while (reader.Read() && reader.TokenType != JsonTokenType.EndArray)
                 {
                     if (calls.Count == MaxBatch || ReadMessage(ref reader, body) is not { } call)
@@ -37,11 +36,7 @@ public sealed record RpcEnvelope(IReadOnlyList<RpcCall> Calls, bool IsBatch)
 
                     calls.Add(call);
                 }
-            }
-            else if (ReadMessage(ref reader, body) is { } single)
-            {
-                calls.Add(single);
-            }
+            else if (ReadMessage(ref reader, body) is { } single) calls.Add(single);
 
             return calls.Count == 0 || reader.Read() ? null : new RpcEnvelope(calls, batch);
         }
@@ -63,7 +58,6 @@ public sealed record RpcEnvelope(IReadOnlyList<RpcCall> Calls, bool IsBatch)
         var seenMethod = false;
         var seenParams = false;
         while (reader.Read() && reader.TokenType == JsonTokenType.PropertyName)
-        {
             if (reader.ValueTextEquals("id"u8))
             {
                 if (seenId || !reader.Read())
@@ -98,7 +92,6 @@ public sealed record RpcEnvelope(IReadOnlyList<RpcCall> Calls, bool IsBatch)
             {
                 reader.Skip();
             }
-        }
 
         var printableMethod = Printable(method);
         return new RpcCall(id, printableMethod, printableMethod == UsageRecord.ToolsCall ? Printable(name) : null);
@@ -135,6 +128,8 @@ public sealed record RpcEnvelope(IReadOnlyList<RpcCall> Calls, bool IsBatch)
             return null;
 
         var text = value.Length > MaxNameLength ? value[..MaxNameLength] : value;
-        return text.Any(char.IsControl) ? string.Concat(text.Select(symbol => char.IsControl(symbol) ? '?' : symbol)) : text;
+        return text.Any(char.IsControl)
+            ? string.Concat(text.Select(symbol => char.IsControl(symbol) ? '?' : symbol))
+            : text;
     }
 }

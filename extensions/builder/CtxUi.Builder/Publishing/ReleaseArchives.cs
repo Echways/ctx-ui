@@ -10,7 +10,10 @@ public sealed class ReleaseArchives(string dataDirectory)
 
     private readonly string _directory = Path.Combine(dataDirectory, "releases");
 
-    public string PathOf(Guid releaseId) => Path.Combine(_directory, $"{releaseId}.tar.gz");
+    public string PathOf(Guid releaseId)
+    {
+        return Path.Combine(_directory, $"{releaseId}.tar.gz");
+    }
 
     public async Task WriteAsync(Guid releaseId, byte[] content, CancellationToken ct)
     {
@@ -41,7 +44,8 @@ public sealed class ReleaseArchives(string dataDirectory)
         FileStream stream;
         try
         {
-            stream = new FileStream(PathOf(release.Id), FileMode.Open, FileAccess.Read, FileShare.Read, 1, FileOptions.Asynchronous | FileOptions.SequentialScan);
+            stream = new FileStream(PathOf(release.Id), FileMode.Open, FileAccess.Read, FileShare.Read, 1,
+                FileOptions.Asynchronous | FileOptions.SequentialScan);
         }
         catch (Exception failure) when (failure is FileNotFoundException or DirectoryNotFoundException)
         {

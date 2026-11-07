@@ -11,9 +11,13 @@ public static class QuotaPeriod
         return anchor.AddDays(periods * days);
     }
 
-    public static DateTimeOffset? NextReset(DateTimeOffset anchor, int? resetEveryDays, DateTimeOffset now) =>
-        resetEveryDays is { } days ? StartAt(anchor, days, now).AddDays(days) : null;
+    public static DateTimeOffset? NextReset(DateTimeOffset anchor, int? resetEveryDays, DateTimeOffset now)
+    {
+        return resetEveryDays is { } days ? StartAt(anchor, days, now).AddDays(days) : null;
+    }
 
-    public static long UsedCalls(Client client, DateTimeOffset now) =>
-        client.UsedSince == StartAt(client.PeriodStartedAt, client.ResetEveryDays, now) ? client.UsedCalls : 0;
+    public static long UsedCalls(Client client, DateTimeOffset now)
+    {
+        return client.UsedSince == StartAt(client.PeriodStartedAt, client.ResetEveryDays, now) ? client.UsedCalls : 0;
+    }
 }

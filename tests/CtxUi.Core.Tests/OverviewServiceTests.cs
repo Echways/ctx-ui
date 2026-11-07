@@ -12,9 +12,15 @@ public class OverviewServiceTests
     private readonly FakeVault _vault = new();
     private readonly FakeTimeProvider _clock = new(TestData.Now);
 
-    private InboundService Inbounds(TestDatabase database) => new(database.NewContext(), _vault, _clock);
+    private InboundService Inbounds(TestDatabase database)
+    {
+        return new InboundService(database.NewContext(), _vault, _clock);
+    }
 
-    private ClientService Clients(TestDatabase database) => new(database.NewContext(), _vault, _clock);
+    private ClientService Clients(TestDatabase database)
+    {
+        return new ClientService(database.NewContext(), _vault, _clock);
+    }
 
     private Task<Overview> LoadAsync(TestDatabase database)
     {
@@ -27,8 +33,10 @@ public class OverviewServiceTests
         Guid inbound,
         DateTimeOffset at,
         UsageOutcome outcome = UsageOutcome.Ok,
-        string? method = "tools/call") =>
-        new(client, inbound, at, method, method == "tools/call" ? "echo" : null, 100, outcome);
+        string? method = "tools/call")
+    {
+        return new UsageRecord(client, inbound, at, method, method == "tools/call" ? "echo" : null, 100, outcome);
+    }
 
     [Fact]
     public async Task Empty_installation_is_all_zeroes()
@@ -54,7 +62,10 @@ public class OverviewServiceTests
         var disabled = await Clients(database).AddAsync("Отключённый", ["echo"]);
         await Clients(database).SetEnabledAsync(disabled.Client.Id, false);
         await Clients(database).MarkUsedAsync(
-            [KeyValuePair.Create(active.Client.Id, TestData.Now.AddHours(-1)), KeyValuePair.Create(idle.Client.Id, TestData.Now.AddHours(-25))]);
+        [
+            KeyValuePair.Create(active.Client.Id, TestData.Now.AddHours(-1)),
+            KeyValuePair.Create(idle.Client.Id, TestData.Now.AddHours(-25))
+        ]);
         _clock.Advance(TimeSpan.FromHours(2));
 
         var overview = await LoadAsync(database);
@@ -82,19 +93,19 @@ public class OverviewServiceTests
             Call(who, echo.Id, TestData.Now.AddHours(-1), UsageOutcome.QuotaExhausted),
             Call(who, echo.Id, TestData.Now.AddHours(-25)),
             Call(who, docs.Id, TestData.Now.AddMinutes(-5), method: "tools/list"),
-            Call(who, docs.Id, TestData.Now.AddMinutes(-5), UsageOutcome.ClientAborted),
+            Call(who, docs.Id, TestData.Now.AddMinutes(-5), UsageOutcome.ClientAborted)
         ]);
 
         var overview = await LoadAsync(database);
 
         Assert.Equal((5, 4, 1), (overview.Calls, overview.ToolCalls, overview.Failures));
         Assert.Equal(
-        [
-            new InboundActivity(docs.Id, "docs", "docs", true, 1, 2, 0),
-            new InboundActivity(echo.Id, "echo", "Эхо", true, 1, 3, 1),
-            new InboundActivity(idle.Id, "idle", "idle", false, 0, 0, 0),
-        ],
-        overview.Inbounds);
+            [
+                new InboundActivity(docs.Id, "docs", "docs", true, 1, 2, 0),
+                new InboundActivity(echo.Id, "echo", "Эхо", true, 1, 3, 1),
+                new InboundActivity(idle.Id, "idle", "idle", false, 0, 0, 0)
+            ],
+            overview.Inbounds);
     }
 
     [Fact]
@@ -118,7 +129,7 @@ public class OverviewServiceTests
             Call(Stranger, Stranger, TestData.Now),
             Call(Stranger, Stranger, TestData.Now, UsageOutcome.QuotaExhausted),
             Call(Stranger, Stranger, TestData.Now.AddDays(-6)),
-            Call(Stranger, Stranger, TestData.Now.AddDays(-7)),
+            Call(Stranger, Stranger, TestData.Now.AddDays(-7))
         ]);
 
         var overview = await LoadAsync(database);
@@ -138,7 +149,8 @@ public class OverviewServiceTests
         Assert.Equal(96, quarters.Count);
         Assert.Equal(TestData.Now.AddMinutes(-95 * 15), quarters[0].Start);
         Assert.Equal(TestData.Now, quarters[^1].Start);
-        Assert.All(quarters.Zip(quarters.Skip(1)), pair => Assert.Equal(TimeSpan.FromMinutes(15), pair.Second.Start - pair.First.Start));
+        Assert.All(quarters.Zip(quarters.Skip(1)),
+            pair => Assert.Equal(TimeSpan.FromMinutes(15), pair.Second.Start - pair.First.Start));
         Assert.All(quarters, quarter => Assert.Equal((0, 0), (quarter.Calls, quarter.Failures)));
     }
 
@@ -156,7 +168,7 @@ public class OverviewServiceTests
             Call(Stranger, Stranger, first.AddMinutes(15)),
             Call(Stranger, Stranger, TestData.Now.AddMinutes(-1), UsageOutcome.QuotaExhausted),
             Call(Stranger, Stranger, TestData.Now.AddMinutes(7)),
-            Call(Stranger, Stranger, TestData.Now.AddMinutes(7), UsageOutcome.UpstreamFailed),
+            Call(Stranger, Stranger, TestData.Now.AddMinutes(7), UsageOutcome.UpstreamFailed)
         ]);
 
         var quarters = (await LoadAsync(database)).Quarters;

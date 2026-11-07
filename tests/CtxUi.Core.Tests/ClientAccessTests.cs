@@ -13,20 +13,28 @@ public class ClientAccessTests
     private readonly FakeVault _vault = new();
     private readonly FakeTimeProvider _clock = new(TestData.Now);
 
-    private ClientService Clients(TestDatabase database) => new(database.NewContext(), _vault, _clock);
+    private ClientService Clients(TestDatabase database)
+    {
+        return new ClientService(database.NewContext(), _vault, _clock);
+    }
 
-    private SignInSettingsService Settings(TestDatabase database) => new(database.NewContext(), _vault);
+    private SignInSettingsService Settings(TestDatabase database)
+    {
+        return new SignInSettingsService(database.NewContext(), _vault);
+    }
 
     private async Task<TestDatabase> DatabaseWithInboundsAsync(params string[] slugs)
     {
         var database = await TestDatabase.CreateAsync();
         foreach (var slug in slugs)
-            await new InboundService(database.NewContext(), _vault, _clock).AddHttpAsync(slug, null, "https://mcp.example.org/mcp");
+            await new InboundService(database.NewContext(), _vault, _clock).AddHttpAsync(slug, null,
+                "https://mcp.example.org/mcp");
 
         return database;
     }
 
-    private static async Task AddDeviceAsync(TestDatabase database, Guid clientId, string signedInWith, DateTimeOffset? revokedAt = null)
+    private static async Task AddDeviceAsync(TestDatabase database, Guid clientId, string signedInWith,
+        DateTimeOffset? revokedAt = null)
     {
         await using var db = database.NewContext();
         db.Devices.Add(new Device
@@ -39,7 +47,7 @@ public class ClientAccessTests
             SignedInWith = signedInWith,
             CreatedAt = TestData.Now,
             RevokedAt = revokedAt,
-            RevokedReason = revokedAt is null ? null : DeviceRevocation.Admin,
+            RevokedReason = revokedAt is null ? null : DeviceRevocation.Admin
         });
         await db.SaveChangesAsync();
     }
@@ -49,7 +57,8 @@ public class ClientAccessTests
     {
         await using var database = await DatabaseWithInboundsAsync("echo");
         await Settings(database).UpdateAsync(
-            new SignInSettingsUpdate { ChangeDefaultMaxDevices = true, DefaultMaxDevices = 2, DefaultDirectKey = false },
+            new SignInSettingsUpdate
+            { ChangeDefaultMaxDevices = true, DefaultMaxDevices = 2, DefaultDirectKey = false },
             PublicUrl);
 
         var issued = await Clients(database).AddAsync("Иванов", ["echo"]);
@@ -66,7 +75,8 @@ public class ClientAccessTests
     {
         await using var database = await DatabaseWithInboundsAsync("echo");
         await Settings(database).UpdateAsync(
-            new SignInSettingsUpdate { ChangeDefaultMaxDevices = true, DefaultMaxDevices = 2, DefaultDirectKey = false },
+            new SignInSettingsUpdate
+            { ChangeDefaultMaxDevices = true, DefaultMaxDevices = 2, DefaultDirectKey = false },
             PublicUrl);
 
         var issued = await Clients(database).AddAsync("Иванов", ["echo"], access: new ClientAccessPolicy(null, true));
@@ -82,9 +92,11 @@ public class ClientAccessTests
         await using var database = await DatabaseWithInboundsAsync("echo");
         var issued = await Clients(database).AddAsync("Иванов", ["echo"]);
 
-        await Clients(database).UpdateAsync(issued.Client.Id, new ClientUpdate { Access = new ClientAccessPolicy(3, false) });
+        await Clients(database)
+            .UpdateAsync(issued.Client.Id, new ClientUpdate { Access = new ClientAccessPolicy(3, false) });
         var limited = await Clients(database).GetAsync(issued.Client.Id);
-        await Clients(database).UpdateAsync(issued.Client.Id, new ClientUpdate { Access = new ClientAccessPolicy(null, true) });
+        await Clients(database).UpdateAsync(issued.Client.Id,
+            new ClientUpdate { Access = new ClientAccessPolicy(null, true) });
         var open = await Clients(database).GetAsync(issued.Client.Id);
 
         Assert.Equal((3, false), (limited.MaxDevices, limited.DirectKey));
@@ -102,7 +114,8 @@ public class ClientAccessTests
         await Assert.ThrowsAsync<DomainException>(() =>
             Clients(database).AddAsync("Петров", ["echo"], access: new ClientAccessPolicy(limit, true)));
         await Assert.ThrowsAsync<DomainException>(() =>
-            Clients(database).UpdateAsync(issued.Client.Id, new ClientUpdate { Access = new ClientAccessPolicy(limit, true) }));
+            Clients(database).UpdateAsync(issued.Client.Id,
+                new ClientUpdate { Access = new ClientAccessPolicy(limit, true) }));
         Assert.Equal(1000, new ClientAccessPolicy(1000, true).Validated().MaxDevices);
     }
 
@@ -122,7 +135,8 @@ public class ClientAccessTests
         Assert.Equal(1, reissued.DevicesRevoked);
         var devices = await database.NewContext().Devices.AsNoTracking().ToListAsync();
         Assert.Null(devices.Single(device => device.SignedInWith == "google").RevokedAt);
-        var keyed = devices.Single(device => device.SignedInWith == Device.ByKey && device.RevokedReason != DeviceRevocation.Admin);
+        var keyed = devices.Single(device =>
+            device.SignedInWith == Device.ByKey && device.RevokedReason != DeviceRevocation.Admin);
         Assert.Equal(DeviceRevocation.KeyReissued, keyed.RevokedReason);
         Assert.Equal(TestData.Now, keyed.RevokedAt);
         Assert.Equal(0, await Clients(database).CountKeyDevicesAsync(issued.Client.Id));

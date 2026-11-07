@@ -17,6 +17,8 @@ public static class PairLines
         return pairs;
     }
 
-    public static List<KeyValuePair<string, string>> ParseText(string? text) =>
-        Parse((text ?? "").Split('\n', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries));
+    public static List<KeyValuePair<string, string>> ParseText(string? text)
+    {
+        return Parse((text ?? "").Split('\n', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries));
+    }
 }

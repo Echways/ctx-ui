@@ -28,19 +28,27 @@ public sealed class AdminStore(CtxUiDbContext db)
         return IdentityResult.Success;
     }
 
-    public async Task<Admin?> FindByIdAsync(string userId, CancellationToken cancellationToken) =>
-        Guid.TryParse(userId, out var id)
+    public async Task<Admin?> FindByIdAsync(string userId, CancellationToken cancellationToken)
+    {
+        return Guid.TryParse(userId, out var id)
             ? await db.Admins.SingleOrDefaultAsync(admin => admin.Id == id, cancellationToken)
             : null;
+    }
 
-    public Task<Admin?> FindByNameAsync(string normalizedUserName, CancellationToken cancellationToken) =>
-        db.Admins.SingleOrDefaultAsync(admin => admin.NameKey == normalizedUserName, cancellationToken);
+    public Task<Admin?> FindByNameAsync(string normalizedUserName, CancellationToken cancellationToken)
+    {
+        return db.Admins.SingleOrDefaultAsync(admin => admin.NameKey == normalizedUserName, cancellationToken);
+    }
 
-    public Task<string> GetUserIdAsync(Admin user, CancellationToken cancellationToken) =>
-        Task.FromResult(user.Id.ToString());
+    public Task<string> GetUserIdAsync(Admin user, CancellationToken cancellationToken)
+    {
+        return Task.FromResult(user.Id.ToString());
+    }
 
-    public Task<string?> GetUserNameAsync(Admin user, CancellationToken cancellationToken) =>
-        Task.FromResult<string?>(user.Name);
+    public Task<string?> GetUserNameAsync(Admin user, CancellationToken cancellationToken)
+    {
+        return Task.FromResult<string?>(user.Name);
+    }
 
     public Task SetUserNameAsync(Admin user, string? userName, CancellationToken cancellationToken)
     {
@@ -48,8 +56,10 @@ public sealed class AdminStore(CtxUiDbContext db)
         return Task.CompletedTask;
     }
 
-    public Task<string?> GetNormalizedUserNameAsync(Admin user, CancellationToken cancellationToken) =>
-        Task.FromResult<string?>(user.NameKey);
+    public Task<string?> GetNormalizedUserNameAsync(Admin user, CancellationToken cancellationToken)
+    {
+        return Task.FromResult<string?>(user.NameKey);
+    }
 
     public Task SetNormalizedUserNameAsync(Admin user, string? normalizedName, CancellationToken cancellationToken)
     {
@@ -63,11 +73,15 @@ public sealed class AdminStore(CtxUiDbContext db)
         return Task.CompletedTask;
     }
 
-    public Task<string?> GetPasswordHashAsync(Admin user, CancellationToken cancellationToken) =>
-        Task.FromResult<string?>(user.PasswordHash.Length == 0 ? null : user.PasswordHash);
+    public Task<string?> GetPasswordHashAsync(Admin user, CancellationToken cancellationToken)
+    {
+        return Task.FromResult<string?>(user.PasswordHash.Length == 0 ? null : user.PasswordHash);
+    }
 
-    public Task<bool> HasPasswordAsync(Admin user, CancellationToken cancellationToken) =>
-        Task.FromResult(user.PasswordHash.Length > 0);
+    public Task<bool> HasPasswordAsync(Admin user, CancellationToken cancellationToken)
+    {
+        return Task.FromResult(user.PasswordHash.Length > 0);
+    }
 
     public Task SetSecurityStampAsync(Admin user, string stamp, CancellationToken cancellationToken)
     {
@@ -75,11 +89,15 @@ public sealed class AdminStore(CtxUiDbContext db)
         return Task.CompletedTask;
     }
 
-    public Task<string?> GetSecurityStampAsync(Admin user, CancellationToken cancellationToken) =>
-        Task.FromResult<string?>(user.SecurityStamp);
+    public Task<string?> GetSecurityStampAsync(Admin user, CancellationToken cancellationToken)
+    {
+        return Task.FromResult<string?>(user.SecurityStamp);
+    }
 
-    public Task<DateTimeOffset?> GetLockoutEndDateAsync(Admin user, CancellationToken cancellationToken) =>
-        Task.FromResult(user.LockedUntil);
+    public Task<DateTimeOffset?> GetLockoutEndDateAsync(Admin user, CancellationToken cancellationToken)
+    {
+        return Task.FromResult(user.LockedUntil);
+    }
 
     public Task SetLockoutEndDateAsync(Admin user, DateTimeOffset? lockoutEnd, CancellationToken cancellationToken)
     {
@@ -87,8 +105,10 @@ public sealed class AdminStore(CtxUiDbContext db)
         return Task.CompletedTask;
     }
 
-    public Task<int> IncrementAccessFailedCountAsync(Admin user, CancellationToken cancellationToken) =>
-        Task.FromResult(++user.FailedAttempts);
+    public Task<int> IncrementAccessFailedCountAsync(Admin user, CancellationToken cancellationToken)
+    {
+        return Task.FromResult(++user.FailedAttempts);
+    }
 
     public Task ResetAccessFailedCountAsync(Admin user, CancellationToken cancellationToken)
     {
@@ -96,12 +116,20 @@ public sealed class AdminStore(CtxUiDbContext db)
         return Task.CompletedTask;
     }
 
-    public Task<int> GetAccessFailedCountAsync(Admin user, CancellationToken cancellationToken) =>
-        Task.FromResult(user.FailedAttempts);
+    public Task<int> GetAccessFailedCountAsync(Admin user, CancellationToken cancellationToken)
+    {
+        return Task.FromResult(user.FailedAttempts);
+    }
 
-    public Task<bool> GetLockoutEnabledAsync(Admin user, CancellationToken cancellationToken) => Task.FromResult(true);
+    public Task<bool> GetLockoutEnabledAsync(Admin user, CancellationToken cancellationToken)
+    {
+        return Task.FromResult(true);
+    }
 
-    public Task SetLockoutEnabledAsync(Admin user, bool enabled, CancellationToken cancellationToken) => Task.CompletedTask;
+    public Task SetLockoutEnabledAsync(Admin user, bool enabled, CancellationToken cancellationToken)
+    {
+        return Task.CompletedTask;
+    }
 
     public void Dispose()
     {

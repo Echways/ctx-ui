@@ -35,7 +35,9 @@ public sealed partial class TestPanel : IAsyncDisposable
         get
         {
             lock (_log)
+            {
                 return _log.ToString();
+            }
         }
     }
 
@@ -43,7 +45,8 @@ public sealed partial class TestPanel : IAsyncDisposable
     {
         var binary = Environment.GetEnvironmentVariable(BinaryVariable);
         if (string.IsNullOrEmpty(binary))
-            throw new InvalidOperationException($"Set {BinaryVariable} to the path of a ctx-ui server binary to run panel tests");
+            throw new InvalidOperationException(
+                $"Set {BinaryVariable} to the path of a ctx-ui server binary to run panel tests");
 
         binary = Path.GetFullPath(binary);
         var dataDir = Directory.CreateTempSubdirectory("ctx-ui-test-panel-").FullName;
@@ -54,7 +57,7 @@ public sealed partial class TestPanel : IAsyncDisposable
             ["CtxUi__ExtensionsDir"] = Path.GetFullPath(options.ExtensionsDir),
             ["CtxUi__PublicUrl"] = address,
             ["CtxUi__Language"] = options.Language,
-            ["Urls"] = address,
+            ["Urls"] = address
         };
         foreach (var (key, value) in options.Settings ?? new Dictionary<string, string>())
             environment[key.Replace(":", "__", StringComparison.Ordinal)] = value;
@@ -76,7 +79,9 @@ public sealed partial class TestPanel : IAsyncDisposable
     public async Task<string> CliAsync(params string[] args)
     {
         var (code, output, error) = await RunAsync(_environment, args);
-        return code == 0 ? output : throw new InvalidOperationException($"ctx-ui {string.Join(' ', args)} exited with {code}: {error}");
+        return code == 0
+            ? output
+            : throw new InvalidOperationException($"ctx-ui {string.Join(' ', args)} exited with {code}: {error}");
     }
 
     public async Task SignInAsync(IPage page)
@@ -93,12 +98,12 @@ public sealed partial class TestPanel : IAsyncDisposable
         if (_server is { } server)
         {
             if (!server.HasExited)
-                server.Kill(entireProcessTree: true);
+                server.Kill(true);
             await server.WaitForExitAsync();
             server.Dispose();
         }
 
-        Directory.Delete(_dataDir, recursive: true);
+        Directory.Delete(_dataDir, true);
     }
 
     private static int FreePort()
@@ -154,7 +159,8 @@ public sealed partial class TestPanel : IAsyncDisposable
         throw new TimeoutException($"ctx-ui did not start in {StartPatience}: {Log}");
     }
 
-    private async Task<(int Code, string Output, string Error)> RunAsync(Dictionary<string, string> environment, params string[] args)
+    private async Task<(int Code, string Output, string Error)> RunAsync(Dictionary<string, string> environment,
+        params string[] args)
     {
         var command = StartInfo(environment);
         command.RedirectStandardOutput = command.RedirectStandardError = true;
@@ -170,7 +176,8 @@ public sealed partial class TestPanel : IAsyncDisposable
 
     private ProcessStartInfo StartInfo(Dictionary<string, string> environment)
     {
-        var info = new ProcessStartInfo(_binary) { UseShellExecute = false, WorkingDirectory = Path.GetDirectoryName(_binary)! };
+        var info = new ProcessStartInfo(_binary)
+        { UseShellExecute = false, WorkingDirectory = Path.GetDirectoryName(_binary)! };
         foreach (var (key, value) in environment)
             info.Environment[key] = value;
         return info;
@@ -181,7 +188,9 @@ public sealed partial class TestPanel : IAsyncDisposable
         if (line is null)
             return;
         lock (_log)
+        {
             _log.AppendLine(line);
+        }
     }
 
     [GeneratedRegex(@"Password:\s+(\S+)")]

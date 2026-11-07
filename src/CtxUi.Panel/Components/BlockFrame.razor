@@ -1,6 +1,7 @@
 <ErrorBoundary>
     <ChildContent>
-        <DynamicComponent Type="Block" Parameters="@(new Dictionary<string, object?> { [nameof(PanelBlock<object>.Context)] = Context })" />
+        <DynamicComponent Type="Block"
+                          Parameters="@(new Dictionary<string, object?> { [nameof(PanelBlock<object>.Context)] = Context })"/>
     </ChildContent>
     <ErrorContent Context="failure">
         <p class="panel-block-failed" role="alert">@PanelText.ExtensionBlockFailed</p>
@@ -8,9 +9,7 @@
 </ErrorBoundary>
 
 @code {
-    [Parameter, EditorRequired]
-    public Type Block { get; set; } = default!;
+    [Parameter][EditorRequired] public Type Block { get; set; } = default!;
 
-    [Parameter]
-    public object? Context { get; set; }
+    [Parameter] public object? Context { get; set; }
 }

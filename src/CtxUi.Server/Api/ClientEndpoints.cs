@@ -310,6 +310,6 @@ public static class ClientEndpoints
                     slug, ConnectionText.Address(publicUrl, slug),
                     ConnectionText.AddressWithToken(publicUrl, token, slug)))
                 .ToList(),
-            ConnectionText.Message(publicUrl, client, token, mode));
+            ConnectionText.Message(publicUrl, client, token, TimeZoneInfo.Utc, mode));
     }
 }

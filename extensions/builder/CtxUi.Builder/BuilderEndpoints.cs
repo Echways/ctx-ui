@@ -1,7 +1,6 @@
 using CtxUi.Builder.Publishing;
 using CtxUi.Builder.Runner;
 using CtxUi.Builder.Servers;
-using Enfilade;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
@@ -97,9 +96,9 @@ public static class BuilderEndpoints
         {
             return await next(context);
         }
-        catch (PanelException failure)
+        catch (BuilderException failure)
         {
-            return Results.Problem(failure.Message, statusCode: StatusOf(Failures.KindOf(failure)));
+            return Results.Problem(failure.Message, statusCode: StatusOf(failure.Kind));
         }
         catch (DraftConflictException failure)
         {

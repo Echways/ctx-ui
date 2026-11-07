@@ -176,7 +176,7 @@ internal sealed partial class BuilderSession : IAsyncDisposable
         await Dialog.GetByRole(AriaRole.Button, new LocatorGetByRoleOptions { Name = "Connect", Exact = true })
             .ClickAsync();
 
-        await Expect(Dialog.GetByRole(AriaRole.Alert)).ToBeVisibleAsync();
+        await Expect(Dialog.GetByRole(AriaRole.Alert)).ToContainTextAsync("The panel refused the inbound:");
         await Expect(Dialog.GetByLabel("Inbound slug", new LocatorGetByLabelOptions { Exact = true }))
             .ToHaveValueAsync(slug);
         await Expect(Dialog.GetByLabel("Name", new LocatorGetByLabelOptions { Exact = true })).ToHaveValueAsync(name);

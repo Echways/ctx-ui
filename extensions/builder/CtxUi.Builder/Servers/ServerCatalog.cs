@@ -6,7 +6,6 @@ using System.Text.RegularExpressions;
 using CtxUi.Builder.Contracts;
 using CtxUi.Builder.Data;
 using CtxUi.Builder.Tools;
-using Enfilade;
 using Microsoft.EntityFrameworkCore;
 
 namespace CtxUi.Builder.Servers;
@@ -54,12 +53,12 @@ public sealed partial class ServerCatalog(
         CancellationToken ct)
     {
         if (!SlugPattern().IsMatch(slug))
-            throw new PanelException(BuilderText.SlugInvalid);
+            throw new BuilderException(BuilderText.SlugInvalid);
         if (string.IsNullOrWhiteSpace(name))
-            throw new PanelException(BuilderText.NameRequired);
+            throw new BuilderException(BuilderText.NameRequired);
         await using var database = await databases.CreateDbContextAsync(ct);
         if (await database.Servers.AnyAsync(server => server.Slug == slug, ct))
-            throw new PanelException(BuilderText.SlugTaken);
+            throw new BuilderException(BuilderText.SlugTaken);
 
         if (import is not null && import.Files.FirstOrDefault(file => file.Path == ProjectFiles.OpenApiPath) is
             { Content: { } document })
@@ -67,9 +66,9 @@ public sealed partial class ServerCatalog(
             {
                 await OpenApiImport.ValidateStoredAsync(document, ct);
             }
-            catch (PanelException failure)
+            catch (BuilderException failure)
             {
-                throw new PanelException(string.Format(BuilderText.ArchiveOpenApiInvalid, failure.Message));
+                throw new BuilderException(string.Format(BuilderText.ArchiveOpenApiInvalid, failure.Message));
             }
 
         if (import is not null && import.Files.FirstOrDefault(file => file.Path == ProjectFiles.BuilderPath) is
@@ -78,9 +77,9 @@ public sealed partial class ServerCatalog(
             {
                 BuilderDocument.Read(builder);
             }
-            catch (PanelException failure)
+            catch (BuilderException failure)
             {
-                throw new PanelException(string.Format(BuilderText.ArchiveBuilderInvalid, failure.Message));
+                throw new BuilderException(string.Format(BuilderText.ArchiveBuilderInvalid, failure.Message));
             }
 
         var limits = new ServerLimits();
@@ -108,7 +107,7 @@ public sealed partial class ServerCatalog(
         catch (DbUpdateException)
         {
             if (await SlugExistsAsync(slug, ct))
-                throw new PanelException(BuilderText.SlugTaken);
+                throw new BuilderException(BuilderText.SlugTaken);
             throw;
         }
 
@@ -139,7 +138,7 @@ public sealed partial class ServerCatalog(
         CancellationToken ct)
     {
         if (!path.StartsWith(ProjectRoot, StringComparison.Ordinal))
-            throw new PanelException(BuilderText.PathInvalid);
+            throw new BuilderException(BuilderText.PathInvalid);
         path = ProjectFiles.ValidatePath(path);
         await using var database = await databases.CreateDbContextAsync(ct);
         await RequireServerAsync(database, id, ct);
@@ -204,7 +203,7 @@ public sealed partial class ServerCatalog(
         var document = draft.OpenApiJson ?? string.Empty;
         if (CodeToolNames.From(draft.Files.Select(file => (file.Path, file.Content))).Contains(tool.Name) ||
             (isNew && OpenApiDraft.Names(document).Contains(tool.Name)))
-            throw new PanelException(string.Format(BuilderText.ToolNameTaken, tool.Name));
+            throw new BuilderException(string.Format(BuilderText.ToolNameTaken, tool.Name));
         return await SaveOpenApiAsync(database, id, OpenApiDraft.Upsert(document, tool), expectedRevision, ct);
     }
 
@@ -249,7 +248,7 @@ public sealed partial class ServerCatalog(
         }
         catch (DraftConflictException)
         {
-            throw new PanelException(BuilderText.ToolExists);
+            throw new BuilderException(BuilderText.ToolExists);
         }
 
         await transaction.CommitAsync(ct);
@@ -260,7 +259,7 @@ public sealed partial class ServerCatalog(
         long expectedRevision, CancellationToken ct)
     {
         if (selected.Count == 0)
-            throw new PanelException(BuilderText.ImportNothingSelected);
+            throw new BuilderException(BuilderText.ImportNothingSelected);
         await using var database = await databases.CreateDbContextAsync(ct);
         var draft = await DraftAsync(database, id, ct);
         if (draft.Revision != expectedRevision)
@@ -309,9 +308,9 @@ public sealed partial class ServerCatalog(
     public async Task SetSecretAsync(Guid id, string name, string value, CancellationToken ct)
     {
         if (!SecretNamePattern().IsMatch(name))
-            throw new PanelException(BuilderText.SecretNameInvalid);
+            throw new BuilderException(BuilderText.SecretNameInvalid);
         if (string.IsNullOrEmpty(value))
-            throw new PanelException(BuilderText.SecretValueRequired);
+            throw new BuilderException(BuilderText.SecretValueRequired);
         await using var database = await databases.CreateDbContextAsync(ct);
         await RequireServerAsync(database, id, ct);
 
@@ -329,10 +328,10 @@ public sealed partial class ServerCatalog(
     public async Task SetAccessAsync(Guid id, NetworkAccess access, ServerLimits limits, CancellationToken ct)
     {
         if (!Enum.IsDefined(access))
-            throw new PanelException(BuilderText.AccessInvalid);
+            throw new BuilderException(BuilderText.AccessInvalid);
         if (limits.MemoryMb < MinimumMemoryMb || !double.IsFinite(limits.Cpus) || limits.Cpus < MinimumCpus ||
             limits.Pids < 1)
-            throw new PanelException(BuilderText.LimitsInvalid);
+            throw new BuilderException(BuilderText.LimitsInvalid);
 
         await using var database = await databases.CreateDbContextAsync(ct);
         await RequireServerAsync(database, id, ct);
@@ -420,7 +419,7 @@ public sealed partial class ServerCatalog(
         }
         catch (DraftConflictException)
         {
-            throw new PanelException(BuilderText.ToolExists);
+            throw new BuilderException(BuilderText.ToolExists);
         }
 
         return path;
@@ -559,13 +558,13 @@ public sealed partial class ServerCatalog(
         {
             formNames = OpenApiDraft.Names(document);
         }
-        catch (PanelException)
+        catch (BuilderException)
         {
             return;
         }
 
         if (names.FirstOrDefault(formNames.Contains) is { } clash)
-            throw new PanelException(string.Format(BuilderText.CodeToolNameTaken, clash));
+            throw new BuilderException(string.Format(BuilderText.CodeToolNameTaken, clash));
     }
 
     private static async Task RequireRoomAsync(BuilderDatabase database, Guid id, string replacedPath, long addedBytes,
@@ -577,7 +576,7 @@ public sealed partial class ServerCatalog(
                                                                      + COALESCE((SELECT LENGTH(CAST(BuilderJson AS BLOB)) FROM Drafts WHERE ServerId = {id} AND {replacedPath} <> {ProjectFiles.BuilderPath}), 0) AS Value
                                                                  """).SingleAsync(ct);
         if (otherBytes + addedBytes > ProjectFiles.MaxProjectBytes)
-            throw new PanelException(BuilderText.ProjectTooLarge);
+            throw new BuilderException(BuilderText.ProjectTooLarge);
     }
 
     private static async Task RequireServerAsync(BuilderDatabase database, Guid id, CancellationToken ct)
@@ -609,7 +608,7 @@ public sealed partial class ServerCatalog(
         }
 
         if (bytes > ProjectFiles.MaxProjectBytes)
-            throw new PanelException(BuilderText.ProjectTooLarge);
+            throw new BuilderException(BuilderText.ProjectTooLarge);
         return draft;
     }
 
@@ -618,26 +617,26 @@ public sealed partial class ServerCatalog(
         if (string.IsNullOrWhiteSpace(baseUrl))
             return null;
         if (!Uri.TryCreate(baseUrl.Trim(), UriKind.Absolute, out var uri) || uri.Scheme is not ("http" or "https"))
-            throw new PanelException(BuilderText.BaseUrlInvalid);
+            throw new BuilderException(BuilderText.BaseUrlInvalid);
         return uri;
     }
 
     private string? SealAuth(ApiAuthInput input, StoredAuth? existing)
     {
         if (!Enum.IsDefined(input.Kind))
-            throw new PanelException(BuilderText.AccessInvalid);
+            throw new BuilderException(BuilderText.AccessInvalid);
         if (input.Kind == ApiAuthKind.None)
             return null;
         if (input.Kind == ApiAuthKind.Header && !HeaderNamePattern().IsMatch(input.HeaderName ?? string.Empty))
-            throw new PanelException(BuilderText.AuthHeaderInvalid);
+            throw new BuilderException(BuilderText.AuthHeaderInvalid);
         if (input.Kind == ApiAuthKind.Basic &&
             (string.IsNullOrWhiteSpace(input.Username) || input.Username.Contains(':')))
-            throw new PanelException(BuilderText.AuthUsernameInvalid);
+            throw new BuilderException(BuilderText.AuthUsernameInvalid);
 
         var secret = !string.IsNullOrEmpty(input.Secret) ? input.Secret :
             existing?.Kind == input.Kind ? existing.Secret : null;
         if (string.IsNullOrEmpty(secret))
-            throw new PanelException(BuilderText.SecretValueRequired);
+            throw new BuilderException(BuilderText.SecretValueRequired);
 
         var stored = new StoredAuth(input.Kind, input.Kind == ApiAuthKind.Header ? input.HeaderName : null,
             input.Kind == ApiAuthKind.Basic ? input.Username?.Trim() : null, secret);

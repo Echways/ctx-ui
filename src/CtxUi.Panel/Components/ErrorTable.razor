@@ -1,3 +1,4 @@
+@inject ViewerTime Viewer
 <MudTable T="ErrorGroup" Items="Items" Elevation="0" Class="tbl" RowClassFunc="@((_, _) => "click")"
           OnRowClick="@((TableRowClickEventArgs<ErrorGroup> row) => OnPick.InvokeAsync(row.Item))">
     <HeaderContent>
@@ -19,7 +20,7 @@
             }
         </MudTd>
         <MudTd DataLabel="@PanelText.TimesColumn" Class="num">@Words.Number(context.Count)</MudTd>
-        <MudTd DataLabel="@PanelText.LastTimeColumn" Class="num">@Words.Minute(context.LastAt)</MudTd>
+        <MudTd DataLabel="@PanelText.LastTimeColumn" Class="num">@Viewer.Minute(context.LastAt)</MudTd>
     </RowTemplate>
 </MudTable>
 

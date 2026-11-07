@@ -1,7 +1,8 @@
 @inject PanelBackend Backend
-@inject PanelActions Actions
+@inject Act Act
 @inject IDialogService Dialogs
 @inject TimeProvider Clock
+@inject ViewerTime Viewer
 
 <Sheet>
     <ChildContent>
@@ -31,15 +32,15 @@
                         </div>
                         <p class="dev-apps">@(device.Apps.Count == 0 ? PanelText.DeviceNoApps : string.Format(PanelText.DeviceApps, string.Join(", ", device.Apps.Select(app => app.AppName))))</p>
                         <p class="dev-meta">
-                            @string.Format(PanelText.DeviceSignedIn, Words.Minute(device.CreatedAt), SignedInWith(device.SignedInWith)) ·
+                            @string.Format(PanelText.DeviceSignedIn, Viewer.Minute(device.CreatedAt), SignedInWith(device.SignedInWith)) ·
                             @PanelText.DeviceSignInIp <code>@device.SignInIp</code>
                         </p>
                         <p class="dev-meta">
-                            @(device.LastUsedAt is { } used ? string.Format(PanelText.DeviceLastUsed, Words.Minute(used)) : PanelText.DeviceNeverUsed)
+                            @(device.LastUsedAt is { } used ? string.Format(PanelText.DeviceLastUsed, Viewer.Minute(used)) : PanelText.DeviceNeverUsed)
                         </p>
                         @if (device is { RevokedReason: { } reason, RevokedAt: { } revokedAt })
                         {
-                            <p class="dev-reason">@PanelText.ResourceManager.GetString("Revoked_" + reason, PanelText.Culture) · @Words.Minute(revokedAt)</p>
+                            <p class="dev-reason">@PanelText.ResourceManager.GetString("Revoked_" + reason, PanelText.Culture) · @Viewer.Minute(revokedAt)</p>
                         }
                     </li>
                 }
@@ -65,7 +66,7 @@
                                         aria-label="@string.Format(PanelText.UnlinkOf, LinkTitle(link))"
                                         @onclick="() => UnlinkAsync(link)">@PanelText.Unlink</button>
                             </div>
-                            <p class="dev-meta">@string.Format(PanelText.LinkedOn, Words.Day(link.LinkedAt))</p>
+                            <p class="dev-meta">@string.Format(PanelText.LinkedOn, Viewer.Day(link.LinkedAt))</p>
                         </li>
                     }
                 </ul>
@@ -116,8 +117,8 @@
 
     private async Task DisconnectAsync(Device device)
     {
-        await Actions.ApplyAsync(
-            services => services.GetRequiredService<DeviceService>().RevokeAsync(Id, device.Id, DeviceRevocation.Admin),
+        await Act.RunAsync(
+            () => Backend.ChangeAsync(services => services.GetRequiredService<DeviceService>().RevokeAsync(Id, device.Id, DeviceRevocation.Admin)),
             string.Format(PanelText.DeviceDisconnected, device.Name));
         await LoadAsync();
     }
@@ -127,8 +128,8 @@
         if (!await Dialogs.ConfirmAsync(string.Format(PanelText.DisconnectAllQuestion, _name), PanelText.DisconnectAllWarning, PanelText.DisconnectAll, true))
             return;
 
-        await Actions.ApplyAsync(
-            services => services.GetRequiredService<DeviceService>().RevokeAllAsync(Id, DeviceRevocation.Admin),
+        await Act.RunAsync(
+            () => Backend.ChangeAsync(services => services.GetRequiredService<DeviceService>().RevokeAllAsync(Id, DeviceRevocation.Admin)),
             PanelText.AllDevicesDisconnected);
         await LoadAsync();
     }
@@ -138,8 +139,8 @@
         if (!await Dialogs.ConfirmAsync(string.Format(PanelText.UnlinkQuestion, $"{LinkTitle(link)} · {link.Display}"), PanelText.UnlinkWarning, PanelText.Unlink, true))
             return;
 
-        await Actions.ApplyAsync(
-            services => services.GetRequiredService<ClientLinkService>().UnlinkAsync(Id, link.Id),
+        await Act.RunAsync(
+            () => Backend.ChangeAsync(services => services.GetRequiredService<ClientLinkService>().UnlinkAsync(Id, link.Id)),
             string.Format(PanelText.LinkRemoved, LinkTitle(link)));
         await LoadAsync();
     }

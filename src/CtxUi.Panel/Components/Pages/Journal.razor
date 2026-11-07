@@ -3,6 +3,7 @@
 @inject PanelLayout Layout
 @inject PanelBackend Backend
 @inject TimeProvider Clock
+@inject ViewerTime Viewer
 
 <PageHead Title="@Layout.TitleOf(PanelSections.Journal)" UpdatedAt="_loadedAt" OnRefresh="LoadAsync">
     <Summary>
@@ -53,7 +54,7 @@ else
                    Class="day-row">@(((DateOnly)context.Key!).ToString("d MMMM", CultureInfo.CurrentCulture))</MudTd>
         </GroupHeaderTemplate>
         <RowTemplate>
-            <MudTd><code>@Words.Clock(context.At, true)</code></MudTd>
+            <MudTd><code>@Viewer.Clock(context.At, true)</code></MudTd>
             <MudTd
                 DataLabel="@PanelText.Client">@_clients.GetValueOrDefault(context.ClientId, PanelText.Removed)</MudTd>
             <MudTd DataLabel="@PanelText.Inbound">

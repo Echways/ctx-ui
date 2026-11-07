@@ -2,7 +2,6 @@ using System.Threading.Channels;
 using CtxUi.Builder.Data;
 using CtxUi.Builder.Runner;
 using CtxUi.Extensions;
-using Enfilade;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -205,7 +204,7 @@ public sealed class PublishQueue : BackgroundService, IExtensionInitializer
     private void RequireConfigured()
     {
         if (!_settings.IsComplete)
-            throw new PanelException(string.Format(BuilderText.RunnerNotConfigured,
+            throw new BuilderException(string.Format(BuilderText.RunnerNotConfigured,
                 string.Join(", ", _settings.Missing)));
     }
 

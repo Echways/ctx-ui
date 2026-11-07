@@ -578,7 +578,7 @@ main() {
     fi
 
     if [ -z "$mode" ]; then
-        fail "ctx-ui is not installed here: no $unit and no running compose project with a ctx-ui service. Install ctx-ui first, see docs/install.md"
+        fail "ctx-ui is not installed here: no $unit and no running compose project with a ctx-ui service. Install ctx-ui first, see docs/en/install.md"
     fi
     if [ -z "$version" ]; then
         fail "no version given: add --version or take builder-install.sh from the release page"

@@ -1,6 +1,6 @@
 # Configuration
 
-**English** · [Русский](ru/configuration.md)
+[English](configuration.md) · [Русский](../ru/configuration.md) · [Documentation](README.md)
 
 Settings come from environment variables. Names are the same for every
 install method.

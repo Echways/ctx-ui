@@ -1,5 +1,4 @@
 using System.Text;
-using Enfilade;
 
 namespace CtxUi.Builder.Tools;
 
@@ -20,7 +19,7 @@ public static class OpenApiSource
         }
 
         if (!Uri.TryCreate(address?.Trim(), UriKind.Absolute, out var uri))
-            throw new PanelException(BuilderText.ImportAddressInvalid);
+            throw new BuilderException(BuilderText.ImportAddressInvalid);
         return await OpenApiImport.FetchAsync(uri, clients.CreateClient(), ct);
     }
 }

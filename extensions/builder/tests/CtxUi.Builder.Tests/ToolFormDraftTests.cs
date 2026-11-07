@@ -1,7 +1,6 @@
 using System.Text.Json.Nodes;
 using CtxUi.Builder.Components;
 using CtxUi.Builder.Tools;
-using Enfilade;
 
 namespace CtxUi.Builder.Tests;
 
@@ -29,7 +28,7 @@ public sealed class ToolFormDraftTests
     {
         var row = new ParameterRow { Name = "p", Type = type, DefaultText = text };
 
-        Assert.Throws<PanelException>(row.ToParameter);
+        Assert.Throws<BuilderException>(row.ToParameter);
     }
 
     [Fact]

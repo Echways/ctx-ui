@@ -1,6 +1,6 @@
 # Browser sign-in (OAuth)
 
-**English** · [Русский](ru/oauth.md)
+[English](oauth.md) · [Русский](../ru/oauth.md) · [Documentation](README.md)
 
 Off by default. While it is off, `/.well-known/*` and `/connect/*` answer an
 empty 404 and everything else works exactly as before.
@@ -103,7 +103,7 @@ claude mcp add --transport http learn https://mcp.example.com/mcp/learn
 - `curl https://<host>/.well-known/oauth-authorization-server` must answer
   JSON whose `issuer` is that address. An empty 404 means OAuth is off.
 - Behind a proxy set `CtxUi__TrustedProxies` (see
-  [configuration.md](configuration.md)), or every device is recorded with the
+  [Configuration](configuration.md#variables)), or every device is recorded with the
   proxy's address. The proxy must send `X-Forwarded-For` and
   `X-Forwarded-Proto`.
 - `ctx-ui oauth status` prints the state, the server metadata address and the

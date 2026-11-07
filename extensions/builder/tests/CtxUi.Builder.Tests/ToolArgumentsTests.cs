@@ -1,6 +1,5 @@
 using System.Text.Json;
 using CtxUi.Builder.Components;
-using Enfilade;
 
 namespace CtxUi.Builder.Tests;
 
@@ -57,7 +56,7 @@ public sealed class ToolArgumentsTests
         var number = From("""{"type":"object","required":["count"],"properties":{"count":{"type":"integer"}}}""");
 
         Assert.Equal("""{"name":""}""", text.ToArguments().ToJsonString());
-        Assert.Throws<PanelException>(() => number.ToArguments());
+        Assert.Throws<BuilderException>(() => number.ToArguments());
     }
 
     [Theory]
@@ -71,7 +70,7 @@ public sealed class ToolArgumentsTests
         var set = From("""{"type":"object","properties":{"field":{"type":"TYPE"}}}""".Replace("TYPE", type));
         Fill(set, ("field", value));
 
-        var failure = Assert.Throws<PanelException>(() => set.ToArguments());
+        var failure = Assert.Throws<BuilderException>(() => set.ToArguments());
 
         Assert.Contains("field", failure.Message);
     }

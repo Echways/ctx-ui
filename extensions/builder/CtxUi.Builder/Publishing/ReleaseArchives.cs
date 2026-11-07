@@ -1,6 +1,5 @@
 using System.Security.Cryptography;
 using CtxUi.Builder.Data;
-using Enfilade;
 
 namespace CtxUi.Builder.Publishing;
 
@@ -49,14 +48,14 @@ public sealed class ReleaseArchives(string dataDirectory)
         }
         catch (Exception failure) when (failure is FileNotFoundException or DirectoryNotFoundException)
         {
-            throw new PanelException(BuilderText.ArchiveMissing);
+            throw new BuilderException(BuilderText.ArchiveMissing);
         }
 
         try
         {
             var hash = Convert.ToHexString(await SHA256.HashDataAsync(stream, ct));
             if (!string.Equals(hash, release.ArchiveHash, StringComparison.OrdinalIgnoreCase))
-                throw new PanelException(BuilderText.ArchiveCorrupted);
+                throw new BuilderException(BuilderText.ArchiveCorrupted);
             stream.Position = 0;
             return stream;
         }

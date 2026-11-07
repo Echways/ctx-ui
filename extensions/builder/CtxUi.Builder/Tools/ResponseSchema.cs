@@ -1,6 +1,5 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using Enfilade;
 using NJsonSchema;
 
 namespace CtxUi.Builder.Tools;
@@ -13,7 +12,7 @@ public static class ResponseSchema
     public static JsonNode FromExample(string json)
     {
         if (string.IsNullOrWhiteSpace(json))
-            throw new PanelException(BuilderText.ResponseExampleEmpty);
+            throw new BuilderException(BuilderText.ResponseExampleEmpty);
         try
         {
             using var document = JsonDocument.Parse(json);
@@ -27,7 +26,7 @@ public static class ResponseSchema
         }
         catch (Exception failure) when (failure is JsonException or InvalidOperationException or NotSupportedException)
         {
-            throw new PanelException(BuilderText.ResponseExampleInvalid);
+            throw new BuilderException(BuilderText.ResponseExampleInvalid);
         }
     }
 

@@ -1,7 +1,6 @@
 using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using Enfilade;
 
 namespace CtxUi.Builder.Components;
 
@@ -73,13 +72,13 @@ public sealed class ArgumentSet
                 if (!field.Required)
                     continue;
                 if (field.Type != "string")
-                    throw new PanelException(string.Format(BuilderText.ToolArgumentRequired, field.Name));
+                    throw new BuilderException(string.Format(BuilderText.ToolArgumentRequired, field.Name));
                 arguments[field.Name] = string.Empty;
                 continue;
             }
 
             arguments[field.Name] = ValueOf(field, text.Trim()) ??
-                                    throw new PanelException(string.Format(BuilderText.ToolArgumentInvalid,
+                                    throw new BuilderException(string.Format(BuilderText.ToolArgumentInvalid,
                                         field.Name));
         }
 

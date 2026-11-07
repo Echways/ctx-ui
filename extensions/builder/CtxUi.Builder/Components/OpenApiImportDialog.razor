@@ -90,7 +90,7 @@
         }
         catch (DraftConflictException failure)
         {
-            throw new PanelException(failure.Message);
+            throw new BuilderException(failure.Message);
         }
 
         if (_selection.UseBaseUrl && _api!.BaseUrl is { } baseUrl)

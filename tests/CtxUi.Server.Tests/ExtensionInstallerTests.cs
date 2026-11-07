@@ -21,7 +21,7 @@ public sealed class ExtensionInstallerTests : IDisposable
 
     private static string SampleFolder => Path.Combine(AppContext.BaseDirectory, "extensions", "sample");
 
-    private static string Manifest(string id = "sample", string version = "1.0.0", string api = "1.0")
+    private static string Manifest(string id = "sample", string version = "1.0.0", string api = "2.0")
     {
         return
             $$"""{ "id": "{{id}}", "name": "Sample", "version": "{{version}}", "api": "{{api}}", "assembly": "SampleExtension" }""";
@@ -124,7 +124,7 @@ public sealed class ExtensionInstallerTests : IDisposable
             Archive(("SampleExtension.dll", "x")),
             Archive(("extension.json", Manifest("Bad/Id")), ("SampleExtension.dll", "x")),
             Archive(("extension.json", Manifest("login")), ("SampleExtension.dll", "x")),
-            Archive(("extension.json", Manifest(api: "2.0")), ("SampleExtension.dll", "x")),
+            Archive(("extension.json", Manifest(api: "3.0")), ("SampleExtension.dll", "x")),
             Archive(("extension.json", Manifest())),
             Archive(("extension.json", Manifest()), ("SampleExtension.dll", "not an assembly")),
             SampleArchive(Manifest("other")),
@@ -189,7 +189,7 @@ public sealed class ExtensionInstallerTests : IDisposable
     {
         InstallFolder("sample");
         InstallFolder("off", Manifest("off"));
-        InstallFolder("old", Manifest("old", api: "2.0"));
+        InstallFolder("old", Manifest("old", api: "3.0"));
         InstallFolder("routes", Manifest("routes"));
         InstallFolder("mismatch", Manifest("other"));
         InstallFolder("login", Manifest("login"));

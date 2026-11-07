@@ -1,5 +1,4 @@
 using CtxUi.Builder.Servers;
-using Enfilade;
 using Microsoft.EntityFrameworkCore;
 
 namespace CtxUi.Builder.Tests;
@@ -61,7 +60,7 @@ public sealed class ServerSettingsTests : IClassFixture<CatalogHarness>
     public async Task Changing_the_kind_without_a_secret_is_refused()
     {
         var server = await Catalog.CreateAsync(Slug(), "Kind", default);
-        await Assert.ThrowsAsync<PanelException>(() =>
+        await Assert.ThrowsAsync<BuilderException>(() =>
             Catalog.SetApiAsync(server.Id, null, new ApiAuthInput(ApiAuthKind.Bearer), 0, default));
     }
 
@@ -86,7 +85,7 @@ public sealed class ServerSettingsTests : IClassFixture<CatalogHarness>
     public async Task Base_url_must_be_an_absolute_http_address(string url)
     {
         var server = await Catalog.CreateAsync(Slug(), "Url", default);
-        await Assert.ThrowsAsync<PanelException>(() =>
+        await Assert.ThrowsAsync<BuilderException>(() =>
             Catalog.SetApiAsync(server.Id, url, new ApiAuthInput(ApiAuthKind.None), 0, default));
     }
 
@@ -96,7 +95,7 @@ public sealed class ServerSettingsTests : IClassFixture<CatalogHarness>
     public async Task Header_name_must_be_a_token(string header, string secret)
     {
         var server = await Catalog.CreateAsync(Slug(), "Header", default);
-        await Assert.ThrowsAsync<PanelException>(() => Catalog.SetApiAsync(server.Id, null,
+        await Assert.ThrowsAsync<BuilderException>(() => Catalog.SetApiAsync(server.Id, null,
             new ApiAuthInput(ApiAuthKind.Header, header, Secret: secret), 0, default));
     }
 
@@ -108,7 +107,7 @@ public sealed class ServerSettingsTests : IClassFixture<CatalogHarness>
             default);
 
         Assert.Equal("httpx>=0.28\npydantic", (await Catalog.SettingsAsync(server.Id, default)).Dependencies);
-        await Assert.ThrowsAsync<PanelException>(() =>
+        await Assert.ThrowsAsync<BuilderException>(() =>
             Catalog.SetDependenciesAsync(server.Id, "--index-url https://x", 1, default));
     }
 
@@ -152,7 +151,7 @@ public sealed class ServerSettingsTests : IClassFixture<CatalogHarness>
         var slug = Slug();
         await Catalog.CreateAsync(slug, "First", default);
 
-        await Assert.ThrowsAsync<PanelException>(() =>
+        await Assert.ThrowsAsync<BuilderException>(() =>
             Catalog.ImportAsync(slug, "Second", new ProjectImport([("mcp/a.py", "a")], null), default));
 
         Assert.Single(await Catalog.ListAsync(default), server => server.Slug == slug);
@@ -163,8 +162,8 @@ public sealed class ServerSettingsTests : IClassFixture<CatalogHarness>
     public async Task Saving_a_file_with_a_disallowed_type_is_refused()
     {
         var server = await Catalog.CreateAsync(Slug(), "Types", default);
-        await Assert.ThrowsAsync<PanelException>(() => Catalog.SaveFileAsync(server.Id, "mcp/a.exe", "x", 0, default));
-        await Assert.ThrowsAsync<PanelException>(() =>
+        await Assert.ThrowsAsync<BuilderException>(() => Catalog.SaveFileAsync(server.Id, "mcp/a.exe", "x", 0, default));
+        await Assert.ThrowsAsync<BuilderException>(() =>
             Catalog.SaveFileAsync(server.Id, "openapi.json", "{}", 0, default));
     }
 
@@ -196,7 +195,7 @@ public sealed class ServerSettingsTests : IClassFixture<CatalogHarness>
 
         archive.Position = 0;
 
-        await Assert.ThrowsAsync<PanelException>(() => Catalog.ImportArchiveAsync(slug, "Bad", archive, default));
+        await Assert.ThrowsAsync<BuilderException>(() => Catalog.ImportArchiveAsync(slug, "Bad", archive, default));
         Assert.DoesNotContain(await Catalog.ListAsync(default), server => server.Slug == slug);
     }
 }

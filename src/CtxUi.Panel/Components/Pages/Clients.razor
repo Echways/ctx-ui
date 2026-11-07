@@ -2,8 +2,9 @@
 @inject PanelLayout Layout
 @inject PanelBackend Backend
 @inject IDialogService Dialogs
-@inject PanelActions Actions
+@inject Act Act
 @inject TimeProvider Clock
+@inject ViewerTime Viewer
 
 <PageHead Title="@Layout.TitleOf(PanelSections.Clients)" Count="_clients?.Count"
           UpdatedAt="_clients is null ? null : _loadedAt" OnRefresh="LoadAsync">
@@ -64,12 +65,12 @@ else
                 <Status Value="ClientState.Of(context, _loadedAt)"/>
             </MudTd>
             <MudTd DataLabel="@PanelText.ExpiryColumn">
-                @(context.ExpiresAt is { } expiresAt ? string.Format(PanelText.ExpiresOn, Words.Day(expiresAt)) : PanelText.NoExpiry)
+                @(context.ExpiresAt is { } expiresAt ? string.Format(PanelText.ExpiresOn, Viewer.Day(expiresAt)) : PanelText.NoExpiry)
             </MudTd>
             <MudTd DataLabel="@PanelText.LastSeenColumn">
                 @if (context.LastUsedAt is { } usedAt)
                 {
-                    @Words.Minute(usedAt)
+                    @Viewer.Minute(usedAt)
                 }
                 else
                 {
@@ -140,15 +141,15 @@ else
 
     private async Task SwitchAsync(Client client, bool enabled)
     {
-        await Actions.ApplyAsync(
-            OnClient(client, clients => clients.SetEnabledAsync(client.Id, enabled)),
+        await Act.RunAsync(
+            () => Backend.ChangeAsync(OnClient(client, clients => clients.SetEnabledAsync(client.Id, enabled))),
             string.Format(enabled ? PanelText.ClientEnabled : PanelText.ClientDisabled, client.Name));
         await LoadAsync();
     }
 
     private async Task ResetAsync(Client client)
     {
-        await Actions.ApplyAsync(OnClient(client, clients => clients.ResetQuotaAsync(client.Id)), string.Format(PanelText.QuotaReset, client.Name));
+        await Act.RunAsync(() => Backend.ChangeAsync(OnClient(client, clients => clients.ResetQuotaAsync(client.Id))), string.Format(PanelText.QuotaReset, client.Name));
         await LoadAsync();
     }
 
@@ -199,7 +200,7 @@ else
         if (!await Dialogs.ConfirmAsync(string.Format(PanelText.ReissueQuestion, client.Name), warning, PanelText.ReissueYes))
             return;
 
-        await Actions.ApplyAsync(OnClient(client, clients => clients.ReissueAsync(client.Id)), string.Format(PanelText.TokenReissued, client.Name));
+        await Act.RunAsync(() => Backend.ChangeAsync(OnClient(client, clients => clients.ReissueAsync(client.Id))), string.Format(PanelText.TokenReissued, client.Name));
         await LoadAsync();
         if (_clients!.Any(known => known.Id == client.Id))
             await ConnectAsync(client, true);
@@ -209,7 +210,7 @@ else
     {
         if (await Dialogs.ConfirmAsync(string.Format(PanelText.RemoveClientQuestion, client.Name), PanelText.RemoveClientWarning, PanelText.Delete, true))
         {
-            await Actions.ApplyAsync(OnClient(client, clients => clients.RemoveAsync(client.Id)), string.Format(PanelText.ClientRemoved, client.Name));
+            await Act.RunAsync(() => Backend.ChangeAsync(OnClient(client, clients => clients.RemoveAsync(client.Id))), string.Format(PanelText.ClientRemoved, client.Name));
             await LoadAsync();
         }
     }

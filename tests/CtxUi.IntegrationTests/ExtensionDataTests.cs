@@ -1,6 +1,7 @@
 using System.Net;
-using Enfilade;
 using Microsoft.Extensions.DependencyInjection;
+using Enfilade;
+using CtxUi.Core;
 using CtxUi.Extensions;
 
 namespace CtxUi.IntegrationTests;
@@ -125,7 +126,7 @@ public class ExtensionDataTests
         await gateway.AddInboundAsync("a", upstream.McpUrl);
 
         var failure =
-            await Assert.ThrowsAsync<PanelException>(() => Data(gateway).SetInboundClientsAsync("a", [Guid.NewGuid()]));
+            await Assert.ThrowsAsync<NotFoundException>(() => Data(gateway).SetInboundClientsAsync("a", [Guid.NewGuid()]));
         Assert.False(string.IsNullOrWhiteSpace(failure.Message));
     }
 
@@ -147,32 +148,36 @@ public class ExtensionDataTests
     }
 
     [Fact]
-    public async Task Adding_a_taken_slug_throws_PanelException_with_the_core_message()
+    public async Task Adding_a_taken_slug_fails_with_a_reason_the_panel_shows()
     {
         await using var upstream = await FakeUpstream.StartAsync();
         await using var gateway = await GatewayHost.StartAsync();
         await gateway.AddInboundAsync("echo", upstream.McpUrl);
 
-        var failure = await Assert.ThrowsAsync<PanelException>(() =>
+        var failure = await Assert.ThrowsAsync<DomainException>(() =>
             Data(gateway).AddHttpInboundAsync(new HttpInboundDraft("echo", "Echo", upstream.McpUrl)));
-        Assert.Contains("echo", failure.Message);
+
+        await using var scope = gateway.App.Services.CreateAsyncScope();
+        var shown = scope.ServiceProvider.GetRequiredService<ErrorMessages>().Of(failure);
+        Assert.Equal(Words.Sentence(failure.Message), shown);
+        Assert.Contains("echo", shown);
     }
 
     [Fact]
-    public async Task Adding_an_inbound_with_an_invalid_address_throws_PanelException()
+    public async Task Adding_an_inbound_with_an_invalid_address_throws_the_core_failure()
     {
         await using var gateway = await GatewayHost.StartAsync();
 
-        var failure = await Assert.ThrowsAsync<PanelException>(() =>
+        var failure = await Assert.ThrowsAsync<DomainException>(() =>
             Data(gateway).AddHttpInboundAsync(new HttpInboundDraft("echo", "Echo", "not an address")));
         Assert.Contains("not an address", failure.Message);
     }
 
     [Fact]
-    public async Task Removing_an_unknown_inbound_throws_PanelException()
+    public async Task Removing_an_unknown_inbound_throws_the_core_failure()
     {
         await using var gateway = await GatewayHost.StartAsync();
 
-        await Assert.ThrowsAsync<PanelException>(() => Data(gateway).RemoveInboundAsync("missing"));
+        await Assert.ThrowsAsync<NotFoundException>(() => Data(gateway).RemoveInboundAsync("missing"));
     }
 }

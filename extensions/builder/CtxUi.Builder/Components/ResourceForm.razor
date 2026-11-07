@@ -16,7 +16,7 @@
     {
         <p class="bad-t" role="alert" data-testid="resource-error">@_error</p>
     }
-    <Form Model="_draft" OnSubmit="SaveAsync" Submit="@BuilderText.SaveResource" Done="@BuilderText.ResourceSaved">
+    <Form @ref="_form" Model="_draft" OnSubmit="SaveAsync" Submit="@BuilderText.SaveResource" Done="@BuilderText.ResourceSaved">
         <Field For="() => _draft.Uri" Label="@BuilderText.ResourceUri"/>
         <Field For="() => _draft.Name" Label="@BuilderText.ResourceName"/>
         <Field For="() => _draft.MimeType" Label="@BuilderText.ResourceMimeType"/>
@@ -57,14 +57,13 @@
 
     [Parameter] public EventCallback OnReload { get; set; }
 
-    private string _baseline = string.Empty;
+    private Form? _form;
 
-    public bool HasUnsavedChanges => DraftSnapshot.Of(_draft) != _baseline;
+    public bool HasUnsavedChanges => _form?.IsDirty == true;
 
     protected override void OnInitialized()
     {
         _draft = Resource is null ? new ResourceFormDraft() : ResourceFormDraft.From(Resource);
-        _baseline = DraftSnapshot.Of(_draft);
     }
 
     private async Task SaveAsync()
@@ -91,7 +90,7 @@
         {
             _pending = action;
             _conflict = true;
-            throw new PanelException(BuilderText.DraftChangedElsewhere);
+            throw new BuilderException(BuilderText.DraftChangedElsewhere);
         }
 
         _conflict = false;
@@ -120,7 +119,7 @@
         {
             _error = BuilderText.DraftChangedElsewhere;
         }
-        catch (PanelException failure)
+        catch (BuilderException failure)
         {
             _error = failure.Message;
         }

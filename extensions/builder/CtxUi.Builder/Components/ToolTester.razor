@@ -130,7 +130,7 @@ else
         {
             _tools = await Runner.ListAsync(ServerId, _target, CancellationToken.None);
         }
-        catch (PanelException failure)
+        catch (BuilderException failure)
         {
             _error = failure.Message;
             return;

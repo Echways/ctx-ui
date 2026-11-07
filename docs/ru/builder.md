@@ -1,12 +1,8 @@
 # Конструктор серверов
 
-Конструктор это расширение панели. Оно собирает в панели MCP-серверы на FastMCP,
-запускает каждый в своём изолированном Docker-контейнере и подключает его как
-HTTP-инбаунд, поэтому сервер доходит до клиентов так же, как любой другой. Токены,
-лимиты, журнал, метрики и OAuth работают для собранных серверов без дополнительных
-настроек.
+[English](../en/builder.md) · [Русский](builder.md) · [Документация](README.md)
 
-[English](../builder.md) · [Русский](builder.md)
+Конструктор это расширение панели. Оно собирает в панели MCP-серверы на FastMCP, запускает каждый в своём изолированном Docker-контейнере и подключает его как HTTP-инбаунд, поэтому сервер доходит до клиентов так же, как любой другой. Токены, лимиты, журнал, метрики и OAuth работают для собранных серверов без дополнительных настроек.
 
 Конструктор не входит в ctx-ui. Без него в панели нет ни следа от него, а основной
 образ и установка через systemd обходятся без Python и Docker.
@@ -64,7 +60,7 @@ Runner сообщит версию релиза, записывает настр
 
 ```bash
 curl -fsSL https://github.com/Echways/ctx-ui/releases/latest/download/builder-install.sh \
-    | sudo bash -s -- --version 0.2.0
+    | sudo bash -s -- --version 0.1.4
 ```
 
 Для обновления выполните команду ещё раз: токен и собранные серверы сохраняются.
@@ -187,7 +183,7 @@ root, с `cap_drop: ALL` и `no-new-privileges`, на корне только д
 Установка через systemd:
 
 ```bash
-export CTXB_VERSION=0.2.0
+export CTXB_VERSION=0.1.4
 export CTXB_RUNNER_TOKEN=$(openssl rand -hex 32)
 docker compose -f builder-compose.yaml up -d
 ```
@@ -202,7 +198,7 @@ CtxUi__Extensions__builder__RunnerToken=<тот же токен>
 ```
 
 ```bash
-sudo ctx-ui extension install builder-0.2.0.zip
+sudo ctx-ui extension install builder-0.1.4.zip
 sudo systemctl restart ctx-ui
 ```
 
@@ -210,7 +206,7 @@ sudo systemctl restart ctx-ui
 рядом с `compose.yaml` ctx-ui и добавьте в `.env`:
 
 ```
-CTXB_VERSION=0.2.0
+CTXB_VERSION=0.1.4
 CTXB_RUNNER_TOKEN=<64 шестнадцатеричные цифры>
 COMPOSE_FILE=compose.yaml:builder-compose.yaml:builder-compose.docker.yaml
 ```
@@ -221,7 +217,7 @@ COMPOSE_FILE=compose.yaml:builder-compose.yaml:builder-compose.docker.yaml
 
 ```bash
 docker compose up -d
-docker compose cp builder-0.2.0.zip ctx-ui:/tmp/builder.zip
+docker compose cp builder-0.1.4.zip ctx-ui:/tmp/builder.zip
 docker compose exec ctx-ui ctx-ui extension install /tmp/builder.zip
 docker compose restart ctx-ui
 ```
@@ -256,7 +252,7 @@ docker compose restart ctx-ui
 ## API для CI
 
 У расширения есть эндпоинты под `/<panel>/extensions/builder/`. Нужен API-ключ в
-`Authorization: Bearer ctxk_…`, как в [REST API](README.md#rest-api).
+`Authorization: Bearer ctxk_…`, как в [REST API](api.md).
 
 | Запрос | Результат |
 | --- | --- |

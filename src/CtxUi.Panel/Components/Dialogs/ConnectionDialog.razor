@@ -2,7 +2,9 @@
 @inject PanelBackend Backend
 @inject IOptions<PanelOptions> Options
 @inject ISnackbar Snackbar
+@inject ErrorMessages Errors
 @inject TimeProvider Clock
+@inject ViewerTime Viewer
 
 <Sheet>
     <ChildContent>
@@ -62,7 +64,7 @@
                     else
                     {
                         <CopyLine Label="@PanelText.InviteLink" Value="@_inviteUrl" CopyLabel="@PanelText.InviteCopy"/>
-                        <p class="hint">@string.Format(PanelText.InviteValidUntil, Words.Day(_inviteUntil))</p>
+                        <p class="hint">@string.Format(PanelText.InviteValidUntil, Viewer.Day(_inviteUntil))</p>
                     }
                 </section>
             }
@@ -117,9 +119,9 @@
                 return (client, clients.Reveal(client), new ConnectionMode(active, settings.KeySignIn, client.DirectKey), providers.Any(provider => provider.Enabled));
             });
         }
-        catch (DomainException exception)
+        catch (Exception exception) when (Errors.Of(exception) is { } reason)
         {
-            Snackbar.Add(Words.Sentence(exception.Message), Severity.Error);
+            Snackbar.Add(reason, Severity.Error);
             MudDialog.Cancel();
             return;
         }
@@ -130,7 +132,7 @@
     private void Describe()
     {
         if (_token is not null)
-            _message = ConnectionText.Message(PublicUrl, _client!, _token, _mode, _inviteUrl);
+            _message = ConnectionText.Message(PublicUrl, _client!, _token, Viewer.Zone, _mode, _inviteUrl);
     }
 
     private async Task InviteAsync()

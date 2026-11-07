@@ -191,7 +191,7 @@ main() {
         fail "root privileges required, run with sudo"
     fi
     if ! command -v systemctl > /dev/null 2>&1 || [ ! -d /run/systemd/system ]; then
-        fail "systemd is required; without it install with Docker, see docs/install.md"
+        fail "systemd is required; without it install with Docker, see docs/en/install.md"
     fi
 
     if [ "$uninstall" -eq 1 ]; then

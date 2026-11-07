@@ -11,7 +11,7 @@
   <PropertyGroup Condition="$(MSBuildProjectName.StartsWith('CtxUi.Extensions'))">
     <Authors>Echways</Authors>
     <PackageLicenseExpression>GPL-3.0-only</PackageLicenseExpression>
-    <PackageProjectUrl>https://github.com/Echways/ctx-ui/blob/main/docs/extensions.md</PackageProjectUrl>
+    <PackageProjectUrl>https://github.com/Echways/ctx-ui/blob/main/docs/en/extensions.md</PackageProjectUrl>
     <PackageTags>ctx-ui;mcp;panel;extensions;blazor</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryUrl>https://github.com/Echways/ctx-ui</RepositoryUrl>

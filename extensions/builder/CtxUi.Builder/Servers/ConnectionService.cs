@@ -19,6 +19,7 @@ public sealed class ConnectionService(
     ReleaseArchives archives,
     PublishQueue queue,
     ConnectedInbounds connected,
+    ErrorMessages errors,
     ILogger<ConnectionService> log)
 {
     public async Task<InboundSummary> ConnectAsync(Guid serverId, string slug, string name, bool forwardIdentity,
@@ -102,7 +103,7 @@ public sealed class ConnectionService(
 
         var wanted = slug.Trim();
         if (inbounds.Any(inbound => inbound.Slug == wanted))
-            throw new PanelException(BuilderText.InboundSlugTaken);
+            throw new BuilderException(BuilderText.InboundSlugTaken);
 
         var inbound =
             await AddInboundAsync(
@@ -138,9 +139,9 @@ public sealed class ConnectionService(
         {
             return await data.AddHttpInboundAsync(draft, ct);
         }
-        catch (PanelException failure)
+        catch (Exception failure) when (errors.Of(failure) is { } reason)
         {
-            throw new PanelException(string.Format(BuilderText.InboundRejected, failure.Message));
+            throw new BuilderException(string.Format(BuilderText.InboundRejected, reason));
         }
     }
 
@@ -155,7 +156,7 @@ public sealed class ConnectionService(
         }
         catch (RunnerException failure)
         {
-            throw new PanelException(string.Format(BuilderText.RunnerDeleteFailed, failure.Message));
+            throw new BuilderException(string.Format(BuilderText.RunnerDeleteFailed, failure.Message));
         }
     }
 
@@ -187,7 +188,7 @@ public sealed class ConnectionService(
     private void RequireConfigured()
     {
         if (!settings.IsComplete)
-            throw new PanelException(
+            throw new BuilderException(
                 string.Format(BuilderText.RunnerNotConfigured, string.Join(", ", settings.Missing)));
     }
 }

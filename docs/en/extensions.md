@@ -1,11 +1,8 @@
 # Panel extensions
 
-An extension adds sections, blocks and actions to the ctx-ui panel, changes its
-navigation and look, and brings its own services, endpoints and database. It is
-built into a zip archive. An administrator installs the archive with one command
-and restarts the service; ctx-ui itself is not rebuilt.
+[English](extensions.md) · [Русский](../ru/extensions.md) · [Documentation](README.md)
 
-[English](extensions.md) · [Русский](ru/extensions.md)
+An extension adds sections, blocks and actions to the ctx-ui panel, changes its navigation and look, and brings its own services, endpoints and database. It is built into a zip archive. An administrator installs the archive with one command and restarts the service; ctx-ui itself is not rebuilt.
 
 ## Your first extension in 5 minutes
 
@@ -133,10 +130,11 @@ context.Panel
 `AddAction` receives `PanelActionArgs<TContext>`: `Context`, `Dialogs` and
 `Services`. When it finishes, the page reloads its data, so a change shows at once.
 An exception shows an error message and is logged. To show your own message, throw
-`Enfilade.PanelException`. `AddSheet` opens a block in a side sheet and passes the
-row as `Context`; the sheet closes with its close word, Escape or a click outside.
-A row context is built only on click, so the menu costs nothing until it is used,
-unless the action has a `When` predicate.
+`Enfilade.PanelException`, or register your exception type in `Register` with
+`context.Services.ShowMessageOf<TException>(failure => failure.Message)`. `AddSheet`
+opens a block in a side sheet and passes the row as `Context`; the sheet closes with its
+close word, Escape or a click outside. A row context is built only on click, so the menu
+costs nothing until it is used, unless the action has a `When` predicate.
 
 `When` scopes the next `AddAction` or `AddSheet` to a synchronous
 `Func<TContext, bool>` predicate. The row menu and the page buttons show such an action
@@ -181,7 +179,7 @@ await data.SetClientEnabledAsync(clients[0].Id, false);
 var days = await data.UsageDaysAsync(from, to, clients[0].Id);
 ```
 
-Since API `1.1` an extension can also create HTTP inbounds and link clients to
+Since API `2.0` an extension can also create HTTP inbounds and link clients to
 them. `SetInboundClientsAsync` replaces the clients of one inbound and leaves
 their other inbounds untouched:
 
@@ -192,9 +190,11 @@ var linked = await data.InboundClientsAsync("built");
 await data.RemoveInboundAsync("built");
 ```
 
-A taken slug, an invalid address or an unknown client throws `Enfilade.PanelException`
-with the localized message of the panel, so an extension can catch it and show the
-reason. The core exception types stay out of reach of extensions. Changes take effect
+A taken slug, an invalid address or an unknown client throws an exception with the
+localized message of the panel. Enfilade shows that message to the user by itself. To
+show the reason in your own words, catch the exception and read the message with
+`Enfilade.ErrorMessages.Of(exception)`, which returns `null` for any other failure. The
+core exception types stay out of reach of extensions. Changes take effect
 in the gateway at once.
 
 ### Services and settings
@@ -268,7 +268,7 @@ Keep other files of the extension in `context.DataDirectory`.
 
 ## Versions and compatibility
 
-The manifest of a package records the extension API version, currently `1.1`. A
+The manifest of a package records the extension API version, currently `2.0`. A
 server loads an extension when the major version equals its own and the minor
 version is not higher. An incompatible extension is skipped with an error in the
 log and the server keeps working.
@@ -309,7 +309,7 @@ created for you.
   [Your first extension in 5 minutes](#your-first-extension-in-5-minutes):
   `dotnet new ctxui-extension`.
 - The [server builder](builder.md) is a large real example, built only on the
-  public contract: [`extensions/builder/CtxUi.Builder`](../extensions/builder/CtxUi.Builder).
+  public contract: [`extensions/builder/CtxUi.Builder`](../../extensions/builder/CtxUi.Builder).
   It shows sections and pages, slots on the inbounds page, a database, hosted
   services, endpoints and the inbound methods of `IPanelData`.
 

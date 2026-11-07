@@ -2,7 +2,6 @@ using System.Text;
 using System.Text.Json.Nodes;
 using CtxUi.Builder.Servers;
 using CtxUi.Builder.Tools;
-using Enfilade;
 
 namespace CtxUi.Builder.Tests;
 
@@ -57,7 +56,7 @@ public sealed class OpenApiCatalogTests : IClassFixture<CatalogHarness>
         await Catalog.SaveOpenApiAsync(id, document.ToJsonString(), (await Catalog.DraftAsync(id, default)).Revision,
             default);
 
-        var failure = await Assert.ThrowsAsync<PanelException>(() =>
+        var failure = await Assert.ThrowsAsync<BuilderException>(() =>
             Catalog.SaveFileAsync(id, "mcp/data.txt", new string('b', half + 1), 0, default));
 
         Assert.Equal(BuilderText.ProjectTooLarge, failure.Message);
@@ -84,7 +83,7 @@ public sealed class OpenApiCatalogTests : IClassFixture<CatalogHarness>
 
         var revision = (await Catalog.DraftAsync(id, default)).Revision;
 
-        await Assert.ThrowsAsync<PanelException>(() => Catalog.SaveOpenApiAsync(id, "{ nope", revision, default));
+        await Assert.ThrowsAsync<BuilderException>(() => Catalog.SaveOpenApiAsync(id, "{ nope", revision, default));
 
         Assert.Null((await Catalog.DraftAsync(id, default)).OpenApiJson);
     }
@@ -115,7 +114,7 @@ public sealed class OpenApiCatalogTests : IClassFixture<CatalogHarness>
             await Catalog.SaveOpenApiAsync(id, document, (await Catalog.DraftAsync(id, default)).Revision, default);
 
         var failure =
-            await Assert.ThrowsAsync<PanelException>(() =>
+            await Assert.ThrowsAsync<BuilderException>(() =>
                 Catalog.ConvertToCodeAsync(id, "get_forecast", revision, default));
 
         var draft = await Catalog.DraftAsync(id, default);
@@ -154,7 +153,7 @@ public sealed class OpenApiCatalogTests : IClassFixture<CatalogHarness>
             OpenApiDraft.Read((await Catalog.DraftAsync(id, default)).OpenApiJson!).Select(tool => tool.Name));
         await Assert.ThrowsAsync<DraftConflictException>(() =>
             Catalog.ImportOperationsAsync(id, api, new HashSet<string> { "b" }, start, default));
-        await Assert.ThrowsAsync<PanelException>(() =>
+        await Assert.ThrowsAsync<BuilderException>(() =>
             Catalog.ImportOperationsAsync(id, api, new HashSet<string>(), revision, default));
     }
 
@@ -177,14 +176,14 @@ public sealed class OpenApiCatalogTests : IClassFixture<CatalogHarness>
         var revision = await Catalog.SaveFormToolAsync(id, Tool("taken"), true,
             (await Catalog.DraftAsync(id, default)).Revision, default);
 
-        var duplicate = await Assert.ThrowsAsync<PanelException>(() =>
+        var duplicate = await Assert.ThrowsAsync<BuilderException>(() =>
             Catalog.SaveFormToolAsync(id, Tool("taken") with { Description = "other" }, true, revision, default));
         Assert.Equal(string.Format(BuilderText.ToolNameTaken, "taken"), duplicate.Message);
 
         await Catalog.SaveFileAsync(id, "mcp/greet.py",
             "from fastmcp.tools import tool\n\n\n@tool\ndef greet():\n    return 1\n", 0, default);
         revision = (await Catalog.DraftAsync(id, default)).Revision;
-        await Assert.ThrowsAsync<PanelException>(() =>
+        await Assert.ThrowsAsync<BuilderException>(() =>
             Catalog.SaveFormToolAsync(id, Tool("greet"), true, revision, default));
 
         var edited = await Catalog.SaveFormToolAsync(id, Tool("taken") with { Description = "edited" }, false, revision,
@@ -203,7 +202,7 @@ public sealed class OpenApiCatalogTests : IClassFixture<CatalogHarness>
             """{"openapi":"3.0.3","info":{"title":"t","version":"1"},"paths":{"/a":{"get":{"operationId":"a","responses":{"200":{"description":"OK"}}}}}}""";
         var api = await OpenApiImport.ParseAsync(new MemoryStream(Encoding.UTF8.GetBytes(document)), default);
 
-        var failure = await Assert.ThrowsAsync<PanelException>(async () => await Catalog.ImportOperationsAsync(id, api,
+        var failure = await Assert.ThrowsAsync<BuilderException>(async () => await Catalog.ImportOperationsAsync(id, api,
             new HashSet<string> { "a" }, (await Catalog.DraftAsync(id, default)).Revision, default));
 
         Assert.Equal(string.Format(BuilderText.ImportNameTaken, "a"), failure.Message);
@@ -251,7 +250,7 @@ public sealed class OpenApiCatalogTests : IClassFixture<CatalogHarness>
         var import = new ProjectImport([("openapi.json", document)], null);
 
         var failure =
-            await Assert.ThrowsAsync<PanelException>(() => Catalog.ImportAsync(Slug(), "Archive", import, default));
+            await Assert.ThrowsAsync<BuilderException>(() => Catalog.ImportAsync(Slug(), "Archive", import, default));
 
         Assert.StartsWith(BuilderText.ArchiveOpenApiInvalid.Split("{0}")[0], failure.Message);
     }
@@ -264,7 +263,7 @@ public sealed class OpenApiCatalogTests : IClassFixture<CatalogHarness>
             (await Catalog.DraftAsync(id, default)).Revision, default);
         var (_, converted) = await Catalog.ConvertToCodeAsync(id, "move", revision, default);
 
-        var failure = await Assert.ThrowsAsync<PanelException>(() =>
+        var failure = await Assert.ThrowsAsync<BuilderException>(() =>
             Catalog.SaveFormToolAsync(id, Tool("move"), false, converted, default));
 
         Assert.Equal(string.Format(BuilderText.ToolNameTaken, "move"), failure.Message);
@@ -277,13 +276,13 @@ public sealed class OpenApiCatalogTests : IClassFixture<CatalogHarness>
         await Catalog.SaveFormToolAsync(id, Tool("forecast"), true, (await Catalog.DraftAsync(id, default)).Revision,
             default);
 
-        var failure = await Assert.ThrowsAsync<PanelException>(() =>
+        var failure = await Assert.ThrowsAsync<BuilderException>(() =>
             Catalog.SaveFileAsync(id, "mcp/f.py", "@tool\ndef forecast():\n    pass\n", 0, default));
         Assert.Equal(string.Format(BuilderText.CodeToolNameTaken, "forecast"), failure.Message);
         Assert.Empty((await Catalog.DraftAsync(id, default)).Files);
 
         var revision = await Catalog.SaveFileAsync(id, "mcp/f.py", "@tool\ndef other():\n    pass\n", 0, default);
-        await Assert.ThrowsAsync<PanelException>(() => Catalog.SaveFileAsync(id, "mcp/f.py",
+        await Assert.ThrowsAsync<BuilderException>(() => Catalog.SaveFileAsync(id, "mcp/f.py",
             "@tool(name=\"forecast\")\ndef other():\n    pass\n", revision, default));
         await Catalog.SaveFileAsync(id, "mcp/data.txt", "forecast", 0, default);
     }

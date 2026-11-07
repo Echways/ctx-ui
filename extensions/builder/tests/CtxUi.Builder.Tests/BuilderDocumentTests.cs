@@ -1,7 +1,6 @@
 using System.Text.Json.Nodes;
 using CtxUi.Builder.Servers;
 using CtxUi.Builder.Tools;
-using Enfilade;
 
 namespace CtxUi.Builder.Tests;
 
@@ -31,10 +30,10 @@ public sealed class BuilderDocumentTests
     {
         var model = new BuilderDocumentModel([Cities(), Cities() with { Name = "other" }], []);
 
-        Assert.Throws<PanelException>(() => BuilderDocument.Write(model));
-        Assert.Throws<PanelException>(() =>
+        Assert.Throws<BuilderException>(() => BuilderDocument.Write(model));
+        Assert.Throws<BuilderException>(() =>
             BuilderDocument.WithResource(new BuilderDocumentModel([Cities()], []), Cities(), null));
-        Assert.Throws<PanelException>(() =>
+        Assert.Throws<BuilderException>(() =>
             BuilderDocument.WithResource(
                 new BuilderDocumentModel([Cities(), Cities() with { Uri = "data://towns" }], []),
                 Cities() with { Uri = "data://towns" }, "data://cities"));
@@ -50,13 +49,13 @@ public sealed class BuilderDocumentTests
     {
         var model = new BuilderDocumentModel([Cities() with { Uri = uri }], []);
 
-        Assert.Throws<PanelException>(() => BuilderDocument.Write(model));
+        Assert.Throws<BuilderException>(() => BuilderDocument.Write(model));
     }
 
     [Fact]
     public void Duplicate_prompt_name_is_refused()
     {
-        Assert.Throws<PanelException>(() => BuilderDocument.Write(new BuilderDocumentModel([], [Report(), Report()])));
+        Assert.Throws<BuilderException>(() => BuilderDocument.Write(new BuilderDocumentModel([], [Report(), Report()])));
     }
 
     [Fact]
@@ -120,7 +119,7 @@ public sealed class BuilderDocumentTests
     [InlineData("""{"prompts":[{"name":"p","template":"a"},{"name":"p","template":"b"}]}""")]
     public void Broken_document_is_refused(string json)
     {
-        Assert.Throws<PanelException>(() => BuilderDocument.Read(json));
+        Assert.Throws<BuilderException>(() => BuilderDocument.Read(json));
     }
 
     [Fact]
@@ -212,7 +211,7 @@ public sealed class BuilderDraftTests : IClassFixture<CatalogHarness>
     [Fact]
     public async Task Saving_for_an_unknown_server_is_refused()
     {
-        await Assert.ThrowsAsync<PanelException>(() => Catalog.SaveResourceAsync(Guid.NewGuid(),
+        await Assert.ThrowsAsync<BuilderException>(() => Catalog.SaveResourceAsync(Guid.NewGuid(),
             new BuilderResource("data://a", "a", "text/plain", ""), null, 0, default));
     }
 
@@ -222,7 +221,7 @@ public sealed class BuilderDraftTests : IClassFixture<CatalogHarness>
         var slug = Slug();
         var import = new ProjectImport([("builder.json", "{broken")], null);
 
-        await Assert.ThrowsAsync<PanelException>(() => Catalog.ImportAsync(slug, "Bad", import, default));
+        await Assert.ThrowsAsync<BuilderException>(() => Catalog.ImportAsync(slug, "Bad", import, default));
 
         Assert.DoesNotContain(await Catalog.ListAsync(default), server => server.Slug == slug);
     }

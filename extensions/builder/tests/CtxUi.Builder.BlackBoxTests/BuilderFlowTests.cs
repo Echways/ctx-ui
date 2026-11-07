@@ -96,6 +96,24 @@ public sealed class BuilderFlowTests(RunnerFixture runner) : IClassFixture<Runne
         Assert.DoesNotContain("fail:", session.Panel.Log, StringComparison.Ordinal);
     }
 
+    [Fact(Skip = BuilderEnvironment.Requirements, SkipUnless = nameof(BuilderEnvironment.Ready),
+        SkipType = typeof(BuilderEnvironment))]
+    public async Task An_added_parameter_asks_before_leaving_the_page()
+    {
+        await using var session = await BuilderSession.StartAsync(runner.Stack);
+        await session.CreateServerAsync("Notes", "notes");
+        await session.Page.GetByTestId("new-form-tool").ClickAsync();
+        await session.Page.GetByTestId("add-parameter").ClickAsync();
+        await Expect(session.Page.GetByTestId("parameter-row")).ToHaveCountAsync(1);
+
+        await session.Page.GetByRole(AriaRole.Navigation)
+            .GetByRole(AriaRole.Link, new LocatorGetByRoleOptions { Name = "Servers", Exact = true }).ClickAsync();
+
+        await Expect(session.Dialog.GetByText("Discard the changes?")).ToBeVisibleAsync();
+        await Expect(session.Page.GetByTestId("parameter-row")).ToHaveCountAsync(1);
+        Assert.DoesNotContain("fail:", session.Panel.Log, StringComparison.Ordinal);
+    }
+
     private static async Task AssertBlocksAsync(BuilderSession session, string opener, string form, string label,
         string text)
     {

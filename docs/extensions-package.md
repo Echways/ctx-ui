@@ -15,6 +15,6 @@ dotnet new install CtxUi.Extensions.Templates
 dotnet new ctxui-extension -n Acme.Reports --id acme-reports
 ```
 
-Guide: [docs/extensions.md](https://github.com/Echways/ctx-ui/blob/main/docs/extensions.md).
+Guide: [docs/en/extensions.md](https://github.com/Echways/ctx-ui/blob/main/docs/en/extensions.md).
 
 Licensed under GPL-3.0-only.

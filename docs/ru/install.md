@@ -1,6 +1,6 @@
 # Установка
 
-[English](../install.md) · **Русский**
+[English](../en/install.md) · [Русский](install.md) · [Документация](README.md)
 
 Два способа: бинарник + systemd или Docker + Caddy. Программа и команда
 `ctx-ui` одни и те же.
@@ -59,7 +59,7 @@ curl -fsSL https://github.com/Echways/ctx-ui/releases/latest/download/install.sh
 Шлюз, CLI и API по умолчанию отвечают на английском. Для русского добавьте
 в `/etc/ctx-ui/ctx-ui.env` строку `CtxUi__Language=ru` и выполните
 `sudo systemctl restart ctx-ui`; подробнее — в
-[configuration.md](configuration.md#язык).
+[Настройки](configuration.md#язык).
 
 ### TLS
 
@@ -134,7 +134,7 @@ sudo ctx-ui up       # запустить и вернуть автозапуск
 
 ```bash
 sudo ctx-ui update           # последний релиз
-sudo ctx-ui update 0.2.0     # конкретная версия
+sudo ctx-ui update 0.1.4     # конкретная версия
 ctx-ui version               # установленная версия
 ```
 
@@ -174,7 +174,7 @@ curl -fsSL https://github.com/Echways/ctx-ui/releases/latest/download/install.sh
 443. Сертификат получает Caddy.
 
 ```bash
-VERSION=0.1.0
+VERSION=0.1.4
 curl -fsSL https://github.com/Echways/ctx-ui/releases/download/v$VERSION/ctx-ui-$VERSION-docker.tar.gz | tar -xz
 cd ctx-ui
 cp .env.example .env
@@ -183,7 +183,7 @@ cp .env.example .env
 `.env`:
 
 ```
-CTX_UI_VERSION=0.1.0
+CTX_UI_VERSION=0.1.4
 CTX_UI_DOMAIN=mcp.example.com
 CTX_UI_LANGUAGE=ru
 ```
@@ -206,7 +206,7 @@ docker compose exec ctx-ui ctx-ui client add "Иванов" --inbound learn
 В каталоге `ctx-ui`:
 
 ```bash
-sed -i 's/^CTX_UI_VERSION=.*/CTX_UI_VERSION=0.2.0/' .env && docker compose up -d
+sed -i 's/^CTX_UI_VERSION=.*/CTX_UI_VERSION=0.1.4/' .env && docker compose up -d
 ```
 
 Compose скачает новый образ и пересоздаст контейнер; данные остаются в томе.
@@ -223,7 +223,7 @@ Compose скачает новый образ и пересоздаст конт�
 или быть пустым. Копировать файл базы работающего сервиса нельзя: SQLite
 держит свежие изменения в `ctx-ui.db-wal`, и простая копия может выйти
 несогласованной. Без `keys/` сохранённые токены и заголовки upstream не
-расшифровать; подробнее — в [configuration.md](configuration.md#каталог-данных).
+расшифровать; подробнее — в [Настройки](configuration.md#каталог-данных).
 
 Бинарник (команда работает от пользователя `ctx-ui`, поэтому ей нужен
 каталог, куда этот пользователь может писать):

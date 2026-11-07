@@ -16,7 +16,7 @@
     {
         <p class="bad-t" role="alert" data-testid="form-error">@_error</p>
     }
-    <Form Model="_draft" OnSubmit="SaveAsync" Submit="@BuilderText.SaveTool" Done="@BuilderText.ToolSaved">
+    <Form @ref="_form" Model="_draft" OnSubmit="SaveAsync" Submit="@BuilderText.SaveTool" Done="@BuilderText.ToolSaved">
         <Field For="() => _draft.Name" Label="@BuilderText.ToolName" Disabled="@(Tool is not null)"/>
         <Field For="() => _draft.Method" Label="@BuilderText.ToolMethod" Options="Methods"/>
         <Field For="() => _draft.Path" Label="@BuilderText.ToolPath"/>
@@ -113,14 +113,13 @@
 
     [Parameter] public EventCallback OnReload { get; set; }
 
-    private string _baseline = string.Empty;
+    private Form? _form;
 
-    public bool HasUnsavedChanges => DraftSnapshot.Of(_draft) != _baseline;
+    public bool HasUnsavedChanges => _form?.IsDirty == true;
 
     protected override void OnInitialized()
     {
         _draft = Tool is null ? new ToolFormDraft() : ToolFormDraft.From(Tool);
-        _baseline = DraftSnapshot.Of(_draft);
     }
 
     private void AddParameter()
@@ -174,7 +173,7 @@
         {
             _pending = action;
             _conflict = true;
-            throw new PanelException(BuilderText.DraftChangedElsewhere);
+            throw new BuilderException(BuilderText.DraftChangedElsewhere);
         }
 
         _conflict = false;
@@ -210,7 +209,7 @@
         {
             _error = BuilderText.DraftChangedElsewhere;
         }
-        catch (PanelException failure)
+        catch (BuilderException failure)
         {
             _error = failure.Message;
         }

@@ -4,7 +4,6 @@ using CtxUi.Builder.Contracts;
 using CtxUi.Builder.Data;
 using CtxUi.Builder.Runner;
 using CtxUi.Builder.Servers;
-using Enfilade;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Query;
 using Microsoft.Extensions.DependencyInjection;
@@ -51,7 +50,7 @@ public sealed class PublishPipeline(
 
         var draft = await catalog.DraftAsync(serverId, ct);
         if (draft.OpenApiJson is not null && string.IsNullOrWhiteSpace(draft.BaseUrl))
-            throw new PanelException(BuilderText.PublishBaseUrlRequired);
+            throw new BuilderException(BuilderText.PublishBaseUrlRequired);
 
         ServerState state;
         try
@@ -462,7 +461,7 @@ public sealed class PublishPipeline(
     {
         switch (failure)
         {
-            case ReleaseFailure or PanelException:
+            case ReleaseFailure or BuilderException:
                 return failure.Message;
             case RunnerException runner:
                 return Describe(runner);

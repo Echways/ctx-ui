@@ -1,5 +1,4 @@
 using System.Text.Json.Nodes;
-using Enfilade;
 using ModelContextProtocol;
 
 namespace CtxUi.Builder.Publishing;
@@ -36,11 +35,11 @@ public sealed class ToolTestRunner(IToolInspector inspector, ReleaseCatalog rele
         }
         catch (OperationCanceledException) when (!ct.IsCancellationRequested)
         {
-            throw new PanelException(string.Format(BuilderText.ToolTestTimedOut, CallTimeout.TotalSeconds));
+            throw new BuilderException(string.Format(BuilderText.ToolTestTimedOut, CallTimeout.TotalSeconds));
         }
         catch (Exception failure) when (failure is HttpRequestException or IOException or McpException)
         {
-            throw new PanelException(string.Format(BuilderText.ToolTestFailed, failure.Message));
+            throw new BuilderException(string.Format(BuilderText.ToolTestFailed, failure.Message));
         }
     }
 }

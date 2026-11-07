@@ -183,7 +183,7 @@ public sealed class ToolInspectorTests
         var inspector = new ToolInspector(new Runner.RunnerSettings(null, null, null), null!, null!);
 
         var refused =
-            await Assert.ThrowsAsync<Enfilade.PanelException>(() => inspector.ListAsync(Guid.NewGuid(), null, default));
+            await Assert.ThrowsAsync<BuilderException>(() => inspector.ListAsync(Guid.NewGuid(), null, default));
 
         Assert.Equal(string.Format(BuilderText.RunnerNotConfigured, "RunnerUrl, RunnerIngressUrl, RunnerToken"),
             refused.Message);

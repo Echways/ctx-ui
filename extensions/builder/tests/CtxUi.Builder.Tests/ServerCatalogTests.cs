@@ -48,7 +48,7 @@ public sealed class ServerCatalogTests : IClassFixture<CatalogHarness>
     {
         var slug = Slug();
         await Catalog.CreateAsync(slug, "First", default);
-        await Assert.ThrowsAsync<Enfilade.PanelException>(() => Catalog.CreateAsync(slug, "Second", default));
+        await Assert.ThrowsAsync<BuilderException>(() => Catalog.CreateAsync(slug, "Second", default));
     }
 
     [Theory]
@@ -58,13 +58,13 @@ public sealed class ServerCatalogTests : IClassFixture<CatalogHarness>
     [InlineData("has space")]
     public async Task Invalid_server_slug_is_refused(string slug)
     {
-        await Assert.ThrowsAsync<Enfilade.PanelException>(() => Catalog.CreateAsync(slug, "Name", default));
+        await Assert.ThrowsAsync<BuilderException>(() => Catalog.CreateAsync(slug, "Name", default));
     }
 
     [Fact]
     public async Task Blank_server_name_is_refused()
     {
-        await Assert.ThrowsAsync<Enfilade.PanelException>(() => Catalog.CreateAsync(Slug(), "  ", default));
+        await Assert.ThrowsAsync<BuilderException>(() => Catalog.CreateAsync(Slug(), "  ", default));
     }
 
     [Fact]
@@ -132,7 +132,7 @@ public sealed class ServerCatalogTests : IClassFixture<CatalogHarness>
     public async Task Unsafe_file_paths_are_refused(string path)
     {
         var server = await Catalog.CreateAsync(Slug(), "Paths", default);
-        await Assert.ThrowsAsync<Enfilade.PanelException>(() =>
+        await Assert.ThrowsAsync<BuilderException>(() =>
             Catalog.SaveFileAsync(server.Id, path, "x", 0, default));
     }
 
@@ -143,14 +143,14 @@ public sealed class ServerCatalogTests : IClassFixture<CatalogHarness>
         var half = new string('x', 9 * 1024 * 1024);
         await Catalog.SaveFileAsync(server.Id, "mcp/a.py", half, 0, default);
 
-        await Assert.ThrowsAsync<Enfilade.PanelException>(() =>
+        await Assert.ThrowsAsync<BuilderException>(() =>
             Catalog.SaveFileAsync(server.Id, "mcp/b.py", half, 0, default));
     }
 
     [Fact]
     public async Task Saving_to_an_unknown_server_is_refused()
     {
-        await Assert.ThrowsAsync<Enfilade.PanelException>(() =>
+        await Assert.ThrowsAsync<BuilderException>(() =>
             Catalog.SaveFileAsync(Guid.NewGuid(), "mcp/a.py", "x", 0, default));
     }
 
@@ -188,7 +188,7 @@ public sealed class ServerCatalogTests : IClassFixture<CatalogHarness>
     public async Task Invalid_secret_names_are_refused(string name)
     {
         var server = await Catalog.CreateAsync(Slug(), "Names", default);
-        await Assert.ThrowsAsync<Enfilade.PanelException>(() => Catalog.SetSecretAsync(server.Id, name, "v", default));
+        await Assert.ThrowsAsync<BuilderException>(() => Catalog.SetSecretAsync(server.Id, name, "v", default));
     }
 
     [Fact]
@@ -234,7 +234,7 @@ public sealed class ServerCatalogTests : IClassFixture<CatalogHarness>
     public async Task Unsafe_limits_are_refused(int memory, double cpus, int pids)
     {
         var server = await Catalog.CreateAsync(Slug(), "Limits", default);
-        await Assert.ThrowsAsync<Enfilade.PanelException>(() =>
+        await Assert.ThrowsAsync<BuilderException>(() =>
             Catalog.SetAccessAsync(server.Id, NetworkAccess.InternetOnly, new ServerLimits(memory, cpus, pids),
                 default));
     }
@@ -289,7 +289,7 @@ public sealed class ServerCatalogTests : IClassFixture<CatalogHarness>
 
         Assert.Equal("mcp/get_data.py", path);
         var failure =
-            await Assert.ThrowsAsync<Enfilade.PanelException>(() =>
+            await Assert.ThrowsAsync<BuilderException>(() =>
                 Catalog.CreateToolAsync(server.Id, "Get Data", default));
         Assert.NotEmpty(failure.Message);
         Assert.Contains("def get_data(", (await Catalog.DraftAsync(server.Id, default)).Files.Single().Content);

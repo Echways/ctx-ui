@@ -3,7 +3,6 @@ using System.Text.Json.Nodes;
 using CtxUi.Builder.Contracts;
 using CtxUi.Builder.Runner;
 using CtxUi.Builder.Servers;
-using Enfilade;
 using ModelContextProtocol;
 using ModelContextProtocol.Client;
 using ModelContextProtocol.Protocol;
@@ -52,7 +51,7 @@ public sealed class ToolInspector(RunnerSettings settings, IHttpClientFactory ht
     private async Task<McpClient> ConnectAsync(Guid serverId, int? release, CancellationToken ct)
     {
         if (!settings.IsComplete)
-            throw new PanelException(
+            throw new BuilderException(
                 string.Format(BuilderText.RunnerNotConfigured, string.Join(", ", settings.Missing)));
 
         var secret = await catalog.RouteSecretAsync(serverId, ct);

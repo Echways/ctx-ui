@@ -1,6 +1,5 @@
 using System.Text.Json.Nodes;
 using CtxUi.Builder.Publishing;
-using Enfilade;
 using Microsoft.Extensions.DependencyInjection;
 using ModelContextProtocol;
 
@@ -78,8 +77,8 @@ public sealed class ToolTestRunnerTests
         var target = new ToolTarget(1, null, false);
 
         var listed =
-            await Assert.ThrowsAsync<PanelException>(() => RunnerOf(harness).ListAsync(server, target, default));
-        var called = await Assert.ThrowsAsync<PanelException>(() =>
+            await Assert.ThrowsAsync<BuilderException>(() => RunnerOf(harness).ListAsync(server, target, default));
+        var called = await Assert.ThrowsAsync<BuilderException>(() =>
             RunnerOf(harness).CallAsync(server, target, "hello", new JsonObject(), default));
 
         Assert.Contains(failure.Message, listed.Message);

@@ -1,5 +1,3 @@
-using CtxUi.Builder;
-
 namespace CtxUi.Builder.Tests;
 
 public sealed class PublicContractTests

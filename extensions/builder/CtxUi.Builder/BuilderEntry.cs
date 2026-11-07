@@ -7,7 +7,6 @@ using CtxUi.Extensions;
 using Enfilade;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Routing;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Net.Http.Headers;
 

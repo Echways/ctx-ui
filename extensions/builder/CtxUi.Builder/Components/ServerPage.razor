@@ -107,7 +107,7 @@ else
             }
             else if (_selected is not null && _files.FirstOrDefault(file => file.Path == _selected) is { } file)
             {
-                <CodeEditor @ref="_editor" @key="file.Path" ServerId="Id" Path="@file.Path" Content="@file.Content"
+                <DraftEditor @ref="_editor" @key="file.Path" ServerId="Id" Path="@file.Path" Content="@file.Content"
                             Revision="file.Revision"/>
             }
             else
@@ -123,7 +123,7 @@ else
     private ServerSettingsView? _settings;
     private InboundSummary? _inbound;
     private bool _connectOpen;
-    private CodeEditor? _editor;
+    private DraftEditor? _editor;
     private string? _selected;
     private ServerView _view;
     private IReadOnlyList<FormTool> _formTools = [];

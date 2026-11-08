@@ -15,8 +15,8 @@ public class ExtensionApiTests
     [Fact]
     public void The_shared_ui_libraries_are_the_ones_this_api_version_promises()
     {
-        Assert.Equal(new Version(2, 0), ExtensionApi.Version);
-        Assert.Equal((0, 2), MajorMinor(typeof(EnfiladeBuilder)));
+        Assert.Equal(new Version(3, 0), ExtensionApi.Version);
+        Assert.Equal((0, 3), MajorMinor(typeof(EnfiladeBuilder)));
         Assert.Equal(9, typeof(MudButton).Assembly.GetName().Version!.Major);
     }
 

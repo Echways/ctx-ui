@@ -28,10 +28,10 @@ public class ExtensionRulesTests
     [Fact]
     public void A_contract_is_compatible_only_at_the_host_major_and_up_to_its_minor()
     {
-        Assert.True(ExtensionRules.IsCompatible("2.0"));
-        Assert.False(ExtensionRules.IsCompatible("2.1"));
-        Assert.False(ExtensionRules.IsCompatible("3.0"));
-        Assert.False(ExtensionRules.IsCompatible("1.1"));
+        Assert.True(ExtensionRules.IsCompatible("3.0"));
+        Assert.False(ExtensionRules.IsCompatible("3.1"));
+        Assert.False(ExtensionRules.IsCompatible("4.0"));
+        Assert.False(ExtensionRules.IsCompatible("2.0"));
         Assert.False(ExtensionRules.IsCompatible("1.0"));
         Assert.False(ExtensionRules.IsCompatible("abc"));
     }

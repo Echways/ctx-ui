@@ -1,8 +1,6 @@
 @implements IAsyncDisposable
-@inject IJSRuntime Js
-@inject NavigationManager Navigation
 @inject ServerCatalog Catalog
-@inject ILogger<CodeEditor> Logger
+@inject ILogger<DraftEditor> Logger
 
 <div class="builder-editor">
     <div class="builder-editor-bar">
@@ -24,7 +22,9 @@
     {
         <p class="bad-t" role="alert" data-testid="save-error">@_error</p>
     }
-    <div @ref="_host" class="builder-editor-host" data-testid="editor"></div>
+    <div data-testid="editor">
+        <CodeEditor @ref="_editor" Value="@Content" Language="python" OnChange="EditorChanged"/>
+    </div>
 </div>
 
 @code {
@@ -40,9 +40,7 @@
     }
 
     private readonly SemaphoreSlim _gate = new(1, 1);
-    private ElementReference _host;
-    private IJSObjectReference? _module;
-    private DotNetObjectReference<CodeEditor>? _self;
+    private CodeEditor? _editor;
     private CancellationTokenSource? _quiet;
     private SaveState _state = SaveState.Saved;
     private string? _error;
@@ -72,17 +70,7 @@
         _revision = Revision;
     }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (!firstRender)
-            return;
-        _module = await Js.InvokeAsync<IJSObjectReference>("import", Navigation.ToAbsoluteUri("_content/CtxUi.Builder/editor.js").AbsoluteUri);
-        _self = DotNetObjectReference.Create(this);
-        await _module.InvokeVoidAsync("create", _host, _self, Content);
-    }
-
-    [JSInvokable]
-    public Task EditorChanged()
+    private Task EditorChanged()
     {
         return InvokeAsync(() =>
         {
@@ -126,10 +114,10 @@
         await _gate.WaitAsync();
         try
         {
-            if (!_dirty || _state == SaveState.Conflict || _module is null || _disposed)
+            if (!_dirty || _state == SaveState.Conflict || _editor is null || _disposed)
                 return;
 
-            var text = await _module.InvokeAsync<string>("getValue", _host);
+            var text = await _editor.GetValueAsync();
             _dirty = false;
             _error = null;
             _state = SaveState.Saving;
@@ -174,7 +162,7 @@
         _dirty = false;
         _error = null;
         _state = SaveState.Saved;
-        await _module!.InvokeVoidAsync("setValue", _host, file.Content);
+        await _editor!.SetValueAsync(file.Content);
     }
 
     private async Task KeepMineAsync()
@@ -197,12 +185,8 @@
         _quiet = null;
         try
         {
-            if (_module is not null)
-            {
+            if (_editor is not null)
                 await SaveAsync();
-                await _module.InvokeVoidAsync("dispose", _host);
-                await _module.DisposeAsync();
-            }
         }
         catch (Exception failure) when (failure is JSDisconnectedException or ObjectDisposedException or InvalidOperationException)
         {
@@ -210,7 +194,6 @@
         finally
         {
             _disposed = true;
-            _self?.Dispose();
         }
     }
 

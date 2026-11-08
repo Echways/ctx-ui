@@ -75,7 +75,7 @@
     private async Task SaveAsync()
     {
         var setup = new ProviderSetup(Info.Name, _clientId, string.IsNullOrWhiteSpace(_secret) ? null : _secret, _issuer, _title);
-        if (await Act.RunAsync(() => Backend.ChangeAsync(services => services.GetRequiredService<SignInSettingsService>().SetProviderAsync(setup)), string.Format(PanelText.ProviderSaved, Name)))
+        if (await Act.RunAsync(() => Backend.ChangeAsync(services => services.GetRequiredService<SignInSettingsService>().SetProviderAsync(setup)), string.Format(PanelText.ProviderSaved, Name)) == ActResult.Done)
             await OnChanged.InvokeAsync();
     }
 

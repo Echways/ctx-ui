@@ -188,7 +188,7 @@
     private async Task ExportAsync()
     {
         var export = await Catalog.ExportAsync(Settings.ServerId, CancellationToken.None);
-        await using var module = await Js.InvokeAsync<IJSObjectReference>("import", Navigation.ToAbsoluteUri("_content/CtxUi.Builder/editor.js").AbsoluteUri);
+        await using var module = await Js.InvokeAsync<IJSObjectReference>("import", Navigation.ToAbsoluteUri("_content/CtxUi.Builder/download.js").AbsoluteUri);
         using var stream = new DotNetStreamReference(new MemoryStream(export.Content));
         await module.InvokeVoidAsync("download", export.FileName, stream);
     }

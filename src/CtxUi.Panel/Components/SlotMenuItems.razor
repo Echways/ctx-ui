@@ -33,7 +33,7 @@
 
     private async Task RunAsync(SlotAction<TContext> action)
     {
-        if (await Act.RunAsync(() => action.Run(new PanelActionArgs<TContext>(Context(), Dialogs, Services))))
+        if (await Act.RunAsync(() => action.Run(new PanelActionArgs<TContext>(Context(), Dialogs, Services))) == ActResult.Done)
             await OnDone.InvokeAsync();
     }
 

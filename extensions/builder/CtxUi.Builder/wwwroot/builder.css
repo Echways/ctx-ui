@@ -8,8 +8,8 @@
 .builder-tools {
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
-    padding-right: 1rem;
+    gap: 4px;
+    padding-right: 20px;
     border-right: 1px solid var(--rule);
 }
 
@@ -17,12 +17,39 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+    margin-top: 16px;
+    padding-left: 12px;
+}
+
+.builder-tools-head:first-child {
+    margin-top: 0;
+}
+
+.builder-tools-head .link {
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border-radius: var(--round);
+    font-size: 16px;
+    line-height: 1;
+    text-decoration: none;
+    transition: background-color 0.3s var(--spring);
+}
+
+.builder-tools-head .link:hover {
+    background: var(--wash);
+}
+
+.builder-tools > .builder-tools-title {
+    margin-top: 16px;
+    padding-left: 12px;
 }
 
 .builder-tools-title {
     color: var(--mist);
-    font-family: var(--mono);
-    font-size: 0.75rem;
+    font: 500 11px/20px var(--mono);
     letter-spacing: 0.08em;
     text-transform: uppercase;
 }
@@ -34,59 +61,113 @@
 }
 
 .builder-file {
+    position: relative;
     display: block;
     width: 100%;
-    padding: 0.4rem 0.6rem;
+    padding: 8px 12px;
     border: 0;
-    border-left: 2px solid transparent;
+    border-radius: var(--round);
     background: transparent;
     color: var(--light);
-    font-family: var(--mono);
-    font-size: 0.85rem;
+    font: 400 13px/20px var(--mono);
+    font-stretch: 87%;
     text-align: left;
     cursor: pointer;
     overflow-wrap: anywhere;
+    transition: background-color 0.3s var(--spring), color 0.3s var(--spring);
 }
 
 .builder-file:hover {
-    background: var(--deep);
+    background: var(--wash);
 }
 
 .builder-file:focus-visible {
-    outline: 1px solid var(--klein);
+    outline: 2px solid var(--glow);
+    outline-offset: -2px;
 }
 
 .builder-file[aria-current="true"] {
-    border-left-color: var(--klein);
-    background: var(--deep);
+    background: var(--wash);
     color: var(--glow);
+}
+
+.builder-file[aria-current="true"]::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 8px;
+    bottom: 8px;
+    width: 2px;
+    border-radius: 2px;
+    background: var(--glow);
 }
 
 .builder-rule {
     width: 100%;
-    margin: 0.5rem 0;
+    height: 1px;
+    margin: 16px 0;
     border: 0;
-    border-top: 1px solid var(--rule);
+    background: var(--hairline-x);
+}
+
+.builder-tools > .link {
+    box-sizing: border-box;
+    width: 100%;
+    margin: 4px 0 0;
+    padding: 8px 12px;
+    border: 1px dashed var(--rule);
+    border-radius: var(--round);
+    color: var(--mist);
+    font: 500 13px/20px var(--sans);
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color 0.3s var(--spring), border-color 0.3s var(--spring), color 0.3s var(--spring);
+}
+
+.builder-tools > .link:hover {
+    background: var(--wash);
+    border-color: var(--line);
+    color: var(--light);
 }
 
 .builder-new-tool {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
-    margin: 0.5rem 0;
+    gap: 8px;
+    margin: 4px 0 8px;
+}
+
+.builder-new-tool .btn-k {
+    width: 100%;
+    text-align: center;
 }
 
 .builder-input {
-    padding: 0.45rem 0.6rem;
-    border: 1px solid var(--rule);
+    box-sizing: border-box;
+    width: 100%;
+    padding: 9px 14px;
+    border: 0;
+    border-radius: var(--round);
     background: var(--deep);
+    box-shadow: inset 0 0 0 1px var(--rule), var(--edge);
     color: var(--light);
-    font-family: var(--mono);
-    font-size: 0.85rem;
+    caret-color: var(--glow);
+    font: 400 13px/20px var(--mono);
+    transition: box-shadow 0.3s var(--spring);
+}
+
+.builder-input::placeholder {
+    color: var(--mist);
+    opacity: 0.8;
+}
+
+.builder-input:hover {
+    box-shadow: inset 0 0 0 1px var(--line), var(--edge);
 }
 
 .builder-input:focus {
-    outline: 1px solid var(--klein);
+    outline: none;
+    box-shadow: inset 0 0 0 2px var(--glow);
 }
 
 .builder-main {
@@ -103,9 +184,10 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 1rem;
-    font-family: var(--mono);
-    font-size: 0.8rem;
+    gap: 16px;
+    padding-inline: 4px;
+    font: 400 12px/20px var(--mono);
+    font-stretch: 87%;
 }
 
 .builder-editor-path {
@@ -126,19 +208,14 @@
     color: var(--ochre);
 }
 
-.builder-editor-host {
-    height: 32rem;
-    border: 1px solid var(--rule);
-    overflow: hidden;
-}
-
 .builder-conflict {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 0.5rem 1rem;
-    padding: 0.75rem 1rem;
-    border: 1px solid var(--ochre);
+    gap: 8px 16px;
+    padding: 12px 16px;
+    border-radius: var(--round);
+    box-shadow: inset 0 0 0 1px var(--ochre);
 }
 
 .builder-conflict p {
@@ -163,10 +240,11 @@
 }
 
 .builder-confirm {
-    margin-top: 1rem;
-    padding: 1rem 1.25rem;
-    border: 1px solid var(--ochre);
+    margin-top: 16px;
+    padding: 16px 20px;
+    border-radius: var(--round);
     background: var(--deep);
+    box-shadow: inset 0 0 0 1px var(--ochre);
 }
 
 .builder-confirm h3 {
@@ -212,8 +290,8 @@
 }
 
 .builder-release {
-    padding-bottom: 1rem;
-    border-bottom: 1px solid var(--rule);
+    padding-bottom: 16px;
+    background: var(--hairline-x) 0 100% / 100% 1px no-repeat;
 }
 
 .builder-release-head {
@@ -230,17 +308,21 @@
 }
 
 .builder-log {
+    box-sizing: border-box;
     max-height: 28rem;
     margin: 0;
-    padding: 0.75rem 1rem;
-    border: 1px solid var(--rule);
+    padding: 16px 20px;
+    border-radius: var(--round);
     background: var(--deep);
+    box-shadow: inset 0 0 0 1px var(--rule), var(--edge);
     color: var(--light);
-    font-family: var(--mono);
-    font-size: 0.8rem;
+    font: 400 13px/20px var(--mono);
+    font-stretch: 87%;
     overflow: auto;
     white-space: pre-wrap;
     overflow-wrap: anywhere;
+    scrollbar-width: thin;
+    scrollbar-color: var(--rule) transparent;
 }
 
 @media (max-width: 800px) {
@@ -251,8 +333,8 @@
     .builder-tools {
         padding-right: 0;
         border-right: 0;
-        border-bottom: 1px solid var(--rule);
-        padding-bottom: 1rem;
+        padding-bottom: 16px;
+        background: var(--hairline-x) 0 100% / 100% 1px no-repeat;
     }
 }
 
@@ -293,10 +375,10 @@
 .builder-parameter {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
-    gap: 0.5rem;
+    gap: 8px;
     align-items: end;
-    padding-bottom: 0.75rem;
-    border-bottom: 1px solid var(--rule);
+    padding-bottom: 12px;
+    background: var(--hairline-x) 0 100% / 100% 1px no-repeat;
 }
 
 .builder-import-source,

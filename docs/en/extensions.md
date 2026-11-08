@@ -268,7 +268,7 @@ Keep other files of the extension in `context.DataDirectory`.
 
 ## Versions and compatibility
 
-The manifest of a package records the extension API version, currently `2.0`. A
+The manifest of a package records the extension API version, currently `3.0`. A
 server loads an extension when the major version equals its own and the minor
 version is not higher. An incompatible extension is skipped with an error in the
 log and the server keeps working.

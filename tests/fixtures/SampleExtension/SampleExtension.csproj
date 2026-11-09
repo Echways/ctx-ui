@@ -11,7 +11,7 @@
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App"/>
     <PackageReference Include="UAParser" VersionOverride="3.1.46"/>
-    <PackageReference Include="Microsoft.Extensions.Compliance.Abstractions" VersionOverride="10.11.0"/>
+    <PackageReference Include="Microsoft.Extensions.Compliance.Redaction" VersionOverride="10.11.0"/>
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="all"/>
     <ProjectReference Include="..\..\..\src\CtxUi.Extensions\CtxUi.Extensions.csproj"/>
   </ItemGroup>

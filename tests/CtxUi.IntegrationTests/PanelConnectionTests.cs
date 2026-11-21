@@ -8,7 +8,7 @@ namespace CtxUi.IntegrationTests;
 
 public class PanelConnectionTests
 {
-    private const string PublicUrl = "https://mcp.example.org";
+    private const string PublicUrl = "https://mcp.example.org:9443";
 
     private static Task<GatewayHost> StartAsync()
     {

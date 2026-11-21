@@ -128,9 +128,12 @@ jobs:
           cat coverage/SummaryGithub.md >> "$GITHUB_STEP_SUMMARY"
 
   docker:
-    name: "Install: Docker"
+    name: "Install: Docker (${{ matrix.proxy }})"
     runs-on: ubuntu-26.04
     timeout-minutes: 15
+    strategy:
+      matrix:
+        proxy: [bundled, external]
     steps:
       - name: Check out
         uses: actions/checkout@v7
@@ -139,7 +142,7 @@ jobs:
         uses: ./.github/actions/dotnet
 
       - name: Run compose stack checks
-        run: deploy/tests/docker.sh
+        run: deploy/tests/docker.sh ${{ matrix.proxy }}
 
   systemd:
     name: "Install: systemd"

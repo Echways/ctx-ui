@@ -2,16 +2,29 @@
 set -euo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-project="ctx-ui-docker-test"
+mode="${1:-bundled}"
+project="ctx-ui-docker-test-$mode"
 version="0.0.0-test"
 stack="$(mktemp -d)"
 failures=0
+compose_file="compose.yaml"
+public_url="https://localhost"
+listen_url="$public_url:18443"
+if [ "$mode" = external ]; then
+    compose_file="compose.external-proxy.yaml"
+    public_url="https://localhost:9443"
+    listen_url="$public_url"
+fi
 
 compose() {
-    docker compose --project-directory "$stack" -p "$project" "$@"
+    docker compose --project-directory "$stack" -p "$project" \
+        -f "$stack/$compose_file" -f "$stack/compose.override.yaml" "$@"
 }
 
 cleanup() {
+    if [ "$mode" = external ]; then
+        docker rm -f "$project-proxy" > /dev/null 2>&1 || true
+    fi
     compose down -v > /dev/null 2>&1 || true
     rm -rf "$stack"
 }
@@ -40,7 +53,7 @@ response_becomes() {
     local expected="$1" actual=""
     shift
     for _ in $(seq 1 30); do
-        actual="$(curl -sk -w ' %{http_code}' "$@" https://localhost:18443/mcp/echo || true)"
+        actual="$(curl -sk -w ' %{http_code}' "$@" "$listen_url/mcp/echo" || true)"
         if [[ "$actual" == *"$expected" ]]; then
             return 0
         fi
@@ -85,29 +98,59 @@ docker build -q -f "$root/deploy/docker/Dockerfile" --build-arg "VERSION=$versio
 dotnet publish "$root/tests/fixtures/SampleExtension" -c Release -o "$stack/extension/sample" > /dev/null
 chmod -R a+rX "$stack/extension"
 
-cp "$root/deploy/docker/compose.yaml" "$root/deploy/docker/Caddyfile" "$stack/"
-sed -e "s/^CTX_UI_VERSION=.*/CTX_UI_VERSION=$version/" -e "s/^CTX_UI_DOMAIN=.*/CTX_UI_DOMAIN=localhost/" \
-    "$root/deploy/docker/.env.example" > "$stack/.env"
+cp "$root/deploy/docker/$compose_file" "$stack/"
+printf 'CTX_UI_VERSION=%s\n' "$version" > "$stack/.env"
 cat > "$stack/compose.override.yaml" <<'YAML'
 services:
   ctx-ui:
     volumes:
       - ./extension/sample:/data/extensions/sample:ro
-  caddy:
-    ports: !override
-      - "18080:80"
-      - "18443:443"
   upstream:
     image: caddy:2
     command: caddy respond --listen :9000 "pong"
 YAML
 
 echo "== settings"
-mv "$stack/.env" "$stack/.env.saved"
+if [ "$mode" = external ]; then
+    required=CTX_UI_PUBLIC_URL
+else
+    required=CTX_UI_DOMAIN
+    cp "$root/deploy/docker/Caddyfile" "$stack/"
+    cat >> "$stack/compose.override.yaml" <<'YAML'
+  caddy:
+    ports: !override
+      - "18080:80"
+      - "18443:443"
+YAML
+fi
 output="$(compose config 2>&1)" && code=0 || code=$?
-check "compose refuses to start without a domain" equals 1 "$code"
-check "refusal names the variable" contains "CTX_UI_" "$output"
-mv "$stack/.env.saved" "$stack/.env"
+check "compose requires $required" equals 1 "$code"
+check "refusal names the variable" contains "$required" "$output"
+
+if [ "$mode" = external ]; then
+    printf 'CTX_UI_PUBLIC_URL=%s\n' "$public_url" >> "$stack/.env"
+    check "external proxy mode starts only ctx-ui" equals ctx-ui \
+        "$(docker compose --project-directory "$stack" -f "$stack/$compose_file" config --services)"
+    output="$(compose config --format json)"
+    check "the default port is published on loopback" equals "127.0.0.1:8080" \
+        "$(jq -r '.services["ctx-ui"].ports[0] | "\(.host_ip):\(.published)"' <<< "$output")"
+    echo "CTX_UI_PORT=18081" >> "$stack/.env"
+    cat > "$stack/Caddyfile" <<'CADDY'
+{
+    admin off
+    auto_https disable_redirects
+}
+
+https://localhost:9443 {
+    tls internal
+    reverse_proxy 127.0.0.1:18081
+}
+CADDY
+    docker run -d --rm --name "$project-proxy" --network host \
+        --mount "type=bind,src=$stack/Caddyfile,dst=/etc/caddy/Caddyfile,readonly" caddy:2 > /dev/null
+else
+    echo "CTX_UI_DOMAIN=localhost" >> "$stack/.env"
+fi
 
 compose up -d > /dev/null 2>&1
 
@@ -123,8 +166,9 @@ check "the log has no extension errors" equals "" "$(echo "$output" | grep "skip
 
 echo "== command line"
 output="$(compose exec -T ctx-ui ctx-ui inbound add echo --url http://upstream:9000/mcp 2>&1)" || true
-check "inbound address uses the domain" contains "https://localhost/mcp/echo" "$output"
+check "inbound address uses the public URL" contains "$public_url/mcp/echo" "$output"
 output="$(compose exec -T ctx-ui ctx-ui client add probe --inbound echo 2>&1)" || true
+check "client address uses the public URL" contains "$public_url/mcp/echo" "$output"
 token="$(echo "$output" | grep -o -E 'tnk_[A-Za-z0-9]{32}' | head -n 1 || true)"
 check "client add prints a token" [ -n "$token" ]
 
@@ -134,42 +178,42 @@ check "request with the token reaches the upstream" response_becomes "pong 200" 
 
 echo "== panel"
 output="$(compose exec -T ctx-ui ctx-ui admin add root 2>&1)" || true
-panel="$(echo "$output" | grep -o -E 'https://localhost/[a-z0-9]{16}/' | head -n 1 || true)"
+panel="$(echo "$output" | grep -o -E "$public_url/[a-z0-9]{16}/" | head -n 1 || true)"
 check "admin add prints the panel address" [ -n "$panel" ]
-path="${panel#https://localhost}"
+path="${panel#"$public_url"}"
 check "login form is served through caddy" equals 200 \
-    "$(curl -sk -o /dev/null -w '%{http_code}' "https://localhost:18443${path}login")"
+    "$(curl -sk -o /dev/null -w '%{http_code}' "$listen_url${path}login")"
 check "panel styles are in the image" equals 200 \
-    "$(curl -sk -o /dev/null -w '%{http_code}' "https://localhost:18443${path}_content/MudBlazor/MudBlazor.min.css")"
-check "visitor is sent to the login form over https" contains "https://localhost:18443${path}login" \
-    "$(curl -sk -o /dev/null -w '%{redirect_url}' "https://localhost:18443${path}")"
+    "$(curl -sk -o /dev/null -w '%{http_code}' "$listen_url${path}_content/MudBlazor/MudBlazor.min.css")"
+check "visitor is sent to the login form over https" contains "$listen_url${path}login" \
+    "$(curl -sk -o /dev/null -w '%{redirect_url}' "$listen_url${path}")"
 check "swagger ui is in the image" equals 200 \
-    "$(curl -sk -o /dev/null -w '%{http_code}' "https://localhost:18443${path}swagger/index.html")"
+    "$(curl -sk -o /dev/null -w '%{http_code}' "$listen_url${path}swagger/index.html")"
 output="$(compose exec -T ctx-ui ctx-ui apikey add probe 2>&1)" || true
 key="$(echo "$output" | grep -o -E 'ctxk_[A-Za-z0-9]{40}' | head -n 1 || true)"
 check "apikey add prints a key" [ -n "$key" ]
 check "api answers through caddy with the key" equals 200 \
-    "$(curl -sk -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $key" "https://localhost:18443${path}api/v1/inbounds")"
+    "$(curl -sk -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $key" "$listen_url${path}api/v1/inbounds")"
 check "panel does not exist without the secret path" equals 404 \
-    "$(curl -sk -o /dev/null -w '%{http_code}' https://localhost:18443/login)"
+    "$(curl -sk -o /dev/null -w '%{http_code}' "$listen_url/login")"
 
 echo "== oauth"
 output="$(compose exec -T ctx-ui ctx-ui oauth on 2>&1)" || true
-check "oauth on succeeds with the https domain" contains "OAuth" "$output"
+check "oauth on succeeds with the HTTPS public URL" contains "OAuth" "$output"
 metadata_issuer() {
     local actual=""
     for _ in $(seq 1 30); do
-        actual="$(curl -sk https://localhost:18443/.well-known/oauth-authorization-server || true)"
-        if [[ "$actual" == *'"issuer": "https://localhost"'* ]]; then
+        actual="$(curl -sk "$listen_url/.well-known/oauth-authorization-server" || true)"
+        if [[ "$actual" == *"\"issuer\": \"$public_url\""* ]]; then
             return 0
         fi
         sleep 1
     done
-    echo "      expected issuer https://localhost"
+    echo "      expected issuer $public_url"
     echo "      actual: $actual"
     return 1
 }
-check "metadata through caddy names the domain as issuer" metadata_issuer
+check "metadata through caddy uses the public URL as issuer" metadata_issuer
 
 echo "== restart"
 compose restart ctx-ui > /dev/null 2>&1

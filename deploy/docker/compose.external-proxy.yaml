@@ -1,0 +1,21 @@
+name: ctx-ui
+
+services:
+  ctx-ui:
+    image: ghcr.io/echways/ctx-ui:${CTX_UI_VERSION:?}
+    restart: unless-stopped
+    environment:
+      CtxUi__PublicUrl: ${CTX_UI_PUBLIC_URL:?set the public URL for ctx-ui}
+      CtxUi__Language: ${CTX_UI_LANGUAGE:-en}
+      CtxUi__TrustedProxies: 10.0.0.0/8,172.16.0.0/12,192.168.0.0/16
+    ports:
+      - "127.0.0.1:${CTX_UI_PORT:-8080}:8080"
+    volumes:
+      - ctx-ui-data:/data
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  ctx-ui-data:

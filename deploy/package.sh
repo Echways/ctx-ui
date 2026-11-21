@@ -38,7 +38,8 @@ done
 
 stage="$work/docker/ctx-ui"
 mkdir -p "$stage"
-cp "$root/deploy/docker/compose.yaml" "$root/deploy/docker/Caddyfile" "$stage/"
+cp "$root/deploy/docker/compose.yaml" "$root/deploy/docker/compose.external-proxy.yaml" \
+    "$root/deploy/docker/Caddyfile" "$stage/"
 sed "s/^CTX_UI_VERSION=.*/CTX_UI_VERSION=$version/" "$root/deploy/docker/.env.example" > "$stage/.env.example"
 pack "$work/docker" "ctx-ui-$version-docker.tar.gz"
 

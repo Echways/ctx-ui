@@ -2,8 +2,8 @@
 
 [English](install.md) · [Русский](../ru/install.md) · [Documentation](README.md)
 
-Two methods: binary + systemd, or Docker + Caddy. Same program, same
-`ctx-ui` command.
+Install with systemd or Docker. Docker supports bundled Caddy and a reverse
+proxy on the host. Both installation methods use the same `ctx-ui` command.
 
 Platforms: Linux x86_64, aarch64. No builds for Windows, macOS, Alpine.
 
@@ -191,6 +191,43 @@ docker compose exec ctx-ui ctx-ui client add "Ivanov" --inbound learn
 The container runs as non-root with all capabilities dropped; port 8080 is
 not published, only Caddy is exposed. Data lives in the `ctx-ui-data`
 volume.
+
+### Docker behind a reverse proxy on the host
+
+Extract a Docker release bundle that contains `compose.external-proxy.yaml`
+and copy `.env.example` to `.env`. Keep the version from the bundle and set
+these values in `.env`.
+
+```dotenv
+COMPOSE_FILE=compose.external-proxy.yaml
+CTX_UI_PUBLIC_URL=https://mcp.example.com:9443
+CTX_UI_PORT=8080
+```
+
+Compose starts only ctx-ui and publishes it on `127.0.0.1:8080`. Set
+`CTX_UI_PORT` to change that local port. Set `CTX_UI_PUBLIC_URL` to the address
+clients use, including the HTTPS port when it differs from 443.
+
+For Caddy running on the host, add a site to its configuration and reload it.
+
+```caddyfile
+https://mcp.example.com:9443 {
+    reverse_proxy 127.0.0.1:8080
+}
+```
+
+Start ctx-ui and create an administrator.
+
+```bash
+docker compose up -d
+docker compose exec ctx-ui ctx-ui admin add admin
+```
+
+An installer can also select this file with
+`docker compose -f compose.external-proxy.yaml up -d`. When switching from
+bundled Caddy, run `docker compose -f compose.yaml down` before starting the
+external-proxy setup. Both setups use the same data volume in the same Compose
+project.
 
 ### Upgrade
 

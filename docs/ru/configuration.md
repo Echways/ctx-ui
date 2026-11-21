@@ -8,7 +8,7 @@
 | Способ установки | Файл | Применить |
 | --- | --- | --- |
 | бинарник | `/etc/ctx-ui/ctx-ui.env` | `sudo systemctl restart ctx-ui` |
-| Docker | `.env` рядом с `compose.yaml` | `docker compose up -d` |
+| Docker | `.env` рядом с файлами Compose | `docker compose up -d` |
 | из исходников | `src/CtxUi.Server/appsettings.json` или окружение | перезапуск |
 
 ## Переменные
@@ -59,11 +59,13 @@ CtxUi__Language=ru
 | Переменная | Значение |
 | --- | --- |
 | `CTX_UI_VERSION` | тег образа |
-| `CTX_UI_DOMAIN` | домен; из него `CtxUi__PublicUrl` и сайт Caddy |
+| `CTX_UI_DOMAIN` | обязателен для встроенного Caddy, задаёт его сайт и публичный URL по умолчанию |
+| `CTX_UI_PUBLIC_URL` | полный внешний URL с портом, если он отличается от стандартного. Передаётся в `CtxUi__PublicUrl`. Обязателен для внешнего прокси. Для встроенного Caddy по умолчанию используется `https://${CTX_UI_DOMAIN}` |
+| `CTX_UI_PORT` | локальный порт на хосте при внешнем прокси, по умолчанию `8080` |
 | `CTX_UI_LANGUAGE` | из него `CtxUi__Language`, по умолчанию `en` |
 
-Compose-файл задаёт `CtxUi__TrustedProxies` частными диапазонами Docker: порт
-сервиса наружу не публикуется, до него доходит только Caddy.
+Оба файла Compose задают `CtxUi__TrustedProxies` частными диапазонами Docker.
+Настройка loopback описана в разделе [Docker за внешним reverse proxy](install.md#docker-за-внешним-reverse-proxy).
 
 Образ задаёт `Urls=http://0.0.0.0:8080` и `CtxUi__DataDir=/data`.
 

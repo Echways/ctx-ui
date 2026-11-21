@@ -5,7 +5,7 @@ services:
     image: ghcr.io/echways/ctx-ui:${CTX_UI_VERSION:?}
     restart: unless-stopped
     environment:
-      CtxUi__PublicUrl: https://${CTX_UI_DOMAIN:?}
+      CtxUi__PublicUrl: ${CTX_UI_PUBLIC_URL:-https://${CTX_UI_DOMAIN:?}}
       CtxUi__Language: ${CTX_UI_LANGUAGE:-en}
       CtxUi__TrustedProxies: 10.0.0.0/8,172.16.0.0/12,192.168.0.0/16
     volumes:

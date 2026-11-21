@@ -305,7 +305,7 @@ jobs:
           curl -fsSL https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG/install.sh | sudo bash
           \`\`\`
 
-          Docker: \`ghcr.io/echways/ctx-ui:$VERSION\`, compose bundle \`ctx-ui-$VERSION-docker.tar.gz\`.
+          Docker: \`ghcr.io/echways/ctx-ui:$VERSION\`, compose bundle \`ctx-ui-$VERSION-docker.tar.gz\` with \`compose.yaml\` for bundled Caddy or \`compose.external-proxy.yaml\` for a reverse proxy on the host.
 
           ## Update
 

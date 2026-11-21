@@ -8,7 +8,7 @@ install method.
 | Install method | File | Apply |
 | --- | --- | --- |
 | binary | `/etc/ctx-ui/ctx-ui.env` | `sudo systemctl restart ctx-ui` |
-| Docker | `.env` next to `compose.yaml` | `docker compose up -d` |
+| Docker | `.env` next to the Compose files | `docker compose up -d` |
 | source | `src/CtxUi.Server/appsettings.json` or environment | restart |
 
 ## Variables
@@ -59,11 +59,14 @@ For Docker, add `CTX_UI_LANGUAGE=ru` to `.env` and run `docker compose up -d`.
 | Variable | Meaning |
 | --- | --- |
 | `CTX_UI_VERSION` | image tag |
-| `CTX_UI_DOMAIN` | domain; sets `CtxUi__PublicUrl` and the Caddy site |
+| `CTX_UI_DOMAIN` | required for bundled Caddy, sets the Caddy site and the default public URL |
+| `CTX_UI_PUBLIC_URL` | full external URL, including a custom HTTPS port, passed to `CtxUi__PublicUrl`. Required with an external proxy. Defaults to `https://${CTX_UI_DOMAIN}` with bundled Caddy |
+| `CTX_UI_PORT` | loopback port on the host with an external proxy, defaults to `8080` |
 | `CTX_UI_LANGUAGE` | sets `CtxUi__Language`, `en` by default |
 
-The compose file sets `CtxUi__TrustedProxies` to the private Docker ranges: the
-service port is not published, only Caddy reaches it.
+Both Compose files set `CtxUi__TrustedProxies` to the private Docker ranges.
+See [Docker behind a reverse proxy on the host](install.md#docker-behind-a-reverse-proxy-on-the-host)
+for the loopback setup.
 
 The image sets `Urls=http://0.0.0.0:8080` and `CtxUi__DataDir=/data`.
 

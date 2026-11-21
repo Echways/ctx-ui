@@ -2,8 +2,9 @@
 
 [English](../en/install.md) · [Русский](install.md) · [Документация](README.md)
 
-Два способа: бинарник + systemd или Docker + Caddy. Программа и команда
-`ctx-ui` одни и те же.
+Установить ctx-ui можно через systemd или Docker. В Docker можно использовать
+встроенный Caddy или reverse proxy на хосте. В обоих случаях используется
+команда `ctx-ui`.
 
 Платформы: Linux x86_64, aarch64. Сборок под Windows, macOS, Alpine нет.
 
@@ -200,6 +201,42 @@ docker compose exec ctx-ui ctx-ui client add "Иванов" --inbound learn
 
 Контейнер работает не от root, без capabilities; порт 8080 не
 публикуется, наружу смотрит только Caddy. Данные в томе `ctx-ui-data`.
+
+### Docker за внешним reverse proxy
+
+Распакуйте Docker-архив релиза, в котором есть `compose.external-proxy.yaml`,
+и скопируйте `.env.example` в `.env`. Сохраните версию из архива и задайте
+в `.env` следующие значения.
+
+```dotenv
+COMPOSE_FILE=compose.external-proxy.yaml
+CTX_UI_PUBLIC_URL=https://mcp.example.com:9443
+CTX_UI_PORT=8080
+```
+
+Compose запускает только ctx-ui и публикует его на `127.0.0.1:8080`.
+Локальный порт можно изменить через `CTX_UI_PORT`. В `CTX_UI_PUBLIC_URL` укажите
+адрес для клиентов, включая порт HTTPS, если он отличается от 443.
+
+Если Caddy уже запущен на хосте, добавьте сайт в его конфигурацию и перечитайте её.
+
+```caddyfile
+https://mcp.example.com:9443 {
+    reverse_proxy 127.0.0.1:8080
+}
+```
+
+Запустите ctx-ui и создайте администратора.
+
+```bash
+docker compose up -d
+docker compose exec ctx-ui ctx-ui admin add admin
+```
+
+Установщик также может выбрать файл явно командой
+`docker compose -f compose.external-proxy.yaml up -d`. При переходе со
+встроенного Caddy сначала выполните `docker compose -f compose.yaml down`.
+Оба варианта используют один том данных в пределах одного проекта Compose.
 
 ### Обновление
 

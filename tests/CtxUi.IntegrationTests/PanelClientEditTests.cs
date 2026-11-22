@@ -25,6 +25,7 @@ public class PanelClientEditTests
             new ClientLimits(60, 2, 500, 30));
         await using var session = await PanelSession.SignInAsync(gateway);
         var page = await OpenClientsAsync(session);
+        await GroupToggle(page, "4419").ClickAsync();
 
         await RowMenu.ChooseAsync(Row(page, "Иванов"), "Изменить");
 
@@ -50,6 +51,7 @@ public class PanelClientEditTests
         var issued = await gateway.AddClientAsync("Иванов", ["echo"], metadata: [KeyValuePair.Create("group", "4419")]);
         await using var session = await PanelSession.SignInAsync(gateway);
         var page = await OpenClientsAsync(session);
+        await GroupToggle(page, "4419").ClickAsync();
 
         await RowMenu.ChooseAsync(Row(page, "Иванов"), "Изменить");
         await Dialog(page).GetByLabel("echo").UncheckAsync();
@@ -58,6 +60,7 @@ public class PanelClientEditTests
         await Dialog(page).GetByLabel("Метаданные").FillAsync("");
         await SaveAsync(page);
         await Expect(Dialog(page)).ToHaveCountAsync(0);
+        await Expect(GroupToggle(page, "4419")).ToHaveCountAsync(0);
         await Expect(Row(page, "Иванов")).ToContainTextAsync("0 / 1");
         await Expect(Row(page, "Иванов")).ToContainTextAsync("docs");
 

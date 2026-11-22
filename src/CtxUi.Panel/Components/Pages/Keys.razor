@@ -37,9 +37,13 @@ else
 {
     <MudTable Items="_keys" Elevation="0" Class="tbl">
         <HeaderContent>
-            <MudTh>@PanelText.Title</MudTh>
+            <MudTh>
+                <MudTableSortLabel T="ApiKey" SortBy="@(key => key.Name)">@PanelText.Title</MudTableSortLabel>
+            </MudTh>
             <MudTh>@PanelText.Key</MudTh>
-            <MudTh>@PanelText.IssuedColumn</MudTh>
+            <MudTh>
+                <MudTableSortLabel T="ApiKey" SortBy="@(key => key.CreatedAt)">@PanelText.IssuedColumn</MudTableSortLabel>
+            </MudTh>
             <MudTh><span class="sr">@PanelText.Actions</span></MudTh>
         </HeaderContent>
         <RowTemplate>

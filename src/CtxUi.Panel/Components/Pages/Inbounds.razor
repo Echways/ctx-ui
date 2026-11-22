@@ -41,10 +41,18 @@ else
               RowClassFunc="@((row, _) => row.Inbound.Enabled ? "click" : "click dim")"
               OnRowClick="@((TableRowClickEventArgs<Row> row) => EditAsync(row.Item!.Inbound))">
         <HeaderContent>
-            <MudTh>@PanelText.Address</MudTh>
-            <MudTh>@PanelText.Title</MudTh>
-            <MudTh>@PanelText.McpServer</MudTh>
-            <MudTh Class="num">@PanelText.ClientCount</MudTh>
+            <MudTh>
+                <MudTableSortLabel T="Row" SortBy="@(row => row.Inbound.Slug)">@PanelText.Address</MudTableSortLabel>
+            </MudTh>
+            <MudTh>
+                <MudTableSortLabel T="Row" SortBy="@(row => row.Inbound.Name)">@PanelText.Title</MudTableSortLabel>
+            </MudTh>
+            <MudTh>
+                <MudTableSortLabel T="Row" SortBy="@(row => row.Inbound.Url)">@PanelText.McpServer</MudTableSortLabel>
+            </MudTh>
+            <MudTh Class="num">
+                <MudTableSortLabel T="Row" SortBy="@(row => row.Clients)">@PanelText.ClientCount</MudTableSortLabel>
+            </MudTh>
             <MudTh><span class="sr">@PanelText.Enabled</span></MudTh>
             <MudTh><span class="sr">@PanelText.Actions</span></MudTh>
         </HeaderContent>

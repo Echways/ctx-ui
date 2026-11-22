@@ -140,12 +140,13 @@ public class PanelOverviewTests
         await JournalHasAsync(gateway, 2);
         await using var session = await PanelSession.SignInAsync(gateway);
         var page = session.Page;
+        var readout = page.GetByRole(AriaRole.Main).GetByRole(AriaRole.Status);
 
         await Horizon(page).FocusAsync();
         await page.Keyboard.PressAsync("ArrowLeft");
 
-        await Expect(page.GetByRole(AriaRole.Status)).ToContainTextAsync("UTC · 2 вызова");
+        await Expect(readout).ToContainTextAsync("UTC · 2 вызова");
         await page.Keyboard.PressAsync("ArrowLeft");
-        await Expect(page.GetByRole(AriaRole.Status)).ToContainTextAsync("UTC · ни одного вызова");
+        await Expect(readout).ToContainTextAsync("UTC · ни одного вызова");
     }
 }

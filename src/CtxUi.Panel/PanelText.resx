@@ -341,7 +341,7 @@
     <value>Metadata</value>
   </data>
   <data name="MetadataHelp" xml:space="preserve">
-    <value>one pair per line, key=value; sent upstream as X-Mcp-Meta-* headers</value>
+    <value>One key=value pair per line. Use group=Name to group clients in the panel. Metadata is sent upstream as X-Mcp-Meta-* headers.</value>
   </data>
   <data name="TokenLost" xml:space="preserve">
     <value>The token can't be shown: its stored copy can't be read because the keys directory is lost. Issue a new one, and the old one stops working</value>

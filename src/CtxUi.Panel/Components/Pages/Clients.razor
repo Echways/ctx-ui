@@ -38,78 +38,39 @@ else if (_clients.Count == 0)
         <button type="button" class="btn-k pigment" @onclick="AddAsync">@PanelText.AddClient</button>
     </div>
 }
-else if (Shown.Count == 0)
+else if (!string.IsNullOrWhiteSpace(_search))
 {
-    <div class="empty">
-        <p>@string.Format(PanelText.ClientsNotFound, _search?.Trim())</p>
-        <button type="button" class="link" @onclick="() => _search = null">@PanelText.ClearSearch</button>
-    </div>
+    var search = _search.Trim();
+    var matches = _clients.Where(client => client.Name.Contains(search, StringComparison.CurrentCultureIgnoreCase)).ToList();
+    if (matches.Count > 0)
+    {
+        @ClientTable(matches)
+    }
+    else
+    {
+        <div class="empty">
+            <p>@string.Format(PanelText.ClientsNotFound, search)</p>
+            <button type="button" class="link" @onclick="() => _search = null">@PanelText.ClearSearch</button>
+        </div>
+    }
 }
 else
 {
-    <MudTable Items="Shown" Elevation="0" Class="tbl" RowClassFunc="RowClass"
-              OnRowClick="@((TableRowClickEventArgs<Client> row) => EditAsync(row.Item!))">
-        <HeaderContent>
-            <MudTh>@PanelText.Name</MudTh>
-            <MudTh>@PanelText.State</MudTh>
-            <MudTh>@PanelText.ExpiryColumn</MudTh>
-            <MudTh>@PanelText.LastSeenColumn</MudTh>
-            <MudTh Class="num">@PanelText.CallsColumn</MudTh>
-            <MudTh>@PanelText.Inbounds</MudTh>
-            <MudTh><span class="sr">@PanelText.AccessColumn</span></MudTh>
-            <MudTh><span class="sr">@PanelText.Actions</span></MudTh>
-        </HeaderContent>
-        <RowTemplate>
-            <MudTd Class="name">@context.Name</MudTd>
-            <MudTd DataLabel="@PanelText.State">
-                <Status Value="ClientState.Of(context, _loadedAt)"/>
-            </MudTd>
-            <MudTd DataLabel="@PanelText.ExpiryColumn">
-                @(context.ExpiresAt is { } expiresAt ? string.Format(PanelText.ExpiresOn, Viewer.Day(expiresAt)) : PanelText.NoExpiry)
-            </MudTd>
-            <MudTd DataLabel="@PanelText.LastSeenColumn">
-                @if (context.LastUsedAt is { } usedAt)
-                {
-                    @Viewer.Minute(usedAt)
-                }
-                else
-                {
-                    <span class="nothing">@PanelText.NeverSeen</span>
-                }
-            </MudTd>
-            <MudTd DataLabel="@PanelText.CallsColumn" Class="num">
-                <Meter Used="QuotaPeriod.UsedCalls(context, _loadedAt)" Limit="context.QuotaCalls"/>
-            </MudTd>
-            <MudTd DataLabel="@PanelText.Inbounds">
-                <code>@string.Join(", ", context.Inbounds.Select(link => link.Inbound!.Slug).Order())</code></MudTd>
-            <MudTd DataLabel="@PanelText.AccessColumn">
-                <span @onclick:stopPropagation="true">
-                    <MudSwitch T="bool" Value="context.Enabled"
-                               aria-label="@string.Format(PanelText.AccessOf, context.Name)"
-                               ValueChanged="@(enabled => SwitchAsync(context, enabled))"/>
-                </span>
-            </MudTd>
-            <MudTd Class="acts">
-                <span class="acts-in" @onclick:stopPropagation="true">
-                    <button type="button" class="link"
-                            @onclick="() => ConnectAsync(context)">@PanelText.Connection</button>
-                    <MudMenu Label="⋯" AriaLabel="@string.Format(PanelText.MoreActions, context.Name)" Class="more"
-                             AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
-                        <MudMenuItem OnClick="() => EditAsync(context)">@PanelText.Edit</MudMenuItem>
-                        <MudMenuItem
-                            Href="@MetricsAddress.Of(new MetricsFilter(context.Id))">@PanelText.Metrics</MudMenuItem>
-                        <MudMenuItem OnClick="() => DevicesAsync(context)">@PanelText.Devices</MudMenuItem>
-                        <MudMenuItem OnClick="() => ResetAsync(context)">@PanelText.ResetQuota</MudMenuItem>
-                        <MudMenuItem OnClick="() => ReissueAsync(context)">@PanelText.NewToken</MudMenuItem>
-                        <SlotMenuItems Slot="PanelSlots.ClientActions" Context="() => PanelData.Summary(context)"
-                                       OnDone="LoadAsync"/>
-                        <MudDivider/>
-                        <MudMenuItem Class="danger" OnClick="() => RemoveAsync(context)">@PanelText.Delete</MudMenuItem>
-                    </MudMenu>
-                </span>
-            </MudTd>
-        </RowTemplate>
-    </MudTable>
+    var groups = _clients.ToLookup(GroupOf);
+    foreach (var group in groups.Where(group => group.Key.Length > 0)
+                 .OrderBy(group => group.Key, StringComparer.CurrentCultureIgnoreCase))
+    {
+        var members = group.ToList();
+        <Catalog @key="group.Key" Title="@group.Key" Count="members.Count">
+            @ClientTable(members)
+        </Catalog>
+    }
+
+    var ungrouped = groups[""].ToList();
+    if (ungrouped.Count > 0)
+    {
+        @ClientTable(ungrouped)
+    }
 }
 
 <PageBottomBlocks Section="@PanelSections.Clients"/>
@@ -119,9 +80,86 @@ else
     private DateTimeOffset _loadedAt;
     private string? _search;
 
-    private List<Client> Shown => string.IsNullOrWhiteSpace(_search)
-        ? _clients!
-        : _clients!.Where(client => client.Name.Contains(_search.Trim(), StringComparison.CurrentCultureIgnoreCase)).ToList();
+    private static string GroupOf(Client client)
+    {
+        return client.Metadata.FirstOrDefault(pair => string.Equals(pair.Key, "group", StringComparison.OrdinalIgnoreCase))
+            .Value?.Trim() ?? "";
+    }
+
+    private RenderFragment ClientTable(IReadOnlyList<Client> clients) =>
+        @<MudTable T="Client" Items="clients" Elevation="0" Class="tbl" RowClassFunc="RowClass"
+                  OnRowClick="@((TableRowClickEventArgs<Client> row) => EditAsync(row.Item!))">
+            <HeaderContent>
+                <MudTh>
+                    <MudTableSortLabel T="Client" SortBy="@(client => client.Name)">@PanelText.Name</MudTableSortLabel>
+                </MudTh>
+                <MudTh>
+                    <MudTableSortLabel T="Client" SortBy="@(client => ClientState.Of(client, _loadedAt))">@PanelText.State</MudTableSortLabel>
+                </MudTh>
+                <MudTh>
+                    <MudTableSortLabel T="Client" SortBy="@(client => client.ExpiresAt)">@PanelText.ExpiryColumn</MudTableSortLabel>
+                </MudTh>
+                <MudTh>
+                    <MudTableSortLabel T="Client" SortBy="@(client => client.LastUsedAt)">@PanelText.LastSeenColumn</MudTableSortLabel>
+                </MudTh>
+                <MudTh Class="num">
+                    <MudTableSortLabel T="Client" SortBy="@(client => QuotaPeriod.UsedCalls(client, _loadedAt))">@PanelText.CallsColumn</MudTableSortLabel>
+                </MudTh>
+                <MudTh>@PanelText.Inbounds</MudTh>
+                <MudTh><span class="sr">@PanelText.AccessColumn</span></MudTh>
+                <MudTh><span class="sr">@PanelText.Actions</span></MudTh>
+            </HeaderContent>
+            <RowTemplate Context="client">
+                <MudTd Class="name">@client.Name</MudTd>
+                <MudTd DataLabel="@PanelText.State">
+                    <Status Value="ClientState.Of(client, _loadedAt)"/>
+                </MudTd>
+                <MudTd DataLabel="@PanelText.ExpiryColumn">
+                    @(client.ExpiresAt is { } expiresAt ? string.Format(PanelText.ExpiresOn, Viewer.Day(expiresAt)) : PanelText.NoExpiry)
+                </MudTd>
+                <MudTd DataLabel="@PanelText.LastSeenColumn">
+                    @if (client.LastUsedAt is { } usedAt)
+                    {
+                        @Viewer.Minute(usedAt)
+                    }
+                    else
+                    {
+                        <span class="nothing">@PanelText.NeverSeen</span>
+                    }
+                </MudTd>
+                <MudTd DataLabel="@PanelText.CallsColumn" Class="num">
+                    <Meter Used="QuotaPeriod.UsedCalls(client, _loadedAt)" Limit="client.QuotaCalls"/>
+                </MudTd>
+                <MudTd DataLabel="@PanelText.Inbounds">
+                    <code>@string.Join(", ", client.Inbounds.Select(link => link.Inbound!.Slug).Order())</code></MudTd>
+                <MudTd DataLabel="@PanelText.AccessColumn">
+                    <span @onclick:stopPropagation="true">
+                        <MudSwitch T="bool" Value="client.Enabled"
+                                   aria-label="@string.Format(PanelText.AccessOf, client.Name)"
+                                   ValueChanged="@(enabled => SwitchAsync(client, enabled))"/>
+                    </span>
+                </MudTd>
+                <MudTd Class="acts">
+                    <span class="acts-in" @onclick:stopPropagation="true">
+                        <button type="button" class="link"
+                                @onclick="() => ConnectAsync(client)">@PanelText.Connection</button>
+                        <MudMenu Label="⋯" AriaLabel="@string.Format(PanelText.MoreActions, client.Name)" Class="more"
+                                 AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
+                            <MudMenuItem OnClick="() => EditAsync(client)">@PanelText.Edit</MudMenuItem>
+                            <MudMenuItem
+                                Href="@MetricsAddress.Of(new MetricsFilter(client.Id))">@PanelText.Metrics</MudMenuItem>
+                            <MudMenuItem OnClick="() => DevicesAsync(client)">@PanelText.Devices</MudMenuItem>
+                            <MudMenuItem OnClick="() => ResetAsync(client)">@PanelText.ResetQuota</MudMenuItem>
+                            <MudMenuItem OnClick="() => ReissueAsync(client)">@PanelText.NewToken</MudMenuItem>
+                            <SlotMenuItems Slot="PanelSlots.ClientActions" Context="() => PanelData.Summary(client)"
+                                           OnDone="LoadAsync"/>
+                            <MudDivider/>
+                            <MudMenuItem Class="danger" OnClick="() => RemoveAsync(client)">@PanelText.Delete</MudMenuItem>
+                        </MudMenu>
+                    </span>
+                </MudTd>
+            </RowTemplate>
+        </MudTable>;
 
     protected override Task OnInitializedAsync()
     {

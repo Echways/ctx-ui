@@ -11,6 +11,38 @@ namespace CtxUi.IntegrationTests;
 public class PanelClientsTests
 {
     [Fact]
+    public async Task Client_groups_expand_sort_and_remain_searchable()
+    {
+        await using var gateway = await GatewayHost.StartAsync();
+        await gateway.AddInboundAsync("echo", "https://echo.example.org/mcp");
+        await gateway.AddClientAsync("Петров", ["echo"], metadata: [KeyValuePair.Create("group", "4419")]);
+        await gateway.AddClientAsync("Иванов", ["echo"], metadata: [KeyValuePair.Create("Group", " 4419 ")]);
+        await gateway.AddClientAsync("Сидорова", ["echo"], metadata: [KeyValuePair.Create("group", " ")]);
+        await using var session = await PanelSession.SignInAsync(gateway);
+        var page = await OpenClientsAsync(session);
+        var toggle = GroupToggle(page, "4419");
+
+        await Expect(toggle).ToHaveAttributeAsync("aria-expanded", "false");
+        await Expect(toggle).ToContainTextAsync("2");
+        await Expect(Row(page, "Сидорова")).ToBeVisibleAsync();
+        await Expect(Row(page, "Иванов")).ToHaveCountAsync(0);
+
+        await toggle.ClickAsync();
+        var catalog = page.Locator(".catalog").Filter(new() { Has = toggle });
+        var names = catalog.Locator("tbody tr td:first-child");
+        var sort = catalog.GetByRole(AriaRole.Columnheader, new() { Name = "Имя", Exact = true });
+        await sort.GetByText("Имя", new() { Exact = true }).ClickAsync();
+        await Expect(names).ToHaveTextAsync(new[] { "Иванов", "Петров" });
+        await sort.GetByText("Имя", new() { Exact = true }).ClickAsync();
+        await Expect(names).ToHaveTextAsync(new[] { "Петров", "Иванов" });
+
+        await toggle.ClickAsync();
+        await page.GetByLabel("Поиск по имени").FillAsync("иван");
+        await Expect(Row(page, "Иванов")).ToBeVisibleAsync();
+        await Expect(Row(page, "Петров")).ToHaveCountAsync(0);
+    }
+
+    [Fact]
     public async Task Empty_list_says_how_access_is_given()
     {
         await using var gateway = await GatewayHost.StartAsync();

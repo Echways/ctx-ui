@@ -30,6 +30,11 @@ internal static class ClientPages
         return page.GetByRole(AriaRole.Row).Filter(new LocatorFilterOptions { HasText = name });
     }
 
+    public static ILocator GroupToggle(IPage page, string name)
+    {
+        return page.Locator(".catalog-toggle").Filter(new() { Has = page.GetByText(name, new() { Exact = true }) });
+    }
+
     public static ILocator Dialog(IPage page)
     {
         return page.GetByRole(AriaRole.Dialog);

@@ -341,7 +341,7 @@
     <value>Метаданные</value>
   </data>
   <data name="MetadataHelp" xml:space="preserve">
-    <value>по одной паре в строке, ключ=значение; уходят upstream заголовками X-Mcp-Meta-*</value>
+    <value>Одна пара ключ=значение на строку. Укажите group=Название, чтобы сгруппировать клиентов в панели. Метаданные передаются upstream в заголовках X-Mcp-Meta-*.</value>
   </data>
   <data name="TokenLost" xml:space="preserve">
     <value>Токен показать нельзя: его сохранённая копия не читается, потерян каталог keys. Выпустите новый, и прежний перестанет работать</value>

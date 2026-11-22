@@ -82,7 +82,7 @@ public static partial class PanelServices
         });
         var layout = CreateLayout();
         extend(layout);
-        layout.Apply(services.AddEnfilade()
+        layout.Apply(services.AddEnfilade(shell => shell.ShowVersion = false)
             .ShowMessageOf<DomainException>(failure => Words.Sentence(failure.Message)));
         services.AddSingleton(layout);
         services.AddScoped<AuthenticationStateProvider, AdminSessionState>();

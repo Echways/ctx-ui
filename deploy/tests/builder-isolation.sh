@@ -46,9 +46,7 @@ work="$(mktemp -d)"
 failures=0
 listener_pid=""
 load_pid=""
-events_pid=""
 slow_pid=""
-eat_pid=""
 
 compose() {
     CTX_UI_VERSION="$version" CTXB_RUNNER_TOKEN="$token" docker compose -p "$project" -f "$root/deploy/builder/compose.yaml" "$@"
@@ -59,7 +57,7 @@ api() {
 }
 
 cleanup() {
-    for pid in "$listener_pid" "$load_pid" "$events_pid" "$slow_pid" "$eat_pid"; do
+    for pid in "$listener_pid" "$load_pid" "$slow_pid"; do
         if [ -n "$pid" ]; then
             kill "$pid" 2> /dev/null || true
         fi
@@ -190,6 +188,24 @@ ingress_becomes_ok() {
         sleep 1
     done
     echo "      the ingress for $id answered '$answer'"
+    return 1
+}
+
+oom_was_confirmed() {
+    local events="$1" since="$2" container_id="$3" pid="$4" kernel_pattern
+    local journal_args=(-k --since "@$since" --no-pager -o cat -q)
+    if grep -Fxq oom <<< "$events"; then
+        return 0
+    fi
+
+    kernel_pattern="oom-kill:constraint=CONSTRAINT_MEMCG,.*oom_memcg=[^,]*/(docker-)?${container_id}(\.scope)?,.*pid=${pid},"
+    if journalctl "${journal_args[@]}" | grep -E "$kernel_pattern" > /dev/null ||
+        sudo -n journalctl "${journal_args[@]}" 2> /dev/null | grep -E "$kernel_pattern" > /dev/null; then
+        return 0
+    fi
+
+    echo "      no matching OOM kill in the kernel journal for PID $pid"
+    printf '      Docker events:\n%s\n' "${events:-<none>}"
     return 1
 }
 
@@ -547,32 +563,16 @@ check "A does not see the docker socket" contains "No such file" "$(docker exec 
 echo "== memory limit"
 check "B has a memory limit and no swap" equals "167772160 167772160" "$(inspect "$b_container" '{{.HostConfig.Memory}} {{.HostConfig.MemorySwap}}')"
 check "B restarts through unless-stopped" equals unless-stopped "$(inspect "$b_container" '{{.HostConfig.RestartPolicy.Name}}')"
-docker events --filter "container=$b_container" --filter event=oom --format '{{.Action}}' > "$work/oom.events" 2> /dev/null &
-events_pid=$!
-sleep 1
-ingress_call "$b_id" "$secret" eat '{"megabytes":1024}' 60 > /dev/null &
-eat_pid=$!
-oom_killed=false
-for _ in $(seq 1 600); do
-    snapshot="$(inspect "$b_container" '{{.State.OOMKilled}} {{.RestartCount}} {{.State.Running}}' 2> /dev/null || true)"
-    if [[ "$snapshot" == true* ]]; then
-        oom_killed=true
-    fi
-    read -r _ restarts running <<< "$snapshot"
-    if [ "${restarts:-0}" -ge 1 ] && [ "$running" = true ]; then
-        break
-    fi
-    sleep 0.05
-done
-wait "$eat_pid" || true
-eat_pid=""
-kill "$events_pid" 2> /dev/null || true
-events_pid=""
-check "the memory event of B is an oom kill" contains oom "$(cat "$work/oom.events")"
-check "docker marked B as OOMKilled" equals true "$oom_killed"
-check "B was restarted once" at_least 1 "$(inspect "$b_container" '{{.RestartCount}}')"
-check "B is running again" equals true "$(inspect "$b_container" '{{.State.Running}}')"
+read -r b_container_id b_pid b_restarts <<< "$(inspect "$b_container" '{{.Id}} {{.State.Pid}} {{.RestartCount}}')"
+oom_since="$(date +%s.%N)"
+ingress_call "$b_id" "$secret" eat '{"megabytes":1024}' 60 > /dev/null
 check "B serves again after the restart" ingress_becomes_ok "$b_id"
+oom_events="$(docker events --since "$oom_since" --until "$(date +%s.%N)" \
+    --filter "container=$b_container_id" --filter event=oom --filter event=die \
+    --format '{{.Action}}{{with index .Actor.Attributes "exitCode"}} {{.}}{{end}}' || true)"
+check "B was killed for exceeding its memory limit" oom_was_confirmed "$oom_events" "$oom_since" "$b_container_id" "$b_pid"
+check "B was restarted once" equals "$((b_restarts + 1))" "$(inspect "$b_container_id" '{{.RestartCount}}')"
+check "B is running again" equals true "$(inspect "$b_container_id" '{{.State.Running}}')"
 
 echo "== process limit"
 ready_to_fork() {

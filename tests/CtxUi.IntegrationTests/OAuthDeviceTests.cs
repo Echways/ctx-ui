@@ -167,6 +167,42 @@ public class OAuthDeviceTests
     }
 
     [Fact]
+    public async Task Subscription_renewal_reuses_the_oauth_connection()
+    {
+        var clock = new FakeTimeProvider(DateTimeOffset.UtcNow);
+        await using var upstream = await FakeUpstream.StartAsync();
+        await using var gateway =
+            await OAuthHarness.StartAsync(builder => builder.Services.AddSingleton<TimeProvider>(clock));
+        await gateway.AddInboundAsync("echo", upstream.McpUrl);
+        var expiresAt = clock.GetUtcNow().AddMinutes(5);
+        var issued = await gateway.AddClientAsync("Иванов", ["echo"], expiresAt);
+        var (flow, access, refresh) = await ConnectAsync(gateway, issued.Token);
+        using var _ = flow;
+
+        clock.Advance(TimeSpan.FromMinutes(5));
+        using var blocked = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/echo", access));
+        Assert.Equal(HttpStatusCode.Forbidden, blocked.StatusCode);
+        Assert.False(blocked.Headers.Contains("WWW-Authenticate"));
+        Assert.Contains("client_expired", await blocked.Content.ReadAsStringAsync());
+
+        var refreshed = await flow.RefreshAsync(refresh);
+        Assert.Equal(HttpStatusCode.OK, refreshed.Status);
+        Assert.Equal(HttpStatusCode.Forbidden, await CallAsync(gateway, refreshed.Access!));
+        Assert.Empty(upstream.Requests);
+
+        await gateway.ArrangeAsync(services => services.GetRequiredService<ClientService>()
+            .UpdateAsync(issued.Client.Id, new ClientUpdate
+            {
+                ChangeExpiry = true,
+                ExpiresAt = clock.GetUtcNow().AddDays(30)
+            }));
+
+        Assert.Equal(HttpStatusCode.OK, await CallAsync(gateway, refreshed.Access!));
+        Assert.Equal(HttpStatusCode.OK, (await flow.RefreshAsync(refreshed.Refresh!)).Status);
+        Assert.Single(await DevicesAsync(gateway, issued.Client.Id));
+    }
+
+    [Fact]
     public async Task Reused_refresh_token_revokes_the_device()
     {
         var clock = new FakeTimeProvider(DateTimeOffset.UtcNow);

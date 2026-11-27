@@ -211,4 +211,10 @@
   <data name="MetricsDaysInvalid" xml:space="preserve">
     <value>days: нужно одно из значений {0}</value>
   </data>
+  <data name="PublicUrlInvalid" xml:space="preserve"><value>Введите HTTPS-адрес с именем хоста и необязательным портом. HTTP разрешён для localhost.</value></data>
+  <data name="DefaultHarnessFixed" xml:space="preserve"><value>Профиль по умолчанию использует глобальный публичный адрес.</value></data>
+  <data name="HarnessNameInvalid" xml:space="preserve"><value>Введите название профиля длиной от 1 до 80 символов.</value></data>
+  <data name="HarnessUnavailable" xml:space="preserve"><value>Выбранный профиль неизвестен или отключён.</value></data>
+  <data name="HarnessAlreadyExists" xml:space="preserve"><value>Профиль с таким идентификатором уже существует.</value></data>
+  <data name="LegacyPublicPathConflict" xml:space="preserve"><value>Сохраните глобальный адрес без пути, прежде чем использовать тот же хост и порт в профиле.</value></data>
 </root>

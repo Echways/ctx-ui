@@ -1,15 +1,13 @@
 using Microsoft.AspNetCore.WebUtilities;
-using Microsoft.EntityFrameworkCore;
 using CtxUi.Connect.Registration;
-using CtxUi.Connect.Resources;
-using CtxUi.Core.Data;
+using CtxUi.Core.Routing;
 using static OpenIddict.Abstractions.OpenIddictConstants;
 
 namespace CtxUi.Connect.Endpoints;
 
 public sealed record ConnectTarget(AppIdentity App, string InboundName);
 
-public sealed class ConnectTargets(RegisteredApps apps, ResourceHandlers resources, CtxUiDbContext db)
+public sealed class ConnectTargets(RegisteredApps apps, ISnapshotSource snapshots)
 {
     public async Task<ConnectTarget?> FromReturnUrlAsync(string? returnUrl, CancellationToken ct)
     {
@@ -17,15 +15,11 @@ public sealed class ConnectTargets(RegisteredApps apps, ResourceHandlers resourc
             return null;
 
         var query = QueryHelpers.ParseQuery(returnUrl[AuthorizeEndpoint.Path.Length..]);
-        return resources.ServedSlugOf(query[Parameters.Resource].ToString()) is { } slug
+        var snapshot = snapshots.Current;
+        return query[Parameters.Resource].Count == 1
+               && snapshot.PublicEndpoints.Resolve(snapshot, query[Parameters.Resource][0]) is { } resource
                && await apps.IdentityAsync(query[Parameters.ClientId].ToString(), ct) is { } app
-            ? new ConnectTarget(app, await InboundNameAsync(slug, ct))
+            ? new ConnectTarget(app, resource.Inbound.Name ?? resource.Inbound.Slug)
             : null;
-    }
-
-    public async Task<string> InboundNameAsync(string slug, CancellationToken ct)
-    {
-        return await db.Inbounds.AsNoTracking().Where(inbound => inbound.Slug == slug).Select(inbound => inbound.Name)
-            .SingleOrDefaultAsync(ct) ?? slug;
     }
 }

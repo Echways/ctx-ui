@@ -7,7 +7,7 @@ namespace CtxUi.Gateway;
 
 public sealed class CredentialReader(IAccessTokenValidator? validator)
 {
-    public async Task<Credential> ReadAsync(HttpContext context, string resource, bool oauthActive,
+    public async Task<Credential> ReadAsync(HttpContext context, string? resource, bool oauthActive,
         CancellationToken ct)
     {
         if (TokenPath.Get(context) is { } fromPath)
@@ -18,6 +18,9 @@ public sealed class CredentialReader(IAccessTokenValidator? validator)
             return new Credential(CredentialKind.Missing);
         if (AccessToken.IsWellFormed(token) || !oauthActive || validator is null)
             return Credential.FromKey(token);
+
+        if (resource is null)
+            return new Credential(CredentialKind.Invalid);
 
         try
         {

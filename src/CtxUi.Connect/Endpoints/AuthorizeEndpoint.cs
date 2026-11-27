@@ -63,11 +63,9 @@ public static class AuthorizeEndpoint
 
     private static async Task<IResult> AuthorizeAsync(
         HttpContext http,
-        ResourceHandlers resources,
         ISnapshotSource snapshots,
         DeviceService devices,
         RegisteredApps apps,
-        ConnectTargets targets,
         IOpenIddictAuthorizationManager authorizations,
         TimeProvider clock)
     {
@@ -84,7 +82,7 @@ public static class AuthorizeEndpoint
             return ConnectResults.Refuse(Errors.AccessDenied, "the user did not allow the access");
 
         var snapshot = snapshots.Current;
-        if (resources.ServedSlugOf(request) is not { } slug || snapshot.Route(slug) is not { } route)
+        if (ResourceHandlers.Resolve(snapshot, request) is not { } resource)
             return ConnectResults.Refuse(Errors.InvalidTarget, ResourceHandlers.Refusal);
 
         var returnUrl = ReturnUrl(request);
@@ -96,7 +94,7 @@ public static class AuthorizeEndpoint
             return ConnectResults.Notice(ConnectText.ClientDisabled);
         if (client.ExpiresAt is { } expiresAt && clock.GetUtcNow() >= expiresAt)
             return ConnectResults.Notice(ConnectText.ClientExpired);
-        if (!client.InboundIds.Contains(route.Id))
+        if (!client.InboundIds.Contains(resource.Inbound.Id))
             return ConnectResults.Notice(string.Format(ConnectText.NoAccessToInbound, client.Name));
 
         var ct = http.RequestAborted;
@@ -118,7 +116,7 @@ public static class AuthorizeEndpoint
             return ConnectResults.Page<ConsentPage>(new
             {
                 App = app,
-                InboundName = await targets.InboundNameAsync(slug, ct),
+                InboundName = resource.Inbound.Name ?? resource.Inbound.Slug,
                 ClientName = client.Name,
                 ReturnUrl = returnUrl,
                 Request = Forwarded(request)
@@ -131,8 +129,8 @@ public static class AuthorizeEndpoint
             .SetClaim(Claims.Name, client.Name)
             .SetClaim(ConnectClaims.Device, device.Id.ToString())
             .SetScopes(GrantedScopes)
-            .SetResources(resources.Resource(slug))
-            .SetAudiences(resources.Resource(slug))
+            .SetResources(resource.Url)
+            .SetAudiences(resource.Url)
             .SetAuthorizationId(authorizationId)
             .SetDestinations(_ => TokenEndpoint.Destinations);
         var principal = new ClaimsPrincipal(identity);

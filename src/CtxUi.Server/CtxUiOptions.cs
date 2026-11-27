@@ -1,4 +1,5 @@
 using CtxUi.Core;
+using CtxUi.Core.Settings;
 
 namespace CtxUi.Server;
 
@@ -8,7 +9,7 @@ public sealed class CtxUiOptions
 
     public string DataDir { get; set; } = "data";
 
-    public string PublicUrl { get; set; } = "http://localhost:8080";
+    public string PublicUrl { get; set; } = PublicEndpointOptions.DefaultUrl;
 
     public string Language { get; set; } = Languages.Default;
 

@@ -1,17 +1,16 @@
-using Microsoft.Extensions.Options;
 using OpenIddict.Abstractions;
 using OpenIddict.Server;
 using CtxUi.Core.Routing;
-using CtxUi.Core.SignIn;
+using CtxUi.Core.Settings;
 using static OpenIddict.Abstractions.OpenIddictConstants;
 using static OpenIddict.Server.OpenIddictServerEvents;
 
 namespace CtxUi.Connect.Resources;
 
-public sealed class ResourceHandlers(ISnapshotSource snapshot, IOptions<ConnectOptions> options) :
+public sealed class ResourceHandlers(ISnapshotSource snapshots) :
     IOpenIddictServerHandler<ValidateTokenRequestContext>
 {
-    public const string Refusal = "resource must be the address of one enabled inbound: <public address>/mcp/<inbound>";
+    public const string Refusal = "resource must be the address of one enabled inbound on a configured public URL";
 
     public static OpenIddictServerHandlerDescriptor Descriptor { get; } =
         OpenIddictServerHandlerDescriptor.CreateBuilder<ValidateTokenRequestContext>()
@@ -22,39 +21,19 @@ public sealed class ResourceHandlers(ISnapshotSource snapshot, IOptions<ConnectO
 
     public ValueTask HandleAsync(ValidateTokenRequestContext context)
     {
-        if (SlugOf(context.Request) is null)
+        if (Match(snapshots.Current, context.Request) is null)
             context.Reject(Errors.InvalidTarget, Refusal);
 
         return ValueTask.CompletedTask;
     }
 
-    public string? SlugOf(OpenIddictRequest request)
+    public static (string Url, string Slug)? Match(RoutingSnapshot snapshot, OpenIddictRequest request)
     {
-        return request.GetResources() is [var resource] ? SlugOf(resource) : null;
+        return request.GetResources() is [var resource] ? snapshot.PublicEndpoints.Match(resource) : null;
     }
 
-    public string? ServedSlugOf(OpenIddictRequest request)
+    public static PublicResource? Resolve(RoutingSnapshot snapshot, OpenIddictRequest request)
     {
-        return Served(SlugOf(request));
-    }
-
-    public string? ServedSlugOf(string? resource)
-    {
-        return Served(SlugOf(resource));
-    }
-
-    private string? SlugOf(string? resource)
-    {
-        return OAuthResource.TrySlug(options.Value.PublicUrl, resource, out var slug) ? slug : null;
-    }
-
-    private string? Served(string? slug)
-    {
-        return slug is not null && snapshot.Current.Route(slug) is not null ? slug : null;
-    }
-
-    public string Resource(string slug)
-    {
-        return OAuthResource.For(options.Value.PublicUrl, slug);
+        return request.GetResources() is [var resource] ? snapshot.PublicEndpoints.Resolve(snapshot, resource) : null;
     }
 }

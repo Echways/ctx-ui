@@ -33,17 +33,10 @@ public static partial class ServerApp
             ServiceRegistration.KeysPath(builder.Configuration));
         builder.Services.AddCtxUiApi();
         builder.Services.AddHealthChecks().AddDbContextCheck<CtxUiDbContext>();
-        builder.Services.Configure<ForwardedHeadersOptions>(options =>
-        {
-            options.ForwardedHeaders = ForwardedHeaders.XForwardedProto;
-            options.KnownIPNetworks.Clear();
-            options.KnownProxies.Clear();
-        });
 
         var app = builder.Build();
-        app.UseForwardedHeaders();
-        app.UseForwardedHeaders(ForwardedFor(app.Services.GetRequiredService<IOptions<CtxUiOptions>>().Value
-            .TrustedProxies));
+        var trustedProxies = app.Services.GetRequiredService<IOptions<CtxUiOptions>>().Value.TrustedProxies;
+        app.UseForwardedHeaders(Forwarding(trustedProxies));
         app.UseTokenPath();
         app.UseCtxUiConnectGate();
         app.UseCtxUiPanelGate([GatewayServices.Path, HealthProbe.Path, .. ConnectServices.OpenPaths]);
@@ -93,11 +86,11 @@ public static partial class ServerApp
     [LoggerMessage(Level = LogLevel.Error, Message = "Extension {Name} skipped: {Reason}")]
     private static partial void LogExtensionSkipped(ILogger logger, string name, string reason);
 
-    private static ForwardedHeadersOptions ForwardedFor(string trustedProxies)
+    private static ForwardedHeadersOptions Forwarding(string trustedProxies)
     {
         var (proxies, networks) = ProxyTrust.Parse(trustedProxies);
         var options = new ForwardedHeadersOptions
-        { ForwardedHeaders = ForwardedHeaders.XForwardedFor, ForwardLimit = 1 };
+        { ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto, ForwardLimit = 1 };
         options.KnownProxies.Clear();
         options.KnownIPNetworks.Clear();
         foreach (var proxy in proxies)

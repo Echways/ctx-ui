@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using CtxUi.Core.Routing;
+using CtxUi.Core.Settings;
+using CtxUi.Core.Inbounds;
 using CtxUi.Core.SignIn;
 using CtxUi.Core.Usage;
 
@@ -10,7 +12,7 @@ namespace CtxUi.Gateway;
 public sealed partial class GatewayHandler(
     SnapshotStore store,
     CredentialReader reader,
-    IOptions<GatewayOptions> options,
+    IOptions<PublicEndpointOptions> options,
     HttpUpstream upstream,
     ClientTouch touch,
     DeviceTouch deviceTouch,
@@ -25,17 +27,28 @@ public sealed partial class GatewayHandler(
         var slug = (string)context.Request.RouteValues["slug"]!;
         var now = clock.GetUtcNow();
         var snapshot = store.Current;
-        var publicUrl = options.Value.PublicUrl;
-        var active = snapshot.SignIn.IsActive(publicUrl);
-        var credential =
-            await reader.ReadAsync(context, OAuthResource.For(publicUrl, slug), active, context.RequestAborted);
+        var endpoints = snapshot.PublicEndpoints;
+        var publicUrl = endpoints.ForRequest(context.Request.Scheme, context.Request.Host.Value);
+        if (publicUrl is null)
+        {
+            context.Response.StatusCode = StatusCodes.Status404NotFound;
+            return;
+        }
+
+        var active = snapshot.SignIn.IsActive(options.Value.Issuer) && OAuthAvailability.IsAllowed(publicUrl);
+        var resource = Slug.IsValid(slug)
+            ? OAuthResource.For(publicUrl, slug)
+            : null;
+        var credential = await reader.ReadAsync(context, resource, active, context.RequestAborted);
         var decision = snapshot.Authorize(credential, slug, now);
 
         object outcome = decision.Status;
         if (decision.Status == AccessStatus.Allowed)
             outcome = await ServeAsync(context, decision, now);
         else
-            await Rejection.WriteAsync(context, decision, active ? OAuthResource.MetadataUrl(publicUrl, slug) : null);
+            await Rejection.WriteAsync(context, decision, active && Slug.IsValid(slug) && (snapshot.Route(slug) is not null || endpoints.Legacy)
+                ? OAuthResource.MetadataUrl(publicUrl, slug)
+                : null);
 
         Served(
             logger,

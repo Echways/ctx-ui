@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.DataProtection;
 using CtxUi.Core;
 using CtxUi.Core.Secrets;
+using CtxUi.Core.Settings;
 using CtxUi.Core.Usage;
 using CtxUi.Panel;
 
@@ -30,6 +31,11 @@ public static class ServiceRegistration
         CreatePrivateDirectory(keysDir);
 
         services.AddCtxUiCore(dataDir);
+        services.AddOptions<PublicEndpointOptions>().Bind(section)
+            .Validate(options => string.IsNullOrWhiteSpace(options.OAuthIssuer) ||
+                                 PublicAddress.Normalize(options.OAuthIssuer) is not null,
+                $"{CtxUiOptions.Section}:OAuthIssuer must be an HTTPS origin or an HTTP loopback origin")
+            .ValidateOnStart();
         services.Configure<UsageOptions>(section);
         services.AddDataProtection()
             .SetApplicationName("CtxUi")

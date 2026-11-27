@@ -2,6 +2,7 @@ using System.Collections.Frozen;
 using CtxUi.Core.Clients;
 using CtxUi.Core.Inbounds;
 using CtxUi.Core.SignIn;
+using CtxUi.Core.Settings;
 
 namespace CtxUi.Core.Routing;
 
@@ -13,6 +14,8 @@ public sealed record InboundRoute(
     bool ForwardIdentity,
     TimeSpan RequestTimeout)
 {
+    public string? Name { get; init; }
+
     public int MaxBodyBytes { get; init; } = Inbound.DefaultMaxBodyBytes;
 }
 
@@ -79,6 +82,8 @@ public sealed class RoutingSnapshot
     public long Revision { get; }
 
     public SignInConfig SignIn { get; }
+
+    public PublicEndpoints PublicEndpoints { get; init; } = PublicEndpoints.Default;
 
     public ClientAccess? ClientByToken(string? token)
     {

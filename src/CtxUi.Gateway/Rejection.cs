@@ -28,7 +28,7 @@ public static class Rejection
             AccessStatus.ClientDisabled => (StatusCodes.Status401Unauthorized, "client_disabled",
                 GatewayText.ClientDisabled),
             AccessStatus.ClientExpired => (
-                StatusCodes.Status401Unauthorized,
+                decision.DeviceId.HasValue ? StatusCodes.Status403Forbidden : StatusCodes.Status401Unauthorized,
                 "client_expired",
                 string.Format(
                     GatewayText.ClientExpired,

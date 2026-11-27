@@ -135,7 +135,7 @@ public sealed class RoutingSnapshot
         if (!client.Enabled)
             return new AccessDecision(AccessStatus.ClientDisabled, client);
         if (client.ExpiresAt is { } expiresAt && now >= expiresAt)
-            return new AccessDecision(AccessStatus.ClientExpired, client);
+            return new AccessDecision(AccessStatus.ClientExpired, client, DeviceId: deviceId);
         if (!_routes.TryGetValue(slug, out var route) || !client.InboundIds.Contains(route.Id))
             return new AccessDecision(AccessStatus.InboundNotFound, client);
 

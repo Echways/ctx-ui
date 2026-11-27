@@ -46,7 +46,8 @@ public static class TokenEndpoint
         var client = snapshot.Current.ClientById(clientId);
         if (client is null
             || !client.Enabled
-            || (client.ExpiresAt is { } expiresAt && clock.GetUtcNow() >= expiresAt)
+            || (request.IsAuthorizationCodeGrantType()
+                && client.ExpiresAt is { } expiresAt && clock.GetUtcNow() >= expiresAt)
             || resources.ServedSlugOf(request) is not { } slug
             || snapshot.Current.Route(slug) is not { } route
             || !client.InboundIds.Contains(route.Id)

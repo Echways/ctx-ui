@@ -1,3 +1,4 @@
+using System.Reflection;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -73,6 +74,8 @@ public static partial class PanelServices
         services.AddOptions<EnfiladeOptions>().Configure<IOptions<PanelOptions>>((shell, panel) =>
         {
             shell.Brand = Brand;
+            shell.Version = typeof(PanelServices).Assembly
+                .GetCustomAttribute<AssemblyInformationalVersionAttribute>()!.InformationalVersion.Split('+')[0];
             shell.Favicon = Favicon;
             shell.Language = panel.Value.Language;
             shell.Languages = [.. Languages.Supported];
@@ -82,7 +85,7 @@ public static partial class PanelServices
         });
         var layout = CreateLayout();
         extend(layout);
-        layout.Apply(services.AddEnfilade(shell => shell.ShowVersion = false)
+        layout.Apply(services.AddEnfilade()
             .ShowMessageOf<DomainException>(failure => Words.Sentence(failure.Message)));
         services.AddSingleton(layout);
         services.AddScoped<AuthenticationStateProvider, AdminSessionState>();

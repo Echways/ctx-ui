@@ -1,3 +1,5 @@
+using System.Reflection;
+using CtxUi.Server;
 using Microsoft.Playwright;
 using static Microsoft.Playwright.Assertions;
 
@@ -5,6 +7,17 @@ namespace CtxUi.IntegrationTests;
 
 public class PanelShellTests
 {
+    [Fact]
+    public async Task Panel_shows_the_ctx_ui_version()
+    {
+        var version = typeof(CtxUiOptions).Assembly
+            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()!.InformationalVersion.Split('+')[0];
+        await using var gateway = await GatewayHost.StartAsync();
+        await using var session = await PanelSession.SignInAsync(gateway);
+
+        await Expect(session.Page.GetByText($"Версия {version}", new() { Exact = true })).ToBeVisibleAsync();
+    }
+
     [Fact]
     public async Task Current_section_is_marked_in_the_navigation()
     {

@@ -13,7 +13,7 @@ public sealed class ServerMetadataHandler(string issuer) : IOpenIddictServerHand
     {
         return OpenIddictServerHandlerDescriptor.CreateBuilder<HandleConfigurationRequestContext>()
             .UseSingletonHandler(new ServerMetadataHandler(issuer))
-            .SetOrder(int.MaxValue - 100_000)
+            .SetOrder(OpenIddictServerHandlers.Discovery.AttachClientAuthenticationMethods.Descriptor.Order + 1)
             .SetType(OpenIddictServerHandlerType.Custom)
             .Build();
     }

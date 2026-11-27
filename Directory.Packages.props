@@ -17,7 +17,7 @@
     <PackageVersion Include="ModelContextProtocol.AspNetCore" Version="$(ModelContextProtocolVersion)" />
     <PackageVersion Include="ModelContextProtocol.Core" Version="$(ModelContextProtocolVersion)" />
     <PackageVersion Include="NJsonSchema" Version="11.6.2" />
-    <PackageVersion Include="Enfilade" Version="0.3.1" />
+    <PackageVersion Include="Enfilade" Version="0.3.2" />
     <PackageVersion Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" Version="5.6.0" />
     <PackageVersion Include="MudBlazor" Version="9.14.0" />
     <PackageVersion Include="MessageFormat" Version="8.0.0" />

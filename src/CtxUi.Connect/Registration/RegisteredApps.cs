@@ -55,6 +55,11 @@ public sealed class RegisteredApps(
             return false;
 
         var descriptor = Describe(document.ClientId, document.ClientName, document.RedirectUris, now);
+        if (!document.AllowsRefreshToken)
+        {
+            descriptor.Permissions.Remove(Permissions.GrantTypes.RefreshToken);
+            descriptor.Permissions.Remove(Permissions.Prefixes.Scope + Scopes.OfflineAccess);
+        }
         descriptor.Properties[CachedUntilProperty] = JsonSerializer.SerializeToElement(now + document.CacheFor);
         if (app is null)
             await apps.CreateAsync(descriptor, ct);
@@ -118,6 +123,12 @@ public sealed class RegisteredApps(
     public async Task<string?> ApplicationIdAsync(string clientId, CancellationToken ct)
     {
         return await apps.FindByClientIdAsync(clientId, ct) is { } app ? await apps.GetIdAsync(app, ct) : null;
+    }
+
+    internal async Task<bool> AllowsRefreshTokenAsync(string clientId, CancellationToken ct)
+    {
+        return await apps.FindByClientIdAsync(clientId, ct) is { } app
+               && await apps.HasPermissionAsync(app, Permissions.GrantTypes.RefreshToken, ct);
     }
 
     public async Task<int> PruneAsync(DateTimeOffset before, CancellationToken ct)

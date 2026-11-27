@@ -36,49 +36,64 @@ public class OAuthMetadataTests
         }
     }
 
-    [Fact]
-    public async Task Server_metadata_advertises_what_mcp_clients_require()
+    [Theory]
+    [InlineData("/.well-known/oauth-authorization-server")]
+    [InlineData("/.well-known/openid-configuration")]
+    public async Task Server_metadata_advertises_what_mcp_clients_require(string path)
     {
         await using var gateway = await OAuthHarness.StartAsync();
 
-        var json = await gateway.Http.GetFromJsonAsync<JsonElement>("/.well-known/oauth-authorization-server");
+        var json = await gateway.Http.GetFromJsonAsync<JsonElement>(path);
 
         Assert.Equal(gateway.Issuer, json.GetProperty("issuer").GetString());
         Assert.True(json.GetProperty("client_id_metadata_document_supported").GetBoolean());
         Assert.True(json.GetProperty("authorization_response_iss_parameter_supported").GetBoolean());
-        Assert.Contains("none", Strings(json, "token_endpoint_auth_methods_supported"));
+        Assert.Equal(["none"], Strings(json, "token_endpoint_auth_methods_supported"));
+        Assert.Equal(["none"], Strings(json, "revocation_endpoint_auth_methods_supported"));
         Assert.Equal(["S256"], Strings(json, "code_challenge_methods_supported"));
         Assert.Equal(gateway.Issuer + "/connect/register", json.GetProperty("registration_endpoint").GetString());
         Assert.Equal(gateway.Issuer + "/connect/authorize", json.GetProperty("authorization_endpoint").GetString());
         Assert.Equal(gateway.Issuer + "/connect/token", json.GetProperty("token_endpoint").GetString());
+        Assert.Equal(gateway.Issuer + "/connect/revoke", json.GetProperty("revocation_endpoint").GetString());
+        Assert.Equal(gateway.Issuer + "/.well-known/jwks", json.GetProperty("jwks_uri").GetString());
         Assert.Equivalent(new[] { "mcp", "offline_access" }, Strings(json, "scopes_supported"));
         Assert.Equivalent(new[] { "authorization_code", "refresh_token" }, Strings(json, "grant_types_supported"));
         Assert.Equal(["code"], Strings(json, "response_types_supported"));
     }
 
-    [Fact]
-    public async Task Endpoints_follow_the_public_url_whatever_the_host_header_says()
+    [Theory]
+    [InlineData("https://gateway.example.org")]
+    [InlineData("https://gateway.example.org:9443")]
+    public async Task Proxied_metadata_uses_the_configured_public_url(string issuer)
     {
-        await using var gateway = await OAuthHarness.StartAsync();
-        using var request = new HttpRequestMessage(HttpMethod.Get, "/.well-known/oauth-authorization-server");
-        request.Headers.Host = "other.example.org";
+        await using var gateway = await OAuthHarness.StartAsync(builder =>
+            builder.Configuration["CtxUi:PublicUrl"] = issuer + "/");
+        await gateway.AddInboundAsync("learn", "https://mcp.example.org/mcp");
+        gateway.Http.DefaultRequestHeaders.Host = "backend.internal";
+        gateway.Http.DefaultRequestHeaders.Add("X-Forwarded-Host", "other.example.org");
+        gateway.Http.DefaultRequestHeaders.Add("X-Forwarded-Proto", "https");
 
-        using var response = await gateway.Http.SendAsync(request);
-        var json = await response.Content.ReadFromJsonAsync<JsonElement>();
+        foreach (var path in new[] { "/.well-known/oauth-authorization-server", "/.well-known/openid-configuration" })
+        {
+            var json = await gateway.Http.GetFromJsonAsync<JsonElement>(path);
+            Assert.Equal(issuer, json.GetProperty("issuer").GetString());
+            Assert.Equal(issuer + "/connect/authorize", json.GetProperty("authorization_endpoint").GetString());
+            Assert.Equal(issuer + "/connect/token", json.GetProperty("token_endpoint").GetString());
+            Assert.Equal(issuer + "/connect/register", json.GetProperty("registration_endpoint").GetString());
+            Assert.Equal(issuer + "/connect/revoke", json.GetProperty("revocation_endpoint").GetString());
+            Assert.Equal(issuer + "/.well-known/jwks", json.GetProperty("jwks_uri").GetString());
+        }
 
-        foreach (var name in new[] { "authorization_endpoint", "token_endpoint", "revocation_endpoint", "jwks_uri" })
-            Assert.StartsWith(gateway.Issuer + "/", json.GetProperty(name).GetString());
-    }
-
-    [Fact]
-    public async Task Openid_configuration_serves_the_same_issuer()
-    {
-        await using var gateway = await OAuthHarness.StartAsync();
-
-        var json = await gateway.Http.GetFromJsonAsync<JsonElement>("/.well-known/openid-configuration");
-
-        Assert.Equal(gateway.Issuer, json.GetProperty("issuer").GetString());
-        Assert.Equal(gateway.Issuer + "/connect/register", json.GetProperty("registration_endpoint").GetString());
+        const string metadataPath = "/.well-known/oauth-protected-resource/mcp/learn";
+        using var rejected = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/learn"));
+        Assert.Equal(HttpStatusCode.Unauthorized, rejected.StatusCode);
+        Assert.Equal($"Bearer resource_metadata=\"{issuer}{metadataPath}\", scope=\"mcp\"",
+            rejected.Headers.WwwAuthenticate.ToString());
+        var resource = await gateway.Http.GetFromJsonAsync<JsonElement>(metadataPath);
+        Assert.Equal(issuer + "/mcp/learn", resource.GetProperty("resource").GetString());
+        Assert.Equal([issuer], Strings(resource, "authorization_servers"));
+        var jwks = await gateway.Http.GetFromJsonAsync<JsonElement>("/.well-known/jwks");
+        Assert.NotEmpty(jwks.GetProperty("keys").EnumerateArray());
     }
 
     [Fact]

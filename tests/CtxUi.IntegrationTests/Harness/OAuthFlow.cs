@@ -69,7 +69,9 @@ public sealed partial class OAuthFlow : IDisposable
         string slug,
         CookieContainer? cookies = null,
         string clientName = "Claude Code",
-        string redirectUri = Callback)
+        string redirectUri = Callback,
+        string? clientId = null,
+        string scope = "mcp offline_access")
     {
         var flow = new OAuthFlow(gateway, cookies ?? new CookieContainer());
         using var refused = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/" + slug));
@@ -83,20 +85,24 @@ public sealed partial class OAuthFlow : IDisposable
         Assert.Equal(flow.Issuer, server.GetProperty("issuer").GetString());
         flow.TokenEndpoint = server.GetProperty("token_endpoint").GetString()!;
 
-        using var registered = await gateway.Http.PostAsJsonAsync(
-            server.GetProperty("registration_endpoint").GetString(),
-            new Dictionary<string, object> { ["client_name"] = clientName, ["redirect_uris"] = new[] { redirectUri } });
-        Assert.Equal(HttpStatusCode.Created, registered.StatusCode);
-        flow.ClientId =
-            (await registered.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("client_id").GetString()!;
+        if (clientId is null)
+        {
+            using var registered = await gateway.Http.PostAsJsonAsync(
+                server.GetProperty("registration_endpoint").GetString(),
+                new Dictionary<string, object>
+                { ["client_name"] = clientName, ["redirect_uris"] = new[] { redirectUri } });
+            Assert.Equal(HttpStatusCode.Created, registered.StatusCode);
+            clientId = (await registered.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("client_id").GetString()!;
+        }
 
+        flow.ClientId = clientId;
         flow.AuthorizeUrl = QueryHelpers.AddQueryString(server.GetProperty("authorization_endpoint").GetString()!,
             new Dictionary<string, string?>
             {
                 ["client_id"] = flow.ClientId,
                 ["redirect_uri"] = redirectUri,
                 ["response_type"] = "code",
-                ["scope"] = "mcp offline_access",
+                ["scope"] = scope,
                 ["state"] = flow.State,
                 ["code_challenge"] = Base64Url(SHA256.HashData(Encoding.ASCII.GetBytes(flow.Verifier))),
                 ["code_challenge_method"] = "S256",

@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using OpenIddict.Abstractions;
 using OpenIddict.Server.AspNetCore;
+using CtxUi.Connect.Registration;
 using CtxUi.Connect.Resources;
 using CtxUi.Core.Routing;
 using CtxUi.Core.SignIn;
@@ -30,6 +31,7 @@ public static class TokenEndpoint
         ResourceHandlers resources,
         ISnapshotSource snapshot,
         DeviceService devices,
+        RegisteredApps apps,
         TimeProvider clock)
     {
         var request = http.GetOpenIddictServerRequest()!;
@@ -54,11 +56,18 @@ public static class TokenEndpoint
             || !await devices.IsActiveAsync(deviceId, http.RequestAborted))
             return Invalid();
 
+        var resource = resources.Resource(slug);
+        if (!presented.HasResource(resource))
+            return ConnectResults.Refuse(Errors.InvalidTarget, "resource must match the original grant");
+
         var identity = new ClaimsIdentity(presented.Claims, presented.Identity!.AuthenticationType, Claims.Name,
             Claims.Role);
         var principal = new ClaimsPrincipal(identity);
-        principal.SetResources(resources.Resource(slug));
-        principal.SetAudiences(resources.Resource(slug));
+        if (principal.HasScope(Scopes.OfflineAccess)
+            && !await apps.AllowsRefreshTokenAsync(request.ClientId!, http.RequestAborted))
+            principal.SetScopes(principal.GetScopes().Remove(Scopes.OfflineAccess));
+        principal.SetResources(resource);
+        principal.SetAudiences(resource);
         principal.SetDestinations(_ => Destinations);
         principal.SetRefreshTokenLifetime(TimeSpan.FromDays(snapshot.Current.SignIn.IdleDays));
         return Results.SignIn(principal, authenticationScheme: OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);

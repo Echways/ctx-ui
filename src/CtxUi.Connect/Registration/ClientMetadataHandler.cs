@@ -1,10 +1,13 @@
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using OpenIddict.Abstractions;
 using OpenIddict.Server;
 using static OpenIddict.Abstractions.OpenIddictConstants;
 using static OpenIddict.Server.OpenIddictServerEvents;
 
 namespace CtxUi.Connect.Registration;
 
-public sealed class ClientMetadataHandler(RegisteredApps apps) :
+public sealed partial class ClientMetadataHandler(RegisteredApps apps) :
     IOpenIddictServerHandler<ExtractAuthorizationRequestContext>,
     IOpenIddictServerHandler<ExtractTokenRequestContext>,
     IOpenIddictServerHandler<ExtractRevocationRequestContext>
@@ -46,7 +49,20 @@ public sealed class ClientMetadataHandler(RegisteredApps apps) :
         if (!apps.IsDocumentClientId(clientId, out _))
             return;
 
-        if (!await apps.EnsureFromDocumentAsync(clientId!, context.CancellationToken))
-            context.Reject(Errors.InvalidClient, "the client metadata document could not be fetched or is not valid");
+        try
+        {
+            if (await apps.EnsureFromDocumentAsync(clientId!, context.CancellationToken))
+                return;
+        }
+        catch (Exception exception) when (exception is OpenIddictExceptions.ValidationException
+                                          or OpenIddictExceptions.ConcurrencyException or DbUpdateException)
+        {
+            RegistrationFailed(context.Logger, exception.GetType().Name);
+        }
+
+        context.Reject(Errors.InvalidClient, "the client metadata document could not be fetched or is not valid");
     }
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Client metadata registration or update failed: {FailureType}")]
+    private static partial void RegistrationFailed(ILogger logger, string failureType);
 }

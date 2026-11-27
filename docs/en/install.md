@@ -208,6 +208,19 @@ Compose starts only ctx-ui and publishes it on `127.0.0.1:8080`. Set
 `CTX_UI_PORT` to change that local port. Set `CTX_UI_PUBLIC_URL` to the address
 clients use, including the HTTPS port when it differs from 443.
 
+For OAuth, use one canonical external HTTPS origin in `CTX_UI_PUBLIC_URL`
+(`CtxUi__PublicUrl` without Docker). The same origin serves discovery and OAuth
+endpoints for every `/mcp/<slug>`. A tunnel can point to the same instance.
+If clients connect through a tunnel's public hostname, configure that HTTPS
+origin and use it in their MCP URLs. Keep the backend private. Configure the
+proxy to accept the public hostname and pass it in `Host` for external
+sign-in providers. Set `X-Forwarded-Proto` to the external `https` scheme.
+
+Changing the origin changes the OAuth issuer and each MCP resource identifier.
+Update client URLs and reconnect OAuth clients after the change. Access tokens
+bound to the old resource and refresh requests sent to the old issuer can stop
+working. Keep the current origin when upgrading without a hostname or port change.
+
 For Caddy running on the host, add a site to its configuration and reload it.
 
 ```caddyfile

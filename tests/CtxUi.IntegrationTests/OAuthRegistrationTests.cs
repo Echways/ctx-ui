@@ -5,8 +5,10 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Time.Testing;
+using OpenIddict.Abstractions;
 using CtxUi.Connect.Registration;
 using CtxUi.Core.Inbounds;
+using static OpenIddict.Abstractions.OpenIddictConstants;
 
 namespace CtxUi.IntegrationTests;
 
@@ -38,7 +40,7 @@ public class OAuthRegistrationTests
     }
 
     private static string Authorize(string clientId, string redirectUri, string? resource,
-        string scope = "mcp offline_access")
+        string scope = "mcp offline_access", string? challengeMethod = "S256")
     {
         var query = new Dictionary<string, string?>
         {
@@ -47,8 +49,8 @@ public class OAuthRegistrationTests
             ["response_type"] = "code",
             ["scope"] = scope,
             ["state"] = "s1",
-            ["code_challenge"] = Challenge,
-            ["code_challenge_method"] = "S256"
+            ["code_challenge"] = challengeMethod is null ? null : Challenge,
+            ["code_challenge_method"] = challengeMethod
         };
         if (resource is not null)
             query["resource"] = resource;
@@ -96,6 +98,181 @@ public class OAuthRegistrationTests
         Assert.StartsWith("/connect/signin?returnUrl=", first.Headers.Location!.OriginalString);
         Assert.Equal(HttpStatusCode.Found, second.StatusCode);
         Assert.Equal(1, metadata.Fetches);
+    }
+
+    [Fact]
+    public async Task Cimd_public_choice_works_through_token_refresh_revocation_and_mcp()
+    {
+        await using var metadata = await MetadataHost.StartAsync();
+        await using var upstream = await FakeUpstream.StartAsync();
+        await using var gateway = await StartAsync();
+        await gateway.AddInboundAsync("echo", upstream.McpUrl);
+        await gateway.AddInboundAsync("other", upstream.McpUrl);
+        var issued = await gateway.AddClientAsync("Test", ["echo", "other"]);
+        metadata.Document = $$"""
+            {
+              "client_id": "{{metadata.Url}}",
+              "client_name": "Metadata client",
+              "redirect_uris": ["{{Callback}}"],
+              "token_endpoint_auth_method": "private_key_jwt",
+              "token_endpoint_auth_methods_supported": ["private_key_jwt", "none"],
+              "jwks_uri": "https://keys.example.org/jwks.json",
+              "token_endpoint_auth_signing_alg": "RS256",
+              "grant_types": ["authorization_code", "refresh_token", "urn:ietf:params:oauth:grant-type:jwt-bearer"],
+              "response_types": ["code"]
+            }
+            """;
+
+        using var flow = await OAuthFlow.StartAsync(gateway, "echo", clientId: metadata.Url, scope: "mcp");
+        await flow.SignInWithKeyAsync(issued.Token);
+        await flow.ApproveAsync();
+        Assert.NotNull(flow.Code);
+
+        await gateway.ArrangeAsync(async services =>
+        {
+            var apps = services.GetRequiredService<IOpenIddictApplicationManager>();
+            var app = await apps.FindByClientIdAsync(metadata.Url);
+            Assert.NotNull(app);
+            Assert.Equal(ClientTypes.Public, await apps.GetClientTypeAsync(app));
+            Assert.Equivalent(new[]
+            {
+                Permissions.Endpoints.Authorization, Permissions.Endpoints.Token, Permissions.Endpoints.Revocation,
+                Permissions.GrantTypes.AuthorizationCode, Permissions.GrantTypes.RefreshToken,
+                Permissions.ResponseTypes.Code, Permissions.Prefixes.Scope + "mcp",
+                Permissions.Prefixes.Scope + Scopes.OfflineAccess
+            }, await apps.GetPermissionsAsync(app), strict: true);
+            Assert.Contains(Requirements.Features.ProofKeyForCodeExchange, await apps.GetRequirementsAsync(app));
+        });
+
+        var exchange = new Dictionary<string, string>
+        {
+            ["grant_type"] = GrantTypes.AuthorizationCode,
+            ["code"] = flow.Code,
+            ["redirect_uri"] = Callback,
+            ["code_verifier"] = new string('a', 43)
+        };
+        Assert.Equal(Errors.InvalidGrant, (await flow.TokenAsync(exchange)).Error);
+        exchange["code_verifier"] = flow.Verifier;
+        exchange["resource"] = gateway.Issuer + "/mcp/other";
+        Assert.Equal(Errors.InvalidTarget, (await flow.TokenAsync(exchange)).Error);
+        exchange.Remove("resource");
+        var (access, refresh) = await flow.ExchangeAsync();
+        using var call = await gateway.Http.SendAsync(OAuthFlow.Mcp("echo", access));
+        Assert.Equal(HttpStatusCode.OK, call.StatusCode);
+        using var other = await gateway.Http.SendAsync(OAuthFlow.Mcp("other", access));
+        Assert.Equal(HttpStatusCode.Unauthorized, other.StatusCode);
+
+        var wrongResource = await flow.TokenAsync(new Dictionary<string, string>
+        {
+            ["grant_type"] = GrantTypes.RefreshToken,
+            ["refresh_token"] = refresh,
+            ["resource"] = gateway.Issuer + "/mcp/other"
+        });
+        Assert.Equal(Errors.InvalidTarget, wrongResource.Error);
+        var rotated = await flow.RefreshAsync(refresh);
+        Assert.Equal(HttpStatusCode.OK, rotated.Status);
+        Assert.NotNull(rotated.Refresh);
+        Assert.NotEqual(refresh, rotated.Refresh);
+        using var revocation = await gateway.Http.PostAsync("/connect/revoke", new FormUrlEncodedContent(
+            new Dictionary<string, string> { ["client_id"] = metadata.Url, ["token"] = rotated.Refresh }));
+        Assert.Equal(HttpStatusCode.OK, revocation.StatusCode);
+        Assert.Equal(Errors.InvalidGrant, (await flow.RefreshAsync(rotated.Refresh)).Error);
+
+        Assert.Equal(Errors.InvalidGrant, (await flow.TokenAsync(exchange)).Error);
+        Assert.Equal(1, metadata.Fetches);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("plain")]
+    public async Task Cimd_client_requires_s256(string? challengeMethod)
+    {
+        await using var metadata = await MetadataHost.StartAsync();
+        await using var gateway = await StartAsync();
+        await gateway.AddInboundAsync("echo", "https://mcp.example.org/mcp");
+        metadata.For(Callback);
+        using var browser = Browser(gateway);
+
+        using var response = await browser.GetAsync(Authorize(metadata.Url, Callback, gateway.Issuer + "/mcp/echo",
+            challengeMethod: challengeMethod));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var page = await response.Content.ReadAsStringAsync();
+        Assert.Contains(Errors.InvalidRequest, page);
+        Assert.Contains("code_challenge", page);
+    }
+
+    [Fact]
+    public async Task Cimd_refresh_revalidates_authentication_methods_after_cache_expiry()
+    {
+        var clock = new FakeTimeProvider(DateTimeOffset.UtcNow);
+        await using var metadata = await MetadataHost.StartAsync();
+        await using var gateway = await StartAsync(builder => builder.Services.AddSingleton<TimeProvider>(clock));
+        await gateway.AddInboundAsync("echo", "https://mcp.example.org/mcp");
+        metadata.Document = $$"""
+            {
+              "client_id": "{{metadata.Url}}", "client_name": "Metadata client", "redirect_uris": ["{{Callback}}"],
+              "token_endpoint_auth_methods_supported": ["private_key_jwt"],
+              "jwks_uri": "https://keys.example.org/jwks.json"
+            }
+            """;
+        var confidential = metadata.Document;
+        using var browser = Browser(gateway);
+        var authorize = Authorize(metadata.Url, Callback, gateway.Issuer + "/mcp/echo");
+        using var initial = await browser.GetAsync(authorize);
+        Assert.Equal(HttpStatusCode.BadRequest, initial.StatusCode);
+        Assert.Contains(Errors.InvalidClient, await initial.Content.ReadAsStringAsync());
+
+        metadata.For(Callback);
+        using var accepted = await browser.GetAsync(authorize);
+        Assert.Equal(HttpStatusCode.Found, accepted.StatusCode);
+        metadata.Document = confidential;
+        using var cached = await browser.GetAsync(authorize);
+        Assert.Equal(HttpStatusCode.Found, cached.StatusCode);
+        Assert.Equal(2, metadata.Fetches);
+
+        clock.Advance(TimeSpan.FromMinutes(11));
+        using var expired = await browser.GetAsync(authorize);
+        Assert.Equal(HttpStatusCode.BadRequest, expired.StatusCode);
+        Assert.Contains(Errors.InvalidClient, await expired.Content.ReadAsStringAsync());
+        Assert.Equal(3, metadata.Fetches);
+
+        metadata.For("https://client.example/new-callback");
+        using var previous = await browser.GetAsync(authorize);
+        Assert.Equal(HttpStatusCode.BadRequest, previous.StatusCode);
+        Assert.Contains("redirect_uri", await previous.Content.ReadAsStringAsync());
+        Assert.Equal(4, metadata.Fetches);
+    }
+
+    [Fact]
+    public async Task Cimd_client_that_only_declares_authorization_code_gets_no_refresh_token()
+    {
+        await using var metadata = await MetadataHost.StartAsync();
+        await using var gateway = await StartAsync();
+        await gateway.AddInboundAsync("echo", "https://mcp.example.org/mcp");
+        var issued = await gateway.AddClientAsync("Test", ["echo"]);
+        metadata.Document = $$"""
+            {
+              "client_id": "{{metadata.Url}}", "client_name": "Metadata client", "redirect_uris": ["{{Callback}}"],
+              "grant_types": ["authorization_code"], "response_types": ["code"]
+            }
+            """;
+
+        using var flow = await OAuthFlow.StartAsync(gateway, "echo", clientId: metadata.Url, scope: "mcp");
+        await flow.SignInWithKeyAsync(issued.Token);
+        await flow.ApproveAsync();
+        Assert.NotNull(flow.Code);
+
+        var answer = await flow.TokenAsync(new Dictionary<string, string>
+        {
+            ["grant_type"] = GrantTypes.AuthorizationCode,
+            ["code"] = flow.Code,
+            ["redirect_uri"] = Callback,
+            ["code_verifier"] = flow.Verifier
+        });
+        Assert.Equal(HttpStatusCode.OK, answer.Status);
+        Assert.NotNull(answer.Access);
+        Assert.Null(answer.Refresh);
     }
 
     [Fact]
@@ -163,15 +340,19 @@ public class OAuthRegistrationTests
         Assert.NotEqual(first, other);
     }
 
-    [Fact]
-    public async Task Dcr_answers_with_the_registered_metadata()
+    [Theory]
+    [InlineData(null)]
+    [InlineData("client_secret_basic")]
+    [InlineData("client_secret_post")]
+    public async Task Dcr_answers_with_the_registered_metadata(string? requestedMethod)
     {
         await using var gateway = await StartAsync();
 
-        using var response = await gateway.Http.PostAsJsonAsync(
-            "/connect/register",
-            new Dictionary<string, object>
-            { ["client_name"] = "Claude Code", ["redirect_uris"] = new[] { "http://localhost:3118/callback" } });
+        var request = new Dictionary<string, object>
+        { ["client_name"] = "Claude Code", ["redirect_uris"] = new[] { "http://localhost:3118/callback" } };
+        if (requestedMethod is not null)
+            request["token_endpoint_auth_method"] = requestedMethod;
+        using var response = await gateway.Http.PostAsJsonAsync("/connect/register", request);
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         var json = await response.Content.ReadFromJsonAsync<JsonElement>();

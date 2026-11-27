@@ -1,9 +1,10 @@
 using System.Net;
 using System.Net.Sockets;
+using Microsoft.Extensions.Logging;
 
 namespace CtxUi.Connect.Registration;
 
-public sealed class ClientMetadataFetcher(IHttpClientFactory http)
+public sealed partial class ClientMetadataFetcher(IHttpClientFactory http, ILogger<ClientMetadataFetcher> logger)
 {
     public const string HttpClientName = "cimd";
     public const int MaxBytes = 5 * 1024;
@@ -15,31 +16,51 @@ public sealed class ClientMetadataFetcher(IHttpClientFactory http)
         try
         {
             using var client = http.CreateClient(HttpClientName);
+            using var deadline = CancellationTokenSource.CreateLinkedTokenSource(ct);
+            deadline.CancelAfter(client.Timeout);
             using var request = new HttpRequestMessage(HttpMethod.Get, clientId);
             request.Headers.Accept.ParseAdd("application/json");
-            using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, ct);
-            if (response.StatusCode != HttpStatusCode.OK || response.Content.Headers.ContentLength > MaxBytes)
-                return null;
+            using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, deadline.Token);
+            if (response.StatusCode != HttpStatusCode.OK)
+                return Refuse($"HTTP {(int)response.StatusCode}");
+            if (response.Content.Headers.ContentLength > MaxBytes)
+                return Refuse("response exceeds the size limit");
 
             var buffer = new byte[MaxBytes + 1];
             var length = 0;
-            await using (var stream = await response.Content.ReadAsStreamAsync(ct))
+            await using (var stream = await response.Content.ReadAsStreamAsync(deadline.Token))
             {
                 int read;
-                while (length < buffer.Length && (read = await stream.ReadAsync(buffer.AsMemory(length), ct)) > 0)
+                while (length < buffer.Length
+                       && (read = await stream.ReadAsync(buffer.AsMemory(length), deadline.Token)) > 0)
                     length += read;
             }
 
-            return length > MaxBytes
-                ? null
-                : ClientMetadataDocument.Parse(clientId, buffer.AsSpan(0, length), response.Headers.CacheControl);
+            if (length > MaxBytes)
+                return Refuse("response exceeds the size limit");
+
+            var document = ClientMetadataDocument.Parse(clientId, buffer.AsSpan(0, length),
+                response.Headers.CacheControl, out var rejection);
+            return rejection is null ? document : Refuse(rejection);
         }
-        catch (Exception exception) when (exception is HttpRequestException or IOException
-                                          || (exception is OperationCanceledException && !ct.IsCancellationRequested))
+        catch (OperationCanceledException) when (!ct.IsCancellationRequested)
         {
-            return null;
+            return Refuse("request timed out");
+        }
+        catch (Exception exception) when (exception is HttpRequestException or IOException)
+        {
+            return Refuse("request or response read failed");
         }
     }
+
+    private ClientMetadataDocument? Refuse(string reason)
+    {
+        LogRejection(logger, reason);
+        return null;
+    }
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Client metadata document rejected: {Reason}")]
+    private static partial void LogRejection(ILogger logger, string reason);
 
     public static SocketsHttpHandler Handler(IMetadataAddressPolicy policy)
     {

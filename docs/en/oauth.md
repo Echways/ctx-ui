@@ -6,7 +6,7 @@ Off by default. While it is off, `/.well-known/*` and `/connect/*` answer an
 empty 404 and everything else works exactly as before.
 
 Turn it on with `ctx-ui oauth on` or the **OAuth** section of the panel. It
-needs `CtxUi__PublicUrl` to start with `https://` (`http://localhost` is fine
+needs `CtxUi__OAuthIssuer` (fallback `CtxUi__PublicUrl`) to start with `https://` (`http://localhost` is fine
 for development).
 
 ## How it works for a person
@@ -97,7 +97,7 @@ claude mcp add --transport http learn https://mcp.example.com/mcp/learn
 
 ## If sign-in does not open
 
-- `CtxUi__PublicUrl` must be the address the browser uses and start with
+- `CtxUi__OAuthIssuer` (fallback `CtxUi__PublicUrl`) must be the address the browser uses and start with
   `https://`. The service logs a warning at start when OAuth is on and it does
   not.
 - `curl https://<host>/.well-known/oauth-authorization-server` must answer
@@ -112,3 +112,13 @@ claude mcp add --transport http learn https://mcp.example.com/mcp/learn
 - An app that sends a broken request (unknown `client_id`, a return address it
   did not register, a client metadata document that cannot be fetched) gets a
   page that explains it, with the technical reason below.
+
+
+## ChatGPT Web
+
+1. In **Public URLs**, set the global address and save the HTTPS address of the tunnel in the **ChatGPT Web** profile. Enable the profile and route its hostname to the same ctx-ui instance with the original `Host` header.
+2. Turn on browser sign-in in the panel's **OAuth** section. Ensure that ChatGPT and the user's browser can reach the canonical issuer displayed in **Public URLs**.
+3. In **Clients → Connection**, select **ChatGPT Web** and copy the OAuth app address for the chosen inbound, for example `https://some-name.trycloudflare.com/mcp/uni`.
+4. In ChatGPT developer mode, add a custom MCP server using that address and OAuth. Use Client ID Metadata Documents if offered. ChatGPT supplies its client metadata and redirect URI. Sign in and approve the connection.
+
+[OpenAI OAuth setup](https://developers.openai.com/plugins/build/auth)

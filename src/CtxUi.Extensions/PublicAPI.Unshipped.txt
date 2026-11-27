@@ -27,3 +27,4 @@ CtxUi.Extensions.PanelActionSlotEditor<TContext>.When(System.Func<TContext, bool
 CtxUi.Extensions.PanelConditionalActionEditor<TContext>
 CtxUi.Extensions.PanelConditionalActionEditor<TContext>.AddAction(System.Func<string!>! title, System.Func<CtxUi.Extensions.PanelActionArgs<TContext>!, System.Threading.Tasks.Task!>! run, int order = 0) -> CtxUi.Extensions.PanelEditor!
 CtxUi.Extensions.PanelConditionalActionEditor<TContext>.AddSheet<TSheet>(System.Func<string!>! title, System.Func<TContext, string!>! sheetTitle, int order = 0) -> CtxUi.Extensions.PanelEditor!
+const CtxUi.Extensions.PanelSections.PublicUrls = "public-urls" -> string!

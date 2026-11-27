@@ -12,9 +12,10 @@ public static class PanelSections
     public const string Journal = "journal";
     public const string AccessCaption = "access";
     public const string OAuth = "oauth";
+    public const string PublicUrls = "public-urls";
     public const string ApiKeys = "keys";
 
-    private static readonly string[] BuiltInPages = [Overview, Metrics, Inbounds, Clients, Journal, OAuth, ApiKeys];
+    private static readonly string[] BuiltInPages = [Overview, Metrics, Inbounds, Clients, Journal, OAuth, PublicUrls, ApiKeys];
 
     public static string Of<TPage>()
     {

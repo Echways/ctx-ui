@@ -1,6 +1,7 @@
 using System.Text;
 using Enfilade;
 using CtxUi.Core.Clients;
+using CtxUi.Core.SignIn;
 
 namespace CtxUi.Panel;
 
@@ -8,17 +9,18 @@ public static class ConnectionText
 {
     public static string Address(string publicUrl, string slug)
     {
-        return $"{publicUrl.TrimEnd('/')}/mcp/{slug}";
+        return OAuthResource.For(publicUrl, slug);
     }
 
     public static string AddressWithToken(string publicUrl, string token, string slug)
     {
-        return $"{publicUrl.TrimEnd('/')}/k/{token}/mcp/{slug}";
+        return Address($"{publicUrl.TrimEnd('/')}/k/{token}", slug);
     }
 
-    public static IReadOnlyList<string> Slugs(Client client)
+    public static IReadOnlyList<string> Slugs(Client client, bool enabledOnly = false)
     {
-        return client.Inbounds.Select(link => link.Inbound!.Slug).Order(StringComparer.Ordinal).ToList();
+        return client.Inbounds.Where(link => !enabledOnly || link.Inbound!.Enabled)
+            .Select(link => link.Inbound!.Slug).Order(StringComparer.Ordinal).ToList();
     }
 
     public static string Message(string publicUrl, Client client, string token, TimeZoneInfo zone,
@@ -31,7 +33,7 @@ public static class ConnectionText
         if (mode.ShowsToken)
             text.Append($"{string.Format(PanelText.MessageToken, token)}\n\n");
 
-        foreach (var slug in Slugs(client))
+        foreach (var slug in Slugs(client, enabledOnly: true))
         {
             text.Append($"{slug}\n");
             text.Append($"  {string.Format(PanelText.MessageAddress, Address(publicUrl, slug))}\n");

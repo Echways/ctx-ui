@@ -71,13 +71,23 @@ public sealed partial class OAuthFlow : IDisposable
         string clientName = "Claude Code",
         string redirectUri = Callback,
         string? clientId = null,
-        string scope = "mcp offline_access")
+        string scope = "mcp offline_access",
+        Uri? resourceOrigin = null)
     {
         var flow = new OAuthFlow(gateway, cookies ?? new CookieContainer());
-        using var refused = await gateway.Http.SendAsync(GatewayHost.Post("/mcp/" + slug));
+        using var probe = AtOrigin(GatewayHost.Post("/mcp/" + slug), resourceOrigin);
+        using var refused = await gateway.Http.SendAsync(probe);
         Assert.Equal(HttpStatusCode.Unauthorized, refused.StatusCode);
         var metadataUrl = ResourceMetadata().Match(refused.Headers.WwwAuthenticate.ToString()).Groups[1].Value;
-        var resource = await gateway.Http.GetFromJsonAsync<JsonElement>(metadataUrl);
+        if (resourceOrigin is not null)
+            Assert.Equal(resourceOrigin.GetLeftPart(UriPartial.Authority) +
+                         "/.well-known/oauth-protected-resource/mcp/" + slug, metadataUrl);
+
+        using var metadata = AtOrigin(new HttpRequestMessage(HttpMethod.Get,
+            resourceOrigin is null ? metadataUrl : new Uri(metadataUrl).PathAndQuery), resourceOrigin);
+        using var metadataResponse = await gateway.Http.SendAsync(metadata);
+        metadataResponse.EnsureSuccessStatusCode();
+        var resource = await metadataResponse.Content.ReadFromJsonAsync<JsonElement>();
         flow.Resource = resource.GetProperty("resource").GetString()!;
         flow.Issuer = resource.GetProperty("authorization_servers")[0].GetString()!;
         var server =
@@ -109,6 +119,17 @@ public sealed partial class OAuthFlow : IDisposable
                 ["resource"] = flow.Resource
             });
         return flow;
+    }
+
+    public static HttpRequestMessage AtOrigin(HttpRequestMessage request, Uri? origin)
+    {
+        if (origin is not null)
+        {
+            request.Headers.Host = origin.Authority;
+            request.Headers.Add("X-Forwarded-Proto", origin.Scheme);
+        }
+
+        return request;
     }
 
     public Task OpenAsync()

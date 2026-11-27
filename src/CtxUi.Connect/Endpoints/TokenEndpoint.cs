@@ -28,7 +28,6 @@ public static class TokenEndpoint
 
     private static async Task<IResult> ExchangeAsync(
         HttpContext http,
-        ResourceHandlers resources,
         ISnapshotSource snapshot,
         DeviceService devices,
         RegisteredApps apps,
@@ -45,19 +44,21 @@ public static class TokenEndpoint
             || !Guid.TryParse(presented.GetClaim(ConnectClaims.Device), out var deviceId))
             return Invalid();
 
-        var client = snapshot.Current.ClientById(clientId);
+        var current = snapshot.Current;
+        if (ResourceHandlers.Match(current, request) is not { } resource)
+            return ConnectResults.Refuse(Errors.InvalidTarget, ResourceHandlers.Refusal);
+
+        var client = current.ClientById(clientId);
         if (client is null
             || !client.Enabled
             || (request.IsAuthorizationCodeGrantType()
                 && client.ExpiresAt is { } expiresAt && clock.GetUtcNow() >= expiresAt)
-            || resources.ServedSlugOf(request) is not { } slug
-            || snapshot.Current.Route(slug) is not { } route
-            || !client.InboundIds.Contains(route.Id)
+            || current.Route(resource.Slug) is not { } inbound
+            || !client.InboundIds.Contains(inbound.Id)
             || !await devices.IsActiveAsync(deviceId, http.RequestAborted))
             return Invalid();
 
-        var resource = resources.Resource(slug);
-        if (!presented.HasResource(resource))
+        if (!presented.HasResource(resource.Url))
             return ConnectResults.Refuse(Errors.InvalidTarget, "resource must match the original grant");
 
         var identity = new ClaimsIdentity(presented.Claims, presented.Identity!.AuthenticationType, Claims.Name,
@@ -66,10 +67,10 @@ public static class TokenEndpoint
         if (principal.HasScope(Scopes.OfflineAccess)
             && !await apps.AllowsRefreshTokenAsync(request.ClientId!, http.RequestAborted))
             principal.SetScopes(principal.GetScopes().Remove(Scopes.OfflineAccess));
-        principal.SetResources(resource);
-        principal.SetAudiences(resource);
+        principal.SetResources(resource.Url);
+        principal.SetAudiences(resource.Url);
         principal.SetDestinations(_ => Destinations);
-        principal.SetRefreshTokenLifetime(TimeSpan.FromDays(snapshot.Current.SignIn.IdleDays));
+        principal.SetRefreshTokenLifetime(TimeSpan.FromDays(current.SignIn.IdleDays));
         return Results.SignIn(principal, authenticationScheme: OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
     }
 

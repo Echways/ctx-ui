@@ -551,7 +551,7 @@
     <value>Приложения вроде Claude, ChatGPT или Cursor подключаются по адресу сервера и входят в браузере, без копирования ключа.</value>
   </data>
   <data name="OAuthNeedsHttps" xml:space="preserve">
-    <value>Для входа через браузер нужен публичный адрес с https://. Сейчас: {0}. Задайте CtxUi__PublicUrl и перезапустите сервис.</value>
+    <value>Для входа через браузер нужен публичный адрес с https://. Сейчас: {0}. Задайте CtxUi__OAuthIssuer и перезапустите сервис.</value>
   </data>
   <data name="OAuthSwitch" xml:space="preserve">
     <value>Вход через браузер (OAuth)</value>
@@ -991,4 +991,23 @@
   <data name="ExtensionBlockFailed" xml:space="preserve">
     <value>Этот блок расширения не удалось показать</value>
   </data>
+  <data name="PublicUrls" xml:space="preserve"><value>Публичные адреса</value></data>
+  <data name="GlobalPublicUrl" xml:space="preserve"><value>Глобальный публичный адрес</value></data>
+  <data name="GlobalPublicUrlHelp" xml:space="preserve"><value>Профиль по умолчанию и профили без переопределения используют этот адрес для всех включённых входов.</value></data>
+  <data name="OAuthIssuer" xml:space="preserve"><value>Издатель OAuth</value></data>
+  <data name="CopyOAuthIssuer" xml:space="preserve"><value>Копировать адрес издателя OAuth</value></data>
+  <data name="EffectivePublicUrl" xml:space="preserve"><value>Действующий публичный адрес</value></data>
+  <data name="CopyEffectivePublicUrl" xml:space="preserve"><value>Копировать действующий публичный адрес</value></data>
+  <data name="Harness" xml:space="preserve"><value>Профиль подключения</value></data>
+  <data name="HarnessProfiles" xml:space="preserve"><value>Профили подключения</value></data>
+  <data name="HarnessEnabled" xml:space="preserve"><value>Включён</value></data>
+  <data name="HarnessDisabled" xml:space="preserve"><value>Отключён</value></data>
+  <data name="HarnessInherits" xml:space="preserve"><value>Наследует глобальный адрес</value></data>
+  <data name="HarnessOverrides" xml:space="preserve"><value>Использует собственный адрес</value></data>
+  <data name="HarnessReset" xml:space="preserve"><value>Восстановить глобальный адрес</value></data>
+  <data name="HarnessAdd" xml:space="preserve"><value>Добавить профиль</value></data>
+  <data name="HarnessId" xml:space="preserve"><value>Идентификатор профиля</value></data>
+  <data name="HarnessOverrideUrl" xml:space="preserve"><value>Собственный публичный адрес</value></data>
+  <data name="HarnessInheritHelp" xml:space="preserve"><value>Оставьте поле пустым, чтобы использовать глобальный адрес.</value></data>
+  <data name="PublicUrlsSaved" xml:space="preserve"><value>Настройки публичных адресов сохранены.</value></data>
 </root>

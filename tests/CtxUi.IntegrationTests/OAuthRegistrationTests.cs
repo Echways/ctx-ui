@@ -8,6 +8,7 @@ using Microsoft.Extensions.Time.Testing;
 using OpenIddict.Abstractions;
 using CtxUi.Connect.Registration;
 using CtxUi.Core.Inbounds;
+using CtxUi.Core.Settings;
 using static OpenIddict.Abstractions.OpenIddictConstants;
 
 namespace CtxUi.IntegrationTests;
@@ -78,6 +79,27 @@ public class OAuthRegistrationTests
         });
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         return (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("client_id").GetString()!;
+    }
+
+    [Fact]
+    public async Task Cimd_callback_specific_redirect_is_validated_for_a_harness_resource()
+    {
+        await using var metadata = await MetadataHost.StartAsync();
+        await using var gateway = await StartAsync();
+        await gateway.AddInboundAsync("echo", "https://mcp.example.org/mcp");
+        const string origin = "https://tunnel.example.org";
+        await gateway.ArrangeAsync(services => services.GetRequiredService<PublicEndpointSettings>()
+            .SaveProfileAsync(new HarnessProfile("chatgpt-web", "ChatGPT Web", true, origin)));
+        const string redirect = "https://chatgpt.com/connector/oauth/synthetic-callback-id";
+        metadata.For(redirect);
+        using var browser = Browser(gateway);
+
+        using var accepted = await browser.GetAsync(Authorize(metadata.Url, redirect, origin + "/mcp/echo"));
+        Assert.Equal(HttpStatusCode.Found, accepted.StatusCode);
+        Assert.StartsWith("/connect/signin?returnUrl=", accepted.Headers.Location!.OriginalString);
+        using var rejected = await browser.GetAsync(Authorize(metadata.Url, redirect + "-other", origin + "/mcp/echo"));
+        Assert.Equal(HttpStatusCode.BadRequest, rejected.StatusCode);
+        Assert.Null(rejected.Headers.Location);
     }
 
     [Fact]

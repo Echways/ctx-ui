@@ -23,6 +23,7 @@ using CtxUi.Connect.SignIn;
 using CtxUi.Connect.Tokens;
 using CtxUi.Core.Data;
 using CtxUi.Core.Routing;
+using CtxUi.Core.Settings;
 using CtxUi.Core.SignIn;
 using static OpenIddict.Abstractions.OpenIddictConstants;
 
@@ -44,8 +45,7 @@ public static partial class ConnectServices
     public static IServiceCollection AddCtxUiConnect(this IServiceCollection services, IConfiguration section,
         string keysDir)
     {
-        services.Configure<ConnectOptions>(section);
-        var issuer = OAuthResource.Issuer((section.Get<ConnectOptions>() ?? new ConnectOptions()).PublicUrl);
+        var issuer = (section.Get<PublicEndpointOptions>() ?? new PublicEndpointOptions()).Issuer;
         services.AddSingleton<OAuthGate>();
         services.AddSingleton<IAccessTokenValidator, AccessTokenValidator>();
         services.TryAddSingleton<IMetadataAddressPolicy, PublicAddressPolicy>();
@@ -97,7 +97,8 @@ public static partial class ConnectServices
                     .AllowRefreshTokenFlow()
                     .RequireProofKeyForCodeExchange()
                     .RegisterScopes(McpScope, Scopes.OfflineAccess)
-                    .DisableResourceValidation()
+                    .RemoveEventHandler(OpenIddictServerHandlers.Authentication.ValidateResources.Descriptor)
+                    .RemoveEventHandler(OpenIddictServerHandlers.Exchange.ValidateResources.Descriptor)
                     .IgnoreResourcePermissions()
                     .SetAuthorizationCodeLifetime(TimeSpan.FromMinutes(1))
                     .SetAccessTokenLifetime(TimeSpan.FromHours(1))
@@ -165,7 +166,7 @@ public static partial class ConnectServices
     public static void LoadCtxUiConnect(this IServiceProvider services)
     {
         _ = services.GetRequiredService<IOptionsMonitor<OpenIddictServerOptions>>().CurrentValue;
-        var publicUrl = services.GetRequiredService<IOptions<ConnectOptions>>().Value.PublicUrl;
+        var publicUrl = services.GetRequiredService<IOptions<PublicEndpointOptions>>().Value.Issuer;
         if (services.GetRequiredService<ISnapshotSource>().Current.SignIn.Enabled &&
             !OAuthAvailability.IsAllowed(publicUrl))
             OAuthUnavailable(services.GetRequiredService<ILoggerFactory>().CreateLogger("CtxUi.Connect"), publicUrl);
@@ -174,6 +175,6 @@ public static partial class ConnectServices
     [LoggerMessage(
         Level = LogLevel.Warning,
         Message =
-            "browser sign-in (OAuth) is on but does not work: the public address {PublicUrl} must start with https://, set CtxUi__PublicUrl")]
-    private static partial void OAuthUnavailable(ILogger logger, string publicUrl);
+            "browser sign-in (OAuth) is on but does not work: the issuer {Issuer} must use HTTPS, set CtxUi__OAuthIssuer")]
+    private static partial void OAuthUnavailable(ILogger logger, string issuer);
 }

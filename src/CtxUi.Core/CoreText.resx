@@ -211,4 +211,10 @@
   <data name="MetricsDaysInvalid" xml:space="preserve">
     <value>days: one of {0} is needed</value>
   </data>
+  <data name="PublicUrlInvalid" xml:space="preserve"><value>Enter an HTTPS URL with a host and optional port. HTTP is allowed for localhost.</value></data>
+  <data name="DefaultHarnessFixed" xml:space="preserve"><value>The default harness is managed through the global public URL.</value></data>
+  <data name="HarnessNameInvalid" xml:space="preserve"><value>Enter a harness name of 1 to 80 characters.</value></data>
+  <data name="HarnessUnavailable" xml:space="preserve"><value>The selected harness is unknown or disabled.</value></data>
+  <data name="HarnessAlreadyExists" xml:space="preserve"><value>A harness with that ID already exists.</value></data>
+  <data name="LegacyPublicPathConflict" xml:space="preserve"><value>Save an origin-only global URL before using the same host and port for a harness override.</value></data>
 </root>

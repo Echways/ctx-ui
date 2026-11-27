@@ -34,7 +34,7 @@ public class PanelLayoutTests
     public void The_default_order_matches_the_panel_today()
     {
         Assert.Equal(
-            ["overview", "metrics", "inbounds", "clients", "journal", "access", "oauth", "keys"],
+            ["overview", "metrics", "inbounds", "clients", "journal", "access", "public-urls", "oauth", "keys"],
             PanelServices.CreateLayout().VisibleEntries);
     }
 
@@ -46,7 +46,7 @@ public class PanelLayoutTests
         Editor(layout).AddSection<SamplePage>(() => "Sample");
 
         Assert.Equal(
-            ["overview", "metrics", "inbounds", "clients", "journal", "sample", "access", "oauth", "keys"],
+            ["overview", "metrics", "inbounds", "clients", "journal", "sample", "access", "public-urls", "oauth", "keys"],
             layout.VisibleEntries);
     }
 
@@ -82,7 +82,7 @@ public class PanelLayoutTests
 
         Assert.Equal(
             [
-                "overview", "sample", "metrics", "inbounds", "clients", "journal", "access", "oauth", "sample/second",
+                "overview", "sample", "metrics", "inbounds", "clients", "journal", "access", "public-urls", "oauth", "sample/second",
                 "keys"
             ],
             layout.VisibleEntries);
@@ -99,7 +99,7 @@ public class PanelLayoutTests
             .Hide(PanelSections.Metrics);
 
         Assert.Equal(
-            ["journal", "overview", "inbounds", "clients", "access", "oauth", "keys"],
+            ["journal", "overview", "inbounds", "clients", "access", "public-urls", "oauth", "keys"],
             layout.VisibleEntries);
         var titles = Applied(layout).Navigation.OfType<Section>().Select(section => section.Title());
         Assert.Contains("Customers", titles);
@@ -122,7 +122,7 @@ public class PanelLayoutTests
     {
         var layout = PanelServices.CreateLayout();
 
-        Editor(layout).Hide(PanelSections.OAuth).Hide(PanelSections.ApiKeys);
+        Editor(layout).Hide(PanelSections.PublicUrls).Hide(PanelSections.OAuth).Hide(PanelSections.ApiKeys);
 
         Assert.Equal(["overview", "metrics", "inbounds", "clients", "journal"], layout.VisibleEntries);
     }

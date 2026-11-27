@@ -2,6 +2,7 @@ using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.OpenApi;
+using CtxUi.Core.Routing;
 
 namespace CtxUi.Server.Api;
 
@@ -80,6 +81,13 @@ public static class ApiServices
         var api = app.MapGroup(Prefix).RequireAuthorization(Policy).AddEndpointFilter<ApiChanges>();
         api.MapInbounds();
         api.MapClients();
+        api.MapGet("/harnesses", (ISnapshotSource snapshots) =>
+            {
+                var endpoints = snapshots.Current.PublicEndpoints;
+                return endpoints.Profiles.Where(profile => profile.Enabled)
+                    .Select(profile => new { profile.Id, profile.Name, PublicUrl = endpoints.EffectiveUrl(profile) });
+            })
+            .WithTags("harnesses").WithSummary("Enabled harness profiles and their effective public URLs");
         api.MapOAuth();
         api.MapUsage();
         app.Map("/api/{**rest}", () => Results.NotFound()).ExcludeFromDescription();

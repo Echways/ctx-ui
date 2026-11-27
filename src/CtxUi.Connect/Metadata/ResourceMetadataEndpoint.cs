@@ -1,10 +1,10 @@
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using CtxUi.Core.Data;
 using CtxUi.Core.Inbounds;
+using CtxUi.Core.Routing;
+using CtxUi.Core.Settings;
 using CtxUi.Core.SignIn;
 
 namespace CtxUi.Connect.Metadata;
@@ -27,26 +27,28 @@ public static class ResourceMetadataEndpoint
 
     public static WebApplication MapResourceMetadata(this WebApplication app)
     {
-        app.MapGet(Path, ServeAsync);
+        app.MapGet(Path, Serve);
         return app;
     }
 
-    private static async Task<IResult> ServeAsync(string slug, CtxUiDbContext db, IOptions<ConnectOptions> options,
-        CancellationToken ct)
+    private static IResult Serve(string slug, HttpRequest request, ISnapshotSource snapshots,
+        IOptions<PublicEndpointOptions> options)
     {
         if (!Slug.IsValid(slug))
             return Results.NotFound();
 
-        var publicUrl = options.Value.PublicUrl;
-        var name = await db.Inbounds.AsNoTracking()
-            .Where(inbound => inbound.Slug == slug && inbound.Enabled)
-            .Select(inbound => inbound.Name)
-            .SingleOrDefaultAsync(ct);
+        var snapshot = snapshots.Current;
+        var endpoints = snapshot.PublicEndpoints;
+        if (endpoints.ForRequest(request.Scheme, request.Host.Value) is not { } publicUrl ||
+            !OAuthAvailability.IsAllowed(publicUrl) || (!endpoints.Legacy && snapshot.Route(slug) is null))
+            return Results.NotFound();
+
+        request.HttpContext.Response.Headers.CacheControl = "no-store";
         return Results.Json(new ResourceMetadata(
             OAuthResource.For(publicUrl, slug),
-            [OAuthResource.Issuer(publicUrl)],
+            [options.Value.Issuer],
             [ConnectServices.McpScope],
             ["header"],
-            name ?? slug));
+            snapshot.Route(slug)?.Name ?? slug));
     }
 }

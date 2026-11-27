@@ -38,6 +38,7 @@ public static partial class PanelServices
             .AddBuiltIn<Clients>(PanelSections.Clients, () => PanelText.Clients)
             .AddBuiltIn<Journal>(PanelSections.Journal, () => PanelText.Journal)
             .AddBuiltInCaption(PanelSections.AccessCaption, () => PanelText.AccessSection)
+            .AddBuiltIn<PublicUrls>(PanelSections.PublicUrls, () => PanelText.PublicUrls)
             .AddBuiltIn<OAuth>(PanelSections.OAuth, () => PanelText.OAuth)
             .AddBuiltIn<Keys>(PanelSections.ApiKeys, () => PanelText.ApiKeys)
             .AddBuiltInStylesheet("_content/CtxUi.Panel/panel.css");

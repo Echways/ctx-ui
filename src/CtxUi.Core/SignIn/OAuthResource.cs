@@ -1,4 +1,5 @@
 using CtxUi.Core.Inbounds;
+using CtxUi.Core.Settings;
 
 namespace CtxUi.Core.SignIn;
 
@@ -25,16 +26,17 @@ public static class OAuthResource
     public static bool TrySlug(string publicUrl, string? requested, out string slug)
     {
         slug = "";
-        if (!Uri.TryCreate(requested, UriKind.Absolute, out var resource)
-            || !Uri.TryCreate(Issuer(publicUrl), UriKind.Absolute, out var issuer)
-            || resource.Query.Length > 0
-            || resource.Fragment.Length > 0
-            || !string.Equals(resource.GetLeftPart(UriPartial.Authority), issuer.GetLeftPart(UriPartial.Authority),
-                StringComparison.OrdinalIgnoreCase))
-            return false;
+        return PublicAddress.Parse(requested) is { } resource &&
+               PublicAddress.Parse(publicUrl) is { } address &&
+               PublicAddress.Authority(resource) == PublicAddress.Authority(address) &&
+               TryPath(publicUrl, requested!, out slug);
+    }
 
-        var prefix = issuer.AbsolutePath.TrimEnd('/') + McpPath;
-        var path = resource.AbsolutePath;
+    internal static bool TryPath(string publicUrl, string requested, out string slug)
+    {
+        slug = "";
+        var prefix = PublicAddress.PathOf(publicUrl).TrimEnd('/') + McpPath;
+        var path = PublicAddress.PathOf(requested);
         if (!path.StartsWith(prefix, StringComparison.Ordinal))
             return false;
 

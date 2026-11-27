@@ -709,4 +709,5 @@
   <data name="ExtensionNone" xml:space="preserve">
     <value>Расширения не установлены</value>
   </data>
+  <data name="HarnessOption" xml:space="preserve"><value>Идентификатор профиля подключения (по умолчанию default)</value></data>
 </root>

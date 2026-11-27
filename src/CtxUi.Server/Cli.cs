@@ -82,7 +82,7 @@ public static partial class Cli
                             parse.GetValue(identity),
                             ct);
                         output.WriteLine(string.Format(ServerText.InboundAdded, inbound.Slug,
-                            $"{PublicUrl(services)}/mcp/{inbound.Slug}"));
+                            ConnectionText.Address(await PublicUrlAsync(services, ct), inbound.Slug)));
                     }),
                 Leaf("list", ServerText.InboundListCommand, [], async (_, services, ct) =>
                 {
@@ -146,16 +146,18 @@ public static partial class Cli
                 return (await services.GetRequiredService<ClientService>().GetAsync(parse.GetValue(name)!, ct)).Id;
             }
 
+            var harness = new Option<string?>("--harness") { Description = ServerText.HarnessOption };
             var client = new Command("client", ServerText.ClientCommand)
             {
                 Leaf(
                     "add",
                     ServerText.ClientAddCommand,
-                    [name, inbound, expires, meta, rate, concurrency, quota, resetDays, devices, directKey],
+                    [name, inbound, expires, meta, rate, concurrency, quota, resetDays, devices, directKey, harness],
                     async (parse, services, ct) =>
                     {
                         var clients = services.GetRequiredService<ClientService>();
                         var defaults = await services.GetRequiredService<SignInSettingsService>().GetAsync(ct);
+                        var publicUrl = await PublicUrlAsync(services, ct, parse.GetValue(harness));
                         var issued = await clients.AddAsync(
                             parse.GetValue(name)!,
                             parse.GetValue(inbound) ?? [],
@@ -165,7 +167,7 @@ public static partial class Cli
                             AccessFrom(parse.GetValue(devices), parse.GetValue(directKey),
                                 new ClientAccessPolicy(defaults.DefaultMaxDevices, defaults.DefaultDirectKey), false),
                             ct);
-                        WriteConnection(services, await clients.GetAsync(issued.Client.Id, ct), issued.Token);
+                        WriteConnection(services, await clients.GetAsync(issued.Client.Id, ct), issued.Token, publicUrl);
                     }),
                 Leaf("list", ServerText.ClientListCommand, [], async (_, services, ct) =>
                 {
@@ -186,11 +188,12 @@ public static partial class Cli
                             $"{client.Name,-28} {status,-9} {expiry,-10} {lastUsed,-16} {calls,-12} {slugs}");
                     }
                 }),
-                Leaf("show", ServerText.ClientShowCommand, [name], async (parse, services, ct) =>
+                Leaf("show", ServerText.ClientShowCommand, [name, harness], async (parse, services, ct) =>
                 {
                     var clients = services.GetRequiredService<ClientService>();
                     var client = await clients.GetAsync(parse.GetValue(name)!, ct);
-                    WriteConnection(services, client, clients.Reveal(client));
+                    WriteConnection(services, client, clients.Reveal(client),
+                        await PublicUrlAsync(services, ct, parse.GetValue(harness)));
                     output.WriteLine(string.Format(ServerText.DeviceLimitLine, DeviceLimitText(client.MaxDevices)));
                     output.WriteLine(string.Format(ServerText.DirectKeyLine, YesNo(client.DirectKey)));
                     output.WriteLine(string.Format(ServerText.DevicesActiveLine,
@@ -229,12 +232,13 @@ public static partial class Cli
                         .ResetQuotaAsync(await ClientIdAsync(parse, services, ct), ct);
                     output.WriteLine(string.Format(ServerText.QuotaReset, parse.GetValue(name)));
                 }),
-                Leaf("reissue", ServerText.ClientReissueCommand, [name], async (parse, services, ct) =>
+                Leaf("reissue", ServerText.ClientReissueCommand, [name, harness], async (parse, services, ct) =>
                 {
                     var clients = services.GetRequiredService<ClientService>();
                     var client = await clients.GetAsync(parse.GetValue(name)!, ct);
+                    var publicUrl = await PublicUrlAsync(services, ct, parse.GetValue(harness));
                     var reissued = await clients.ReissueAsync(client.Id, ct);
-                    WriteConnection(services, client, reissued.Token);
+                    WriteConnection(services, client, reissued.Token, publicUrl);
                     if (reissued.DevicesRevoked > 0)
                         output.WriteLine(string.Format(ServerText.ReissueRevoked, reissued.DevicesRevoked));
                 }),
@@ -343,7 +347,7 @@ public static partial class Cli
                 output.WriteLine(string.Format(ServerText.EntranceLogin, name));
                 output.WriteLine(string.Format(ServerText.EntrancePassword, password));
                 output.WriteLine(string.Format(ServerText.EntrancePanel,
-                    PanelUrl(services, await services.GetRequiredService<PanelSettings>().PathAsync(ct))));
+                    await PanelUrlAsync(services, await services.GetRequiredService<PanelSettings>().PathAsync(ct), ct)));
                 output.WriteLine(ServerText.PasswordShownOnce);
             }
 
@@ -390,12 +394,12 @@ public static partial class Cli
                     if (!parse.GetValue(renew))
                     {
                         output.WriteLine(string.Format(ServerText.EntrancePanel,
-                            PanelUrl(services, await settings.PathAsync(ct))));
+                            await PanelUrlAsync(services, await settings.PathAsync(ct), ct)));
                         return;
                     }
 
                     output.WriteLine(string.Format(ServerText.EntrancePanel,
-                        PanelUrl(services, await settings.RenewPathAsync(ct))));
+                        await PanelUrlAsync(services, await settings.RenewPathAsync(ct), ct)));
                     output.WriteLine(ServerText.PanelPathRenewed);
                 })
             };
@@ -410,7 +414,7 @@ public static partial class Cli
                 Leaf("add", ServerText.ApiKeyAddCommand, [name], async (parse, services, ct) =>
                 {
                     var issued = await services.GetRequiredService<ApiKeyService>().AddAsync(parse.GetValue(name)!, ct);
-                    var panel = PanelUrl(services, await services.GetRequiredService<PanelSettings>().PathAsync(ct));
+                    var panel = await PanelUrlAsync(services, await services.GetRequiredService<PanelSettings>().PathAsync(ct), ct);
                     output.WriteLine(string.Format(ServerText.ApiKeyIssued, issued.Key.Name));
                     output.WriteLine(string.Format(ServerText.ApiKeySecret, issued.Secret));
                     output.WriteLine(
@@ -494,7 +498,7 @@ public static partial class Cli
             return command;
         }
 
-        void WriteConnection(IServiceProvider services, Client client, string? token)
+        void WriteConnection(IServiceProvider services, Client client, string? token, string publicUrl)
         {
             output.WriteLine(string.Format(ServerText.ConnectionClient, client.Name));
             output.WriteLine(string.Format(
@@ -513,13 +517,13 @@ public static partial class Cli
             }
 
             output.WriteLine(string.Format(ServerText.ConnectionToken, token));
-            foreach (var slug in ConnectionText.Slugs(client))
+            foreach (var slug in ConnectionText.Slugs(client, enabledOnly: true))
             {
                 output.WriteLine(string.Format(ServerText.ConnectionInbound, slug));
                 output.WriteLine(string.Format(ServerText.AddressWithHeader,
-                    ConnectionText.Address(PublicUrl(services), slug)));
+                    ConnectionText.Address(publicUrl, slug)));
                 output.WriteLine(string.Format(ServerText.AddressWithToken,
-                    ConnectionText.AddressWithToken(PublicUrl(services), token, slug)));
+                    ConnectionText.AddressWithToken(publicUrl, token, slug)));
             }
         }
     }
@@ -553,14 +557,21 @@ public static partial class Cli
             : throw new DomainException(string.Format(ServerText.NumberInRange, option, max));
     }
 
-    private static string PublicUrl(IServiceProvider services)
+    private static string Issuer(IServiceProvider services)
     {
-        return services.GetRequiredService<IOptions<CtxUiOptions>>().Value.PublicUrl.TrimEnd('/');
+        return services.GetRequiredService<IOptions<PublicEndpointOptions>>().Value.Issuer;
     }
 
-    private static string PanelUrl(IServiceProvider services, string path)
+    private static async Task<string> PublicUrlAsync(IServiceProvider services, CancellationToken ct,
+        string? harness = null)
     {
-        return $"{PublicUrl(services)}/{path}/";
+        var endpoints = await services.GetRequiredService<PublicEndpointSettings>().GetAsync(ct);
+        return endpoints.Select(harness);
+    }
+
+    private static async Task<string> PanelUrlAsync(IServiceProvider services, string path, CancellationToken ct)
+    {
+        return $"{await PublicUrlAsync(services, ct)}/{path}/";
     }
 
     private static string Date(DateTimeOffset value, string format)

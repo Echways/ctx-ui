@@ -60,6 +60,53 @@ public class PanelConnectionTests
     }
 
     [Fact]
+    public async Task Public_URL_settings_update_the_harness_selector_and_all_connection_details()
+    {
+        await using var gateway = await StartAsync();
+        await gateway.AddInboundAsync("learn", "https://learn.example.org/mcp");
+        await gateway.AddInboundAsync("docs", "https://docs.example.org/mcp");
+        var issued = await gateway.AddClientAsync("Иванов", ["learn", "docs"]);
+        await using var session = await PanelSession.SignInAsync(gateway);
+        var page = session.Page;
+        await page.GetByRole(AriaRole.Navigation)
+            .GetByRole(AriaRole.Link, new LocatorGetByRoleOptions { Name = "Публичные адреса" }).ClickAsync();
+
+        var global = page.GetByRole(AriaRole.Region, new() { Name = "Глобальный публичный адрес" });
+        var globalUrl = global.GetByRole(AriaRole.Textbox, new() { Name = "Глобальный публичный адрес" });
+        var save = global.GetByRole(AriaRole.Button, new() { Name = "Сохранить" });
+        await globalUrl.FillAsync("http://ctx.example.org");
+        await save.ClickAsync();
+        await Expect(page.GetByText("Введите HTTPS-адрес", new PageGetByTextOptions { Exact = false })).ToBeVisibleAsync();
+        const string changed = "https://ctx.example.org:9443";
+        await globalUrl.FillAsync(changed + "/");
+        await save.ClickAsync();
+        await Expect(global.Locator("output").First).ToHaveTextAsync(changed);
+
+        var harness = page.Locator("section").Filter(new LocatorFilterOptions
+        {
+            Has = page.GetByRole(AriaRole.Heading, new() { Name = "ChatGPT Web", Exact = true })
+        }).Last;
+        await harness.GetByRole(AriaRole.Button, new() { Name = "Изменить" }).ClickAsync();
+        const string tunnel = "https://tunnel.example.org";
+        await harness.GetByRole(AriaRole.Textbox, new() { Name = "Собственный публичный адрес" }).FillAsync(tunnel);
+        await harness.GetByRole(AriaRole.Button, new() { Name = "Сохранить" }).ClickAsync();
+        await Expect(harness.Locator("output")).ToHaveTextAsync(tunnel);
+
+        await OpenClientsAsync(session);
+        await Row(page, "Иванов").GetByRole(AriaRole.Button, new() { Name = "Подключение" }).ClickAsync();
+        await Expect(Address(page, "learn", "С заголовком")).ToHaveTextAsync(changed + "/mcp/learn");
+
+        await Dialog(page).GetByRole(AriaRole.Combobox, new() { Name = "Профиль подключения" }).ClickAsync();
+        await page.GetByRole(AriaRole.Option, new() { Name = "ChatGPT Web", Exact = true }).ClickAsync();
+
+        await Expect(Address(page, "learn", "С заголовком")).ToHaveTextAsync(tunnel + "/mcp/learn");
+        await Expect(Address(page, "docs", "С токеном в пути"))
+            .ToHaveTextAsync($"{tunnel}/k/{issued.Token}/mcp/docs");
+        await Expect(Message(page)).ToContainTextAsync(tunnel + "/mcp/docs");
+        await Expect(Message(page)).Not.ToContainTextAsync(changed);
+    }
+
+    [Fact]
     public async Task Dialog_shows_the_token_both_addresses_of_every_inbound_and_a_message_to_send()
     {
         await using var gateway = await StartAsync();

@@ -372,6 +372,14 @@ svg.hz:focus-visible {
     box-shadow: var(--edge);
 }
 
+.harness-profile {
+    display: grid;
+    justify-items: start;
+    min-width: 0;
+    gap: 8px;
+    padding: 14px 18px;
+}
+
 .provider summary {
     display: flex;
     justify-content: space-between;

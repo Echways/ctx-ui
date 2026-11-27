@@ -16,14 +16,15 @@
 | Переменная | Ключ в `appsettings.json` | По умолчанию | Значение |
 | --- | --- | --- | --- |
 | `Urls` | `Urls` | `http://127.0.0.1:8080` | адрес прослушивания |
-| `CtxUi__PublicUrl` | `CtxUi:PublicUrl` | `http://localhost:8080` | внешний адрес; начало адресов клиентов и панели |
+| `CtxUi__PublicUrl` | `CtxUi:PublicUrl` | `http://localhost:8080` | начальный публичный адрес и резервное значение издателя OAuth |
+| `CtxUi__OAuthIssuer` | `CtxUi:OAuthIssuer` | значение `CtxUi__PublicUrl` | канонический адрес сервера OAuth |
 | `CtxUi__DataDir` | `CtxUi:DataDir` | `data` | каталог базы и ключей |
 | `CtxUi__Language` | `CtxUi:Language` | `en` | язык ошибок шлюза, CLI, API и панели, пока администратор не выбрал свой: `en` или `ru` |
 | `CtxUi__RefreshInterval` | `CtxUi:RefreshInterval` | `00:00:01` | как часто сервер проверяет изменения из CLI |
 | `CtxUi__FlushInterval` | `CtxUi:FlushInterval` | `00:00:05` | как часто пишутся счётчики квот и журнал вызовов |
 | `CtxUi__UsageRetentionDays` | `CtxUi:UsageRetentionDays` | `30` | срок хранения журнала; итоги по дням хранятся всегда. «Метрики» предлагают только периоды, которые в него укладываются: для 90 дней нужно не меньше `90` |
 | `CtxUi__ConcurrencyWait` | `CtxUi:ConcurrencyWait` | `00:00:01` | сколько запрос сверх лимита одновременных ждёт слот до ответа 429 |
-| `CtxUi__TrustedProxies` | `CtxUi:TrustedProxies` | пусто | адреса и подсети (через запятую) обратных прокси, чьему `X-Forwarded-For` можно верить; loopback доверен всегда. Нужен для IP входа устройств |
+| `CtxUi__TrustedProxies` | `CtxUi:TrustedProxies` | пусто | адреса и подсети (через запятую) обратных прокси, чьим заголовкам `X-Forwarded-For` и `X-Forwarded-Proto` можно верить; loopback доверен всегда |
 | `CtxUi__ExtensionsDir` | `CtxUi:ExtensionsDir` | `<DataDir>/extensions` | каталог установленных расширений панели, см. [расширения](extensions.md) |
 | `CtxUi__DisabledExtensions` | `CtxUi:DisabledExtensions` | пусто | идентификаторы расширений через запятую, которые не загружать |
 | `CtxUi__SessionCheckInterval` | `CtxUi:SessionCheckInterval` | `00:01:00` | как часто открытая панель перепроверяет сеанс администратора |
@@ -33,6 +34,18 @@
 
 Путь панели хранится в базе, а не в настройках:
 `ctx-ui admin path [--new]`.
+
+### Публичные адреса и профили подключения
+
+Откройте **Публичные адреса** в панели. Сохранённый глобальный адрес применяется сразу, имеет приоритет над `CtxUi__PublicUrl` и сохраняется после перезапуска. Профиль без собственного адреса наследует глобальный. Профиль Default всегда включён, а идентификатор нового профиля фиксируется при создании.
+
+Например, сохраните `https://ctx.echwaysfinland.online:9443` как глобальный адрес. Откройте настройки профиля **ChatGPT Web**, включите его и сохраните `https://some-name.trycloudflare.com`. В разделе **Клиенты** откройте **Подключение** для клиента с доступом к входу `uni` и выберите профиль. Default даёт `https://ctx.echwaysfinland.online:9443/mcp/uni`, а ChatGPT Web даёт `https://some-name.trycloudflare.com/mcp/uni`. Выбранный профиль применяется ко всем включённым входам.
+
+Каждый настроенный адрес MCP должен вести к этому экземпляру ctx-ui. Настройте HTTPS на прокси, передавайте исходный `Host` с нестандартным портом и задайте `X-Forwarded-Proto: https`. Для прокси, который подключается не через loopback, добавьте его адрес в `CtxUi__TrustedProxies`. После первого сохранения в разделе MCP-шлюз и discovery принимают адреса включённых профилей. Чтобы сохранить старые MCP-ссылки после смены глобального адреса, добавьте прежний адрес как включённый профиль.
+
+Адрес издателя OAuth задаётся через `CtxUi__OAuthIssuer` или исходный `CtxUi__PublicUrl`. Он должен быть доступен OAuth-клиентам. Если нужно поменять переменную `CtxUi__PublicUrl` при развёртывании, сначала закрепите прежний адрес издателя в `CtxUi__OAuthIssuer`. См. [Настройка ChatGPT Web](oauth.md#chatgpt-web).
+
+`GET /api/v1/harnesses` возвращает список включённых профилей. Запросы на выдачу, перевыпуск и получение подключения клиента принимают `?harness=chatgpt-web`. Команды `client show`, `client add` и `client reissue` принимают `--harness chatgpt-web`.
 
 ### Язык
 
@@ -61,6 +74,7 @@ CtxUi__Language=ru
 | `CTX_UI_VERSION` | тег образа |
 | `CTX_UI_DOMAIN` | обязателен для встроенного Caddy, задаёт его сайт и публичный URL по умолчанию |
 | `CTX_UI_PUBLIC_URL` | полный внешний URL с портом, если он отличается от стандартного. Передаётся в `CtxUi__PublicUrl`. Обязателен для внешнего прокси. Для встроенного Caddy по умолчанию используется `https://${CTX_UI_DOMAIN}` |
+| `CTX_UI_OAUTH_ISSUER` | необязательный канонический адрес OAuth, передаётся в `CtxUi__OAuthIssuer` |
 | `CTX_UI_PORT` | локальный порт на хосте при внешнем прокси, по умолчанию `8080` |
 | `CTX_UI_LANGUAGE` | из него `CtxUi__Language`, по умолчанию `en` |
 

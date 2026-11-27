@@ -6,6 +6,7 @@ using CtxUi.Core.Data;
 using CtxUi.Core.Inbounds;
 using CtxUi.Core.Secrets;
 using CtxUi.Core.SignIn;
+using CtxUi.Core.Settings;
 
 namespace CtxUi.Core.Routing;
 
@@ -13,7 +14,8 @@ public sealed partial class RoutingSnapshotLoader(
     CtxUiDbContext db,
     ISecretVault vault,
     TimeProvider clock,
-    ILogger<RoutingSnapshotLoader> logger)
+    ILogger<RoutingSnapshotLoader> logger,
+    PublicEndpointSettings? endpoints = null)
 {
     public Task<long> CurrentRevisionAsync(CancellationToken ct = default)
     {
@@ -45,6 +47,7 @@ public sealed partial class RoutingSnapshotLoader(
                 inbound.ForwardIdentity,
                 TimeSpan.FromSeconds(inbound.RequestTimeoutSeconds))
             {
+                Name = inbound.Name,
                 MaxBodyBytes = inbound.MaxBodyBytes
             });
         }
@@ -73,7 +76,10 @@ public sealed partial class RoutingSnapshotLoader(
                     MaxDevices = client.MaxDevices
                 })),
             devices,
-            await SignInAsync(settings, ct));
+            await SignInAsync(settings, ct))
+        {
+            PublicEndpoints = endpoints is null ? PublicEndpoints.Default : await endpoints.GetAsync(ct)
+        };
     }
 
     private async Task<SignInConfig> SignInAsync(SignInSettings settings, CancellationToken ct)

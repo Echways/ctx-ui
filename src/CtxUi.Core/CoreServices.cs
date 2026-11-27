@@ -31,6 +31,8 @@ public static class CoreServices
         services.AddScoped<OverviewService>();
         services.AddScoped<MetricsService>();
         services.AddScoped<PanelSettings>();
+        services.AddOptions<PublicEndpointOptions>();
+        services.AddScoped<PublicEndpointSettings>();
         services.AddScoped<ApiKeyService>();
         services.AddScoped<SignInSettingsService>();
         services.AddScoped<ClientLinkService>();

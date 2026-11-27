@@ -4,7 +4,7 @@
 @inject PanelBackend Backend
 @inject Act Act
 @inject IDialogService Dialogs
-@inject IOptions<PanelOptions> Options
+@inject IOptions<PublicEndpointOptions> Options
 @inject TimeProvider Clock
 
 <PageHead Title="@Layout.TitleOf(PanelSections.OAuth)" UpdatedAt="_settings is null ? null : _loadedAt"
@@ -91,7 +91,7 @@ else
     private bool _selfRevoke;
     private int _revision;
 
-    private string PublicUrl => Options.Value.PublicUrl;
+    private string PublicUrl => Options.Value.Issuer;
 
     private bool Available => OAuthAvailability.IsAllowed(PublicUrl);
 

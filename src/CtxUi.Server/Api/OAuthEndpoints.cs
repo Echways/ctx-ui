@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.Extensions.Options;
 using CtxUi.Core;
 using CtxUi.Core.SignIn;
+using CtxUi.Core.Settings;
 
 namespace CtxUi.Server.Api;
 
@@ -60,14 +61,14 @@ public static class OAuthEndpoints
             .WithSummary("Remove a provider and the accounts linked through it");
     }
 
-    private static async Task<Ok<OAuthView>> GetAsync(SignInSettingsService service, IOptions<CtxUiOptions> options,
+    private static async Task<Ok<OAuthView>> GetAsync(SignInSettingsService service, IOptions<PublicEndpointOptions> options,
         CancellationToken ct)
     {
-        return TypedResults.Ok(await ViewAsync(service, options.Value.PublicUrl, ct));
+        return TypedResults.Ok(await ViewAsync(service, options.Value.Issuer, ct));
     }
 
     private static async Task<Ok<OAuthView>> ChangeAsync(
-        OAuthChange body, SignInSettingsService service, IOptions<CtxUiOptions> options, CancellationToken ct)
+        OAuthChange body, SignInSettingsService service, IOptions<PublicEndpointOptions> options, CancellationToken ct)
     {
         var devices = body.DefaultMaxDevices;
         await service.UpdateAsync(
@@ -81,13 +82,13 @@ public static class OAuthEndpoints
                 IdleDays = body.IdleDays,
                 SelfRevoke = body.SelfRevoke
             },
-            options.Value.PublicUrl,
+            options.Value.Issuer,
             ct);
-        return TypedResults.Ok(await ViewAsync(service, options.Value.PublicUrl, ct));
+        return TypedResults.Ok(await ViewAsync(service, options.Value.Issuer, ct));
     }
 
     private static async Task<Ok<ProviderView>> PutProviderAsync(
-        string name, ProviderBody body, SignInSettingsService service, IOptions<CtxUiOptions> options,
+        string name, ProviderBody body, SignInSettingsService service, IOptions<PublicEndpointOptions> options,
         CancellationToken ct)
     {
         var info = ProviderCatalog.Get(name);
@@ -97,7 +98,7 @@ public static class OAuthEndpoints
                 body.Issuer ?? stored?.Issuer, body.Title ?? stored?.Title),
             ct);
         var saved = (await service.ProvidersAsync(ct)).Single(provider => provider.Name == info.Name);
-        return TypedResults.Ok(Provider(saved, options.Value.PublicUrl));
+        return TypedResults.Ok(Provider(saved, options.Value.Issuer));
     }
 
     private static async Task<NoContent> SwitchAsync(SignInSettingsService service, string name, bool enabled,

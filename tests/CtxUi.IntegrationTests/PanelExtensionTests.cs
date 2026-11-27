@@ -24,7 +24,7 @@ public class PanelExtensionTests
 
         var links = await page.GetByRole(AriaRole.Navigation).GetByRole(AriaRole.Link).AllInnerTextsAsync();
         Assert.Equal(
-            ["Обзор", "Метрики", "Inbound'ы", "Клиенты", "Журнал", "OAuth", "Ключи API"],
+            ["Обзор", "Метрики", "Inbound'ы", "Клиенты", "Журнал", "Публичные адреса", "OAuth", "Ключи API"],
             links.Select(link => link.Trim()).Where(link => link.Length > 0 && link != "ctx-ui"));
         Assert.Equal(
             ["Изменить", "Метрики", "Устройства", "Сбросить квоту", "Новый токен", "Удалить"],

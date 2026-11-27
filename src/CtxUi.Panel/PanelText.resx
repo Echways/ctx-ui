@@ -551,7 +551,7 @@
     <value>Apps such as Claude, ChatGPT or Cursor connect with the server address and sign in in the browser, without copying a key.</value>
   </data>
   <data name="OAuthNeedsHttps" xml:space="preserve">
-    <value>Browser sign-in needs a public address that starts with https://. Now: {0}. Set CtxUi__PublicUrl and restart the service.</value>
+    <value>Browser sign-in needs a public address that starts with https://. Now: {0}. Set CtxUi__OAuthIssuer and restart the service.</value>
   </data>
   <data name="OAuthSwitch" xml:space="preserve">
     <value>Browser sign-in (OAuth)</value>
@@ -991,4 +991,23 @@ Paste the issuer address, the client ID and the secret here.</value>
   <data name="ExtensionBlockFailed" xml:space="preserve">
     <value>This extension block could not be shown</value>
   </data>
+  <data name="PublicUrls" xml:space="preserve"><value>Public URLs</value></data>
+  <data name="GlobalPublicUrl" xml:space="preserve"><value>Global public URL</value></data>
+  <data name="GlobalPublicUrlHelp" xml:space="preserve"><value>The default profile and profiles without an override use this address for all enabled inbounds.</value></data>
+  <data name="OAuthIssuer" xml:space="preserve"><value>OAuth issuer</value></data>
+  <data name="CopyOAuthIssuer" xml:space="preserve"><value>Copy OAuth issuer</value></data>
+  <data name="EffectivePublicUrl" xml:space="preserve"><value>Effective public URL</value></data>
+  <data name="CopyEffectivePublicUrl" xml:space="preserve"><value>Copy effective public URL</value></data>
+  <data name="Harness" xml:space="preserve"><value>Harness</value></data>
+  <data name="HarnessProfiles" xml:space="preserve"><value>Harness profiles</value></data>
+  <data name="HarnessEnabled" xml:space="preserve"><value>Enabled</value></data>
+  <data name="HarnessDisabled" xml:space="preserve"><value>Disabled</value></data>
+  <data name="HarnessInherits" xml:space="preserve"><value>Inherits the global URL</value></data>
+  <data name="HarnessOverrides" xml:space="preserve"><value>Uses a custom URL</value></data>
+  <data name="HarnessReset" xml:space="preserve"><value>Reset to global URL</value></data>
+  <data name="HarnessAdd" xml:space="preserve"><value>Add harness</value></data>
+  <data name="HarnessId" xml:space="preserve"><value>Profile ID</value></data>
+  <data name="HarnessOverrideUrl" xml:space="preserve"><value>Custom public URL</value></data>
+  <data name="HarnessInheritHelp" xml:space="preserve"><value>Leave blank to inherit the global public URL.</value></data>
+  <data name="PublicUrlsSaved" xml:space="preserve"><value>Public URL settings saved.</value></data>
 </root>

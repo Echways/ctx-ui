@@ -1,6 +1,6 @@
 @using Microsoft.Extensions.Options
 @inject PanelBackend Backend
-@inject IOptions<PanelOptions> Options
+@inject IOptions<PublicEndpointOptions> Options
 @inject ISnackbar Snackbar
 @inject ErrorMessages Errors
 @inject TimeProvider Clock
@@ -27,8 +27,14 @@
                 <KeyField Label="@PanelText.Token" Value="@_token" CopyLabel="@PanelText.CopyToken" Born="Fresh"/>
             }
 
+            <MudSelect T="string" Label="@PanelText.Harness" Value="@_harness" ValueChanged="SelectHarness">
+                @foreach (var profile in _endpoints.Profiles.Where(profile => profile.Enabled))
+                {
+                    <MudSelectItem T="string" Value="@profile.Id">@profile.Name</MudSelectItem>
+                }
+            </MudSelect>
             <div class="slugs">
-                @foreach (var slug in ConnectionText.Slugs(_client))
+                @foreach (var slug in ConnectionText.Slugs(_client, enabledOnly: true))
                 {
                     var heading = $"slug-{slug}-{_id}";
                     <section class="slug" aria-labelledby="@heading">
@@ -102,21 +108,33 @@
 
     [Parameter] public bool Fresh { get; set; }
 
-    private string PublicUrl => Options.Value.PublicUrl;
+    private PublicEndpoints _endpoints = PublicEndpoints.Default;
+    private string _harness = PublicEndpoints.DefaultId;
+
+    private string PublicUrl => _endpoints.Select(_harness);
+    private string Issuer => Options.Value.Issuer;
+
+    private void SelectHarness(string harness)
+    {
+        _harness = harness;
+        Describe();
+    }
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
-            (_client, _token, _mode, _providersOn) = await Backend.ReadAsync(async services =>
+            (_client, _token, _mode, _providersOn, _endpoints) = await Backend.ReadAsync(async services =>
             {
                 var clients = services.GetRequiredService<ClientService>();
                 var client = await clients.GetAsync(Id);
                 var signIn = services.GetRequiredService<SignInSettingsService>();
                 var settings = await signIn.GetAsync();
-                var active = settings.Enabled && OAuthAvailability.IsAllowed(PublicUrl);
+                var active = settings.Enabled && OAuthAvailability.IsAllowed(Issuer);
                 var providers = await signIn.ProvidersAsync();
-                return (client, clients.Reveal(client), new ConnectionMode(active, settings.KeySignIn, client.DirectKey), providers.Any(provider => provider.Enabled));
+                var endpoints = await services.GetRequiredService<PublicEndpointSettings>().GetAsync();
+                return (client, clients.Reveal(client), new ConnectionMode(active, settings.KeySignIn, client.DirectKey),
+                    providers.Any(provider => provider.Enabled), endpoints);
             });
         }
         catch (Exception exception) when (Errors.Of(exception) is { } reason)
@@ -138,7 +156,7 @@
     private async Task InviteAsync()
     {
         var code = await Backend.ChangeAsync(services => services.GetRequiredService<ClientLinkService>().InviteAsync(Id));
-        _inviteUrl = $"{OAuthResource.Issuer(PublicUrl)}/connect/invite/{code}";
+        _inviteUrl = $"{Issuer}/connect/invite/{code}";
         _inviteUntil = Clock.GetUtcNow() + InviteCode.Lifetime;
         Describe();
     }

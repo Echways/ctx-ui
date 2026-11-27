@@ -12,7 +12,7 @@ public class ExtensionLoadingTests
     private const string Section = "Образец";
 
     private static readonly string[] BuiltIn =
-        ["Обзор", "Метрики", "Inbound'ы", "Клиенты", "Журнал", "OAuth", "Ключи API"];
+        ["Обзор", "Метрики", "Inbound'ы", "Клиенты", "Журнал", "Публичные адреса", "OAuth", "Ключи API"];
 
     private static async Task<string[]> LinksAsync(IPage page, string brand = "ctx-ui")
     {
@@ -48,7 +48,7 @@ public class ExtensionLoadingTests
         await using var session = await PanelSession.SignInAsync(gateway);
 
         Assert.Equal(
-            ["Обзор", Section, "Метрики", "Inbound'ы", "Заказчики", "OAuth", "Ключи API"],
+            ["Обзор", Section, "Метрики", "Inbound'ы", "Заказчики", "Публичные адреса", "OAuth", "Ключи API"],
             await LinksAsync(session.Page, "Sample brand"));
         await Expect(session.Page.GetByRole(AriaRole.Banner).GetByText("Sample brand")).ToBeVisibleAsync();
         Assert.Contains("#123456", await session.Page.ContentAsync(), StringComparison.Ordinal);
@@ -92,7 +92,7 @@ public class ExtensionLoadingTests
         await using var gateway = await SampleExtensionHost.StartAsync();
         await using var session = await PanelSession.SignInAsync(gateway);
 
-        Assert.Equal(["Обзор", "Метрики", "Inbound'ы", "Клиенты", "Журнал", Section, "OAuth", "Ключи API"],
+        Assert.Equal(["Обзор", "Метрики", "Inbound'ы", "Клиенты", "Журнал", Section, "Публичные адреса", "OAuth", "Ключи API"],
             await LinksAsync(session.Page));
 
         var page = await OpenSectionAsync(gateway, session);

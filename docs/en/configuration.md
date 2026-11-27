@@ -2,8 +2,7 @@
 
 [English](configuration.md) · [Русский](../ru/configuration.md) · [Documentation](README.md)
 
-Settings come from environment variables. Names are the same for every
-install method.
+Deployment settings come from environment variables. The panel also manages public MCP addresses.
 
 | Install method | File | Apply |
 | --- | --- | --- |
@@ -16,14 +15,15 @@ install method.
 | Variable | `appsettings.json` key | Default | Meaning |
 | --- | --- | --- | --- |
 | `Urls` | `Urls` | `http://127.0.0.1:8080` | listen address |
-| `CtxUi__PublicUrl` | `CtxUi:PublicUrl` | `http://localhost:8080` | external address; prefix of client and panel addresses |
+| `CtxUi__PublicUrl` | `CtxUi:PublicUrl` | `http://localhost:8080` | initial public address and fallback OAuth issuer |
+| `CtxUi__OAuthIssuer` | `CtxUi:OAuthIssuer` | value of `CtxUi__PublicUrl` | canonical OAuth server origin |
 | `CtxUi__DataDir` | `CtxUi:DataDir` | `data` | database and keys directory |
 | `CtxUi__Language` | `CtxUi:Language` | `en` | language of gateway errors, CLI, API and the panel until an administrator picks one: `en` or `ru` |
 | `CtxUi__RefreshInterval` | `CtxUi:RefreshInterval` | `00:00:01` | how often the server checks for CLI changes |
 | `CtxUi__FlushInterval` | `CtxUi:FlushInterval` | `00:00:05` | how often quota counters and the call log are written |
 | `CtxUi__UsageRetentionDays` | `CtxUi:UsageRetentionDays` | `30` | call log retention; daily totals are kept forever. The Metrics page offers only periods that fit in it: 90 days needs at least `90` |
 | `CtxUi__ConcurrencyWait` | `CtxUi:ConcurrencyWait` | `00:00:01` | how long a request over the concurrency limit waits for a slot before 429 |
-| `CtxUi__TrustedProxies` | `CtxUi:TrustedProxies` | empty | addresses and subnets (comma separated) of reverse proxies whose `X-Forwarded-For` is trusted; loopback is always trusted. Needed for the sign-in IP of devices |
+| `CtxUi__TrustedProxies` | `CtxUi:TrustedProxies` | empty | addresses and subnets (comma separated) of reverse proxies whose `X-Forwarded-For` and `X-Forwarded-Proto` are trusted; loopback is always trusted |
 | `CtxUi__ExtensionsDir` | `CtxUi:ExtensionsDir` | `<DataDir>/extensions` | folder of installed panel extensions, see [extensions](extensions.md) |
 | `CtxUi__DisabledExtensions` | `CtxUi:DisabledExtensions` | empty | extension ids (comma-separated) not to load |
 | `CtxUi__SessionCheckInterval` | `CtxUi:SessionCheckInterval` | `00:01:00` | how often an open panel rechecks the administrator's session |
@@ -33,6 +33,18 @@ Use `Urls`, not `ASPNETCORE_URLS`: the latter is overridden by
 
 The panel path is stored in the database, not in settings:
 `ctx-ui admin path [--new]`.
+
+### Public URLs and harnesses
+
+Open **Public URLs** in the panel to save the global URL and manage harness profiles. The saved global URL takes precedence over `CtxUi__PublicUrl` and survives a restart. The panel applies saves immediately. A profile with a blank override inherits the global URL. Default is always enabled, and the profile identifier is fixed after creation.
+
+For example, save `https://ctx.echwaysfinland.online:9443` as the global URL. Edit **ChatGPT Web**, enable it, enter `https://some-name.trycloudflare.com`, and save. In **Clients**, open **Connection** for a client assigned to `uni` and pick the harness. Default yields `https://ctx.echwaysfinland.online:9443/mcp/uni`. ChatGPT Web yields `https://some-name.trycloudflare.com/mcp/uni`. Every enabled inbound uses the selected profile's origin and its own slug.
+
+Each configured MCP origin must route to this instance. Configure HTTPS at the proxy, forward the original `Host` including any nondefault port, and set `X-Forwarded-Proto: https`. Add the immediate proxy to `CtxUi__TrustedProxies` when it connects from outside loopback. After the first save in **Public URLs**, the MCP gateway and protected-resource discovery accept configured, enabled origins. To keep an old MCP URL after changing the global URL, add its origin as an enabled profile.
+
+The issuer stays at `CtxUi__OAuthIssuer` or the deployment's `CtxUi__PublicUrl` fallback. It must be reachable by OAuth clients. To preserve issuer identity when changing the deployment-level `CtxUi__PublicUrl`, set `CtxUi__OAuthIssuer` to the previous issuer first. See [Configure OAuth for ChatGPT Web](oauth.md#chatgpt-web).
+
+Use `GET /api/v1/harnesses` to list enabled profiles. Add `?harness=chatgpt-web` to the client connection, issue, or reissue API. The CLI accepts `--harness chatgpt-web` with `client show`, `client add`, and `client reissue`.
 
 ### Language
 
@@ -61,6 +73,7 @@ For Docker, add `CTX_UI_LANGUAGE=ru` to `.env` and run `docker compose up -d`.
 | `CTX_UI_VERSION` | image tag |
 | `CTX_UI_DOMAIN` | required for bundled Caddy, sets the Caddy site and the default public URL |
 | `CTX_UI_PUBLIC_URL` | full external URL, including a custom HTTPS port, passed to `CtxUi__PublicUrl`. Required with an external proxy. Defaults to `https://${CTX_UI_DOMAIN}` with bundled Caddy |
+| `CTX_UI_OAUTH_ISSUER` | optional canonical OAuth issuer, passed to `CtxUi__OAuthIssuer` |
 | `CTX_UI_PORT` | loopback port on the host with an external proxy, defaults to `8080` |
 | `CTX_UI_LANGUAGE` | sets `CtxUi__Language`, `en` by default |
 

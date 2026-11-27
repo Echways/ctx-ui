@@ -30,7 +30,7 @@ public static partial class Cli
 
         Task Change(IServiceProvider services, SignInSettingsUpdate update, CancellationToken ct)
         {
-            return services.GetRequiredService<SignInSettingsService>().UpdateAsync(update, PublicUrl(services), ct);
+            return services.GetRequiredService<SignInSettingsService>().UpdateAsync(update, Issuer(services), ct);
         }
 
         string? ProviderSecret(ParseResult parse)
@@ -52,7 +52,7 @@ public static partial class Cli
             {
                 var settings = services.GetRequiredService<SignInSettingsService>();
                 var current = await settings.GetAsync(ct);
-                var publicUrl = PublicUrl(services);
+                var publicUrl = Issuer(services);
                 output.WriteLine(string.Format(ServerText.OAuthState, OnOff(current.Enabled)));
                 if (!OAuthAvailability.IsAllowed(publicUrl))
                     output.WriteLine(string.Format(ServerText.OAuthUnavailable, publicUrl));
@@ -143,7 +143,7 @@ public static partial class Cli
                             new ProviderSetup(info.Name, parse.GetValue(clientId)!, ProviderSecret(parse),
                                 parse.GetValue(issuer), parse.GetValue(title)), ct);
                         output.WriteLine(string.Format(ServerText.ProviderSaved, info.Name,
-                            $"{PublicUrl(services)}/connect/callback/{info.Name}"));
+                            $"{Issuer(services)}/connect/callback/{info.Name}"));
                     }),
                 leaf("on", ServerText.ProviderOnCommand, [provider], async (parse, services, ct) =>
                 {
@@ -249,7 +249,7 @@ public static partial class Cli
                 var client = await services.GetRequiredService<ClientService>().GetAsync(parse.GetValue(name)!, ct);
                 var code = await services.GetRequiredService<ClientLinkService>().InviteAsync(client.Id, ct);
                 var until = services.GetRequiredService<TimeProvider>().GetUtcNow() + InviteCode.Lifetime;
-                output.WriteLine(string.Format(ServerText.InviteLine, $"{PublicUrl(services)}/connect/invite/{code}"));
+                output.WriteLine(string.Format(ServerText.InviteLine, $"{Issuer(services)}/connect/invite/{code}"));
                 output.WriteLine(string.Format(ServerText.InviteUntil, Date(until, "yyyy-MM-dd HH:mm")));
             }),
             leaf("links", ServerText.ClientLinksCommand, [name], async (parse, services, ct) =>

@@ -1,0 +1,151 @@
+@page "/public-urls"
+@using Microsoft.Extensions.Options
+@inject PanelBackend Backend
+@inject Act Act
+@inject IOptions<PublicEndpointOptions> Options
+
+<PageHead Title="@PanelText.PublicUrls" OnRefresh="LoadAsync"/>
+<PageTopBlocks Section="@PanelSections.PublicUrls"/>
+
+@if (_endpoints is null)
+{
+    <Placeholder/>
+}
+else
+{
+    <div class="settings">
+        <section class="group" aria-labelledby="global-public-url">
+            <h2 id="global-public-url">@PanelText.GlobalPublicUrl</h2>
+            <p class="hint">@PanelText.GlobalPublicUrlHelp</p>
+            <CopyLine Label="@PanelText.EffectivePublicUrl" Value="@_endpoints.GlobalUrl"
+                      CopyLabel="@PanelText.CopyEffectivePublicUrl"/>
+            <CopyLine Label="@PanelText.OAuthIssuer" Value="@Options.Value.Issuer"
+                      CopyLabel="@PanelText.CopyOAuthIssuer"/>
+            <MudTextField T="string" @bind-Value="_globalUrl" Label="@PanelText.GlobalPublicUrl" Disabled="_saving"/>
+            <div class="actions">
+                <button type="button" class="btn-k pigment" disabled="@_saving"
+                        @onclick="SaveGlobalAsync">@PanelText.Save</button>
+            </div>
+        </section>
+
+        <section class="group" aria-labelledby="harnesses">
+            <h2 id="harnesses">@PanelText.HarnessProfiles</h2>
+            <div class="providers">
+                @foreach (var profile in _endpoints.Profiles)
+                {
+                    <section class="provider harness-profile" @key="profile.Id">
+                        <h3>@profile.Name</h3>
+                        <code>@profile.Id</code>
+                        <p class="hint">
+                            @(profile.Enabled ? PanelText.HarnessEnabled : PanelText.HarnessDisabled)
+                            · @(profile.PublicUrl is null ? PanelText.HarnessInherits : PanelText.HarnessOverrides)
+                        </p>
+                        <CopyLine Label="@PanelText.EffectivePublicUrl" Value="@_endpoints.EffectiveUrl(profile)"
+                                  CopyLabel="@PanelText.CopyEffectivePublicUrl"/>
+                        @if (_editing == profile.Id)
+                        {
+                            @ProfileFields(false)
+                            @if (profile.PublicUrl is not null)
+                            {
+                                <button type="button" class="link" disabled="@_saving"
+                                        @onclick="() => SaveAsync(settings => settings.ResetProfileUrlAsync(profile.Id))">@PanelText.HarnessReset</button>
+                            }
+                        }
+                        else if (profile.Id != PublicEndpoints.DefaultId)
+                        {
+                            <button type="button" class="link" disabled="@_saving"
+                                    @onclick="() => Edit(profile)">@PanelText.Edit</button>
+                        }
+                    </section>
+                }
+            </div>
+            @if (_editing == "")
+            {
+                @ProfileFields(true)
+            }
+            else
+            {
+                <div class="actions">
+                    <button type="button" class="btn-k pigment" disabled="@_saving"
+                            @onclick="AddProfile">@PanelText.HarnessAdd</button>
+                </div>
+            }
+        </section>
+    </div>
+}
+<PageBottomBlocks Section="@PanelSections.PublicUrls"/>
+
+@code {
+    private PublicEndpoints? _endpoints;
+    private string _globalUrl = "";
+    private string? _editing;
+    private string _id = "";
+    private string _name = "";
+    private bool _enabled;
+    private string? _override;
+    private bool _saving;
+
+    protected override Task OnInitializedAsync() => LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        _endpoints = await Backend.ReadAsync(services => services.GetRequiredService<PublicEndpointSettings>().GetAsync());
+        _globalUrl = _endpoints.GlobalUrl;
+    }
+
+    private void AddProfile() => Edit(new HarnessProfile("", "", true, null));
+
+    private void Edit(HarnessProfile profile)
+    {
+        _editing = _id = profile.Id;
+        _name = profile.Name;
+        _enabled = profile.Enabled;
+        _override = profile.PublicUrl;
+    }
+
+    private RenderFragment ProfileFields(bool adding) => @<div>
+        @if (adding)
+        {
+            <MudTextField T="string" @bind-Value="_id" Label="@PanelText.HarnessId" Disabled="_saving"/>
+        }
+        <MudTextField T="string" @bind-Value="_name" Label="@PanelText.Name" Disabled="_saving"/>
+        <MudSwitch T="bool" @bind-Value="_enabled" Label="@PanelText.HarnessEnabled" Disabled="_saving"/>
+        <MudTextField T="string" @bind-Value="_override" Label="@PanelText.HarnessOverrideUrl" Disabled="_saving"
+                      HelperText="@PanelText.HarnessInheritHelp"/>
+        <div class="actions">
+            <button type="button" class="btn-k pigment" disabled="@_saving"
+                    @onclick="() => SaveProfileAsync(_override)">@PanelText.Save</button>
+            <button type="button" class="link" disabled="@_saving" @onclick="() => _editing = null">@PanelText.Cancel</button>
+        </div>
+    </div>;
+
+    private Task SaveGlobalAsync() => SaveAsync(settings => settings.SaveGlobalAsync(_globalUrl));
+
+    private Task SaveProfileAsync(string? url)
+    {
+        return SaveAsync(settings => _editing == ""
+            ? settings.CreateProfileAsync(new HarnessProfile(_id, _name, _enabled, url))
+            : settings.SaveProfileAsync(new HarnessProfile(_id, _name, _enabled, url)));
+    }
+
+    private async Task SaveAsync(Func<PublicEndpointSettings, Task> save)
+    {
+        if (_saving)
+            return;
+
+        _saving = true;
+        try
+        {
+            if (await Act.RunAsync(() => Backend.ChangeAsync(services =>
+                    save(services.GetRequiredService<PublicEndpointSettings>())), PanelText.PublicUrlsSaved) == ActResult.Done)
+            {
+                _editing = null;
+                await LoadAsync();
+            }
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+}

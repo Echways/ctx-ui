@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.Extensions.Options;
 using CtxUi.Core.Clients;
 using CtxUi.Core.SignIn;
+using CtxUi.Core.Settings;
+using CtxUi.Core.Routing;
 using CtxUi.Panel;
 
 namespace CtxUi.Server.Api;
@@ -74,7 +76,7 @@ public static class ClientEndpoints
         clients.MapGet("/", ListAsync).WithSummary("All clients; ?name= finds one by name, case-insensitive");
         clients.MapGet("/{id:guid}", GetAsync).WithSummary("One client");
         clients.MapGet("/{id:guid}/connection", ConnectionAsync)
-            .WithSummary("Token, addresses and a message for the client");
+            .WithSummary("Token, addresses and a message for the client; ?harness= selects a profile");
         clients.MapPost("/", AddAsync).WithSummary("Issue a client").WithDescription(
             "expires: date YYYY-MM-DD (UTC) from which access is closed. An empty field in limits removes that limit.");
         clients.MapPatch("/{id:guid}", ChangeAsync).WithSummary("Change the expiry, inbounds, limits or metadata")
@@ -125,28 +127,33 @@ public static class ClientEndpoints
     }
 
     private static async Task<Results<Ok<ConnectionView>, ProblemHttpResult>> ConnectionAsync(
-        Guid id, ClientService clients, SignInSettingsService signIn, IOptions<CtxUiOptions> options,
+        Guid id, string? harness, ClientService clients, SignInSettingsService signIn,
+        ISnapshotSource snapshots, IOptions<PublicEndpointOptions> options,
         CancellationToken ct)
     {
         var client = await clients.GetAsync(id, ct);
+        var url = snapshots.Current.PublicEndpoints.Select(harness);
         if (clients.Reveal(client) is not { } token)
             return TypedResults.Problem(
                 statusCode: StatusCodes.Status409Conflict,
                 detail: ServerText.TokenLostApi);
 
-        return TypedResults.Ok(Connection(options.Value.PublicUrl, client, token,
-            await ConnectionMode.OfAsync(signIn, client, options.Value.PublicUrl, ct)));
+        return TypedResults.Ok(Connection(url, client, token,
+            await ConnectionMode.OfAsync(signIn, client, options.Value.Issuer, ct)));
     }
 
     private static async Task<Created<IssuedClientView>> AddAsync(
         NewClient body,
+        string? harness,
         ClientService clients,
         SignInSettingsService signIn,
-        IOptions<CtxUiOptions> options,
+        ISnapshotSource snapshots,
+        IOptions<PublicEndpointOptions> options,
         TimeProvider clock,
         HttpContext http,
         CancellationToken ct)
     {
+        var url = snapshots.Current.PublicEndpoints.Select(harness);
         var issued = await clients.AddAsync(
             body.Name ?? "",
             body.Inbounds ?? [],
@@ -160,8 +167,8 @@ public static class ClientEndpoints
             $"{http.Request.PathBase}{ApiServices.Prefix}/clients/{client.Id}",
             new IssuedClientView(
                 View(client, clock.GetUtcNow(), 0),
-                Connection(options.Value.PublicUrl, client, issued.Token,
-                    await ConnectionMode.OfAsync(signIn, client, options.Value.PublicUrl, ct))));
+                Connection(url, client, issued.Token,
+                    await ConnectionMode.OfAsync(signIn, client, options.Value.Issuer, ct))));
     }
 
     private static async Task<Ok<ClientView>> ChangeAsync(
@@ -197,13 +204,15 @@ public static class ClientEndpoints
     }
 
     private static async Task<Ok<ConnectionView>> ReissueAsync(
-        Guid id, ClientService clients, SignInSettingsService signIn, IOptions<CtxUiOptions> options,
+        Guid id, string? harness, ClientService clients, SignInSettingsService signIn,
+        ISnapshotSource snapshots, IOptions<PublicEndpointOptions> options,
         CancellationToken ct)
     {
+        var url = snapshots.Current.PublicEndpoints.Select(harness);
         var reissued = await clients.ReissueAsync(id, ct);
         var client = await clients.GetAsync(id, ct);
-        var mode = await ConnectionMode.OfAsync(signIn, client, options.Value.PublicUrl, ct);
-        return TypedResults.Ok(Connection(options.Value.PublicUrl, client, reissued.Token, mode) with
+        var mode = await ConnectionMode.OfAsync(signIn, client, options.Value.Issuer, ct);
+        return TypedResults.Ok(Connection(url, client, reissued.Token, mode) with
         {
             DevicesRevoked = reissued.DevicesRevoked
         });
@@ -242,10 +251,10 @@ public static class ClientEndpoints
     }
 
     private static async Task<Ok<InviteView>> InviteAsync(
-        Guid id, ClientLinkService links, IOptions<CtxUiOptions> options, TimeProvider clock, CancellationToken ct)
+        Guid id, ClientLinkService links, IOptions<PublicEndpointOptions> options, TimeProvider clock, CancellationToken ct)
     {
         var code = await links.InviteAsync(id, ct);
-        return TypedResults.Ok(new InviteView($"{OAuthResource.Issuer(options.Value.PublicUrl)}/connect/invite/{code}",
+        return TypedResults.Ok(new InviteView($"{options.Value.Issuer}/connect/invite/{code}",
             clock.GetUtcNow() + InviteCode.Lifetime));
     }
 
@@ -305,7 +314,7 @@ public static class ClientEndpoints
     {
         return new ConnectionView(
             token,
-            ConnectionText.Slugs(client)
+            ConnectionText.Slugs(client, enabledOnly: true)
                 .Select(slug => new ConnectionAddress(
                     slug, ConnectionText.Address(publicUrl, slug),
                     ConnectionText.AddressWithToken(publicUrl, token, slug)))

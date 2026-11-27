@@ -709,4 +709,5 @@
   <data name="ExtensionNone" xml:space="preserve">
     <value>No extensions installed</value>
   </data>
+  <data name="HarnessOption" xml:space="preserve"><value>Harness profile ID (defaults to default)</value></data>
 </root>
